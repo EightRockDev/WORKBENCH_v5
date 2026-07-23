@@ -1,0 +1,38 @@
+# ===========================================================================
+# Eight Rock Workbench v5.0 — Caddy config (Windows deploy)
+# ---------------------------------------------------------------------------
+# Same as deploy/Caddyfile but with Windows log paths. install.ps1 copies this
+# to Caddyfile.active with your domain/app-dir substituted. Streamlit stays on
+# localhost; Caddy owns the public HTTPS side with automatic Let's Encrypt.
+#
+# Requires the DNS A-record for the domain to point at the reserved public IP
+# (Let's Encrypt will not issue a certificate for a bare IP address).
+# ===========================================================================
+
+{
+	email ops@eight-rock.com
+}
+
+workbench.eight-rock.com {
+	reverse_proxy 127.0.0.1:8501 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "SAMEORIGIN"
+		Referrer-Policy           "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	log {
+		output file "C:\WORKBENCH_V5\logs\caddy-access.log"
+		format json
+	}
+
+	encode gzip zstd
+}
