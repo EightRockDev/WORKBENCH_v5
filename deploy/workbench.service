@@ -1,0 +1,50 @@
+# ===========================================================================
+# Eight Rock Workbench v5.0 — systemd service (Section 9.1 process manager)
+# ---------------------------------------------------------------------------
+# Keeps the Streamlit app running, auto-restarts on crash/reboot. The app is
+# bound to 127.0.0.1 ONLY — Caddy (deploy/Caddyfile) owns the public side.
+#
+# Install:
+#   sudo cp deploy/workbench.service /etc/systemd/system/workbench.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now workbench
+#   sudo systemctl status workbench
+# ===========================================================================
+
+[Unit]
+Description=Eight Rock Workbench (Streamlit)
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+# Dedicated non-root service account (create with: sudo useradd -r -s /usr/sbin/nologin workbench)
+User=workbench
+Group=workbench
+
+# App lives on LOCAL disk — never OneDrive (hard rule, Section 9.2).
+WorkingDirectory=/opt/8rw
+EnvironmentFile=/opt/8rw/.env
+
+# uv runs the app from the locked environment (uv.lock present).
+ExecStart=/usr/bin/env uv run streamlit run app.py \
+    --server.address 127.0.0.1 \
+    --server.port 8501 \
+    --server.headless true \
+    --browser.gatherUsageStats false
+
+Restart=always
+RestartSec=3
+# Give Streamlit time to come up before healthchecks.
+TimeoutStartSec=60
+
+# --- Hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/8rw /var/log/8rw
+
+[Install]
+WantedBy=multi-user.target

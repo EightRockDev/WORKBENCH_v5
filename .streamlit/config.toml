@@ -1,0 +1,30 @@
+# Eight Rock Workbench — Streamlit theme.
+# Mirrors the CSS variables in Workbench.html line 10. Update both together.
+
+[theme]
+# Yardi-Matrix-inspired light content + dark chrome (per Brian 2026-05-08).
+# `base = "light"` gives Streamlit's defaults the right cascade — the
+# CSS injected from app.py overlays Eight Rock's specific palette and
+# explicitly darkens the sidebar.
+base = "light"
+primaryColor          = "#C8900A"   # Eight Rock gold — works on white
+backgroundColor       = "#f5f7fa"   # cool white-grey content bg
+secondaryBackgroundColor = "#ffffff" # cards / panels
+textColor             = "#0f1117"   # near-black for readability
+font                  = "sans-serif"
+
+[server]
+# Bind to all interfaces so Peter can reach the workbench at
+# http://192.168.0.248:8501 over the office LAN.
+address = "0.0.0.0"
+port = 8501
+# Open the browser tab automatically when run.bat launches.
+headless = false
+runOnSave = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+# Cleaner UI — no toolbar at the top right when not running locally with dev tools.
+toolbarMode = "minimal"

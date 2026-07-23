@@ -1,0 +1,48 @@
+# ===========================================================================
+# Eight Rock Workbench v5.0 — Caddy reverse proxy (Section 9.1)
+# ---------------------------------------------------------------------------
+# Public HTTPS with automatic Let's Encrypt certificates, sitting in front of
+# the Streamlit app which is bound to localhost only (127.0.0.1:8501).
+#
+#   * Replace workbench.eight-rock.com with your real domain (A-record must
+#     already point at the server's reserved public IP — Let's Encrypt will
+#     NOT issue a certificate for a bare IP address, per Section 9.1).
+#   * Replace ops@eight-rock.com with the address for ACME expiry notices.
+#
+# Install path: /etc/caddy/Caddyfile   (reload with:  sudo systemctl reload caddy)
+# ===========================================================================
+
+{
+	# ACME contact for Let's Encrypt certificate lifecycle notifications.
+	email ops@eight-rock.com
+}
+
+workbench.eight-rock.com {
+
+	# --- Streamlit backend (localhost only; the proxy owns the public side) ---
+	reverse_proxy 127.0.0.1:8501 {
+		# Streamlit uses WebSockets for its live session channel; Caddy proxies
+		# them transparently, but keep the upstream headers correct.
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	# --- Security headers (supports SR-2/SR-3 posture, Section 8.1) ---
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "SAMEORIGIN"
+		Referrer-Policy           "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# --- Access log (feeds the audit posture; ship to your log store) ---
+	log {
+		output file /var/log/caddy/workbench-access.log
+		format json
+	}
+
+	encode gzip zstd
+}
