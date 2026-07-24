@@ -12,6 +12,11 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.4.0.1.0 — 2026-07-24  ·  Updater hardening
+- `update-workbench.bat` now stops a running app, **hard-resets to origin/main**
+  (so a diverged local copy can never block an update), fails loudly on network
+  error, then syncs deps and applies the DB migration. `.env` is untouched.
+
 ## V5.4.0.0.0 — 2026-07-24  ·  Phase 0 groundwork: Eight Rock native spine (§7.2/§7.4)
 - **`core/spine.py`** — the identity + taxonomy that replaces ALN:
   - `property_id(fips, apn)` -> deterministic `8R-{FIPS}-{12 hex SHA-256 of the
