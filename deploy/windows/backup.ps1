@@ -1,10 +1,10 @@
 <#
 ===========================================================================
- Eight Rock Workbench v5.0 — nightly DB backup (Windows, Section 9.1/9.2)
+ Eight Rock Workbench v5.0 - nightly DB backup (Windows, Section 9.1/9.2)
  --------------------------------------------------------------------------
  A pg_dump writes ONE closed file, then it is safe to copy to a OneDrive
  backup target (Section 9.2). The LIVE database must never live in a synced
- folder — only the closed dump is synced.
+ folder - only the closed dump is synced.
 
  Schedule via Task Scheduler (run as SYSTEM or an admin), daily ~02:15:
    schtasks /create /tn "Workbench Backup" /tr ^
