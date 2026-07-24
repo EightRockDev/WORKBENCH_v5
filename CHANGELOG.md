@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.3.0.0.0 — 2026-07-24  ·  V5-P2: Compliance gate C1-C7 + outreach chokepoint (§4.4/§5)
+- **Schema**: `consent_records`, `revocations`, `internal_dnc`, `dnc_scrubs`,
+  `outreach_touches` (append-only, with `rule_trace`), `campaigns`,
+  `relationship_edges` — all RLS org-private.
+- **`core/compliance/rules.py`** — the gate. C1 DNC (internal list + 31-day scrub
+  freshness + federal + the six state registries), C2 litigator, C3 channel rules
+  (prerecorded/AI-voice/RVM/SMS to a cell HARD-BLOCKED without prior express
+  written consent), C4 quiet hours 8:00-21:00 in the *called-party's* local time
+  (area-code -> state -> conservative all-zone fallback) + per-person frequency
+  caps incl. the Oregon 3/day overlay, C5 revocation honored across ALL channels,
+  C6 FCRA firewall (non-acquisition purposes refused outright), C7 licensing.
+  Returns a full **rule trace**.
+- **`core/compliance/ledger.py`** — consent / revocation / internal-DNC / scrub
+  ledgers; an opt-out immediately revokes consents and adds to internal DNC.
+- **`core/outreach/engine.py`** — every touch routes through `attempt_touch`,
+  which evaluates the gate, logs the attempt WITH its trace (allowed or blocked),
+  and dispatches only if allowed. Dial list exposes only `callable` numbers (B1).
+  Audit export (`export_touches_csv`) satisfies AC-B2. Relationship edges (B5).
+- **Tests** (`tests/test_compliance.py`): 21 ADVERSARIAL tests per the §13
+  verification rule — unstamped/expired/federal-DNC/state-DNC/litigator/internal-
+  DNC/prerecorded-to-cell/SMS/quiet-hours/unknown-geography/revoked/FCRA/managed-
+  service/frequency-cap all refused; blocked touches still logged and never
+  dispatched; touch log proven append-only.
+
 ## V5.2.1.3.0 — 2026-07-24  ·  Robust BatchData key setter (clean PS script)
 - `set-skiptrace-key.bat` now calls `deploy/windows/set-skiptrace-key.ps1` (a
   clean, reliable script instead of an inline one-liner). Writes the key to .env

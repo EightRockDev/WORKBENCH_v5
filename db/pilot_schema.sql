@@ -277,3 +277,143 @@ ON CONFLICT (key) DO UPDATE SET
    label=EXCLUDED.label, maps_to=EXCLUDED.maps_to, module_grants=EXCLUDED.module_grants,
    field_mask=EXCLUDED.field_mask, action_grants=EXCLUDED.action_grants,
    default_scope=EXCLUDED.default_scope;
+
+-- ===========================================================================
+-- MODULE A §4.4 COMPLIANCE GATE (C1-C7) + MODULE B §5 OUTREACH
+-- ---------------------------------------------------------------------------
+-- Defensive architecture: federal TCPA exposure is $500-$1,500 per call/text,
+-- uncapped; state mini-TCPAs add $5K-$11K. These tables make the compliant path
+-- the only path the software allows.
+-- ===========================================================================
+
+BEGIN;
+
+-- C5 CONSENT LEDGER — prior express written consent, required before any
+-- prerecorded/AI voice or ringless voicemail to a cell, and before SMS (C3).
+CREATE TABLE IF NOT EXISTS consent_records (
+    id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id       uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    e164         text NOT NULL,
+    channel      text NOT NULL CHECK (channel IN ('voice','sms','email','all')),
+    consent_kind text NOT NULL DEFAULT 'express_written'
+                   CHECK (consent_kind IN ('express_written','express_oral','inquiry')),
+    evidence     text,                       -- how/where consent was captured
+    captured_at  timestamptz NOT NULL DEFAULT now(),
+    expires_at   timestamptz,                -- NULL = no expiry
+    revoked_at   timestamptz,                -- set by a revocation (C5)
+    created_by   uuid REFERENCES users(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS ix_consent_org_phone ON consent_records(org_id, e164);
+
+-- C5 REVOCATION LEDGER — opt-out via ANY channel, honored across ALL channels.
+-- Propagates to the tenant internal DNC list immediately.
+CREATE TABLE IF NOT EXISTS revocations (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id      uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    e164        text,
+    email       text,
+    scope       text NOT NULL DEFAULT 'all' CHECK (scope IN ('all','voice','sms','email','mail')),
+    source      text,                        -- 'inbound_call','sms_stop','email_unsub',...
+    received_at timestamptz NOT NULL DEFAULT now(),
+    honored_at  timestamptz NOT NULL DEFAULT now(),   -- immediate; FCC allows <=10 business days
+    note        text,
+    CHECK (e164 IS NOT NULL OR email IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS ix_revoke_org_phone ON revocations(org_id, e164);
+CREATE INDEX IF NOT EXISTS ix_revoke_org_email ON revocations(org_id, email);
+
+-- C1 INTERNAL DO-NOT-CALL LEDGER — retained 5 years per FTC rule.
+CREATE TABLE IF NOT EXISTS internal_dnc (
+    id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id     uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    e164       text NOT NULL,
+    reason     text,
+    added_at   timestamptz NOT NULL DEFAULT now(),
+    retain_until timestamptz NOT NULL DEFAULT now() + interval '5 years',
+    UNIQUE (org_id, e164)
+);
+
+-- C1 DNC SCRUB RUNS — federal + six state registries (IN, LA, MO, PA, TX, WY).
+-- A scrub is valid 31 days; campaign start auto re-scrubs on expiry.
+CREATE TABLE IF NOT EXISTS dnc_scrubs (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id      uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    e164        text NOT NULL,
+    federal     boolean NOT NULL DEFAULT false,
+    states      text[] NOT NULL DEFAULT '{}',
+    litigator   boolean NOT NULL DEFAULT false,
+    vendor      text,
+    scrubbed_at timestamptz NOT NULL DEFAULT now(),
+    expires_at  timestamptz NOT NULL DEFAULT now() + interval '31 days'
+);
+CREATE INDEX IF NOT EXISTS ix_scrub_org_phone ON dnc_scrubs(org_id, e164, scrubbed_at DESC);
+
+-- §5 / AC-B2 OUTREACH TOUCH LOG — 100% of outbound touches logged with channel,
+-- timestamp, the rule-evaluation trace (which compliance checks passed), and
+-- outcome. Append-only; audit-exportable.
+CREATE TABLE IF NOT EXISTS outreach_touches (
+    id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id       uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    property_id  text,
+    poc_id       uuid REFERENCES poc_records(id) ON DELETE SET NULL,
+    person_name  text,
+    channel      text NOT NULL CHECK (channel IN ('call','voicemail','sms','email','mail')),
+    subtype      text,                       -- 'manual_dial','prerecorded','rvm','letter',...
+    e164         text,
+    email        text,
+    allowed      boolean NOT NULL,           -- did the gate permit it?
+    rule_trace   jsonb NOT NULL DEFAULT '[]'::jsonb,   -- [{rule,passed,detail}] (AC-B2)
+    outcome      text,                       -- 'connected','voicemail','no_answer','sent',...
+    campaign_id  uuid,
+    actor_user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+    ts           timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_touch_org_ts    ON outreach_touches(org_id, ts DESC);
+CREATE INDEX IF NOT EXISTS ix_touch_org_phone ON outreach_touches(org_id, e164, ts DESC);
+CREATE OR REPLACE FUNCTION touches_immutable() RETURNS trigger AS $$
+BEGIN RAISE EXCEPTION 'outreach_touches is append-only (AC-B2): % not permitted', TG_OP; END;
+$$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS trg_touch_immutable ON outreach_touches;
+CREATE TRIGGER trg_touch_immutable BEFORE UPDATE OR DELETE ON outreach_touches
+    FOR EACH ROW EXECUTE FUNCTION touches_immutable();
+
+-- §5 B4 CAMPAIGNS / cadence orchestration
+CREATE TABLE IF NOT EXISTS campaigns (
+    id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id     uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    name       text NOT NULL,
+    cadence    jsonb NOT NULL DEFAULT '[]'::jsonb,   -- [{step,channel,offset_days}]
+    status     text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','running','paused','done')),
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- §5 B5 RELATIONSHIP GRAPH — touches/responses/referrals accumulate per org.
+CREATE TABLE IF NOT EXISTS relationship_edges (
+    id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id     uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    from_kind  text NOT NULL,   -- 'user','poc','lender','broker'
+    from_id    text NOT NULL,
+    to_kind    text NOT NULL,
+    to_id      text NOT NULL,
+    edge       text NOT NULL,   -- 'contacted','responded','referred','closed_with'
+    weight     numeric(8,2) NOT NULL DEFAULT 1,
+    last_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_edges_org ON relationship_edges(org_id, from_id);
+
+COMMIT;
+
+-- RLS for the new org-private tables (§10.1 — cross-org read impossible at DB layer)
+DO $$
+DECLARE t text;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['consent_records','revocations','internal_dnc','dnc_scrubs',
+                             'outreach_touches','campaigns','relationship_edges']
+    LOOP
+        EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
+        EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
+        EXECUTE format('DROP POLICY IF EXISTS org_isolation ON %I', t);
+        EXECUTE format('CREATE POLICY org_isolation ON %I USING (org_id = current_org_id()) '
+                       'WITH CHECK (org_id = current_org_id())', t);
+    END LOOP;
+END $$;
