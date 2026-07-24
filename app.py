@@ -67,7 +67,6 @@ from ui.v2_theme_05292026 import (
     render_v2_inspector as _v2_inspector,
     render_v2_cmdk_palette as _v2_cmdk,
     apply_query_param_to_state as _apply_qp,
-    render_v1_switch_button as _v1_switch_btn,
     gather_metrics as _v2_metrics,
     render_v2_inventory_landing as _v2_landing,
     record_property_view as _v2_record_view,
@@ -651,9 +650,9 @@ def main() -> None:
             render_admin_page(st, user, org_id)
             return
 
-    # V1 mode: floating "Try V2.0" pill in the top-right corner.
-    # V2 mode: handled inside render_v2_topbar (no-op here).
-    _v1_switch_btn(selected_property_id)
+    # (Removed the legacy "Try V2.0" theme-switch pill — "V2.0" was an old
+    # internal UI-theme codename, not a product version, and reads as a
+    # downgrade offer in the v5 product. Users no longer switch themes.)
 
     # The sidebar's "+ Add custom property" button sets a session-state flag
     # rather than calling `@st.dialog` directly — dialogs invoked from

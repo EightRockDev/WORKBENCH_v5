@@ -12,6 +12,11 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.1.1.3.0 — 2026-07-24  ·  Remove legacy "Try V2.0" theme switcher
+- Removed the floating "Try V2.0" pill (and its unused import). "V2.0" was an old
+  internal UI-theme codename ("Quiet Operator"), not a product version, and read
+  as a downgrade offer in the v5 product. Users no longer switch themes.
+
 ## V5.1.1.2.0 — 2026-07-24  ·  Fix migrate-db.ps1 arg parsing (Windows psql)
 - Windows `psql` stops parsing options after a bare connection URL, so `-f` was
   dropped and the script fell into an interactive prompt. Pass the URL via `-d`
