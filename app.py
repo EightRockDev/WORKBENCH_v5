@@ -625,6 +625,15 @@ def main() -> None:
     # v5.0 multi-tenancy (Section 10): resolve the active org + effective
     # permissions (module grants / field masks / action grants / scope).
     org_id, perms = core_session.resolve_org_context(user)
+    # Detect a schema-drift signal (DB not migrated after a git pull) and show a
+    # soft hint instead of crashing the page.
+    if isinstance(perms, tuple) and perms and perms[0] == "__schema_error__":
+        st.warning(
+            "⚠️ Multi-tenant features are inactive because the database schema is "
+            "out of date. Run `.\\deploy\\windows\\migrate-db.ps1` (or re-run "
+            "`setup-db.ps1`) to update it, then restart.",
+            icon="⚠️")
+        perms = None
     st.session_state["org_id"] = org_id
     st.session_state["perms"] = perms
 

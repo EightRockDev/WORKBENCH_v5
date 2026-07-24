@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.1.1.1.0 — 2026-07-24  ·  DB migration script + graceful schema-drift handling
+- **Fix**: after V5.1.0 moved `memberships` out of RLS, a DB that wasn't
+  re-migrated raised `InsufficientPrivilege` on org creation. Added
+  `deploy/windows/migrate-db.ps1` — applies `db/pilot_schema.sql` using the
+  existing `.env` credentials (no admin, no superuser password); idempotent.
+- `core/session.py` / `app.py`: `resolve_org_context` now catches DB errors and
+  the app shows a soft "run migrate-db.ps1" banner instead of white-screening.
+- Verified: reproduces the error on the old schema; migration disables the stale
+  RLS; org creation then succeeds.
+
 ## V5.1.1.0.0 — 2026-07-24  ·  Org context + point-and-click org admin
 - `core/session.py`: `resolve_org_context` — resolves the logged-in user's
   active org + effective permissions; admins auto-bootstrap a default org (become

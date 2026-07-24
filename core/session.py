@@ -70,15 +70,26 @@ def resolve_org_context(user: AdminUser | None) -> tuple[str | None, object | No
         return None, None
     from core import orgs
 
-    # Admins bootstrap a default org if they have none; others must be enrolled.
-    if user.is_admin:
-        org_id = orgs.ensure_default_org(user.id, "Eight Rock Capital")
-    else:
-        user_org_list = orgs.user_orgs(user.id, active_only=True)
-        org_id = user_org_list[0]["org_id"] if user_org_list else None
-    if org_id is None:
-        return None, None
-    return org_id, orgs.get_permissions(user.id, org_id)
+    try:
+        # Admins bootstrap a default org if they have none; others must be enrolled.
+        if user.is_admin:
+            org_id = orgs.ensure_default_org(user.id, "Eight Rock Capital")
+        else:
+            user_org_list = orgs.user_orgs(user.id, active_only=True)
+            org_id = user_org_list[0]["org_id"] if user_org_list else None
+        if org_id is None:
+            return None, None
+        return org_id, orgs.get_permissions(user.id, org_id)
+    except Exception as exc:  # pragma: no cover - surfaced as a soft banner
+        # Most commonly a schema drift (DB not migrated after a git pull).
+        # Degrade gracefully: the app still loads; the multi-tenant features are
+        # simply inactive until the DB is migrated. Signal it for a UI hint.
+        import os
+
+        if os.environ.get("ER_DEBUG"):
+            import traceback
+            traceback.print_exc()
+        return None, ("__schema_error__", str(exc))
 
 
 def render_account_chip(st, user: AdminUser | None) -> None:
