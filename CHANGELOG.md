@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.1.0.0.0 — 2026-07-24  ·  Walk: Multi-tenancy & Roles (Section 10)
+- **Permission model** (`core/permissions.py`): effective permissions from a
+  role preset — module grants, server-side field masking (`mask`/`scrub` so a
+  masked field never reaches the client), action gating (`require` → 403), and
+  scope parsing.
+- **Org & membership lifecycle** (`core/orgs.py`): create org (creator becomes
+  Principal/org-admin), invite/assign by picking a preset key, change preset/
+  scope/status, one-click offboarding, `user_orgs` login resolution, and
+  `get_permissions(user, org)`.
+- **Schema**: `memberships` moved out of org RLS to control-plane (fixes the
+  login-time "which org?" bootstrap); org-private DATA tables stay RLS-forced.
+- **Tests** (`tests/test_multitenancy.py`): 8 new — AC-10.2 (field masking),
+  AC-10.3 (separation of duty: GO gate + waterfall-edit not self-grantable),
+  AC-10.4 (LP own_only / guest single_deal), AC-10.5 (setup + offboarding).
+
 ## V5.0.2.0.0 — 2026-07-24
 - Adopt the `V5.x.x.x.x` version scheme; version pill now reads `V5.0.2.0.0`.
 - Add this changelog; record the "bump version + changelog every change" rule in

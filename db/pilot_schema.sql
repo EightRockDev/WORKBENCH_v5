@@ -202,7 +202,8 @@ $$ LANGUAGE sql STABLE;
 DO $$
 DECLARE t text;
 BEGIN
-    FOREACH t IN ARRAY ARRAY['poc_records','edit_locks','skiptrace_spend','memberships']
+    -- Org-PRIVATE DATA tables: cross-org read is impossible at the DB layer.
+    FOREACH t IN ARRAY ARRAY['poc_records','edit_locks','skiptrace_spend']
     LOOP
         EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
         EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
@@ -211,6 +212,15 @@ BEGIN
           'CREATE POLICY org_isolation ON %I USING (org_id = current_org_id()) '
           'WITH CHECK (org_id = current_org_id())', t);
     END LOOP;
+
+    -- memberships is a CONTROL-PLANE table (user<->org<->role mapping). It must
+    -- be readable before an org context exists (to resolve which org a user
+    -- belongs to at login), so it is NOT under org_isolation RLS; the
+    -- application layer (core/orgs.py) governs who may read/write it. Explicitly
+    -- clear any policy from an earlier schema version so re-apply is clean.
+    EXECUTE 'DROP POLICY IF EXISTS org_isolation ON memberships';
+    EXECUTE 'ALTER TABLE memberships NO FORCE ROW LEVEL SECURITY';
+    EXECUTE 'ALTER TABLE memberships DISABLE ROW LEVEL SECURITY';
 END $$;
 
 COMMIT;
