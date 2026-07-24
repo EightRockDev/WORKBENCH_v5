@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.2.0.0.0 — 2026-07-24  ·  Module A — Skip Trace & POC Intelligence (Section 4)
+- **Deterministic resolution pipeline S1–S7** (`core/skiptrace/pipeline.py`):
+  entity anchor -> portfolio chain -> LLC piercing (registry, recurse to depth 4)
+  -> person skip-trace waterfall (cheapest tier first, stop on grade-A) ->
+  validation & A/B/F grading -> compliance stamp -> persist. No LLM (Section 11).
+- **Vendor abstraction** (`core/skiptrace/providers.py`, spec §8): SOS /
+  SkipTrace / Validation provider interfaces with deterministic MOCK adapters
+  (zero spend, repeatable). Swap to real BatchData/Trestle/VA-SCC via
+  `ER_SKIPTRACE_PROVIDERS=live` — pipeline code unchanged.
+- **Compliance gate (AC-A3)**: `callable` is computed in exactly one place from a
+  valid, unexpired DNC stamp + litigator/federal-DNC check; nothing else can mark
+  a number callable. **Cost telemetry + hard monthly budget cap (FR-A5/AC-A4)**.
+- **Owner Intelligence panel** (`ui/skiptrace_panel.py`, on the Diligence tab):
+  one-click Resolve Contacts (FR-A1), entity-chain display, graded phones with
+  red-lock reasons for blocked numbers, provenance + spend. Gated by the
+  `skip_trace` module grant / `run_skiptrace` action (§10.4).
+- Tests (`tests/test_skiptrace.py`): 12 — AC-A1 (>=80% resolve to a named human
+  with a grade-A phone), AC-A3 (callable invariant), AC-A4 (spend + budget cap),
+  LLC piercing, waterfall stop, idempotent persist, §4.5 contract shape.
+- **Fixes**: "Preview as role" now degrades gracefully instead of white-screening
+  on a stale module (defensive `apply_preview`); the comps "Refresh All" ETL
+  control shows a notice instead of a red error (the standalone ETL script isn't
+  part of the v5 layout — refresh lands with the Phase 0 spine).
+
 ## V5.1.2.0.0 — 2026-07-24  ·  §10.4 enforced in the deal screens + "Preview as role"
 - **Module gating live in the UI** (`ui/authz.py` + `app.py`): Underwriting,
   Due Diligence, Returns & Waterfall, Investors, Exec Summary, Market, Pipeline,

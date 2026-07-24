@@ -822,6 +822,12 @@ def main() -> None:
         if _authz.guard_module("underwriting", "Underwriting"):
             render_underwriting(prop, folder)
     with tab_dd:
+        # Owner Intelligence (Module A) — gated internally by the skip_trace
+        # module grant, so a role with skip trace but not underwriting still
+        # sees it. Renders above the underwriting-gated diligence content.
+        from ui.skiptrace_panel import render_owner_intel
+        render_owner_intel(prop)
+        st.divider()
         if _authz.guard_module("underwriting", "Due Diligence"):
             # Acquisition Checklist sits at the TOP of Diligence now.
             render_acquisition_checklist(prop, folder)

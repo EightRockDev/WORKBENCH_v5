@@ -764,7 +764,14 @@ def _run_etl_refresh(only: str | None = None) -> None:
     etl_script = etl_dir / "hampton_roads_etl.py"
 
     if not etl_script.exists():
-        st.error(f"ETL script not found at {etl_script}")
+        # The standalone ETL script belongs to the old repo layout and isn't
+        # part of the v5 deployment. Public-data refresh will be wired into the
+        # 8R data spine (Phase 0 / Module F); until then this is a no-op, shown
+        # as a notice rather than a red error.
+        st.info("Automated data refresh isn't wired into this deployment yet. "
+                "Public sources (FRED / BLS / HUD / FMR / permits) will be "
+                "refreshed by the 8R data spine (Phase 0). This control "
+                "activates once that pipeline lands.")
         return
 
     cmd = [_sys.executable, str(etl_script)]

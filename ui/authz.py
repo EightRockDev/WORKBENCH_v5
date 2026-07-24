@@ -90,9 +90,14 @@ def apply_preview(org_id: str | None, real_perms):
     pick = st.session_state.get("_preview_role")
     if not pick or pick == "(my real role)" or not org_id:
         return real_perms
-    from core import orgs
+    try:
+        from core import orgs
 
-    preset = orgs.get_preset(pick)
-    if preset is None:
+        preset = orgs.get_preset(pick)
+    except Exception:
+        # Defensive: never let the preview switch crash the app (e.g. a
+        # transient DB error or a stale module after a partial pull).
+        return real_perms
+    if not preset:
         return real_perms
     return Permissions.from_preset_row(org_id, preset)
