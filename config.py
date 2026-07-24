@@ -9,10 +9,16 @@ Decisions ratified 2026-05-06; see memory file `feedback_underwriting_convention
 from __future__ import annotations
 
 # ---------------------------------------------------------------------------
-# Version  (format: vMAJOR.MINOR.MMDDYYYY — per feedback.md "Always Bump Version")
+# Version  (v5.0 scheme, format: V5.PHASE.FEATURE.PATCH.BUILD)
+#   - the leading 5 marks the Workbench v5.0 product line (fixed)
+#   - PHASE   : build-sequence milestone (0 = P0/P0.5 pilot, 1 = Walk, ...)
+#   - FEATURE : notable capability added within the phase
+#   - PATCH   : fixes/refinements
+#   - BUILD   : increments on every change
+# *** BUMP THIS ON EVERY CHANGE and add a CHANGELOG.md entry (owner directive). ***
 # ---------------------------------------------------------------------------
 
-WORKBENCH_VERSION = "v1.10.05262026"
+WORKBENCH_VERSION = "V5.0.2.0.0"
 
 
 # ---------------------------------------------------------------------------

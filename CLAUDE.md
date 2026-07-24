@@ -98,6 +98,15 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Versioning (owner directive — do this on EVERY change)
+
+- Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).
+  Source of truth: `WORKBENCH_VERSION` in `config.py`; shown in the app's
+  top-bar pill.
+- **Every change**: bump `WORKBENCH_VERSION` (BUILD for routine changes; higher
+  segments at feature/phase milestones) **and** add a dated entry to
+  `CHANGELOG.md`. The owner explicitly asked that this never be skipped.
+
 ## Commit conventions
 
 - Small, focused commits; reference the spec section/AC in the message.
