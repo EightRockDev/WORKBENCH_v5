@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.3.2.0.0 — 2026-07-24  ·  Module C: Forced-Seller Radar v2 (§6.1)
+- **`core/radar_v2.py`**: one explainable 0-100 distress score fusing six
+  weighted signals — loan-maturity proximity (GRANITE), tax delinquency, permit
+  decay, ownership tenure, listing appearance/removal, and the **new v5.0 POC
+  signals** from Module A (deceased-owner flag, out-of-state mailing address,
+  portfolio size, entity dissolution). Every component carries its evidence.
+- Weights are tuned so **no single signal alone reaches the ACT band** — distress
+  is a fusion judgement, proven by test.
+- **Backtest harness** (`backtest()`): top-decile trailing score vs. population
+  base rate. Synthetic 600-property run yields **3.08x lift** (base 10.8% ->
+  top-decile 33.3%), clearing the spec's >=3x acceptance bar.
+- **`ui/radar_panel.py`** on the Subject tab: score badge + per-component
+  contribution bars + the full evidence list; signal inputs are overridable
+  until Phase 0 / GRANITE wire them automatically.
+- Tests (`tests/test_radar_v2.py`): 18 passing.
+
 ## V5.3.1.0.0 — 2026-07-24  ·  V5-P3: Module B Outreach Engine B1-B5 (§5)
 - **B2 artifacts** (`core/outreach/artifacts.py`): letters + call talking points
   grounded in deed chain / GRANITE loan maturity / assessed-value trend /

@@ -820,6 +820,11 @@ def main() -> None:
     # is how "a Maintenance preset cannot see the purchase price" is enforced
     # in the UI: the financial renderers are never invoked for that role.
     with tab_subject:
+        # Module C (§6.1): forced-seller distress score + evidence panel, above
+        # the property detail so the sourcing signal leads.
+        from ui.radar_panel import render_radar
+        render_radar(prop)
+        st.divider()
         render_property_detail(prop, folder)
     with tab_perf:
         if _authz.guard_module("comps", "Performance & Market"):
