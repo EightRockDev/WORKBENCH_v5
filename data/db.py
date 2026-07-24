@@ -56,10 +56,13 @@ def ensure_db_synced() -> bool:
 
     if not DB_PATH.is_file():
         if newest is None:
-            raise FileNotFoundError(
-                f"No ALN exports found in {ALN_DATA_DIR} (or fallback "
-                f"{ALN_PATH}). Drop the ALN xlsx files and try again."
-            )
+            # No ALN source present. In v5.0 the ALN spine is being replaced by
+            # the self-sourced 8R property spine (Phase 0 / Module F), so a clean
+            # deployment legitimately has no ALN xlsx. Rather than crash, create
+            # an empty schema-only DB so the app boots with an empty inventory;
+            # properties arrive via the spine or manual entry.
+            init_empty_db()
+            return True
         sync(None, DB_PATH, SCHEMA_PATH)
         return True
 
@@ -68,6 +71,16 @@ def ensure_db_synced() -> bool:
         return True
 
     return False
+
+
+def init_empty_db(db_path: Path = DB_PATH, schema_path: Path = SCHEMA_PATH) -> None:
+    """Create a schema-only (empty) SQLite DB. Used when no ALN source exists so
+    the app boots with an empty property inventory instead of raising."""
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    schema_sql = Path(schema_path).read_text(encoding="utf-8")
+    with get_connection(db_path) as conn:
+        conn.executescript(schema_sql)
+        conn.commit()
 
 
 def force_resync() -> int:

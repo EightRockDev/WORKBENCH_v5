@@ -33,6 +33,7 @@ except ImportError:
     pass
 
 import config
+from core import session as core_session
 from data.db import get_property
 from data.property_io import (
     discover_property_folders,
@@ -615,7 +616,25 @@ def main() -> None:
         # screenshot — V2 chrome itself is now the visual contract.
         _v2_cmdk()
 
+    # v5.0 pilot auth (Section 9.4): resolve the user and, when a real OIDC
+    # provider is configured, gate access here. Returns None in legacy ungated
+    # mode so the deterministic core still runs standalone (Section 11).
+    user = core_session.resolve_user(st)  # may st.stop() for login / pending
+    st.session_state["user"] = user
+
     active_module, selected_property_id = render_sidebar()
+
+    # Account chip + logout, then admin panel (admins only). The admin toggle
+    # lives in the sidebar; when on, it takes over the content area.
+    core_session.render_account_chip(st, user)
+    if user is not None and user.is_admin:
+        with st.sidebar:
+            st.session_state["_show_admin"] = st.toggle(
+                "🔧 Admin panel", value=st.session_state.get("_show_admin", False))
+        if st.session_state.get("_show_admin"):
+            from ui.admin import render_admin_page
+            render_admin_page(st, user)
+            return
 
     # V1 mode: floating "Try V2.0" pill in the top-right corner.
     # V2 mode: handled inside render_v2_topbar (no-op here).
@@ -759,7 +778,7 @@ def main() -> None:
         ])
 
         if selected_property_id is None:
-            for tab in (tab_subject, tab_perf, tab_uw, tab_dd, tab_wf, tab_owner, tab_summary, tab_ic, tab_acq):
+            for tab in (tab_subject, tab_uw, tab_wf, tab_perf, tab_summary, tab_dd, tab_owner):
                 with tab:
                     st.info("Pick a property from the sidebar to begin.")
             return
