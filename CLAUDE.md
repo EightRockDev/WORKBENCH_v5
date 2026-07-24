@@ -81,16 +81,24 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 - §9.3/§9.4 app layer: `core/user_admin.py`, `core/oidc.py`, `ui/admin.py`,
   `data/concurrency.py` — **8/8 acceptance tests pass** (AC-9.3, AC-9.4).
 - Host bring-up: Python/uv/PostgreSQL installed on `C:\WORKBENCH_V5`; schema
-  loaded; `.env` written.
+  loaded; `.env` written; app deps synced; 8/8 pilot tests green on the host.
+- **App boots + is login-gated.** `core/session.py` resolves the user (legacy
+  ungated / OIDC gate / `ER_DEV_LOGIN` dev bypass); `app.py` renders the account
+  chip and routes admins to the admin panel. `data/db.py` boots with an empty
+  inventory when no ALN data is present. Verified via Streamlit AppTest in all
+  three modes; 397 tests pass (2 pre-existing legacy aln_loader failures;
+  test_listings.py needs an absent `pullers` module — both predate this work).
 
 **Next (remaining V5-P0.5, then per BUILD-ORDER.md)**
-1. `uv sync` on the host; run the pilot test suite there to confirm green.
-2. Wire `core/oidc.gate()` + `ui/admin.render_admin_page()` into `app.py`
-   routing; migrate the app's existing SQLite tables to Postgres.
-3. Public serving: install Caddy + NSSM (`deploy/windows/install.ps1`), set DNS
+1. Public serving: install Caddy + NSSM (`deploy/windows/install.ps1`), set DNS
    A-record + router port-forward, configure Auth0/Entra OIDC in
-   `.streamlit/secrets.toml`.
-4. Then: §10 multi-tenancy UI, Phase 0 data independence (§7), Module A (§4).
+   `.streamlit/secrets.toml`. Then write `docs/ACCESS.md` (owner request above).
+2. Migrate the app's existing SQLite property/deal store to Postgres (couples
+   with Phase 0 §7 — the 8R spine replaces ALN).
+3. Then: §10 multi-tenancy UI, Phase 0 data independence (§7), Module A (§4).
+
+**How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
+Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
 ## Commit conventions
 
