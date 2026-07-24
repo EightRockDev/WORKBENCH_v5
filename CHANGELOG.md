@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.2.1.1.0 — 2026-07-24  ·  Skip-trace live diagnostic + VA-SCC verification path
+- `scripts/diagnose_skiptrace.py`: run ON THE SERVER (real internet + keys) to
+  dump raw + parsed vendor responses per provider — used to verify/tune the live
+  adapters (esp. the VA SCC CIS scraper, which the firewalled build env can't hit).
+- `.env.example`: documents the public market-data key names (Census/FRED/BLS/HUD)
+  for the Phase 0 spine — names only, never values.
+
 ## V5.2.1.0.0 — 2026-07-24  ·  Module A live vendor adapters (BatchData/Trestle/VA-SCC)
 - `core/skiptrace/live.py`: real HTTP adapters behind the §8 provider interfaces —
   **BatchData** (skip trace: phones/emails/DNC), **Trestle** (validation +
