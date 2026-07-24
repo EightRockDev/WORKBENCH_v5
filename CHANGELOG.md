@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.1.1.0.0 — 2026-07-24  ·  Org context + point-and-click org admin
+- `core/session.py`: `resolve_org_context` — resolves the logged-in user's
+  active org + effective permissions; admins auto-bootstrap a default org (become
+  Principal) so the org/role model is live with zero setup.
+- `app.py`: stores `org_id` + `perms` in session; passes org to the admin page.
+- `ui/admin.py`: new **Organization & roles** tab — list members, assign a role
+  preset from the library (point-and-click), offboard/reactivate, add existing
+  users to the org. Every change audit-logged.
+- `core/orgs.py`: `list_presets`, `ensure_default_org` helpers.
+- Verified: admin panel renders both tabs; normal load clean; 16/16 tests pass.
+
 ## V5.1.0.0.0 — 2026-07-24  ·  Walk: Multi-tenancy & Roles (Section 10)
 - **Permission model** (`core/permissions.py`): effective permissions from a
   role preset — module grants, server-side field masking (`mask`/`scrub` so a

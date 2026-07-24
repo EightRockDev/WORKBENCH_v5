@@ -87,13 +87,20 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
   three modes; 397 tests pass (2 pre-existing legacy aln_loader failures;
   test_listings.py needs an absent `pullers` module — both predate this work).
 
-**Next (remaining V5-P0.5, then per BUILD-ORDER.md)**
-1. Public serving: install Caddy + NSSM (`deploy/windows/install.ps1`), set DNS
-   A-record + router port-forward, configure Auth0/Entra OIDC in
-   `.streamlit/secrets.toml`. Then write `docs/ACCESS.md` (owner request above).
-2. Migrate the app's existing SQLite property/deal store to Postgres (couples
-   with Phase 0 §7 — the 8R spine replaces ALN).
-3. Then: §10 multi-tenancy UI, Phase 0 data independence (§7), Module A (§4).
+- **V5-Walk multi-tenancy & roles (§10) — core done (V5.1.x).** Permission model
+  (`core/permissions.py`), org/membership lifecycle (`core/orgs.py`), org context
+  in session, and the point-and-click **Organization & roles** admin tab
+  (`ui/admin.py`). 16/16 pilot + multi-tenancy tests pass (AC-10.1..10.5).
+
+**Next (per BUILD-ORDER.md)**
+1. Enforce field masking in the deal UI — apply `perms.mask/scrub` to the
+   underwriting/returns/LP surfaces so masked users never see price/returns/
+   waterfall (model built + tested; UI application pending).
+2. Public serving: Caddy + NSSM (`deploy/windows/install.ps1`), DNS, port-forward,
+   Auth0/Entra OIDC in `.streamlit/secrets.toml`. Finalize `docs/ACCESS.md`.
+3. Migrate the app's SQLite property/deal store to Postgres (couples with Phase 0
+   §7 — the 8R spine replaces ALN).
+4. Then: Module A skip-trace (§4), Phase 0 data independence (§7).
 
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.

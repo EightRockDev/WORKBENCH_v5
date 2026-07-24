@@ -59,6 +59,28 @@ def resolve_user(st) -> AdminUser | None:
     return None  # Postgres present but sign-in not configured; admin hidden
 
 
+def resolve_org_context(user: AdminUser | None) -> tuple[str | None, object | None]:
+    """Resolve the user's active org + effective permissions (Section 10).
+
+    For the single-org pilot, an admin with no org yet gets a default one
+    auto-created (they become Principal), so the org/role model is live without
+    any setup. Returns (org_id, Permissions) or (None, None) in ungated mode.
+    """
+    if user is None:
+        return None, None
+    from core import orgs
+
+    # Admins bootstrap a default org if they have none; others must be enrolled.
+    if user.is_admin:
+        org_id = orgs.ensure_default_org(user.id, "Eight Rock Capital")
+    else:
+        user_org_list = orgs.user_orgs(user.id, active_only=True)
+        org_id = user_org_list[0]["org_id"] if user_org_list else None
+    if org_id is None:
+        return None, None
+    return org_id, orgs.get_permissions(user.id, org_id)
+
+
 def render_account_chip(st, user: AdminUser | None) -> None:
     """Small 'signed in as' caption + logout, shown only when truly logged in."""
     if user is None:

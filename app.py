@@ -622,6 +622,12 @@ def main() -> None:
     user = core_session.resolve_user(st)  # may st.stop() for login / pending
     st.session_state["user"] = user
 
+    # v5.0 multi-tenancy (Section 10): resolve the active org + effective
+    # permissions (module grants / field masks / action grants / scope).
+    org_id, perms = core_session.resolve_org_context(user)
+    st.session_state["org_id"] = org_id
+    st.session_state["perms"] = perms
+
     active_module, selected_property_id = render_sidebar()
 
     # Account chip + logout, then admin panel (admins only). The admin toggle
@@ -633,7 +639,7 @@ def main() -> None:
                 "🔧 Admin panel", value=st.session_state.get("_show_admin", False))
         if st.session_state.get("_show_admin"):
             from ui.admin import render_admin_page
-            render_admin_page(st, user)
+            render_admin_page(st, user, org_id)
             return
 
     # V1 mode: floating "Try V2.0" pill in the top-right corner.

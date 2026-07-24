@@ -147,6 +147,26 @@ def user_orgs(user_id: str, *, active_only: bool = True) -> list[dict]:
                      role_preset=r["role_preset"], status=r["status"]) for r in cur.fetchall()]
 
 
+def list_presets() -> list[dict]:
+    """The role-preset library (key + human label + default scope) for admin
+    dropdowns. Platform-maintained; the admin only ever picks a key (10.3)."""
+    with pg.connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT key, label, maps_to, default_scope FROM role_presets ORDER BY label")
+        return [dict(r) for r in cur.fetchall()]
+
+
+def ensure_default_org(user_id: str, name: str = "My Organization") -> str:
+    """Return the user's first active org, creating one (as Principal) if none.
+
+    Lets the single-org pilot 'just work': the first admin gets an org without
+    any setup, and the org model (Section 10) is live underneath from day one.
+    """
+    existing = user_orgs(user_id, active_only=True)
+    if existing:
+        return existing[0]["org_id"]
+    return create_org(user_id, name)
+
+
 def get_permissions(user_id: str, org_id: str) -> Permissions | None:
     """Resolve a user's effective permissions in an org (membership + preset).
     Returns None if the user is not an active member."""
