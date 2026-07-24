@@ -12,6 +12,11 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.2.0.1.0 — 2026-07-24  ·  Double-click launcher + updater (no more cd trap)
+- `start-workbench.bat` (launch) and `update-workbench.bat` (git sync + uv sync +
+  migrate) — both `cd /d` into the project first, so they work from any folder.
+  Eliminates the recurring "wrong directory" failures on Windows.
+
 ## V5.2.0.0.0 — 2026-07-24  ·  Module A — Skip Trace & POC Intelligence (Section 4)
 - **Deterministic resolution pipeline S1–S7** (`core/skiptrace/pipeline.py`):
   entity anchor -> portfolio chain -> LLC piercing (registry, recurse to depth 4)
