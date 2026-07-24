@@ -63,12 +63,10 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 
 ## Owner requests to honor (standing)
 
-- **Deliver end-user ACCESS INSTRUCTIONS** when the public-serving layer is up.
-  The owner explicitly asked for a plain-English guide covering: the URL to
-  reach the app, how they and pilot users sign in (Google / Microsoft /
-  email-password via the OIDC provider), the first-login-becomes-admin behavior,
-  and how the admin invites/approves new users. Produce this as a short doc
-  (e.g. `docs/ACCESS.md`) at the deploy milestone — do not let it slip.
+- **End-user ACCESS INSTRUCTIONS** — DONE (first pass): `docs/ACCESS.md` covers
+  dev-mode launch (no login), real Auth0/Entra sign-in setup (Google/Microsoft/
+  email), first-login-becomes-admin, and the approve-users flow. Finalize the
+  public URL section once the domain + Auth0 are actually live.
 
 ## Current status (update this as you go)
 
