@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.2.1.3.0 — 2026-07-24  ·  Robust BatchData key setter (clean PS script)
+- `set-skiptrace-key.bat` now calls `deploy/windows/set-skiptrace-key.ps1` (a
+  clean, reliable script instead of an inline one-liner). Writes the key to .env
+  idempotently, prints a masked confirmation, and reminds you to RESTART the app
+  (the provider status is read at startup).
+
 ## V5.2.1.2.0 — 2026-07-24  ·  Double-click helpers for skip-trace setup
 - `set-skiptrace-key.bat`: prompts for the BatchData key and writes it to .env
   correctly (idempotent, enables live mode). `diagnose-skiptrace.bat`: prompts
