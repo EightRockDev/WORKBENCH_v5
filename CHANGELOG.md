@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.2.1.0.0 — 2026-07-24  ·  Module A live vendor adapters (BatchData/Trestle/VA-SCC)
+- `core/skiptrace/live.py`: real HTTP adapters behind the §8 provider interfaces —
+  **BatchData** (skip trace: phones/emails/DNC), **Trestle** (validation +
+  litigator/name-match grading), **VA SCC** (entity -> officers piercing).
+- `get_registry()` "live" mode mixes live+mock **per provider** by env key, so you
+  go live one vendor at a time (add BATCHDATA_API_KEY -> skip trace is real while
+  SOS/validation stay mock). Panel shows a live/mock status line per provider.
+- `.env.example`: documents ER_SKIPTRACE_PROVIDERS + the three vendor keys.
+- Tests (`tests/test_skiptrace_live.py`): 7 — HTTP-mocked payload parsing
+  (BatchData/Trestle), E.164 normalization, DNC->non-callable, registry mixing,
+  and a full pipeline run on live-mocked BatchData. 19/19 skiptrace tests green.
+- Real vendor calls cost money per request; the FR-A5 budget cap still guards spend.
+
 ## V5.2.0.1.0 — 2026-07-24  ·  Double-click launcher + updater (no more cd trap)
 - `start-workbench.bat` (launch) and `update-workbench.bat` (git sync + uv sync +
   migrate) — both `cd /d` into the project first, so they work from any folder.

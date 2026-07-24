@@ -64,8 +64,15 @@ def render_owner_intel(prop: dict | None) -> None:
         st.caption(f"Owner of record: **{owner}**"
                    + (f"  ·  entity — LLC piercing will run" if pipeline.looks_like_entity(owner)
                       else "  ·  individual"))
-        st.caption(f"Providers: **mock** (deterministic, $0 real spend) · "
-                   f"month-to-date org spend: ${pipeline.month_to_date_spend(org_id):.2f}")
+        from core.skiptrace import providers as _prov
+        stt = _prov.get_registry().status
+        live_any = any("live" in v for v in stt.values())
+        prov_line = " · ".join(f"{k}: **{v}**" for k, v in stt.items())
+        st.caption(("🟢 " if live_any else "🧪 ") + f"Providers — {prov_line}")
+        if not live_any:
+            st.caption("Mock providers = deterministic, **$0 real spend**. Add vendor "
+                       "keys + `ER_SKIPTRACE_PROVIDERS=live` for real data.")
+        st.caption(f"Month-to-date org spend: ${pipeline.month_to_date_spend(org_id):.2f}")
 
     disabled = not can_run
     if st.button(f"🔎 Resolve Contacts (~${typ:.2f})", type="primary", disabled=disabled,

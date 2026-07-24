@@ -270,21 +270,58 @@ class ProviderRegistry:
     sos: SOSProvider
     trace_waterfall: list[SkipTraceProvider] = field(default_factory=list)
     validation: ValidationProvider = None  # type: ignore[assignment]
+    status: dict = field(default_factory=dict)  # {'sos': 'live'|'mock', ...}
 
 
-def get_registry() -> ProviderRegistry:
-    """Resolve the active provider set. ``ER_SKIPTRACE_PROVIDERS=live`` selects
-    real adapters once they exist; default is the deterministic mock set."""
-    mode = os.environ.get("ER_SKIPTRACE_PROVIDERS", "mock").lower()
-    if mode == "live":  # pragma: no cover - real adapters land with vendor keys
-        raise RuntimeError(
-            "Live skip-trace adapters are not configured yet. Provision vendor "
-            "API keys (BatchData, Trestle, Cobalt/VA SCC) and add adapters in "
-            "core/skiptrace/providers.py, then set ER_SKIPTRACE_PROVIDERS=live.")
+def _mock_registry() -> ProviderRegistry:
     return ProviderRegistry(
         sos=MockSOS(),
         trace_waterfall=sorted(
             [MockTier1Append(), MockTier2BatchData(), MockTier3Enformion()],
             key=lambda p: p.tier),
         validation=MockTrestle(),
+        status={"sos": "mock", "skiptrace": "mock", "validation": "mock"},
     )
+
+
+def get_registry() -> ProviderRegistry:
+    """Resolve the active provider set.
+
+    ``ER_SKIPTRACE_PROVIDERS=live`` uses real vendor adapters where a key is
+    present and falls back to the deterministic mock **per provider** — so you
+    can go live one vendor at a time. Default (unset/``mock``) is all-mock.
+    """
+    mode = os.environ.get("ER_SKIPTRACE_PROVIDERS", "mock").lower()
+    if mode != "live":
+        return _mock_registry()
+
+    from core.skiptrace import live  # local import: requests only needed live
+
+    status: dict = {}
+
+    # SOS (entity piercing): VA SCC if a token is set, else mock.
+    va_token = os.environ.get("VA_SCC_API_TOKEN")
+    if va_token:
+        sos, status["sos"] = live.VaSccSOS(va_token), "live (va-scc)"
+    else:
+        sos, status["sos"] = MockSOS(), "mock"
+
+    # Skip trace waterfall: BatchData live if keyed, else the mock waterfall.
+    bd_key = os.environ.get("BATCHDATA_API_KEY")
+    if bd_key:
+        waterfall = [live.BatchDataSkipTrace(bd_key)]
+        status["skiptrace"] = "live (batchdata)"
+    else:
+        waterfall = sorted([MockTier1Append(), MockTier2BatchData(), MockTier3Enformion()],
+                           key=lambda p: p.tier)
+        status["skiptrace"] = "mock"
+
+    # Validation/grading: Trestle live if keyed, else mock.
+    tr_key = os.environ.get("TRESTLE_API_KEY")
+    if tr_key:
+        validation, status["validation"] = live.TrestleValidation(tr_key), "live (trestle)"
+    else:
+        validation, status["validation"] = MockTrestle(), "mock"
+
+    return ProviderRegistry(sos=sos, trace_waterfall=waterfall,
+                            validation=validation, status=status)
