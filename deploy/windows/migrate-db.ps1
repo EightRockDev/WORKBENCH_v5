@@ -30,8 +30,11 @@ if (-not $line) { throw "DATABASE_URL not found in $envFile" }
 $url = ($line -replace '^DATABASE_URL=', '').Trim()
 
 Write-Host ">> Applying db\pilot_schema.sql ..." -ForegroundColor Yellow
-& $psql $url -v ON_ERROR_STOP=1 -q -f (Join-Path $AppDir "db\pilot_schema.sql")
+# Pass the connection via -d so there is no bare positional argument: Windows
+# psql stops parsing options after a bare dbname/URL, which silently drops -f
+# and lands in an interactive prompt.
+& $psql -d $url -v ON_ERROR_STOP=1 -q -f (Join-Path $AppDir "db\pilot_schema.sql")
 
-$presets = (& $psql $url -tAc "select count(*) from role_presets").Trim()
+$presets = (& $psql -d $url -tAc "select count(*) from role_presets").Trim()
 Write-Host ("`n>> Migration complete. role_presets rows = " + $presets + " (expected 18).") -ForegroundColor Green
 Write-Host "   Restart the app to pick up the change."

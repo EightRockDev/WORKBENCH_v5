@@ -12,6 +12,11 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.1.1.2.0 — 2026-07-24  ·  Fix migrate-db.ps1 arg parsing (Windows psql)
+- Windows `psql` stops parsing options after a bare connection URL, so `-f` was
+  dropped and the script fell into an interactive prompt. Pass the URL via `-d`
+  so all options parse. Verified against PostgreSQL 16.
+
 ## V5.1.1.1.0 — 2026-07-24  ·  DB migration script + graceful schema-drift handling
 - **Fix**: after V5.1.0 moved `memberships` out of RLS, a DB that wasn't
   re-migrated raised `InsufficientPrivilege` on org creation. Added
