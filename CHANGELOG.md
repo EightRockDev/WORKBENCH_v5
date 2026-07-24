@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.3.1.0.0 — 2026-07-24  ·  V5-P3: Module B Outreach Engine B1-B5 (§5)
+- **B2 artifacts** (`core/outreach/artifacts.py`): letters + call talking points
+  grounded in deed chain / GRANITE loan maturity / assessed-value trend /
+  portfolio context. Deterministic templates (no LLM); `validate_polish()`
+  rejects any AI rewrite that adds or drops a grounded number (§11 AC-11.3).
+- **AC-B3 direct mail**: `build_letter_batch` dedupes by normalized
+  (owner, address) and exports print-ready HTML + mail-merge CSV. Verified:
+  500 letters + 25 dupes removed in well under the 10-minute bar.
+- **B4 cadence** (`core/outreach/cadence.py`): call -> letter -> call -> email
+  with dated steps, campaign lifecycle, and automatic pause on opt-out or a
+  terminal deal stage.
+- **B1/B5 UI** (`ui/outreach_panel.py`, on Due Diligence + the CRM module):
+  call list of ONLY callable numbers with a live gate pre-check per row, blocked
+  numbers shown with their reason, letter-batch builder, AC-B2 audit log with
+  CSV export, and opt-out capture. No prerecorded/AI-voice button exists — the
+  UI explains the §4.4 C3 stance instead.
+- Tests (`tests/test_outreach.py`): 11. Fixed a real bug the tests caught —
+  `.capitalize()` was destroying "HUD"/"March" in talking points.
+
 ## V5.3.0.0.0 — 2026-07-24  ·  V5-P2: Compliance gate C1-C7 + outreach chokepoint (§4.4/§5)
 - **Schema**: `consent_records`, `revocations`, `internal_dnc`, `dnc_scrubs`,
   `outreach_touches` (append-only, with `rule_trace`), `campaigns`,

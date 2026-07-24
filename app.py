@@ -687,15 +687,21 @@ def main() -> None:
         # ---- CRM & Sourcing module ----
         if _is_v2():
             _v2_topbar(None)  # V2 chrome above CRM module
-        tab_inv, tab_pipe = st.tabs([
+        tab_inv, tab_pipe, tab_out = st.tabs([
             "🏠 Inventory & Alerts",
             "🎯 Pipeline & Sourcing",
+            "📞 Outreach",
         ])
         with tab_inv:
             render_inventory(prop=None)
         with tab_pipe:
             if _authz.guard_module("outreach", "Pipeline & Sourcing"):
                 render_pipeline(prop=None)
+        with tab_out:
+            # Module B (§5) — org-wide outreach surface: audit log + opt-outs
+            # are reachable without a property selected.
+            from ui.outreach_panel import render_outreach
+            render_outreach(None)
         return
 
     if active_module == "portfolio":
@@ -827,6 +833,11 @@ def main() -> None:
         # sees it. Renders above the underwriting-gated diligence content.
         from ui.skiptrace_panel import render_owner_intel
         render_owner_intel(prop)
+        st.divider()
+        # Module B (§5): compliant outreach on the resolved contacts. Gated
+        # internally by the `outreach` module grant / `send_outreach` action.
+        from ui.outreach_panel import render_outreach
+        render_outreach(prop)
         st.divider()
         if _authz.guard_module("underwriting", "Due Diligence"):
             # Acquisition Checklist sits at the TOP of Diligence now.
