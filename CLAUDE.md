@@ -92,15 +92,18 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
   in session, and the point-and-click **Organization & roles** admin tab
   (`ui/admin.py`). 16/16 pilot + multi-tenancy tests pass (AC-10.1..10.5).
 
+- **§10.4 enforced in the UI (V5.1.2.0.0).** `ui/authz.py` gates every deal tab
+  by module grant (lock notice otherwise); mask/scrub helpers; admin sidebar
+  "👁 Preview as role" shows the app as any preset. 21/21 tests green.
+
 **Next (per BUILD-ORDER.md)**
-1. Enforce field masking in the deal UI — apply `perms.mask/scrub` to the
-   underwriting/returns/LP surfaces so masked users never see price/returns/
-   waterfall (model built + tested; UI application pending).
-2. Public serving: Caddy + NSSM (`deploy/windows/install.ps1`), DNS, port-forward,
-   Auth0/Entra OIDC in `.streamlit/secrets.toml`. Finalize `docs/ACCESS.md`.
-3. Migrate the app's SQLite property/deal store to Postgres (couples with Phase 0
-   §7 — the 8R spine replaces ALN).
-4. Then: Module A skip-trace (§4), Phase 0 data independence (§7).
+1. **Section 10 is functionally complete.** Next build-order phase: **Module A
+   skip-trace (§4)** — deterministic pipeline S1–S5 with provider interfaces
+   (mock adapters until vendor keys arrive), poc_records store, cost telemetry
+   (AC-A1/A2/A4), then the §4.4 compliance gate (AC-A3).
+2. Public serving when owner is ready: Caddy + NSSM, DNS, port-forward,
+   Auth0/Entra OIDC. Finalize `docs/ACCESS.md`.
+3. Phase 0 data independence (§7) / SQLite→Postgres deal-store migration.
 
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
