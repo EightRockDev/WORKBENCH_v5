@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.2.1.2.0 — 2026-07-24  ·  Double-click helpers for skip-trace setup
+- `set-skiptrace-key.bat`: prompts for the BatchData key and writes it to .env
+  correctly (idempotent, enables live mode). `diagnose-skiptrace.bat`: prompts
+  for owner name + address and runs the diagnostic. Both cd into the project, so
+  no wrong-directory / "type it as a command" mistakes.
+
 ## V5.2.1.1.0 — 2026-07-24  ·  Skip-trace live diagnostic + VA-SCC verification path
 - `scripts/diagnose_skiptrace.py`: run ON THE SERVER (real internet + keys) to
   dump raw + parsed vendor responses per provider — used to verify/tune the live
