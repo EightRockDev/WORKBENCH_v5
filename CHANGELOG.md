@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.4.0.0.0 — 2026-07-24  ·  Phase 0 groundwork: Eight Rock native spine (§7.2/§7.4)
+- **`core/spine.py`** — the identity + taxonomy that replaces ALN:
+  - `property_id(fips, apn)` -> deterministic `8R-{FIPS}-{12 hex SHA-256 of the
+    normalized APN}`; regenerable from public records alone, provably non-ALN.
+  - `provisional_property_id()` -> `8R-{FIPS}-X{geohash9}` for stock without an
+    APN yet (self-contained geohash implementation), plus alias/crosswalk shape.
+  - `classify_8r_class()` -> A/B/C/D from Eight Rock's OWN criteria (vintage band,
+    rent percentile vs. submarket, permit reinvestment, condition flags) with a
+    rationale trail — converts a licensing liability into buy-box IP.
+  - `derive_8r_form()` -> garden / townhome / mid-rise / high-rise / small-plex
+    from assessor use codes + unit counts.
+  - `scan_text_for_aln()` / `record_is_clean()` -> the AC-P0-1/AC-P0-2
+    "not discernible" verification, with word-boundary matching so "walnut" and
+    "Alnwick" don't produce false hits.
+- Tests (`tests/test_spine.py`): 15 passing.
+
 ## V5.3.2.0.0 — 2026-07-24  ·  Module C: Forced-Seller Radar v2 (§6.1)
 - **`core/radar_v2.py`**: one explainable 0-100 distress score fusing six
   weighted signals — loan-maturity proximity (GRANITE), tax delinquency, permit

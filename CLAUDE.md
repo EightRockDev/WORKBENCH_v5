@@ -102,12 +102,23 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
   (AC-A4). Owner Intelligence panel on the Diligence tab (FR-A1). 12 tests green.
 
 **Next (per BUILD-ORDER.md)**
-1. **Module A compliance gate deepening (§4.4)**: DNC re-scrub expiry, consent/
-   revocation ledger, quiet-hours + frequency caps — the full C1–C7 (AC-A3 audit
-   export). Then Module B Outreach (§5).
-2. Public serving when owner is ready: Caddy + NSSM, DNS, port-forward,
-   Auth0/Entra OIDC. Finalize `docs/ACCESS.md`.
-3. Phase 0 data independence (§7) / SQLite→Postgres deal-store migration.
+1. **Module D — Inbox->Deal (§6.2)**: Outlook/Gmail Graph ingest, classify broker/
+   lender email, auto-extract OMs into the doc pipeline, confidence-gated writes.
+2. **Live vendor verification**: owner has a BatchData key; run
+   `diagnose-skiptrace.bat` on the server and tune `core/skiptrace/live.py` field
+   mapping against the real response. VA SCC CIS scraper still unverified (build
+   env is firewalled from cis.scc.virginia.gov).
+3. Public serving: Caddy + NSSM, DNS, port-forward, Auth0/Entra OIDC.
+4. Phase 0 execution: build `properties_8r` from muni_records using `core/spine.py`,
+   shadow-parity, cutover, purge (§7.3).
+
+## Built so far (phases complete)
+- V5-P0.5 pilot (auth, admin, concurrency), V5-Walk §10 multi-tenancy + §10.4 UI
+  enforcement, Module A §4 skip trace (+ live adapters), **V5-P2 §4.4 compliance
+  gate C1-C7**, **V5-P3 Module B outreach B1-B5**, **Module C radar v2 §6.1**,
+  **Phase 0 spine §7.2**. ~90 module tests green; full suite 479 passed with 4
+  pre-existing data-dependent failures (aln_loader x2, test_db + test_property_io
+  smoke tests that need the real ALN-populated DB / deal folders).
 
 ## Recurring gotchas (owner is non-technical on infra)
 - **Always `cd C:\WORKBENCH_V5` first** in any new PowerShell window.
