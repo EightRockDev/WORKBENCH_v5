@@ -147,6 +147,14 @@ def user_orgs(user_id: str, *, active_only: bool = True) -> list[dict]:
                      role_preset=r["role_preset"], status=r["status"]) for r in cur.fetchall()]
 
 
+def get_preset(key: str) -> dict | None:
+    """One role_presets row (full grants/masks), e.g. for admin role preview."""
+    with pg.connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM role_presets WHERE key = %s", (key,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def list_presets() -> list[dict]:
     """The role-preset library (key + human label + default scope) for admin
     dropdowns. Platform-maintained; the admin only ever picks a key (10.3)."""

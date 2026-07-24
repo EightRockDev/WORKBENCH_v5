@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.1.2.0.0 — 2026-07-24  ·  §10.4 enforced in the deal screens + "Preview as role"
+- **Module gating live in the UI** (`ui/authz.py` + `app.py`): Underwriting,
+  Due Diligence, Returns & Waterfall, Investors, Exec Summary, Market, Pipeline,
+  and Portfolio each render only for roles whose preset carries the module
+  grant — everyone else gets a lock notice. This is the spec's rule made real:
+  *a Maintenance preset cannot see the purchase price* — the financial
+  renderers are never invoked for that role.
+- **Field masking helpers** (`authz.mask`/`authz.scrub`) for shared surfaces.
+- **👁 Preview as role** (admin sidebar): see the workbench exactly as any of
+  the 18 presets sees it — pick "Maintenance" and watch Underwriting lock.
+  Real permissions untouched; admin panel stays reachable.
+- Tests: 5 new DB-free unit tests (`tests/test_authz_ui.py`); verified via
+  AppTest that Principal sees the purchase-price input and a Maintenance
+  preview gets 6 lock notices and no purchase price anywhere. 21/21 green.
+
 ## V5.1.1.3.0 — 2026-07-24  ·  Remove legacy "Try V2.0" theme switcher
 - Removed the floating "Try V2.0" pill (and its unused import). "V2.0" was an old
   internal UI-theme codename ("Quiet Operator"), not a product version, and read

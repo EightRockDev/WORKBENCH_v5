@@ -634,7 +634,13 @@ def main() -> None:
             icon="⚠️")
         perms = None
     st.session_state["org_id"] = org_id
-    st.session_state["perms"] = perms
+
+    # §10.4 enforcement: admins may preview the app as any role preset (the
+    # picker lives in the sidebar); the EFFECTIVE permissions for this run are
+    # what every guard/mask call reads from session state.
+    from ui import authz as _authz
+    _authz.render_preview_picker(user, org_id)
+    st.session_state["perms"] = _authz.apply_preview(org_id, perms)
 
     active_module, selected_property_id = render_sidebar()
 
@@ -688,14 +694,16 @@ def main() -> None:
         with tab_inv:
             render_inventory(prop=None)
         with tab_pipe:
-            render_pipeline(prop=None)
+            if _authz.guard_module("outreach", "Pipeline & Sourcing"):
+                render_pipeline(prop=None)
         return
 
     if active_module == "portfolio":
         # ---- Portfolio Risk Dashboard ----
         if _is_v2():
             _v2_topbar(None)
-        render_portfolio()
+        if _authz.guard_module("underwriting", "Portfolio Risk"):
+            render_portfolio()
         return
 
     if active_module == "help":
@@ -801,24 +809,34 @@ def main() -> None:
     # Brian 5/29 v2.0.27 — IC Memo + Acquisition no longer have their own
     # tabs. IC Memo Validator now renders at the BOTTOM of Summary; the
     # Acquisition Checklist renders at the TOP of Diligence.
+    # §10.4 module gating: each tab renders only for roles whose preset carries
+    # the module grant — otherwise a lock notice explains the restriction. This
+    # is how "a Maintenance preset cannot see the purchase price" is enforced
+    # in the UI: the financial renderers are never invoked for that role.
     with tab_subject:
         render_property_detail(prop, folder)
     with tab_perf:
-        render_comps(prop, folder)
+        if _authz.guard_module("comps", "Performance & Market"):
+            render_comps(prop, folder)
     with tab_uw:
-        render_underwriting(prop, folder)
+        if _authz.guard_module("underwriting", "Underwriting"):
+            render_underwriting(prop, folder)
     with tab_dd:
-        # Acquisition Checklist sits at the TOP of Diligence now.
-        render_acquisition_checklist(prop, folder)
-        render_due_diligence(prop, folder)
+        if _authz.guard_module("underwriting", "Due Diligence"):
+            # Acquisition Checklist sits at the TOP of Diligence now.
+            render_acquisition_checklist(prop, folder)
+            render_due_diligence(prop, folder)
     with tab_wf:
-        render_waterfall(prop, folder)
+        if _authz.guard_module("waterfall", "Returns & Waterfall"):
+            render_waterfall(prop, folder)
     with tab_owner:
-        render_owner_portal(prop, folder)
+        if _authz.guard_module("lp_portal", "Investors"):
+            render_owner_portal(prop, folder)
     with tab_summary:
-        render_exec_summary(prop, folder)
-        # IC Memo Validator sits at the BOTTOM of Summary now.
-        render_ic_memo_validator(prop, folder)
+        if _authz.guard_module("documents", "Exec Summary"):
+            render_exec_summary(prop, folder)
+            # IC Memo Validator sits at the BOTTOM of Summary now.
+            render_ic_memo_validator(prop, folder)
 
 
 if __name__ == "__main__":
