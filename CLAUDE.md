@@ -96,14 +96,27 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
   by module grant (lock notice otherwise); mask/scrub helpers; admin sidebar
   "👁 Preview as role" shows the app as any preset. 21/21 tests green.
 
+- **Module A skip-trace (§4) — DONE (V5.2.0.0.0).** `core/skiptrace/` pipeline
+  S1–S7 + provider abstraction (mock adapters; `ER_SKIPTRACE_PROVIDERS=live` for
+  real vendors). Compliance-gated `callable` (AC-A3), cost telemetry + budget cap
+  (AC-A4). Owner Intelligence panel on the Diligence tab (FR-A1). 12 tests green.
+
 **Next (per BUILD-ORDER.md)**
-1. **Section 10 is functionally complete.** Next build-order phase: **Module A
-   skip-trace (§4)** — deterministic pipeline S1–S5 with provider interfaces
-   (mock adapters until vendor keys arrive), poc_records store, cost telemetry
-   (AC-A1/A2/A4), then the §4.4 compliance gate (AC-A3).
+1. **Module A compliance gate deepening (§4.4)**: DNC re-scrub expiry, consent/
+   revocation ledger, quiet-hours + frequency caps — the full C1–C7 (AC-A3 audit
+   export). Then Module B Outreach (§5).
 2. Public serving when owner is ready: Caddy + NSSM, DNS, port-forward,
    Auth0/Entra OIDC. Finalize `docs/ACCESS.md`.
 3. Phase 0 data independence (§7) / SQLite→Postgres deal-store migration.
+
+## Recurring gotchas (owner is non-technical on infra)
+- **Always `cd C:\WORKBENCH_V5` first** in any new PowerShell window.
+- After a schema-changing pull, run `migrate-db.ps1` (via
+  `powershell -ExecutionPolicy Bypass -File .\deploy\windows\migrate-db.ps1`).
+- If the app errors with a stale-module `AttributeError`, the working copy is out
+  of sync → `git fetch origin && git reset --hard origin/main` (safe; `.env` is
+  gitignored). Legacy features needing external setup (doc ingestion → API key,
+  ETL refresh) should degrade to a NOTICE, never a red crash.
 
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
