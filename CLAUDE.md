@@ -61,6 +61,16 @@ uv run pytest tests/test_pilot_admin.py -v   # Postgres-backed; needs DATABASE_U
 ```
 The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 
+## How the owner wants to be worked with (standing, 2026-07-25)
+
+- **Short answers, not build reports.** Make the fix, then say what to test.
+  Skip root-cause essays unless asked. Detail belongs in `CHANGELOG.md`.
+- **Do the work yourself.** Test your own changes (pytest + Streamlit AppTest);
+  don't hand the owner steps you could have run. Only ask them to do something
+  that genuinely requires their machine, their credentials, or their decision.
+- A browser is available in the build environment - use it rather than asking.
+- Keep the action list to **3-5 items, max**.
+
 ## Owner requests to honor (standing)
 
 - **End-user ACCESS INSTRUCTIONS** — DONE (first pass): `docs/ACCESS.md` covers
