@@ -66,6 +66,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import config
+from core import etl_db
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +77,7 @@ import config
 _HERE = Path(__file__).resolve()
 WORKBENCH_DB_PATH = _HERE.parent.parent / "data" / "workbench.db"
 CALIBRATION_SCHEMA_PATH = _HERE.parent.parent / "data" / "calibration_schema.sql"
-ETL_DB_PATH = _HERE.parent.parent.parent / "hampton-roads-etl" / "hampton_roads.db"
+ETL_DB_PATH = etl_db.resolve_etl_db() or etl_db.preferred_location()
 
 
 # ---------------------------------------------------------------------------
@@ -289,10 +290,11 @@ def _ensure_calibration_tables(db_path: Path | None = None) -> None:
 
 
 def _connect_etl_readonly() -> sqlite3.Connection | None:
-    if not ETL_DB_PATH.is_file():
+    path = etl_db.resolve_etl_db()
+    if path is None:
         return None
     try:
-        return sqlite3.connect(f"file:{ETL_DB_PATH}?mode=ro", uri=True)
+        return sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     except sqlite3.Error:
         return None
 

@@ -38,6 +38,7 @@ from core.market_data import (
 from data.db import list_properties
 from data.property_io import PropertyFolder, load_sources
 from ui.components import section_card, v2_strip_icon
+from ui.etl_notice import render_etl_missing_notice
 
 
 # ---------------------------------------------------------------------------
@@ -979,8 +980,8 @@ def _render_data_sources() -> None:
     ):
         st.caption(
             "Each row shows the source URL and the timestamp of the most-"
-            "recent puller run that wrote to that table. Re-run "
-            "`python hampton_roads_etl.py` to refresh."
+            "recent puller run that wrote to that table. Refresh is handled "
+            "by the 8R data spine (Phase 0)."
         )
 
         # Render each source as its own row-card so the description and URL
@@ -1123,11 +1124,7 @@ def _render_subject_vs_market(
     """
     c = config.COLORS  # palette tokens used in inline HTML below
     if not is_etl_available():
-        st.info(
-            "Hampton Roads market data not loaded. Run `python "
-            "hampton_roads_etl.py` from `hampton-roads-etl/` to populate the "
-            "subject-vs-market panel."
-        )
+        render_etl_missing_notice("the subject-vs-market panel")
         return
 
     st.caption(

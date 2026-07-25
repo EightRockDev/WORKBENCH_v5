@@ -39,6 +39,7 @@ from data.property_io import (
     save_search,
 )
 from ui.components import section_card, v2_strip_icon
+from ui.etl_notice import render_etl_missing_notice
 
 
 # ---------------------------------------------------------------------------
@@ -772,10 +773,7 @@ def _render_browse_section() -> None:
         )
 
         if df.empty:
-            st.info(
-                "No inventory data yet. Run `python hampton_roads_etl.py "
-                "--only=asr` from `hampton-roads-etl/` to populate."
-            )
+            render_etl_missing_notice("the assessor inventory")
             return
 
         # ---- Apply assessor-side filters ----
@@ -1097,10 +1095,7 @@ def render_inventory(prop: dict | None = None) -> None:
     in the sidebar.
     """
     if not is_etl_available():
-        st.warning(
-            "ETL database not loaded. Run `python hampton_roads_etl.py` "
-            "from `hampton-roads-etl/` to populate the multifamily inventory."
-        )
+        render_etl_missing_notice("the multifamily inventory and alerts")
         return
 
     _render_alerts_section()

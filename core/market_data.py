@@ -27,15 +27,13 @@ from pathlib import Path
 
 import pandas as pd
 
-# `<workbench-root>/python_workbench/core/market_data.py`
-#   .parent → core/
-#   .parent → python_workbench/
-#   .parent → workbench root
-# then into hampton-roads-etl/hampton_roads.db
-ETL_DB_PATH = (
-    Path(__file__).resolve().parent.parent.parent
-    / "hampton-roads-etl" / "hampton_roads.db"
-)
+from core import etl_db
+
+# Location is resolved by `core/etl_db.py` ($ER_ETL_DB, then `data/`, then
+# `hampton-roads-etl/`, then the legacy v2.4.1 sibling folder). Kept as a module
+# constant for callers that report the path; the helpers below re-resolve on
+# every call, so dropping the file in and restarting the app is enough.
+ETL_DB_PATH = etl_db.resolve_etl_db() or etl_db.preferred_location()
 
 # Independent-city VA county FIPS for HR cities. Mirrors hampton-roads-etl/config.py
 # but copied here so the workbench doesn't import from the ETL package.
@@ -52,10 +50,11 @@ HR_CITY_TO_COUNTY_FIPS_5 = {
 
 def is_etl_available() -> bool:
     """True if the ETL database exists and has at least one expected table."""
-    if not ETL_DB_PATH.is_file():
+    path = etl_db.resolve_etl_db()
+    if path is None:
         return False
     try:
-        with sqlite3.connect(ETL_DB_PATH) as db:
+        with sqlite3.connect(path) as db:
             cur = db.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' "
                 "AND name IN ('bah_rates','census_bps','hud_fmr',"
@@ -68,11 +67,12 @@ def is_etl_available() -> bool:
 
 def _connect() -> sqlite3.Connection | None:
     """Open the ETL DB read-only, or return None if it doesn't exist."""
-    if not ETL_DB_PATH.is_file():
+    path = etl_db.resolve_etl_db()
+    if path is None:
         return None
     try:
         # Read-only via URI so the workbench never accidentally writes here.
-        return sqlite3.connect(f"file:{ETL_DB_PATH}?mode=ro", uri=True)
+        return sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     except sqlite3.Error:
         return None
 

@@ -12,6 +12,37 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.5.2.0.0 — 2026-07-25  ·  Market data: find it instead of blaming the operator
+- **Fixes "ETL database not loaded. Run `python hampton_roads_etl.py` from
+  `hampton-roads-etl/`."** Two bugs behind one message. (1) That standalone ETL
+  project is not part of the v5 deployment, so the instruction was a dead end.
+  (2) The lookup path was `<module>/../../..`, correct in the v2.4.1 layout
+  (`<root>/python_workbench/core/`) but a level too high in v5 where `core/`
+  sits directly under the app root — on the pilot host it resolved to
+  `C:\hampton-roads-etl\`, so the database could never be found even when
+  present.
+- **`core/etl_db.py`** — single resolver used by every reader: `$ER_ETL_DB`,
+  then `data/`, then `hampton-roads-etl/`, then the legacy v2.4.1 sibling
+  folder. Re-resolved per call, so dropping the file in and restarting works.
+  `core/calibration.py` carried the same stale path and now shares the resolver.
+- **`core/etl_locate.py` + a "Find it on this machine" button** — the operator
+  upgraded from v2.4.1, so that database is almost certainly already on the
+  host. The app now searches the likely roots (bounded depth, skip-list for
+  heavy directories), ranks hits largest-first (a tiny file is an aborted run),
+  and copies the chosen one into place. It copies rather than moves, so the
+  previous workbench keeps working. Gated to admins: an analyst must not be able
+  to write to the app's data directory in a multi-tenant deployment.
+- **`ui/etl_notice.py`** — one honest empty state, now used by the Inventory,
+  Comps, and Direct-Mail panels, that says what is missing, what it powers, and
+  where the app looked.
+- Tests: 20 new (path resolution incl. the legacy layout, env override,
+  largest-first ranking, depth and skip-list limits, copy-onto-itself no-op,
+  admin gating) plus a guard that no `ui/*.py` panel tells the operator to run
+  the undeployed ETL script again. 546 passed; the 4 pre-existing
+  data-dependent failures are unchanged.
+
+---
+
 ## V5.5.1.3.0 — 2026-07-25  ·  Migration unblocked (RLS-blocked dedupe)
 - **Fixes "could not create unique index `ux_term_sheets_message` — duplicate
   keys exist"** on databases that accumulated duplicate term sheets before that

@@ -35,6 +35,7 @@ from core.market_data import get_multifamily_inventory, is_etl_available
 from data.db import list_properties
 from data.property_io import PROPERTIES_ROOT
 from ui.components import section_card, v2_strip_icon
+from ui.etl_notice import render_etl_missing_notice
 
 
 BROKER_CRM_FILENAME = "_broker_crm.json"
@@ -286,11 +287,8 @@ def _render_direct_mail_generator() -> None:
             )
 
         if not is_etl_available():
-            st.warning(
-                "ETL DB not loaded. Direct-mail generator needs the multifamily "
-                "inventory pulled from city assessors. Run "
-                "`python hampton_roads_etl.py --only=asr` first."
-            )
+            render_etl_missing_notice(
+                "the direct-mail generator (it needs the assessor inventory)")
             return
 
         # Pull from inventory
