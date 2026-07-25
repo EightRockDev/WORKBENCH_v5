@@ -21,9 +21,15 @@
 
 ## One-time setup (two values in `.env`)
 
+**The short version:** get the client ID from step 2 below, then double-click
+**`setup-inbox.bat`** in `C:\WORKBENCH_V5`. It generates the encryption key for
+you and writes both values into `.env`. The only thing you type is the client ID.
+
 ### 1. A token-encryption key
 
-On the server, in `C:\WORKBENCH_V5`:
+`setup-inbox.bat` creates this (`ER_TOKEN_KEY`) automatically and will **never
+overwrite an existing one** — regenerating it would disconnect every mailbox
+already connected. To do it by hand instead, on the server in `C:\WORKBENCH_V5`:
 
 ```powershell
 uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
@@ -56,7 +62,9 @@ You need a client ID so Microsoft knows which app is asking. Free, ~3 minutes:
 6. Go to **API permissions** → **Add a permission** → **Microsoft Graph** →
    **Delegated permissions** → check **`Mail.Read`** and **`User.Read`** → **Add**.
 
-Add the client ID to `.env`:
+Now double-click **`setup-inbox.bat`** and paste the client ID when it asks. It
+writes `MS_GRAPH_CLIENT_ID` (and the encryption key) into `.env` for you. By
+hand, the line is:
 
 ```
 MS_GRAPH_CLIENT_ID=<the Application (client) ID>
@@ -88,3 +96,6 @@ mailbox; nobody sees anyone else's.
   `GMAIL_TOKEN`), though the device-code convenience flow is Outlook-only today.
 - Ingest is **idempotent per user**: pressing Sync repeatedly will not duplicate
   messages, deals, or term sheets.
+- **"AADSTS54005 — code already redeemed"** means that one-time sign-in code was
+  already used (or the page was refreshed after finishing). Each code works
+  once. Click **Get a new code** and run through the three steps again.

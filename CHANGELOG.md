@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.5.1.2.0 — 2026-07-25  ·  One-click inbox setup
+- **`setup-inbox.bat` + `deploy/windows/setup-inbox.ps1`** — double-click
+  one-time setup for Module D. Generates `ER_TOKEN_KEY` automatically (and
+  **never regenerates an existing one**, which would orphan already-connected
+  mailboxes) and stores `MS_GRAPH_CLIENT_ID` in `.env`. Prints a masked
+  confirmation plus the next two steps. Pure ASCII, per the PowerShell 5.1 rule.
+- `docs/INBOX-SETUP.md`: leads with the double-click path, keeps the manual
+  commands as the alternative, and adds an AADSTS54005 ("code already
+  redeemed") troubleshooting note.
+
+---
+
 ## V5.5.1.1.0 — 2026-07-24  ·  Self-healing schema + device-code fix
 - **`data/migrate.py` — automatic schema migration on startup.** The app now
   compares the live database against the tables/columns the running code needs
