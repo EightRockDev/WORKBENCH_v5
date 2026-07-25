@@ -102,8 +102,9 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
   (AC-A4). Owner Intelligence panel on the Diligence tab (FR-A1). 12 tests green.
 
 **Next (per BUILD-ORDER.md)**
-1. **Module D — Inbox->Deal (§6.2)**: Outlook/Gmail Graph ingest, classify broker/
-   lender email, auto-extract OMs into the doc pipeline, confidence-gated writes.
+1. **Module E — Doc AI / underwriting hardening (§6.3)**: deterministic
+   validation rules per doc type, per-field confidence, rent-roll anomaly
+   detection, named stress-test overlays.
 2. **Live vendor verification**: owner has a BatchData key; run
    `diagnose-skiptrace.bat` on the server and tune `core/skiptrace/live.py` field
    mapping against the real response. VA SCC CIS scraper still unverified (build
@@ -116,7 +117,7 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 - V5-P0.5 pilot (auth, admin, concurrency), V5-Walk §10 multi-tenancy + §10.4 UI
   enforcement, Module A §4 skip trace (+ live adapters), **V5-P2 §4.4 compliance
   gate C1-C7**, **V5-P3 Module B outreach B1-B5**, **Module C radar v2 §6.1**,
-  **Phase 0 spine §7.2**. ~90 module tests green; full suite 479 passed with 4
+  **Phase 0 spine §7.2**, **V5-P4 Module D inbox->deal §6.2**. 128 module tests green; full suite 517 passed with 4
   pre-existing data-dependent failures (aln_loader x2, test_db + test_property_io
   smoke tests that need the real ALN-populated DB / deal folders).
 

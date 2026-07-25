@@ -687,10 +687,11 @@ def main() -> None:
         # ---- CRM & Sourcing module ----
         if _is_v2():
             _v2_topbar(None)  # V2 chrome above CRM module
-        tab_inv, tab_pipe, tab_out = st.tabs([
+        tab_inv, tab_pipe, tab_out, tab_inbox = st.tabs([
             "🏠 Inventory & Alerts",
             "🎯 Pipeline & Sourcing",
             "📞 Outreach",
+            "📥 Inbox → Deal",
         ])
         with tab_inv:
             render_inventory(prop=None)
@@ -702,6 +703,11 @@ def main() -> None:
             # are reachable without a property selected.
             from ui.outreach_panel import render_outreach
             render_outreach(None)
+        with tab_inbox:
+            # Module D (§6.2) — inbound broker/lender mail -> pipeline records,
+            # confidence-gated with a one-click confirm queue.
+            from ui.inbox_panel import render_inbox
+            render_inbox()
         return
 
     if active_module == "portfolio":

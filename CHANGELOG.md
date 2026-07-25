@@ -12,6 +12,38 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.5.0.0.0 — 2026-07-24  ·  V5-P4: Module D — Inbox -> Deal Engine (§6.2)
+- **Schema**: `inbox_messages` (idempotent on org+provider+external_id), `deals`
+  (pipeline records, row_version-tracked), `term_sheets` (lender history),
+  `crm_contacts` — all RLS org-private.
+- **`core/inbox/classify.py`** — deterministic broker / lender / attorney / LP /
+  other classification from sender domain, subject, body and attachment signals,
+  with a calibrated confidence and an **ambiguity penalty** (a close runner-up
+  lowers confidence, which is what pushes borderline mail to a human).
+- **`core/inbox/extract.py`** — deterministic fact extraction: units, asking
+  price, cap rate, street address, city/state, deal name; and lender terms
+  (rate, LTV, amortization, IO, term, proceeds). Per-field confidences combine
+  into a weighted composite; implausible values (99,999 units, a 95% cap) are
+  rejected, and an unlabeled dollar figure scores low on purpose.
+- **`core/inbox/engine.py`** — the **§6.2 confidence gate**: high-confidence mail
+  creates/updates a pipeline record automatically; anything below the bar is
+  **queued for one-click human confirm and never silently written**. Ingest is
+  idempotent, follow-up mail updates the same deal, lender mail attaches a term
+  sheet, contacts accumulate into CRM and into the Module B relationship graph.
+- **`core/inbox/providers.py`** — MailProvider abstraction with a deterministic
+  5-message mock fixture plus **live Outlook/Graph and Gmail adapters**
+  (`ER_INBOX_PROVIDER=graph` + `MS_GRAPH_TOKEN`), falling back to mock when
+  unconfigured — same pattern as the skip-trace vendors (§8).
+- **`ui/inbox_panel.py`** (CRM module -> "📥 Inbox → Deal"): confirm queue with
+  editable fields, pipeline with stage control, term-sheet history, all-mail view.
+- Tests (`tests/test_inbox.py`): **22**, covering classification, extraction,
+  the confidence gate both ways, one-click confirm, dismissal, idempotency,
+  deal updates, CRM accumulation, and a full mock sync.
+- **Fix found by the suite**: `attempt_touch` had no way to pin the evaluation
+  instant, so the quiet-hours rule made a test wall-clock dependent. Added
+  `now_utc` (a scheduled cadence runner needs it too) and a new regression test
+  proving a 22:00-local dispatch is refused and the dispatcher never invoked.
+
 ## V5.4.0.1.0 — 2026-07-24  ·  Updater hardening
 - `update-workbench.bat` now stops a running app, **hard-resets to origin/main**
   (so a diverged local copy can never block an update), fails loudly on network

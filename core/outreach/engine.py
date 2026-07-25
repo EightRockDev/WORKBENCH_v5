@@ -43,16 +43,21 @@ def attempt_touch(org_id: str, *, channel: str, subtype: str = "manual_dial",
                   poc_id: str | None = None, state: str | None = None,
                   phone_record: dict | None = None, actor_user_id: str | None = None,
                   campaign_id: str | None = None, purpose: str = "acquisition",
+                  now_utc=None,
                   dispatcher: Callable[[], str] | None = None) -> TouchResult:
     """Evaluate the gate, log the attempt with its trace, dispatch only if allowed.
 
     ``dispatcher`` performs the real-world action (place the call, render the
     letter, send the email) and returns an outcome string. It is invoked ONLY
     after the gate passes. Omit it to run in "check + log" mode.
+
+    ``now_utc`` pins the evaluation instant — required by a scheduled cadence
+    runner (which decides at send time, not at plan time) and by tests, since
+    the quiet-hours rule is wall-clock dependent by design.
     """
     decision = rules.evaluate(
         org_id, channel=channel, subtype=subtype, e164=e164, email=email,
-        state=state, phone_record=phone_record, purpose=purpose)
+        state=state, phone_record=phone_record, purpose=purpose, now_utc=now_utc)
 
     outcome: str | None = None
     if decision.allowed and dispatcher is not None:

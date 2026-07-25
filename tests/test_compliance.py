@@ -173,11 +173,12 @@ def test_managed_service_refused(org):
 def test_frequency_cap_enforced(org):
     for _ in range(rules.DEFAULT_DAILY_CAP):
         r = engine.attempt_touch(org, channel="call", e164=CLEAN_PHONE["e164"],
-                                 state="VA", phone_record=CLEAN_PHONE,
+                                 state="VA", phone_record=CLEAN_PHONE, now_utc=NOON_ET,
                                  person_name="X", dispatcher=lambda: "connected")
         assert r.allowed
     blocked = engine.attempt_touch(org, channel="call", e164=CLEAN_PHONE["e164"],
-                                   state="VA", phone_record=CLEAN_PHONE, person_name="X")
+                                   state="VA", phone_record=CLEAN_PHONE, person_name="X",
+                                   now_utc=NOON_ET)
     assert not blocked.allowed
     assert any(r["rule"] == "C4-FREQUENCY" and not r["passed"]
                for r in blocked.decision.trace_json())
@@ -191,7 +192,7 @@ def test_blocked_touch_is_still_logged_and_not_dispatched(org):
     dispatched = []
     res = engine.attempt_touch(
         org, channel="voicemail", subtype="prerecorded", e164=CLEAN_PHONE["e164"],
-        state="VA", phone_record=CLEAN_PHONE, person_name="Owner",
+        state="VA", phone_record=CLEAN_PHONE, person_name="Owner", now_utc=NOON_ET,
         dispatcher=lambda: dispatched.append(1) or "sent")
     assert not res.allowed
     assert dispatched == []            # the dispatcher was never invoked
@@ -202,7 +203,7 @@ def test_blocked_touch_is_still_logged_and_not_dispatched(org):
 
 def test_audit_export_has_trace_columns(org):
     engine.attempt_touch(org, channel="call", e164=CLEAN_PHONE["e164"], state="VA",
-                         phone_record=CLEAN_PHONE, person_name="Owner",
+                         phone_record=CLEAN_PHONE, person_name="Owner", now_utc=NOON_ET,
                          dispatcher=lambda: "connected")
     csv_text = engine.export_touches_csv(org)
     assert "rules_passed" in csv_text and "C1-FEDERAL-DNC" in csv_text
@@ -210,7 +211,7 @@ def test_audit_export_has_trace_columns(org):
 
 def test_touch_log_is_append_only(org):
     engine.attempt_touch(org, channel="call", e164=CLEAN_PHONE["e164"], state="VA",
-                         phone_record=CLEAN_PHONE, person_name="Owner",
+                         phone_record=CLEAN_PHONE, person_name="Owner", now_utc=NOON_ET,
                          dispatcher=lambda: "connected")
     import psycopg
     with pg.org_connection(org) as conn, conn.cursor() as cur:
@@ -234,3 +235,18 @@ def test_dial_list_excludes_non_callable():
     targets = engine.callable_targets(pocs)
     assert [t["e164"] for t in targets] == ["+17575550001", "+17575550003"]
     assert all(t["phone_record"]["callable"] for t in targets)
+
+
+def test_quiet_hours_blocks_a_real_dispatch_attempt(org):
+    """Regression: attempt_touch honors the wall-clock window. A dispatch at
+    22:00 called-party local time must be refused and never invoked."""
+    import datetime as dt
+    dispatched = []
+    res = engine.attempt_touch(
+        org, channel="call", e164=CLEAN_PHONE["e164"], state="VA",
+        phone_record=CLEAN_PHONE, person_name="Owner",
+        now_utc=dt.datetime(2026, 7, 25, 3, 0, tzinfo=dt.timezone.utc),
+        dispatcher=lambda: dispatched.append(1) or "connected")
+    assert not res.allowed and dispatched == []
+    assert any(r["rule"] == "C4-QUIET-HOURS" and not r["passed"]
+               for r in res.decision.trace_json())

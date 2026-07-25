@@ -417,3 +417,109 @@ BEGIN
                        'WITH CHECK (org_id = current_org_id())', t);
     END LOOP;
 END $$;
+
+-- ===========================================================================
+-- MODULE D §6.2 — INBOX -> DEAL ENGINE
+-- ---------------------------------------------------------------------------
+-- Classify inbound broker/lender/attorney mail, extract deal facts, and
+-- auto-create/update pipeline records with ZERO manual entry. Confidence-gated:
+-- below-threshold extractions queue for one-click human confirm rather than
+-- silently writing (spec §6.2).
+-- ===========================================================================
+
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS inbox_messages (
+    id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id        uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    provider      text NOT NULL DEFAULT 'mock',     -- 'graph' | 'gmail' | 'mock'
+    external_id   text NOT NULL,                    -- provider message id (idempotency)
+    from_email    text,
+    from_name     text,
+    subject       text,
+    body          text,
+    received_at   timestamptz NOT NULL DEFAULT now(),
+    attachments   jsonb NOT NULL DEFAULT '[]'::jsonb,
+    category      text,                             -- broker|lender|attorney|lp|other
+    confidence    numeric(4,3) NOT NULL DEFAULT 0,
+    classifier    text NOT NULL DEFAULT 'deterministic',   -- or 'ai'
+    status        text NOT NULL DEFAULT 'new'
+                    CHECK (status IN ('new','auto_applied','queued','confirmed','dismissed')),
+    extracted     jsonb NOT NULL DEFAULT '{}'::jsonb,
+    deal_id       uuid,
+    ingested_at   timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (org_id, provider, external_id)
+);
+CREATE INDEX IF NOT EXISTS ix_inbox_org_status ON inbox_messages(org_id, status, received_at DESC);
+
+-- Pipeline records auto-created/updated from inbound mail (§6.2).
+CREATE TABLE IF NOT EXISTS deals (
+    id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id        uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    property_id   text,
+    name          text NOT NULL,
+    address       text,
+    city          text,
+    state         text,
+    units         integer,
+    asking_price  numeric(14,2),
+    cap_rate      numeric(6,4),
+    stage         text NOT NULL DEFAULT 'lead'
+                    CHECK (stage IN ('lead','screening','loi','under_contract','closed','dead','no_go')),
+    source        text,                             -- 'inbox','manual','radar'
+    broker_email  text,
+    row_version   integer NOT NULL DEFAULT 0,
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    updated_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_deals_org_stage ON deals(org_id, stage);
+DROP TRIGGER IF EXISTS trg_deals_rowver ON deals;
+CREATE TRIGGER trg_deals_rowver BEFORE UPDATE ON deals
+    FOR EACH ROW EXECUTE FUNCTION bump_row_version();
+
+-- Term-sheet history captured from lender mail (§6.2).
+CREATE TABLE IF NOT EXISTS term_sheets (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id      uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    deal_id     uuid REFERENCES deals(id) ON DELETE CASCADE,
+    message_id  uuid REFERENCES inbox_messages(id) ON DELETE SET NULL,
+    lender      text,
+    rate        numeric(6,4),
+    ltv         numeric(5,4),
+    amort_years integer,
+    io_years    integer,
+    term_years  integer,
+    proceeds    numeric(14,2),
+    received_at timestamptz NOT NULL DEFAULT now(),
+    raw         jsonb NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX IF NOT EXISTS ix_terms_org_deal ON term_sheets(org_id, deal_id, received_at DESC);
+
+-- CRM contacts accumulated from inbound mail; feeds the Module B graph (B5).
+CREATE TABLE IF NOT EXISTS crm_contacts (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id      uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    email       text NOT NULL,
+    name        text,
+    company     text,
+    role        text,                               -- broker|lender|attorney|lp|other
+    first_seen  timestamptz NOT NULL DEFAULT now(),
+    last_seen   timestamptz NOT NULL DEFAULT now(),
+    message_count integer NOT NULL DEFAULT 1,
+    UNIQUE (org_id, email)
+);
+
+COMMIT;
+
+DO $$
+DECLARE t text;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['inbox_messages','deals','term_sheets','crm_contacts']
+    LOOP
+        EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
+        EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
+        EXECUTE format('DROP POLICY IF EXISTS org_isolation ON %I', t);
+        EXECUTE format('CREATE POLICY org_isolation ON %I USING (org_id = current_org_id()) '
+                       'WITH CHECK (org_id = current_org_id())', t);
+    END LOOP;
+END $$;
