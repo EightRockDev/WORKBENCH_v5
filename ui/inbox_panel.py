@@ -29,6 +29,7 @@ def render_inbox() -> None:
                "here for one click instead of being written silently.")
 
     perms, org_id = st.session_state.get("perms"), st.session_state.get("org_id")
+    user_id = _uid()
     if isinstance(perms, Permissions) and not perms.can_open("documents"):
         st.info(f"🔒 Inbox → Deal isn't included in your role (`{perms.role_preset}`).")
         return
@@ -36,36 +37,32 @@ def render_inbox() -> None:
         st.warning("Inbox → Deal needs the PostgreSQL store and an organization "
                    "context.", icon="⚠️")
         return
+    if not user_id:
+        st.warning("Sign in to use Inbox → Deal. Your mailbox is private to you, "
+                   "so the app needs to know who you are.", icon="🔒")
+        return
 
-    status = inbox.provider_status()
-    c1, c2 = st.columns([3, 1])
-    c1.caption(("🟢 " if status.startswith("live") else "🧪 ") +
-               f"Mail source: **{status}**"
-               + ("" if status.startswith("live") else
-                  " — set `ER_INBOX_PROVIDER=graph` + `MS_GRAPH_TOKEN` in .env "
-                  "to connect your real Outlook mailbox."))
-    if c2.button("🔄 Sync inbox", type="primary"):
-        results = inbox.sync_inbox(org_id)
-        auto = sum(1 for r in results if r.status == "auto_applied")
-        queued = sum(1 for r in results if r.status == "queued")
-        st.success(f"Ingested {len(results)} message(s) — {auto} auto-applied, "
-                   f"{queued} queued for confirm.")
-        st.rerun()
+    st.info("🔒 **Your mailbox is private.** Only you can see the messages from "
+            "your connected account — not your colleagues, not an org admin. "
+            "The **deals** created from that mail are shared with your team.",
+            icon="🔒")
 
-    q = engine.list_queue(org_id)
+    _render_connection(org_id, user_id)
+
+    q = engine.list_queue(org_id, user_id)
     t_queue, t_pipe, t_terms, t_all = st.tabs(
         [f"✅ Confirm queue ({len(q)})", "📊 Pipeline", "🏦 Term sheets", "📧 All mail"])
     with t_queue:
-        _render_queue(org_id, q)
+        _render_queue(org_id, user_id, q)
     with t_pipe:
         _render_pipeline(org_id)
     with t_terms:
         _render_terms(org_id)
     with t_all:
-        _render_all(org_id)
+        _render_all(org_id, user_id)
 
 
-def _render_queue(org_id: str, q: list[dict]) -> None:
+def _render_queue(org_id: str, user_id: str, q: list[dict]) -> None:
     if not q:
         st.success("Nothing waiting. Everything ingested either cleared the "
                    "confidence gate or wasn't deal-related.")
@@ -76,10 +73,12 @@ def _render_queue(org_id: str, q: list[dict]) -> None:
         f = ((m.get("extracted") or {}).get("fields")) or {}
         conf = (m.get("extracted") or {}).get("confidence", 0)
         with st.container(border=True):
+            received = m.get("received_at")
+            when = f"{received:%a %d %b %Y, %H:%M}" if received else "(no date)"
             st.markdown(f"{_CAT_ICON.get(m['category'], '📧')} **{m['subject'] or '(no subject)'}**  \n"
-                        f"from {m.get('from_name') or ''} <{m.get('from_email')}> · "
-                        f"classify {float(m.get('confidence') or 0):.0%} · "
-                        f"extract {float(conf):.0%}")
+                        f"from {m.get('from_name') or ''} <{m.get('from_email')}>  \n"
+                        f"📅 **received {when}** · classify "
+                        f"{float(m.get('confidence') or 0):.0%} · extract {float(conf):.0%}")
             with st.expander("Message body"):
                 st.text(m.get("body") or "")
             c1, c2, c3 = st.columns(3)
@@ -102,11 +101,11 @@ def _render_queue(org_id: str, q: list[dict]) -> None:
                         "city": city.strip() or None, "state": state.strip() or None,
                         "units": int(units) or None,
                         "asking_price": float(price) or None},
-                        actor_user_id=_uid())
+                        actor_user_id=user_id)
                     st.success(f"'{name}' added to the pipeline.")
                     st.rerun()
             if b2.button("Dismiss", key=f"no-{m['id']}"):
-                engine.dismiss_message(org_id, str(m["id"]), actor_user_id=_uid())
+                engine.dismiss_message(org_id, str(m["id"]), actor_user_id=user_id)
                 st.rerun()
 
 
@@ -152,18 +151,91 @@ def _render_terms(org_id: str) -> None:
                     f"· {t['received_at']:%Y-%m-%d}")
 
 
-def _render_all(org_id: str) -> None:
-    msgs = engine.list_messages(org_id)
+def _render_all(org_id: str, user_id: str) -> None:
+    msgs = engine.list_messages(org_id, user_id)
     if not msgs:
         st.info("No mail ingested yet.")
         return
     for m in msgs[:50]:
         badge = {"auto_applied": "✅", "queued": "⏳", "confirmed": "✅",
                  "dismissed": "🚫", "new": "•"}.get(m["status"], "•")
-        st.markdown(f"{badge} {_CAT_ICON.get(m['category'], '📧')} "
+        received = m.get("received_at")
+        when = f"{received:%Y-%m-%d %H:%M}" if received else "—"
+        st.markdown(f"{badge} `{when}` {_CAT_ICON.get(m['category'], '📧')} "
                     f"**{m['subject'] or '(no subject)'}** — {m.get('from_email')} · "
                     f"{m['category']} {float(m.get('confidence') or 0):.0%} · "
                     f"_{m['status']}_")
+
+
+def _render_connection(org_id: str, user_id: str) -> None:
+    """Connect / disconnect THIS user's mailbox (OAuth device-code flow)."""
+    from core.inbox import oauth
+
+    status = inbox.mailbox_status(org_id, user_id)
+    c1, c2, c3 = st.columns([3, 1, 1])
+
+    if status["connected"]:
+        last = status.get("last_sync_at")
+        c1.caption(f"🟢 Connected: **{status.get('account_email') or status['provider']}** "
+                   f"({status['provider']}) · last sync "
+                   f"{last:%Y-%m-%d %H:%M}" if last else
+                   f"🟢 Connected: **{status.get('account_email') or status['provider']}** "
+                   f"· not synced yet")
+        if c3.button("Disconnect"):
+            oauth.disconnect(org_id, user_id, purge_messages=True)
+            st.success("Mailbox disconnected and your stored messages deleted.")
+            st.rerun()
+    else:
+        c1.caption("🧪 No mailbox connected — running on **demo fixtures**. "
+                   "Connect Outlook below to ingest your real mail.")
+        with c1.expander("🔗 Connect my Outlook mailbox"):
+            _render_device_flow(org_id, user_id)
+
+    if c2.button("🔄 Sync inbox", type="primary"):
+        results = inbox.sync_inbox(org_id, user_id)
+        auto = sum(1 for r in results if r.status == "auto_applied")
+        queued = sum(1 for r in results if r.status == "queued")
+        st.success(f"Ingested {len(results)} message(s) — {auto} auto-applied, "
+                   f"{queued} queued for confirm.")
+        st.rerun()
+
+
+def _render_device_flow(org_id: str, user_id: str) -> None:
+    """Device-code sign-in: the server never sees your password."""
+    import os
+
+    from core.inbox import oauth
+
+    if not os.environ.get("MS_GRAPH_CLIENT_ID"):
+        st.warning("Set `MS_GRAPH_CLIENT_ID` in .env first (register a Microsoft "
+                   "Entra app as a **public client** with `Mail.Read`). "
+                   "See docs/INBOX-SETUP.md.", icon="⚠️")
+        return
+    if not oauth.token_key_configured():
+        st.warning("Set `ER_TOKEN_KEY` in .env so your mailbox token can be "
+                   "encrypted at rest. See docs/INBOX-SETUP.md.", icon="⚠️")
+        return
+
+    flow = st.session_state.get("_mail_flow")
+    if st.button("Start sign-in"):
+        try:
+            flow = oauth.begin_device_flow()
+            st.session_state["_mail_flow"] = flow
+        except Exception as e:
+            st.error(str(e))
+            return
+    if flow:
+        st.markdown(f"1. Open **{flow['verification_uri']}**\n"
+                    f"2. Enter the code: **`{flow['user_code']}`**\n"
+                    f"3. Approve access, then click below.")
+        if st.button("I approved it - finish connecting"):
+            try:
+                res = oauth.complete_device_flow(org_id, user_id, flow)
+                st.session_state.pop("_mail_flow", None)
+                st.success(f"Connected {res.get('account_email') or 'your mailbox'}.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Could not complete sign-in: {e}")
 
 
 def _uid():

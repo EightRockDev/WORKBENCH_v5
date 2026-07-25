@@ -47,9 +47,14 @@ class IngestResult:
         return self.status == "auto_applied"
 
 
-def ingest_message(org_id: str, msg: dict) -> IngestResult:
-    """Ingest one message. ``msg``: external_id, from_email, from_name, subject,
-    body, received_at, attachments[]."""
+def ingest_message(org_id: str, msg: dict, owner_user_id: str | None = None) -> IngestResult:
+    """Ingest one message for ONE user.
+
+    ``owner_user_id`` owns the raw message: it is written to
+    ``inbox_messages.owner_user_id`` and the row is only ever readable through
+    a user-scoped connection, so a colleague cannot read it (RLS enforces this
+    at the database layer). The DEAL extracted from it is org-visible.
+    """
     c = clf.classify(from_email=msg.get("from_email"), subject=msg.get("subject"),
                      body=msg.get("body"), attachments=msg.get("attachments"))
 
@@ -71,7 +76,7 @@ def ingest_message(org_id: str, msg: dict) -> IngestResult:
                   f"extract {e.confidence:.2f}/{AUTO_APPLY_EXTRACT}) - "
                   "queued for one-click confirm")
 
-    message_id = _upsert_message(org_id, msg, c, e, status)
+    message_id = _upsert_message(org_id, msg, c, e, status, owner_user_id)
     _upsert_contact(org_id, msg, c.category)
 
     deal_id = term_id = None
@@ -85,9 +90,9 @@ def ingest_message(org_id: str, msg: dict) -> IngestResult:
 def confirm_message(org_id: str, message_id: str, overrides: dict | None = None,
                     actor_user_id: str | None = None) -> IngestResult:
     """One-click human confirm of a queued extraction (§6.2)."""
-    with pg.org_connection(org_id) as conn, conn.cursor() as cur:
-        cur.execute("SELECT * FROM inbox_messages WHERE org_id=%s AND id=%s",
-                    (org_id, message_id))
+    # User-scoped: a user can only confirm mail they own.
+    with pg.user_connection(org_id, actor_user_id) as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM inbox_messages WHERE id=%s", (message_id,))
         row = cur.fetchone()
     if row is None:
         raise LookupError("message not found")
@@ -104,10 +109,10 @@ def confirm_message(org_id: str, message_id: str, overrides: dict | None = None,
                       evidence=list(stored.get("evidence") or []) + ["human confirmed"])
 
     deal_id, term_id = _apply(org_id, message_id, msg, c, e)
-    with pg.org_connection(org_id) as conn, conn.cursor() as cur:
+    with pg.user_connection(org_id, actor_user_id) as conn, conn.cursor() as cur:
         cur.execute("""UPDATE inbox_messages SET status='confirmed', deal_id=%s,
-                          extracted=%s WHERE org_id=%s AND id=%s""",
-                    (deal_id, json.dumps(e.as_dict()), org_id, message_id))
+                          extracted=%s WHERE id=%s""",
+                    (deal_id, json.dumps(e.as_dict()), message_id))
         conn.commit()
     _audit(org_id, actor_user_id, "inbox.confirm", message_id, {"deal_id": deal_id})
     return IngestResult(message_id, c.category, c.confidence, e.confidence,
@@ -115,9 +120,9 @@ def confirm_message(org_id: str, message_id: str, overrides: dict | None = None,
 
 
 def dismiss_message(org_id: str, message_id: str, actor_user_id: str | None = None) -> None:
-    with pg.org_connection(org_id) as conn, conn.cursor() as cur:
-        cur.execute("UPDATE inbox_messages SET status='dismissed' WHERE org_id=%s AND id=%s",
-                    (org_id, message_id))
+    with pg.user_connection(org_id, actor_user_id) as conn, conn.cursor() as cur:
+        cur.execute("UPDATE inbox_messages SET status='dismissed' WHERE id=%s",
+                    (message_id,))
         conn.commit()
     _audit(org_id, actor_user_id, "inbox.dismiss", message_id, {})
 
@@ -137,18 +142,21 @@ def _apply(org_id, message_id, msg, c, e) -> tuple[str | None, str | None]:
     return deal_id, None
 
 
-def _upsert_message(org_id, msg, c, e, status) -> str:
-    with pg.org_connection(org_id) as conn, conn.cursor() as cur:
+def _upsert_message(org_id, msg, c, e, status, owner_user_id=None) -> str:
+    # Raw mail is PER-USER private: written and read through a user-scoped
+    # connection whose RLS policy requires both org and user context.
+    with pg.user_connection(org_id, owner_user_id) as conn, conn.cursor() as cur:
         cur.execute(
             """INSERT INTO inbox_messages
-                 (org_id, provider, external_id, from_email, from_name, subject, body,
-                  received_at, attachments, category, confidence, classifier, status, extracted)
-               VALUES (%s,%s,%s,%s,%s,%s,%s, COALESCE(%s, now()), %s,%s,%s,%s,%s,%s)
-               ON CONFLICT (org_id, provider, external_id) DO UPDATE
+                 (org_id, owner_user_id, provider, external_id, from_email, from_name,
+                  subject, body, received_at, attachments, category, confidence,
+                  classifier, status, extracted)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s, COALESCE(%s, now()), %s,%s,%s,%s,%s,%s)
+               ON CONFLICT (org_id, owner_user_id, provider, external_id) DO UPDATE
                  SET category=EXCLUDED.category, confidence=EXCLUDED.confidence,
                      extracted=EXCLUDED.extracted
                RETURNING id""",
-            (org_id, msg.get("provider", "mock"), str(msg.get("external_id")),
+            (org_id, owner_user_id, msg.get("provider", "mock"), str(msg.get("external_id")),
              msg.get("from_email"), msg.get("from_name"), msg.get("subject"),
              msg.get("body"), msg.get("received_at"),
              json.dumps(msg.get("attachments") or []), c.category,
@@ -204,7 +212,13 @@ def _insert_term_sheet(org_id, deal_id, message_id, f: dict) -> str:
         cur.execute(
             """INSERT INTO term_sheets (org_id, deal_id, message_id, lender, rate, ltv,
                                         amort_years, io_years, term_years, proceeds, raw)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id""",
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+               ON CONFLICT (message_id) WHERE message_id IS NOT NULL DO UPDATE
+                 SET deal_id=EXCLUDED.deal_id, lender=EXCLUDED.lender, rate=EXCLUDED.rate,
+                     ltv=EXCLUDED.ltv, amort_years=EXCLUDED.amort_years,
+                     io_years=EXCLUDED.io_years, term_years=EXCLUDED.term_years,
+                     proceeds=EXCLUDED.proceeds, raw=EXCLUDED.raw
+               RETURNING id""",
             (org_id, deal_id, message_id, f.get("lender"), f.get("rate"), f.get("ltv"),
              f.get("amort_years"), f.get("io_years"), f.get("term_years"),
              f.get("proceeds"), json.dumps(f)))
@@ -255,17 +269,19 @@ def _audit(org_id, actor, action, target, after) -> None:
 # reads
 # ---------------------------------------------------------------------------
 
-def list_queue(org_id: str, limit: int = 50) -> list[dict]:
-    with pg.org_connection(org_id) as conn, conn.cursor() as cur:
-        cur.execute("""SELECT * FROM inbox_messages WHERE org_id=%s AND status='queued'
-                        ORDER BY received_at DESC LIMIT %s""", (org_id, limit))
+def list_queue(org_id: str, user_id: str, limit: int = 50) -> list[dict]:
+    """Only the owning user's queued mail (RLS-enforced)."""
+    with pg.user_connection(org_id, user_id) as conn, conn.cursor() as cur:
+        cur.execute("""SELECT * FROM inbox_messages WHERE status='queued'
+                        ORDER BY received_at DESC LIMIT %s""", (limit,))
         return [dict(r) for r in cur.fetchall()]
 
 
-def list_messages(org_id: str, limit: int = 100) -> list[dict]:
-    with pg.org_connection(org_id) as conn, conn.cursor() as cur:
-        cur.execute("""SELECT * FROM inbox_messages WHERE org_id=%s
-                        ORDER BY received_at DESC LIMIT %s""", (org_id, limit))
+def list_messages(org_id: str, user_id: str, limit: int = 100) -> list[dict]:
+    """Only the owning user's mail (RLS-enforced)."""
+    with pg.user_connection(org_id, user_id) as conn, conn.cursor() as cur:
+        cur.execute("""SELECT * FROM inbox_messages
+                        ORDER BY received_at DESC LIMIT %s""", (limit,))
         return [dict(r) for r in cur.fetchall()]
 
 

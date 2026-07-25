@@ -37,6 +37,8 @@ dependencies = [
     #     multi-tenant row-level security (Section 10.1). Inactive while the
     #     app runs on SQLite in local-dev; enabled once DATABASE_URL is set.
     "psycopg[binary]>=3.2",
+    # --- Module D: encrypt per-user mailbox OAuth tokens at rest (§8.1 SR-2.4).
+    "cryptography>=43.0",
 ]
 
 [dependency-groups]

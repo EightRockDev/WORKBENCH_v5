@@ -12,6 +12,37 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.5.1.0.0 — 2026-07-24  ·  Module D: per-user mailbox privacy + connect flow
+**Security model: private mailbox, shared pipeline.** (Owner requirement.)
+- **Per-user RLS**: `inbox_messages` gains `owner_user_id`; `inbox_messages` and
+  the new `mailbox_connections` are protected by a `user_isolation` policy that
+  requires BOTH `app.current_org_id` AND `app.current_user_id`. A missing user
+  context returns **zero rows** — it fails closed rather than leaking. Deals,
+  term sheets and CRM contacts stay ORG-visible: the pipeline is shared work.
+- **`data/pg.user_connection(org, user)`** — the only way to reach per-user data.
+- **`core/inbox/oauth.py`** — OAuth **device-code** sign-in via MSAL (no public
+  redirect URL needed yet; the server never sees a password). Requests
+  `Mail.Read` only. **Tokens encrypted at rest** with Fernet via `ER_TOKEN_KEY`
+  (§8.1 SR-2.4); the DB never holds plaintext. `disconnect()` purges that user's
+  stored mail but keeps the org's deals.
+- **`core/inbox/__init__.sync_inbox(org, user)`** uses that user's own token,
+  falling back to demo fixtures when no mailbox is linked.
+- **UI**: connect/disconnect panel with the device code, an explicit privacy
+  banner, and **received dates now shown** in the confirm queue and all-mail views.
+- **`docs/INBOX-SETUP.md`** — Entra app registration + `ER_TOKEN_KEY` steps.
+
+**Bug fixes (both reported by the owner):**
+- **Duplicate term sheets on every Sync** — term sheets are now unique per source
+  message (partial unique index + `ON CONFLICT ... WHERE message_id IS NOT NULL`).
+- **Missing dates** — `received_at` is now rendered wherever messages are listed.
+- **Cross-user ingest collision** — the idempotency key was `(org, provider,
+  external_id)`, so a second user syncing the same message id collided with the
+  first user's row and tripped RLS. Key is now owner-scoped.
+- Tests: **32** in `tests/test_inbox.py`, including a privacy block proving a
+  colleague (and an org admin) cannot read another user's mail, that missing user
+  context returns nothing, that repeated syncs don't duplicate, and that stored
+  tokens are never plaintext.
+
 ## V5.5.0.0.0 — 2026-07-24  ·  V5-P4: Module D — Inbox -> Deal Engine (§6.2)
 - **Schema**: `inbox_messages` (idempotent on org+provider+external_id), `deals`
   (pipeline records, row_version-tracked), `term_sheets` (lender history),

@@ -78,6 +78,22 @@ def org_connection(org_id: str) -> Iterator["psycopg.Connection[Any]"]:
         yield conn
 
 
+@contextlib.contextmanager
+def user_connection(org_id: str, user_id: str) -> Iterator["psycopg.Connection[Any]"]:
+    """A connection scoped to one tenant AND one user.
+
+    Required for per-user-private tables (``inbox_messages``,
+    ``mailbox_connections``): their RLS policies test BOTH
+    ``app.current_org_id`` and ``app.current_user_id``, so a missing user
+    context fails **closed** (zero rows) rather than leaking a colleague's mail.
+    """
+    with connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT set_config('app.current_org_id', %s, false)", (org_id,))
+            cur.execute("SELECT set_config('app.current_user_id', %s, false)", (user_id,))
+        yield conn
+
+
 def healthcheck() -> tuple[bool, str]:
     """Lightweight connectivity probe for the admin/status surface."""
     if not is_configured():

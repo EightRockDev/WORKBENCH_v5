@@ -523,3 +523,83 @@ BEGIN
                        'WITH CHECK (org_id = current_org_id())', t);
     END LOOP;
 END $$;
+
+-- ===========================================================================
+-- MODULE D — PER-USER MAILBOX PRIVACY  (owner request, 2026-07-24)
+-- ---------------------------------------------------------------------------
+-- Security model: **private mailbox, shared pipeline.**
+--   * A connected mailbox belongs to ONE user. Raw messages are visible only to
+--     that user - not to colleagues in the same org, not to org admins.
+--   * The DEALS / term sheets / contacts extracted from those messages ARE
+--     org-visible: that is the point of the module (pipeline is shared work).
+-- Enforced at the database layer with RLS keyed to app.current_user_id, so a
+-- missing user context fails CLOSED (no rows) rather than leaking.
+-- ===========================================================================
+
+BEGIN;
+
+CREATE OR REPLACE FUNCTION current_user_id() RETURNS uuid AS $$
+    SELECT NULLIF(current_setting('app.current_user_id', true), '')::uuid;
+$$ LANGUAGE sql STABLE;
+
+-- Per-user OAuth mailbox connections. Tokens are stored ENCRYPTED by the
+-- application (Fernet, key in ER_TOKEN_KEY) - the DB never sees plaintext.
+CREATE TABLE IF NOT EXISTS mailbox_connections (
+    id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id         uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider       text NOT NULL CHECK (provider IN ('graph','gmail')),
+    account_email  text,
+    access_token   text,          -- encrypted blob
+    refresh_token  text,          -- encrypted blob
+    expires_at     timestamptz,
+    scopes         text,
+    status         text NOT NULL DEFAULT 'connected'
+                     CHECK (status IN ('connected','expired','revoked')),
+    last_sync_at   timestamptz,
+    created_at     timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (user_id, provider)
+);
+CREATE INDEX IF NOT EXISTS ix_mailbox_user ON mailbox_connections(user_id);
+
+-- Messages become owned by the connecting user.
+ALTER TABLE inbox_messages ADD COLUMN IF NOT EXISTS owner_user_id uuid
+    REFERENCES users(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS ix_inbox_owner ON inbox_messages(owner_user_id, received_at DESC);
+
+-- One term sheet per source message (fixes duplicate rows on repeated sync).
+DELETE FROM term_sheets a USING term_sheets b
+ WHERE a.message_id IS NOT NULL AND a.message_id = b.message_id AND a.id > b.id;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_term_sheets_message
+    ON term_sheets(message_id) WHERE message_id IS NOT NULL;
+
+COMMIT;
+
+-- Strict per-user RLS on raw mail + mailbox connections; fails closed when the
+-- user context is unset. Deals/term_sheets/crm_contacts keep ORG-level RLS.
+DO $$
+DECLARE t text;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['inbox_messages','mailbox_connections']
+    LOOP
+        EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
+        EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
+        EXECUTE format('DROP POLICY IF EXISTS org_isolation ON %I', t);
+        EXECUTE format('DROP POLICY IF EXISTS user_isolation ON %I', t);
+    END LOOP;
+    EXECUTE 'CREATE POLICY user_isolation ON inbox_messages '
+            'USING (org_id = current_org_id() AND owner_user_id = current_user_id()) '
+            'WITH CHECK (org_id = current_org_id() AND owner_user_id = current_user_id())';
+    EXECUTE 'CREATE POLICY user_isolation ON mailbox_connections '
+            'USING (org_id = current_org_id() AND user_id = current_user_id()) '
+            'WITH CHECK (org_id = current_org_id() AND user_id = current_user_id())';
+END $$;
+
+-- Idempotency must be PER USER: two colleagues can each receive the same
+-- message id in their own mailbox, and neither may collide with (or update)
+-- the other's row. Replace the org-wide key with an owner-scoped one.
+BEGIN;
+ALTER TABLE inbox_messages DROP CONSTRAINT IF EXISTS inbox_messages_org_id_provider_external_id_key;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_inbox_owner_msg
+    ON inbox_messages(org_id, owner_user_id, provider, external_id);
+COMMIT;

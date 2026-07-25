@@ -117,9 +117,17 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 - V5-P0.5 pilot (auth, admin, concurrency), V5-Walk §10 multi-tenancy + §10.4 UI
   enforcement, Module A §4 skip trace (+ live adapters), **V5-P2 §4.4 compliance
   gate C1-C7**, **V5-P3 Module B outreach B1-B5**, **Module C radar v2 §6.1**,
-  **Phase 0 spine §7.2**, **V5-P4 Module D inbox->deal §6.2**. 128 module tests green; full suite 517 passed with 4
+  **Phase 0 spine §7.2**, **V5-P4 Module D inbox->deal §6.2**. 138 module tests green; full suite 527 passed with 4
   pre-existing data-dependent failures (aln_loader x2, test_db + test_property_io
   smoke tests that need the real ALN-populated DB / deal folders).
+
+## Module D privacy invariant (do not regress)
+Raw mail is **per-user private**: `inbox_messages` / `mailbox_connections` carry
+per-user RLS requiring both `app.current_org_id` and `app.current_user_id`.
+Always reach them via `data.pg.user_connection(org_id, user_id)` — never
+`org_connection`. Deals/term_sheets/crm_contacts stay org-scoped on purpose.
+Mailbox OAuth tokens are Fernet-encrypted with `ER_TOKEN_KEY`; never store or log
+plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 
 ## Recurring gotchas (owner is non-technical on infra)
 - **Always `cd C:\WORKBENCH_V5` first** in any new PowerShell window.
