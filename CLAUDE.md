@@ -134,7 +134,15 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 - Schema drift is now **self-healing**: `data/migrate.py` runs on app startup,
   detects a stale schema and applies `db/pilot_schema.sql` automatically. When a
   migration adds a column the code reads, ALSO add it to `REQUIRED_COLUMNS`
-  there. `migrate-db.ps1` remains available for a manual run.
+  there (and correctness-enforcing indexes to `REQUIRED_INDEXES`).
+  `migrate-db.ps1` remains available for a manual run.
+- **Migrations run with NO tenant context.** Any `DELETE`/`UPDATE` in
+  `pilot_schema.sql` against a table with `FORCE ROW LEVEL SECURITY` matches
+  **zero rows** and silently no-ops (`current_org_id()` is NULL) — while
+  `CREATE INDEX`/constraint checks are *not* RLS-filtered and still see every
+  row. That mismatch caused the `ux_term_sheets_message` duplicate-key failure.
+  Toggle `NO FORCE` / `FORCE` around such DML inside one `DO` block so a failure
+  rolls the whole thing back and never leaves RLS off.
 - If the app errors with a stale-module `AttributeError`, the working copy is out
   of sync → `git fetch origin && git reset --hard origin/main` (safe; `.env` is
   gitignored). Legacy features needing external setup (doc ingestion → API key,

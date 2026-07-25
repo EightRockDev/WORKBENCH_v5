@@ -568,8 +568,26 @@ ALTER TABLE inbox_messages ADD COLUMN IF NOT EXISTS owner_user_id uuid
 CREATE INDEX IF NOT EXISTS ix_inbox_owner ON inbox_messages(owner_user_id, received_at DESC);
 
 -- One term sheet per source message (fixes duplicate rows on repeated sync).
-DELETE FROM term_sheets a USING term_sheets b
- WHERE a.message_id IS NOT NULL AND a.message_id = b.message_id AND a.id > b.id;
+--
+-- The dedupe MUST bypass RLS. term_sheets is FORCE ROW LEVEL SECURITY, and a
+-- migration has no tenant context (app.current_org_id is unset), so
+-- current_org_id() is NULL and a plain DELETE matches ZERO rows and silently
+-- no-ops. CREATE UNIQUE INDEX, by contrast, is NOT RLS-filtered: it sees every
+-- row and fails with "duplicate keys exist" on databases that accumulated
+-- duplicates before this index existed. Toggling FORCE off around the DELETE is
+-- the fix; the migration role owns the table and FORCE is restored immediately.
+-- If the block raises, the whole DO rolls back, so RLS can never be left off.
+DO $$
+BEGIN
+    ALTER TABLE term_sheets NO FORCE ROW LEVEL SECURITY;
+    DELETE FROM term_sheets a USING term_sheets b
+     WHERE a.message_id IS NOT NULL AND a.message_id = b.message_id AND a.id > b.id;
+    ALTER TABLE term_sheets FORCE ROW LEVEL SECURITY;
+EXCEPTION WHEN insufficient_privilege THEN
+    -- Not the table owner: leave RLS exactly as it was. The index creation
+    -- below will then report the duplicates loudly rather than hiding them.
+    NULL;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS ux_term_sheets_message
     ON term_sheets(message_id) WHERE message_id IS NOT NULL;
 

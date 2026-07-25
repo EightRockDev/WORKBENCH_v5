@@ -12,6 +12,33 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.5.1.3.0 — 2026-07-25  ·  Migration unblocked (RLS-blocked dedupe)
+- **Fixes "could not create unique index `ux_term_sheets_message` — duplicate
+  keys exist"** on databases that accumulated duplicate term sheets before that
+  index existed. Root cause: the dedupe `DELETE` that runs first is *itself*
+  subject to `FORCE ROW LEVEL SECURITY`. A migration has no tenant context, so
+  `current_org_id()` is NULL, the DELETE matched **zero rows** and silently
+  no-opped — while `CREATE UNIQUE INDEX` is *not* RLS-filtered, saw every
+  duplicate, and failed. The dedupe now runs with `FORCE` toggled off and
+  restored inside one `DO` block, so RLS can never be left switched off (and a
+  non-owner role degrades to a loud error rather than a silent skip).
+- **Also fixes the downstream `relation "mailbox_connections" does not exist`.**
+  That table is created in the same transaction as the failing index, so the
+  abort rolled it back too — which is why connecting a mailbox failed at the
+  final step even though the Microsoft sign-in itself succeeded. One root cause,
+  both errors; one startup now heals both.
+- **`data/migrate.py` now checks indexes, not just tables/columns.**
+  `ux_term_sheets_message` and `ux_inbox_owner_msg` *enforce correctness* (no
+  duplicate term sheets on re-sync; per-user idempotency). A missing one is
+  silent data corruption, so it counts as drift.
+- Regression test: seeds the exact broken state (duplicates + FORCE RLS on),
+  proves one `ensure_schema` heals it, that no duplicates remain, and that
+  `term_sheets` is left with `FORCE ROW LEVEL SECURITY` still **on**.
+- Audited the rest of `db/pilot_schema.sql` for the same class of bug: the
+  dedupe was the only DML against an RLS-forced table.
+
+---
+
 ## V5.5.1.2.0 — 2026-07-25  ·  One-click inbox setup
 - **`setup-inbox.bat` + `deploy/windows/setup-inbox.ps1`** — double-click
   one-time setup for Module D. Generates `ER_TOKEN_KEY` automatically (and

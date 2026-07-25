@@ -44,6 +44,14 @@ REQUIRED_TABLES: list[str] = [
     "inbox_messages", "deals", "term_sheets", "crm_contacts",
     "mailbox_connections",
 ]
+# Indexes that ENFORCE a correctness rule, not just speed one up. Missing ones
+# are real drift: `ux_term_sheets_message` is what stops a repeated Sync from
+# duplicating term sheets, and `ux_inbox_owner_msg` is the per-user idempotency
+# key. A dropped-or-never-created index here is silent data corruption.
+REQUIRED_INDEXES: list[str] = [
+    "ux_term_sheets_message",
+    "ux_inbox_owner_msg",
+]
 
 
 def schema_is_current() -> tuple[bool, list[str]]:
@@ -62,6 +70,11 @@ def schema_is_current() -> tuple[bool, list[str]]:
         for t, c in REQUIRED_COLUMNS:
             if t in have_tables and (t, c) not in have_cols:
                 missing.append(f"{t}.{c}")
+        cur.execute("SELECT indexname FROM pg_indexes WHERE schemaname='public'")
+        have_idx = {r["indexname"] for r in cur.fetchall()}
+        for ix in REQUIRED_INDEXES:
+            if ix not in have_idx:
+                missing.append(f"index {ix}")
     return (not missing), missing
 
 
