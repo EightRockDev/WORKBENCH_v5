@@ -618,6 +618,14 @@ def main() -> None:
     # v5.0 pilot auth (Section 9.4): resolve the user and, when a real OIDC
     # provider is configured, gate access here. Returns None in legacy ungated
     # mode so the deterministic core still runs standalone (Section 11).
+    # Keep the database schema in step with the code automatically. The schema
+    # file is idempotent, so this is a no-op once current; it exists so pulling
+    # new code can never leave the app running against a stale schema.
+    from data import migrate as _migrate
+    _schema_ok, _schema_msg = _migrate.ensure_schema()
+    if not _schema_ok:
+        st.error(f"⚠️ Database schema problem — {_schema_msg}", icon="⚠️")
+
     user = core_session.resolve_user(st)  # may st.stop() for login / pending
     st.session_state["user"] = user
 

@@ -117,7 +117,7 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 - V5-P0.5 pilot (auth, admin, concurrency), V5-Walk §10 multi-tenancy + §10.4 UI
   enforcement, Module A §4 skip trace (+ live adapters), **V5-P2 §4.4 compliance
   gate C1-C7**, **V5-P3 Module B outreach B1-B5**, **Module C radar v2 §6.1**,
-  **Phase 0 spine §7.2**, **V5-P4 Module D inbox->deal §6.2**. 138 module tests green; full suite 527 passed with 4
+  **Phase 0 spine §7.2**, **V5-P4 Module D inbox->deal §6.2**. 142 module tests green; full suite 531 passed with 4
   pre-existing data-dependent failures (aln_loader x2, test_db + test_property_io
   smoke tests that need the real ALN-populated DB / deal folders).
 
@@ -131,8 +131,10 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 
 ## Recurring gotchas (owner is non-technical on infra)
 - **Always `cd C:\WORKBENCH_V5` first** in any new PowerShell window.
-- After a schema-changing pull, run `migrate-db.ps1` (via
-  `powershell -ExecutionPolicy Bypass -File .\deploy\windows\migrate-db.ps1`).
+- Schema drift is now **self-healing**: `data/migrate.py` runs on app startup,
+  detects a stale schema and applies `db/pilot_schema.sql` automatically. When a
+  migration adds a column the code reads, ALSO add it to `REQUIRED_COLUMNS`
+  there. `migrate-db.ps1` remains available for a manual run.
 - If the app errors with a stale-module `AttributeError`, the working copy is out
   of sync → `git fetch origin && git reset --hard origin/main` (safe; `.env` is
   gitignored). Legacy features needing external setup (doc ingestion → API key,

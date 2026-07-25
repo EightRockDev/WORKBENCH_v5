@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.5.1.1.0 — 2026-07-24  ·  Self-healing schema + device-code fix
+- **`data/migrate.py` — automatic schema migration on startup.** The app now
+  compares the live database against the tables/columns the running code needs
+  and, if anything is missing, applies the idempotent `db/pilot_schema.sql`
+  itself. This kills an entire class of failure for the operator: pulling new
+  code can no longer produce a raw `UndefinedColumn` crash (exactly the
+  `inbox_messages.owner_user_id` error reported). Failure surfaces as an
+  actionable banner, never a traceback; the guard never drops data.
+- **Verified by test** (`tests/test_migrate.py`): a required column is dropped,
+  detected as missing, auto-healed — **and the per-user RLS privacy policy is
+  proven restored**, since a dropped column cascades the policy away and silently
+  losing it would expose private mail.
+- **Device-code sign-in fix**: a Microsoft device code is single-use, and a
+  Streamlit rerun could re-submit it (AADSTS54005 "already redeemed"). The code
+  is now marked spent before submission, the button disables after one use, and
+  a friendly "Get a new code" path replaces the raw error.
+
 ## V5.5.1.0.0 — 2026-07-24  ·  Module D: per-user mailbox privacy + connect flow
 **Security model: private mailbox, shared pipeline.** (Owner requirement.)
 - **Per-user RLS**: `inbox_messages` gains `owner_user_id`; `inbox_messages` and

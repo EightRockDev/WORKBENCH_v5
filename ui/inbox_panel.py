@@ -217,25 +217,40 @@ def _render_device_flow(org_id: str, user_id: str) -> None:
         return
 
     flow = st.session_state.get("_mail_flow")
-    if st.button("Start sign-in"):
+    if st.button("Start sign-in" if not flow else "Get a new code"):
         try:
-            flow = oauth.begin_device_flow()
-            st.session_state["_mail_flow"] = flow
+            st.session_state["_mail_flow"] = oauth.begin_device_flow()
+            st.session_state.pop("_mail_flow_used", None)
+            st.rerun()
         except Exception as e:
             st.error(str(e))
             return
+
     if flow:
+        used = st.session_state.get("_mail_flow_used")
         st.markdown(f"1. Open **{flow['verification_uri']}**\n"
                     f"2. Enter the code: **`{flow['user_code']}`**\n"
                     f"3. Approve access, then click below.")
-        if st.button("I approved it - finish connecting"):
+        st.caption("A code can only be redeemed once. If it fails, click "
+                   "**Get a new code** and repeat.")
+        if st.button("I approved it - finish connecting", disabled=bool(used)):
+            # Mark BEFORE calling: a device code is single-use, and a Streamlit
+            # rerun must never re-submit an already-redeemed code (AADSTS54005).
+            st.session_state["_mail_flow_used"] = True
             try:
                 res = oauth.complete_device_flow(org_id, user_id, flow)
                 st.session_state.pop("_mail_flow", None)
+                st.session_state.pop("_mail_flow_used", None)
                 st.success(f"Connected {res.get('account_email') or 'your mailbox'}.")
                 st.rerun()
             except Exception as e:
-                st.error(f"Could not complete sign-in: {e}")
+                st.session_state.pop("_mail_flow", None)     # code is spent
+                msg = str(e)
+                if "54005" in msg or "already redeemed" in msg:
+                    st.warning("That code was already used. Click **Get a new "
+                               "code** and approve the fresh one.", icon="🔁")
+                else:
+                    st.error(f"Could not complete sign-in: {msg}")
 
 
 def _uid():
