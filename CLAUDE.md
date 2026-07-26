@@ -112,10 +112,7 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
   (AC-A4). Owner Intelligence panel on the Diligence tab (FR-A1). 12 tests green.
 
 **Next (per BUILD-ORDER.md)**
-1. **Module E — Doc AI / underwriting hardening (§6.3)**: deterministic
-   validation rules per doc type, per-field confidence, rent-roll anomaly
-   detection, named stress-test overlays.
-2. **Live vendor verification**: owner has a BatchData key; run
+1. **Live vendor verification**: owner has a BatchData key; run
    `diagnose-skiptrace.bat` on the server and tune `core/skiptrace/live.py` field
    mapping against the real response. VA SCC CIS scraper still unverified (build
    env is firewalled from cis.scc.virginia.gov).

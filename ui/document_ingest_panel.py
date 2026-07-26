@@ -86,10 +86,48 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
                     )
                     if result.extraction_notes:
                         st.caption(f"AI notes: {result.extraction_notes}")
+                    _render_qa_report(fp, c)
                     _render_extracted(result.extracted, c)
 
         # ---- Show ingestion log ----
         _render_ingestion_log(fp, c)
+
+
+def _render_qa_report(folder: Path, c: dict) -> None:
+    """Module E (\u00a76.3): deterministic QA over everything now on file.
+
+    Runs AFTER commit so cross-document ties see the newly-written fields
+    alongside earlier uploads. No model calls - pure arithmetic.
+    """
+    from core.extraction_qa import run_qa
+    from data.property_io import load_sources
+
+    sources = load_sources(folder)
+    if not sources:
+        return
+    report = run_qa(sources)
+    if not report.checks and not report.low_confidence:
+        return
+
+    if report.blocking:
+        st.error(
+            "\u26d4 Extraction QA: " + report.summary()
+            + " \u2014 review before trusting the numbers. A blocking QA "
+            "failure holds a GO verdict at WATCH.")
+    elif report.failures:
+        st.warning("\u26a0 Extraction QA: " + report.summary())
+    else:
+        st.success("\u2705 Extraction QA: " + report.summary())
+
+    problems = report.failures or report.low_confidence
+    if problems:
+        with st.expander("QA details", expanded=report.blocking):
+            for chk in report.failures:
+                st.markdown(f"**{chk.severity.upper()}** \u2014 {chk.title}")
+                st.caption(chk.detail)
+            for flag in report.low_confidence:
+                st.markdown(f"**LOW CONFIDENCE** \u2014 `{flag.key}`")
+                st.caption(flag.reason)
 
 
 def _render_extracted(data: dict, c: dict) -> None:

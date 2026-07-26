@@ -152,6 +152,30 @@ def _prepare_units_df(units: list[dict[str, Any]]) -> pd.DataFrame:
     return out
 
 
+def _render_anomalies(sources: dict[str, Any]) -> None:
+    """Module E (§6.3) rent-roll anomaly findings, collapsed when clean."""
+    from core.rent_roll_anomalies import detect_anomalies
+
+    anomalies = detect_anomalies(sources)
+    if not anomalies:
+        return
+    c = config.COLORS
+    sev_color = {"error": c["rd"], "warning": c["yw"], "info": c["bl"]}
+    n_err = sum(1 for a in anomalies if a.severity == "error")
+    label = f"\u26a0 {len(anomalies)} rent-roll anomaly finding(s)"
+    if n_err:
+        label += f" \u2014 {n_err} critical"
+    with st.expander(label, expanded=bool(n_err)):
+        for a in anomalies:
+            color = sev_color.get(a.severity, c["tx2"])
+            st.markdown(
+                f"<span style='color:{color};font-weight:700'>"
+                f"{a.severity.upper()}</span> \u2014 **{a.title}**",
+                unsafe_allow_html=True,
+            )
+            st.caption(a.detail)
+
+
 def render_rent_roll(
     folder: PropertyFolder | None,
     *,
@@ -211,6 +235,12 @@ def render_rent_roll(
             f'<span>effective {rr_date}</span></div>'
         )
     st.markdown(source_html, unsafe_allow_html=True)
+
+    # Module E (§6.3): deterministic anomaly detection — duplicates,
+    # below-comp units, expiration clusters, RUBS-as-rent. Rendered right
+    # under the provenance line so a suspect roll is flagged before anyone
+    # reads the tiles it inflates.
+    _render_anomalies(sources)
 
     if show_summary:
         # Row 1 — counts.

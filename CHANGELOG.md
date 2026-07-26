@@ -12,6 +12,52 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.6.0.0.0 — 2026-07-26  ·  Module E: Doc AI & Underwriting hardening (§6.3)
+**V5-P4 second half — extraction QA, anomaly detection, named stress tests,
+DD→verdict tightening. All deterministic (§11): zero model calls.**
+
+- **`core/extraction_qa.py`** — deterministic validation per document type.
+  T-12: revenue/expense lines must tie to printed totals, NOI is definitional,
+  loss lines can't exceed GPR (sign-error catch). Rent roll: unit rows tie to
+  the stated count, occupancy math closes, per-unit rent/sqft sanity bands
+  (decimal-slip catch, offending units named). OM: PPU ties to price/units,
+  cap ties to NOI/price, percent-vs-fraction band. Cross-document (§6.3 by
+  name): rent-roll unit count ties to the OM; rent-roll potential rent ties to
+  T-12 GPR; OM in-place NOI vs T-12 ("underwrite the T-12" note). Per-field
+  confidence walk flags anything under 70% for human confirm. `run_qa()` →
+  report with `blocking` = errors or low-confidence fields.
+- **`core/rent_roll_anomalies.py`** — the four spec'd detectors: below-comp
+  units (vs the property's own floorplan median — ordinary loss-to-lease does
+  NOT fire, proven by test), duplicate unit numbers, lease-expiration clusters
+  (≥25% of expirations in one month), RUBS-as-rent (charges≡rent despite
+  other income; repeated flat premium over market). Findings name the units.
+- **`core/stress_overlays.py`** — named scenarios wired to the real pipeline
+  (calc→waterfall→IRR): **2008-style** (2yr zero rent growth then half-speed,
+  vacancy +300bps, exit cap +100bps), **COVID-style** (1yr flat, +300bps y1
+  vacancy incl. collections stress, cap unchanged), **insurance shock** (+40%
+  insurance line ≈ +3% opex permanent, expense growth +100bps). Failure bar =
+  the sensitivity 12% LP-IRR flag; an incomputable LP IRR (capital never
+  returned) counts as failed, not skipped. Deltas vs base reported.
+- **`core/verdict_tightening.py`** — bidirectional DD→verdict per spec: open
+  hard dealbreaker ⇒ NO-GO; CRITICAL risk ⇒ NO-GO; HIGH risk ⇒ one tier down;
+  REJECT/FURTHER_DILIGENCE recommendation or non-IC-ready DD caps GO at WATCH
+  ("a DD finding downgrade can move GO → WATCH automatically"); a failed named
+  overlay caps GO at WATCH; blocking extraction QA caps GO at WATCH. Only ever
+  tightens — clean signals never upgrade a thin deal.
+- **UI**: Exec Summary shows the tightened verdict (with "economics alone read
+  GO" note + ⚠ rationale lines) and a **Named Stress Tests** card (PASS/FAIL
+  chip, stressed LP IRR, delta vs base). Rent-roll views flag anomalies above
+  the tiles. Document ingest runs QA after every commit — blocking failures
+  show ⛔ before anyone trusts the numbers ("validated writes only", §7.4).
+- **Verification**: 62 new tests (22 QA, 16 anomalies, 10 stress, 14
+  tightening) + headless AppTest renders of the Exec Summary and rent-roll
+  panels against a deliberately-corrupted deal (dup unit, below-comp unit,
+  broken NOI, unit-count mismatch) — all surfaces render and block correctly.
+  Full suite: 608 passed; the 4 pre-existing data-dependent failures unchanged.
+  DD tightening only engages once dd.json exists, so fresh deals aren't demoted.
+
+---
+
 ## V5.5.2.0.0 — 2026-07-25  ·  Market data: find it instead of blaming the operator
 - **Fixes "ETL database not loaded. Run `python hampton_roads_etl.py` from
   `hampton-roads-etl/`."** Two bugs behind one message. (1) That standalone ETL

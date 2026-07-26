@@ -183,7 +183,7 @@ def _build_summary_data(prop: dict[str, Any], folder: PropertyFolder | None):
     )
 
     # Sensitivity grid
-    sens = build_sensitivity(SensitivityBase(
+    sens_base = SensitivityBase(
         purchase_price=deal.pp,
         year1_gpr=gpr, year1_expenses=expenses,
         am_fee_pct=deal.am_fee_pct,
@@ -192,7 +192,31 @@ def _build_summary_data(prop: dict[str, Any], folder: PropertyFolder | None):
         amort_months=config.AMORT_MONTHS, io_years=deal.io,
         hold_years=deal.hp, exit_cap=deal.exit_cap,
         equity_raise=deal.equity_raise,
-    ))
+    )
+    sens = build_sensitivity(sens_base)
+
+    # ---- Module E (§6.3): named stress overlays + QA + DD tightening -----
+    from core import verdict_tightening
+    from core.extraction_qa import run_qa
+    from core.stress_overlays import run_stress_overlays
+
+    stress = run_stress_overlays(
+        sens_base,
+        base_vacancy=deal.vacancy_frac,
+        base_rent_growth=deal.rent_growth,
+        base_expense_growth=deal.expense_growth,
+    )
+    qa_report = run_qa(sources or {})
+
+    # DD only tightens once diligence has actually started (dd.json exists);
+    # bootstrapping a 0%-complete file here would demote every fresh deal.
+    dd_state = None
+    if (folder.path / "dd.json").is_file():
+        from core import due_diligence as dd_mod
+        dd_state = dd_mod.recompute_aggregates(dd_mod.load_state(folder.path))
+
+    tight = verdict_tightening.tighten(
+        verdict, dd_state=dd_state, stress=stress, qa=qa_report)
 
     return {
         "deal": deal, "sources": sources, "cf": cf, "wf": wf,
@@ -200,6 +224,8 @@ def _build_summary_data(prop: dict[str, Any], folder: PropertyFolder | None):
         "cap": cap, "dscr": dscr_v, "coc": coc, "ppu": ppu,
         "ads": ads, "gpr_y1": gpr, "expenses_y1": expenses,
         "verdict": verdict, "sensitivity": sens,
+        "stress": stress, "qa": qa_report, "tightened": tight,
+        "dd_started": dd_state is not None,
     }
 
 
@@ -256,12 +282,22 @@ def render_exec_summary(
             "GO": c["gn"], "WATCH": c["yw"],
             "FINANCING-CONSTRAINED-WATCH": c["yw"], "NO-GO": c["rd"],
         }
-        fg = color_map.get(verdict.verdict, c["tx2"])
+        tight = data.get("tightened")
+        shown_verdict = tight.verdict if tight is not None else verdict.verdict
+        fg = color_map.get(shown_verdict, c["tx2"])
         st.markdown(
             f"**Recommendation:** "
-            f"<span style='color:{fg};font-weight:700;font-size:18px'>{verdict.verdict}</span>",
+            f"<span style='color:{fg};font-weight:700;font-size:18px'>{shown_verdict}</span>",
             unsafe_allow_html=True,
         )
+        if tight is not None and tight.downgraded:
+            base_fg = color_map.get(tight.base_verdict, c["tx2"])
+            st.markdown(
+                f"<span style='color:{c['tx2']};font-size:13px'>Economics alone "
+                f"read <b style='color:{base_fg}'>{tight.base_verdict}</b> — "
+                "downgraded by the findings below (§6.3 tightening).</span>",
+                unsafe_allow_html=True,
+            )
 
         st.markdown("**Key metrics:**")
         st.markdown(
@@ -278,6 +314,14 @@ def render_exec_summary(
         st.markdown("**Rationale:**")
         for r in verdict.rationale:
             st.markdown(f"- {r}")
+        if tight is not None:
+            for r in tight.rationale:
+                st.markdown(f"- ⚠️ {r}")
+            if not data.get("dd_started"):
+                st.caption("Due diligence not started yet — the verdict above "
+                           "is economics-only and will tighten as DD findings land.")
+
+    _render_stress_panel(data)
 
     # ---- Artifact Engine (LLM-powered analytical generators) ----
     # Per Brian 2026-05-08: the Exec Summary tab's only document-export
@@ -288,6 +332,40 @@ def render_exec_summary(
     # was confusing. If you need a no-API summary, the Verdict + Preview
     # block above shows the headline GO/WATCH/NO-GO with rationale.
     _render_artifact_engine_panel(prop, data, folder)
+
+
+def _render_stress_panel(data: dict[str, Any]) -> None:
+    """Module E (§6.3): the three named stress overlays, each a row with the
+    stressed LP IRR, the delta from base, and a pass/fail chip."""
+    stress = data.get("stress")
+    if stress is None or not stress.results:
+        return
+    c = config.COLORS
+    with section_card(
+        "Named Stress Tests",
+        icon="🌪",
+        subtitle=(
+            "The deal re-run under three named historical scenarios. A failure "
+            f"means LP IRR falls below the {config.SENSITIVITY_LP_IRR_FLAG:.0%} "
+            "downside bar — a failed scenario holds a GO at WATCH."
+        ),
+    ):
+        for r in stress.results:
+            if r.lp_irr is None:
+                lp_txt = "capital not returned"
+            else:
+                lp_txt = f"LP IRR {r.lp_irr * 100:.1f}%"
+            delta_txt = (f" ({r.lp_irr_delta * 100:+.1f} pts vs base)"
+                         if r.lp_irr_delta is not None else "")
+            if r.failed:
+                chip = (f"<span style='color:{c['rd']};font-weight:700'>FAIL</span>")
+            else:
+                chip = (f"<span style='color:{c['gn']};font-weight:700'>PASS</span>")
+            st.markdown(
+                f"{chip} &nbsp;**{r.overlay.label}** — {lp_txt}{delta_txt}",
+                unsafe_allow_html=True,
+            )
+            st.caption(r.overlay.description)
 
 
 def _render_artifact_engine_panel(
