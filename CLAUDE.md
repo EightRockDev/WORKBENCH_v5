@@ -116,17 +116,22 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    `diagnose-skiptrace.bat` on the server and tune `core/skiptrace/live.py` field
    mapping against the real response. VA SCC CIS scraper still unverified (build
    env is firewalled from cis.scc.virginia.gov).
-3. Public serving: Caddy + NSSM, DNS, port-forward, Auth0/Entra OIDC.
-4. Phase 0 execution: build `properties_8r` from muni_records using `core/spine.py`,
+2. Public serving: Caddy + NSSM, DNS, port-forward, Auth0/Entra OIDC.
+3. Phase 0 execution: build `properties_8r` from muni_records using `core/spine.py`,
    shadow-parity, cutover, purge (§7.3).
 
 ## Built so far (phases complete)
 - V5-P0.5 pilot (auth, admin, concurrency), V5-Walk §10 multi-tenancy + §10.4 UI
   enforcement, Module A §4 skip trace (+ live adapters), **V5-P2 §4.4 compliance
   gate C1-C7**, **V5-P3 Module B outreach B1-B5**, **Module C radar v2 §6.1**,
-  **Phase 0 spine §7.2**, **V5-P4 Module D inbox->deal §6.2**. 142 module tests green; full suite 531 passed with 4
-  pre-existing data-dependent failures (aln_loader x2, test_db + test_property_io
-  smoke tests that need the real ALN-populated DB / deal folders).
+  **Phase 0 spine §7.2**, **V5-P4 Module D inbox->deal §6.2**, **Module E
+  Doc AI/underwriting hardening §6.3** (V5.6.0.0.0: extraction QA
+  `core/extraction_qa.py`, anomalies `core/rent_roll_anomalies.py`, named
+  stress overlays `core/stress_overlays.py`, DD->verdict
+  `core/verdict_tightening.py` — all deterministic; wired into Exec
+  Summary, rent-roll views, doc ingest). Full suite 608 passed with 4
+  pre-existing data-dependent failures (aln_loader x2, test_db +
+  test_property_io smoke tests that need the real ALN data/deal folders).
 
 ## Module D privacy invariant (do not regress)
 Raw mail is **per-user private**: `inbox_messages` / `mailbox_connections` carry
