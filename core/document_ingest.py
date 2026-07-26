@@ -304,6 +304,11 @@ def ingest_document(
     """Extract structured data from one document.
 
     ``document_type`` overrides auto-classification. Default is auto.
+
+    Tabular files (XLSX/CSV) are parsed DETERMINISTICALLY first - a rent roll
+    or T-12 in Excel is structured data and needs no model and no API key
+    (spec 11: the core runs with AI off). The model handles PDFs and layouts
+    the parser can't recognize.
     """
     text = extract_document_text(file_path)
     if not text or text.startswith("[extraction error"):
@@ -317,6 +322,38 @@ def ingest_document(
 
     if document_type is None:
         document_type = classify_document(file_path.name, text[:2000])
+
+    # ---- Deterministic path for tabular files (no API key required) ------
+    tabular = file_path.suffix.lower() in (".xlsx", ".xlsm", ".xls", ".csv")
+    if tabular and document_type in ("rent_roll", "t12", "unknown"):
+        from core import rent_roll_parser as rrp
+        if document_type in ("rent_roll", "unknown"):
+            block = rrp.parse_rent_roll(file_path)
+            if block is not None:
+                n = block["summary"]["totalUnits"]
+                return IngestionResult(
+                    document_type="rent_roll",
+                    source_doc=file_path.name,
+                    extracted={"rentRoll": block,
+                               "totalUnits": n,
+                               "occupiedUnits": block["summary"]["occupiedUnits"],
+                               "occupancyPct": block["summary"]["occupancyPct"]},
+                    confidence=rrp.CONFIDENCE,
+                    extraction_notes=(f"Parsed deterministically from the "
+                                      f"spreadsheet ({n} unit rows) - no AI used."),
+                )
+        if document_type in ("t12", "unknown"):
+            t12 = rrp.parse_t12(file_path)
+            if t12 is not None:
+                return IngestionResult(
+                    document_type="t12",
+                    source_doc=file_path.name,
+                    extracted=t12,
+                    confidence=rrp.CONFIDENCE,
+                    extraction_notes=("Parsed deterministically from the "
+                                      "spreadsheet (12-month totals column) - "
+                                      "no AI used."),
+                )
 
     if document_type == "unknown":
         return IngestionResult(
@@ -340,12 +377,18 @@ def ingest_document(
     truncated = text[:max_chars]
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
+        if tabular:
+            hint = ("the spreadsheet layout was not recognized by the "
+                    "built-in parser, and AI extraction needs an Anthropic "
+                    "API key")
+        else:
+            hint = "AI extraction of PDFs needs an Anthropic API key"
         return IngestionResult(
             document_type=document_type,
             source_doc=file_path.name,
             extracted={},
             confidence=0.0,
-            error="ANTHROPIC_API_KEY not set",
+            error=f"NEEDS_API_KEY: {hint}",
         )
 
     try:
@@ -447,7 +490,16 @@ def commit_to_sources_json(
 
     # Walk extracted dict and merge
     for k, v in result.extracted.items():
-        wrapped = wrap_field(k, v) if not isinstance(v, dict) else _wrap_nested(v, result.source_doc, extracted_at, result.confidence)
+        if k == "rentRoll":
+            # Canonical block read RAW by ui/rent_roll.py and the anomaly
+            # detectors (summary values, units list). It carries its own
+            # provenance (file/date) - wrapping its leaves would break every
+            # reader, so it is stored exactly as parsed.
+            wrapped = v
+        elif isinstance(v, dict):
+            wrapped = _wrap_nested(v, result.source_doc, extracted_at, result.confidence)
+        else:
+            wrapped = wrap_field(k, v)
 
         if k in existing and not overwrite:
             continue

@@ -73,7 +73,9 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
                     doc_type = None if dt_override == "auto" else dt_override
                     result = di.ingest_document(target, document_type=doc_type)
 
-                if result.error:
+                if result.error and result.error.startswith("NEEDS_API_KEY"):
+                    _render_needs_api_key(result.error.split(": ", 1)[-1], fp)
+                elif result.error:
                     st.error(f"Extraction failed: {result.error}")
                 elif not result.is_success:
                     st.warning("No fields extracted.")
@@ -85,12 +87,43 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
                         + ("Saved into the workbench." if n else "No new fields written (check 'Overwrite' to replace existing values).")
                     )
                     if result.extraction_notes:
-                        st.caption(f"AI notes: {result.extraction_notes}")
+                        prefix = ("Parser" if "no AI used" in result.extraction_notes
+                                  else "AI notes")
+                        st.caption(f"{prefix}: {result.extraction_notes}")
                     _render_qa_report(fp, c)
                     _render_extracted(result.extracted, c)
 
         # ---- Show ingestion log ----
         _render_ingestion_log(fp, c)
+
+
+def _render_needs_api_key(reason: str, fp: Path) -> None:
+    """Actionable no-key panel: explain what still works without a key, and
+    let the operator paste one right here (saved to .env, never committed)."""
+    st.warning(
+        "\U0001f512 This document needs AI extraction \u2014 " + reason + ". "
+        "Excel/CSV rent rolls and T-12s parse automatically without a key; "
+        "PDFs and unusual layouts use Claude and need one.")
+    with st.form(f"docing_key_{fp.name}", clear_on_submit=False):
+        st.markdown(
+            "Get a key at [console.anthropic.com](https://console.anthropic.com/settings/keys), "
+            "paste it below, and re-run the extraction. It is stored in the "
+            "server's local `.env` (gitignored) \u2014 one time, all features.")
+        entered = st.text_input("Anthropic API key", type="password",
+                                key=f"docing_key_input_{fp.name}",
+                                placeholder="sk-ant-...")
+        if st.form_submit_button("Save key", type="primary"):
+            cleaned = (entered or "").strip()
+            if not cleaned.startswith("sk-") or len(cleaned) < 20:
+                st.error("That doesn't look like an Anthropic key "
+                         "(they start with sk-). Nothing saved.")
+            else:
+                import os
+                from ui.exec_summary import _save_api_key_to_env
+                env_path = Path(__file__).resolve().parent.parent / ".env"
+                _save_api_key_to_env(env_path, cleaned)
+                os.environ["ANTHROPIC_API_KEY"] = cleaned
+                st.success("Key saved. Click the Extract button again.")
 
 
 def _render_qa_report(folder: Path, c: dict) -> None:

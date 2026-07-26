@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.6.1.0.0 — 2026-07-26  ·  Excel/CSV ingestion without an API key
+- **Fixes "Extraction failed: ANTHROPIC_API_KEY not set"** on Excel rent-roll
+  upload. A spreadsheet is structured data — running it through a language
+  model added cost, latency, a key requirement, and a failure mode for a task
+  a parser does perfectly. Per §11 (LLM-optional core), tabular files now
+  parse **deterministically first**; AI is only needed for PDFs and layouts
+  the parser can't recognize.
+- **`core/rent_roll_parser.py`** — rent-roll parser (header detection across
+  many real-world column spellings, currency/date coercion, title and totals
+  rows skipped, status inferred from tenant when no status column, first
+  matching sheet in a multi-sheet workbook) and a conservative label-matching
+  T-12 parser (rightmost totals column; requires the revenue/opex/NOI
+  backbone or returns nothing — never a half-parsed statement). Both emit
+  confidence 0.98 and still pass through the Module E extraction-QA gate.
+- The parsed `rentRoll` block is committed **unwrapped** (a wrapped summary
+  would have crashed the rent-roll tiles); scalar fields keep full provenance
+  wrapping.
+- **No key + unparseable/PDF** now shows an actionable panel — what still
+  works without a key, where to get one, and a paste-it-here form that saves
+  to `.env` — instead of a raw red error.
+- Verification: 13 new parser/routing tests (incl. the exact reported
+  scenario: `Crossroads ... Rent Roll ... .xlsx` with no key ingests
+  successfully) + headless renders of the no-key panel and the full
+  xlsx → ingest → sources.json → rent-roll-UI chain. Full suite: 621 passed;
+  the 4 pre-existing data-dependent failures unchanged.
+
+---
+
 ## V5.6.0.0.0 — 2026-07-26  ·  Module E: Doc AI & Underwriting hardening (§6.3)
 **V5-P4 second half — extraction QA, anomaly detection, named stress tests,
 DD→verdict tightening. All deterministic (§11): zero model calls.**
