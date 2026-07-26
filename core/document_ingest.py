@@ -251,15 +251,51 @@ def extract_text_from_pdf(pdf_path: Path, max_pages: int = 30) -> list[tuple[int
 
 
 def extract_text_from_xlsx(xlsx_path: Path) -> str:
-    """Concat all sheet contents to plain text."""
-    import openpyxl
-    wb = openpyxl.load_workbook(xlsx_path, read_only=True, data_only=True)
-    chunks = []
-    for sheet in wb.worksheets:
-        chunks.append(f"\n--- SHEET: {sheet.title} ---\n")
-        for row in sheet.iter_rows(values_only=True):
-            chunks.append("\t".join(str(c) if c is not None else "" for c in row))
-    return "\n".join(chunks)
+    """Concat all sheet contents to plain text.
+
+    openpyxl reads modern .xlsx/.xlsm; legacy .xls (BIFF) goes through xlrd.
+    Some systems export .xls bytes under an .xlsx name (and vice versa), so on
+    a format error the other reader is tried before giving up.
+    """
+    def _via_openpyxl(payload: bytes) -> str:
+        # BytesIO, not the path: openpyxl rejects a ".xls" FILENAME even when
+        # the bytes are a perfectly good .xlsx (mislabeled PM-system exports).
+        import io
+        import openpyxl
+        wb = openpyxl.load_workbook(io.BytesIO(payload), read_only=True,
+                                    data_only=True)
+        chunks = []
+        for sheet in wb.worksheets:
+            chunks.append(f"\n--- SHEET: {sheet.title} ---\n")
+            for row in sheet.iter_rows(values_only=True):
+                chunks.append("\t".join(str(c) if c is not None else "" for c in row))
+        return "\n".join(chunks)
+
+    def _via_xlrd(payload: bytes) -> str:
+        import xlrd
+        book = xlrd.open_workbook(file_contents=payload)
+        chunks = []
+        for sheet in book.sheets():
+            chunks.append(f"\n--- SHEET: {sheet.name} ---\n")
+            for r in range(sheet.nrows):
+                chunks.append("\t".join(str(c.value) if c.value != "" else ""
+                                         for c in sheet.row(r)))
+        return "\n".join(chunks)
+
+    payload = xlsx_path.read_bytes()
+    # Route by CONTENT, not extension (mislabeled exports are common):
+    # xlsx = zip ("PK"), legacy xls = OLE2 compound file (D0 CF 11 E0).
+    if payload[:4] == b"\xd0\xcf\x11\xe0":
+        readers = [_via_xlrd, _via_openpyxl]
+    else:
+        readers = [_via_openpyxl, _via_xlrd]
+    last_err: Exception | None = None
+    for reader in readers:
+        try:
+            return reader(payload)
+        except Exception as e:      # wrong format for this reader - try the other
+            last_err = e
+    raise last_err if last_err else RuntimeError("no spreadsheet reader available")
 
 
 def extract_text_from_csv(csv_path: Path) -> str:
@@ -310,14 +346,33 @@ def ingest_document(
     (spec 11: the core runs with AI off). The model handles PDFs and layouts
     the parser can't recognize.
     """
-    text = extract_document_text(file_path)
-    if not text or text.startswith("[extraction error"):
+    try:
+        size = file_path.stat().st_size
+    except OSError:
+        size = 0
+    if size == 0:
         return IngestionResult(
             document_type="unknown",
             source_doc=file_path.name,
             extracted={},
             confidence=0.0,
-            error=f"could not extract text from {file_path.name}",
+            error=("EMPTY_FILE: the uploaded file contained 0 bytes. This "
+                   "usually means it is a cloud-only OneDrive/SharePoint "
+                   "placeholder or was dragged straight from an email "
+                   "preview. Open it once on this computer (or File > Save "
+                   "As to the Desktop), then upload that copy."),
+        )
+
+    text = extract_document_text(file_path)
+    if not text or text.startswith("[extraction error"):
+        cause = text[len("[extraction error: "):-1] if text else "the file produced no readable text"
+        return IngestionResult(
+            document_type="unknown",
+            source_doc=file_path.name,
+            extracted={},
+            confidence=0.0,
+            error=(f"could not read {file_path.name} - {cause}. If this is a "
+                   "very old .xls export, re-save it as .xlsx and upload again."),
         )
 
     if document_type is None:

@@ -241,3 +241,50 @@ def test_commit_roundtrip_feeds_the_rent_roll_ui(tmp_path, monkeypatch):
     detect_anomalies(sources)
     report = run_qa(sources)
     assert not report.errors, [c.detail for c in report.errors]
+
+
+# ----------------------------------------------- hostile-file resilience
+
+def test_zero_byte_upload_gives_a_plain_explanation(tmp_path, monkeypatch):
+    """THE reported bug (round 2): a 0-byte upload (cloud-only OneDrive
+    placeholder / drag-from-email) must produce a human explanation, never
+    'could not extract text from ...'."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    f = tmp_path / "Crossroads Townhomes - T12 - 05.2026 - Corrected.xlsx"
+    f.write_bytes(b"")
+    result = di.ingest_document(f)
+    assert not result.is_success
+    assert result.error.startswith("EMPTY_FILE")
+    assert "OneDrive" in result.error and "0 bytes" in result.error
+
+
+def test_garbage_bytes_named_xlsx_fail_cleanly(tmp_path, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    f = tmp_path / "corrupt rent roll.xlsx"
+    f.write_bytes(b"this is not a zip archive at all" * 10)
+    result = di.ingest_document(f)          # must not raise
+    assert not result.is_success
+    assert "could not read" in result.error
+    assert result.error != "could not extract text from corrupt rent roll.xlsx"
+
+
+def test_xlsx_bytes_with_xls_extension_still_parse(tmp_path, monkeypatch):
+    """PM systems mislabel exports; the reader chain must recover."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    real = _write_rent_roll_xlsx(tmp_path / "real.xlsx")
+    mislabeled = tmp_path / "rent roll export.xls"
+    mislabeled.write_bytes(real.read_bytes())
+    result = di.ingest_document(mislabeled)
+    assert result.is_success, result.error
+    assert result.extracted["rentRoll"]["summary"]["totalUnits"] == 26
+
+
+def test_empty_file_beats_every_other_error_path(tmp_path, monkeypatch):
+    """Empty PDF and empty CSV get the same explanation - the check runs
+    before any format-specific reader."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    for name in ("t12.pdf", "rent roll.csv", "om.xlsx"):
+        f = tmp_path / name
+        f.write_bytes(b"")
+        result = di.ingest_document(f)
+        assert result.error.startswith("EMPTY_FILE"), name

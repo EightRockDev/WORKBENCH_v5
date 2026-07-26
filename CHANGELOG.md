@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.6.1.1.0 — 2026-07-26  ·  Bulletproof uploads (empty / legacy / mislabeled files)
+- **Fixes "could not extract text from ... .xlsx"** on the reported upload. The
+  file card showed **0.0B** — the browser sent an empty file (typical of a
+  cloud-only OneDrive/SharePoint placeholder or a drag straight from an email
+  preview). The app accepted the 0 bytes and failed downstream with a useless
+  message.
+- **0-byte uploads are now caught at the door**: the panel refuses them with a
+  plain explanation (open the file once / Save As to Desktop, re-upload) and
+  never overwrites a previously-stored good copy. A second backstop inside
+  `ingest_document` catches empty files arriving by any other path.
+- **Spreadsheets are routed by CONTENT, not file extension.** xlsx is a zip
+  (`PK`), legacy xls is an OLE2 file — the readers are chosen by those magic
+  bytes, with fallback to the other reader. This fixes: real `.xls` files
+  (xlrd), `.xls` bytes mislabeled `.xlsx` and vice versa (common from PM
+  systems), and openpyxl's refusal to open a good xlsx that merely has an
+  `.xls` filename. Corrupt bytes fail with a named cause + "re-save as .xlsx"
+  hint — never a traceback.
+- Verification: 4 new hostile-file tests (0-byte xlsx/pdf/csv, garbage bytes,
+  mislabeled extension round-trip) + full-app headless boot. Suite: 625 passed;
+  the 4 pre-existing data-dependent failures unchanged.
+
+---
+
 ## V5.6.1.0.0 — 2026-07-26  ·  Excel/CSV ingestion without an API key
 - **Fixes "Extraction failed: ANTHROPIC_API_KEY not set"** on Excel rent-roll
   upload. A spreadsheet is structured data — running it through a language

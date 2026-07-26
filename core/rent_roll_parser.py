@@ -99,15 +99,34 @@ def _to_date_str(value: Any) -> str | None:
 
 
 def _load_rows(path: Path) -> list[list[Any]]:
-    """All rows of the first data-bearing sheet (xlsx) or the csv."""
+    """All rows of the first data-bearing sheet (xlsx/xls) or the csv.
+
+    Never raises: an unreadable or empty file returns [] and the caller
+    reports "not parseable" instead of crashing. Legacy .xls goes through
+    xlrd; a mislabeled extension falls through to the other reader.
+    """
     suffix = path.suffix.lower()
+    try:
+        if path.stat().st_size == 0:
+            return []
+    except OSError:
+        return []
+
     if suffix == ".csv":
         import csv
-        with path.open(newline="", encoding="utf-8", errors="replace") as fh:
-            return [row for row in csv.reader(fh)]
-    if suffix in (".xlsx", ".xlsm", ".xls"):
+        try:
+            with path.open(newline="", encoding="utf-8", errors="replace") as fh:
+                return [row for row in csv.reader(fh)]
+        except (OSError, csv.Error):
+            return []
+
+    def _via_openpyxl(payload: bytes) -> list[list[Any]]:
+        # BytesIO, not the path: openpyxl rejects a ".xls" FILENAME even when
+        # the bytes are a perfectly good .xlsx (mislabeled PM-system exports).
+        import io
         import openpyxl
-        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        wb = openpyxl.load_workbook(io.BytesIO(payload), read_only=True,
+                                    data_only=True)
         best: list[list[Any]] = []
         for sheet in wb.worksheets:
             rows = [list(r) for r in sheet.iter_rows(values_only=True)]
@@ -116,6 +135,39 @@ def _load_rows(path: Path) -> list[list[Any]]:
             if len(rows) > len(best):
                 best = rows
         return best
+
+    def _via_xlrd(payload: bytes) -> list[list[Any]]:
+        import xlrd
+        book = xlrd.open_workbook(file_contents=payload)
+        best: list[list[Any]] = []
+        for sheet in book.sheets():
+            rows = [[(c.value if c.value != "" else None) for c in sheet.row(r)]
+                    for r in range(sheet.nrows)]
+            if _find_header(rows) is not None:
+                return rows
+            if len(rows) > len(best):
+                best = rows
+        return best
+
+    if suffix in (".xlsx", ".xlsm", ".xls"):
+        try:
+            payload = path.read_bytes()
+        except OSError:
+            return []
+        # Route by CONTENT, not extension: xlsx is a zip (PK..), legacy xls
+        # is an OLE2 compound file (D0 CF 11 E0).
+        if payload[:2] == b"PK":
+            readers = [_via_openpyxl, _via_xlrd]
+        elif payload[:4] == b"\xd0\xcf\x11\xe0":
+            readers = [_via_xlrd, _via_openpyxl]
+        else:
+            readers = [_via_openpyxl, _via_xlrd]
+        for reader in readers:
+            try:
+                return reader(payload)
+            except Exception:
+                continue
+        return []
     return []
 
 

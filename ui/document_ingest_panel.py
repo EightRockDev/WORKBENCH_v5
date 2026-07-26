@@ -59,10 +59,24 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
             )
 
         if uploaded is not None:
+            payload = bytes(uploaded.getbuffer())
+            if not payload:
+                # A 0-byte upload is almost always a cloud-only OneDrive/
+                # SharePoint placeholder or a file dragged straight out of an
+                # email preview - the browser sends the stub, not the content.
+                st.error(
+                    f"**{uploaded.name} arrived empty (0 bytes)** - nothing "
+                    "to extract. This usually means the file is a cloud-only "
+                    "OneDrive placeholder or was dragged from an email "
+                    "preview. Open it once in Excel (or File > Save As to "
+                    "the Desktop), then upload that copy.")
+                _render_ingestion_log(fp, c)
+                return
+
             target_dir = fp / "ingest-uploads"
             target_dir.mkdir(parents=True, exist_ok=True)
             target = target_dir / uploaded.name
-            target.write_bytes(uploaded.getbuffer())
+            target.write_bytes(payload)
 
             if st.button(
                 f"🤖 Extract from {uploaded.name}",
@@ -75,6 +89,8 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
 
                 if result.error and result.error.startswith("NEEDS_API_KEY"):
                     _render_needs_api_key(result.error.split(": ", 1)[-1], fp)
+                elif result.error and result.error.startswith("EMPTY_FILE"):
+                    st.error("Nothing to extract - " + result.error.split(": ", 1)[-1])
                 elif result.error:
                     st.error(f"Extraction failed: {result.error}")
                 elif not result.is_success:
