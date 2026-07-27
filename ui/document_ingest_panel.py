@@ -58,59 +58,184 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
                 key=f"docing_overwrite_{fp.name}",
             )
 
+        doc_type = None if dt_override == "auto" else dt_override
+
         if uploaded is not None:
             payload = bytes(uploaded.getbuffer())
             if not payload:
-                # A 0-byte upload is almost always a cloud-only OneDrive/
-                # SharePoint placeholder or a file dragged straight out of an
-                # email preview - the browser sends the stub, not the content.
+                # The browser sent a 0-byte stub (cloud-only OneDrive file or
+                # a drag straight out of an email preview). No website can
+                # read those - but THIS app runs on the same machine as the
+                # file, so the from-disk picker below reads it directly.
                 st.error(
-                    f"**{uploaded.name} arrived empty (0 bytes)** - nothing "
-                    "to extract. This usually means the file is a cloud-only "
-                    "OneDrive placeholder or was dragged from an email "
-                    "preview. Open it once in Excel (or File > Save As to "
-                    "the Desktop), then upload that copy.")
-                _render_ingestion_log(fp, c)
-                return
+                    f"**The browser sent {uploaded.name} as 0 bytes** (this "
+                    "happens with OneDrive cloud-only files and email "
+                    "drag-outs - the content never reaches any website). "
+                    "**Use \"Pull from this computer\" below instead** - it "
+                    "reads the file straight from disk and doesn't care "
+                    "where it's stored.")
+            else:
+                target_dir = fp / "ingest-uploads"
+                target_dir.mkdir(parents=True, exist_ok=True)
+                target = target_dir / uploaded.name
+                target.write_bytes(payload)
+                if st.button(
+                    f"🤖 Extract from {uploaded.name}",
+                    key=f"docing_run_{fp.name}",
+                    type="primary",
+                ):
+                    _run_extraction(target, doc_type, overwrite, fp, c)
 
-            target_dir = fp / "ingest-uploads"
-            target_dir.mkdir(parents=True, exist_ok=True)
-            target = target_dir / uploaded.name
-            target.write_bytes(payload)
-
-            if st.button(
-                f"🤖 Extract from {uploaded.name}",
-                key=f"docing_run_{fp.name}",
-                type="primary",
-            ):
-                with st.spinner(f"Extracting fields from {uploaded.name}..."):
-                    doc_type = None if dt_override == "auto" else dt_override
-                    result = di.ingest_document(target, document_type=doc_type)
-
-                if result.error and result.error.startswith("NEEDS_API_KEY"):
-                    _render_needs_api_key(result.error.split(": ", 1)[-1], fp)
-                elif result.error and result.error.startswith("EMPTY_FILE"):
-                    st.error("Nothing to extract - " + result.error.split(": ", 1)[-1])
-                elif result.error:
-                    st.error(f"Extraction failed: {result.error}")
-                elif not result.is_success:
-                    st.warning("No fields extracted.")
-                else:
-                    n = di.commit_to_sources_json(fp, result, overwrite=overwrite)
-                    st.success(
-                        f"Extracted {n} field(s) from {result.source_doc} "
-                        f"(type: {result.document_type}). "
-                        + ("Saved into the workbench." if n else "No new fields written (check 'Overwrite' to replace existing values).")
-                    )
-                    if result.extraction_notes:
-                        prefix = ("Parser" if "no AI used" in result.extraction_notes
-                                  else "AI notes")
-                        st.caption(f"{prefix}: {result.extraction_notes}")
-                    _render_qa_report(fp, c)
-                    _render_extracted(result.extracted, c)
+        _render_disk_picker(fp, c, doc_type, overwrite)
 
         # ---- Show ingestion log ----
         _render_ingestion_log(fp, c)
+
+
+_DOC_SUFFIXES = (".xlsx", ".xlsm", ".xls", ".csv", ".pdf")
+
+
+def _run_extraction(target: Path, doc_type, overwrite: bool, fp: Path, c: dict) -> None:
+    """Ingest one on-disk file and render the outcome. Shared by the
+    browser-upload path and the from-disk picker."""
+    with st.spinner(f"Extracting fields from {target.name}..."):
+        result = di.ingest_document(target, document_type=doc_type)
+
+    if result.error and result.error.startswith("NEEDS_API_KEY"):
+        _render_needs_api_key(result.error.split(": ", 1)[-1], fp)
+    elif result.error and result.error.startswith("EMPTY_FILE"):
+        st.error("Nothing to extract - " + result.error.split(": ", 1)[-1])
+    elif result.error:
+        st.error(f"Extraction failed: {result.error}")
+    elif not result.is_success:
+        st.warning("No fields extracted.")
+    else:
+        n = di.commit_to_sources_json(fp, result, overwrite=overwrite)
+        st.success(
+            f"Extracted {n} field(s) from {result.source_doc} "
+            f"(type: {result.document_type}). "
+            + ("Saved into the workbench." if n else
+               "No new fields written (check 'Overwrite' to replace existing values).")
+        )
+        if result.extraction_notes:
+            prefix = ("Parser" if "no AI used" in result.extraction_notes
+                      else "AI notes")
+            st.caption(f"{prefix}: {result.extraction_notes}")
+        _render_qa_report(fp, c)
+        _render_extracted(result.extracted, c)
+
+
+def _candidate_files(root: Path, limit: int = 30) -> list[Path]:
+    """Documents under `root` (one level of subfolders), newest first."""
+    hits: list[Path] = []
+    try:
+        entries = list(root.iterdir())
+    except OSError:
+        return []
+    for entry in entries:
+        try:
+            if entry.is_file() and entry.suffix.lower() in _DOC_SUFFIXES:
+                hits.append(entry)
+            elif entry.is_dir() and not entry.name.startswith("."):
+                for sub in entry.iterdir():
+                    if sub.is_file() and sub.suffix.lower() in _DOC_SUFFIXES:
+                        hits.append(sub)
+        except OSError:
+            continue
+    hits.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+    return hits[:limit]
+
+
+def _default_scan_roots(fp: Path) -> list[Path]:
+    """Places documents usually land on the host, in scan order."""
+    roots = [fp]                                   # the property folder itself
+    home = Path.home()
+    for name in ("Downloads", "Desktop", "Documents"):
+        d = home / name
+        if d.is_dir():
+            roots.append(d)
+    return roots
+
+
+def _render_disk_picker(fp: Path, c: dict, doc_type, overwrite: bool) -> None:
+    """Read a document straight from this computer's disk - no browser upload.
+
+    Exists because the browser cannot read cloud-only OneDrive placeholders
+    or files dragged from an email preview (they arrive as 0 bytes). The app
+    runs on the same machine as the files, so a direct disk read sidesteps
+    the browser entirely - and opening a OneDrive placeholder from Python
+    makes Windows download the real content automatically.
+    """
+    with st.expander("📂 Pull from this computer instead (no upload needed)",
+                     expanded=False):
+        st.caption(
+            "Reads the file straight from disk - works no matter where it's "
+            "stored (OneDrive included). Showing the newest documents from "
+            "the property folder, Downloads, Desktop and Documents; or paste "
+            "any full path.")
+        typed = st.text_input(
+            "File or folder path (optional)",
+            key=f"docing_disk_path_{fp.name}",
+            placeholder=r"C:\Users\you\Downloads\Crossroads T12.xlsx  (or a folder)",
+        )
+
+        typed_path = Path(typed.strip().strip('"')) if typed.strip() else None
+        if typed_path is not None and typed_path.is_file():
+            candidates = [typed_path]
+        elif typed_path is not None and typed_path.is_dir():
+            candidates = _candidate_files(typed_path)
+            if not candidates:
+                st.warning(f"No documents (.xlsx/.xls/.csv/.pdf) found in {typed_path}")
+        elif typed_path is not None:
+            st.warning(f"Path not found: {typed_path}")
+            candidates = []
+        else:
+            candidates = []
+            seen: set = set()
+            for root in _default_scan_roots(fp):
+                for f in _candidate_files(root, limit=10):
+                    r = str(f.resolve())
+                    if r not in seen:
+                        seen.add(r)
+                        candidates.append(f)
+            candidates = candidates[:30]
+
+        if not candidates:
+            return
+
+        def _label(f: Path) -> str:
+            try:
+                kb = f.stat().st_size / 1024
+                stamp = dt.datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+            except OSError:
+                kb, stamp = 0, "?"
+            return f"{f.name}  ({kb:,.0f} KB, {stamp})"
+
+        chosen = st.selectbox(
+            "Pick the document", candidates, format_func=_label,
+            key=f"docing_disk_pick_{fp.name}")
+        if st.button("🤖 Extract from this file", type="primary",
+                     key=f"docing_disk_run_{fp.name}"):
+            source = Path(chosen)
+            try:
+                payload = source.read_bytes()
+            except OSError as exc:
+                st.error(f"Could not read {source.name}: {exc}")
+                return
+            if not payload:
+                st.error(
+                    f"{source.name} really is 0 bytes on disk. If it lives in "
+                    "OneDrive, right-click it in File Explorer and choose "
+                    "'Always keep on this device', wait for the green check, "
+                    "then try again.")
+                return
+            # Copy into the property folder so the doc travels with the deal.
+            target_dir = fp / "ingest-uploads"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target = target_dir / source.name
+            if source.resolve() != target.resolve():
+                target.write_bytes(payload)
+            _run_extraction(target, doc_type, overwrite, fp, c)
 
 
 def _render_needs_api_key(reason: str, fp: Path) -> None:

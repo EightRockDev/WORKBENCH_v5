@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.6.2.0.0 — 2026-07-26  ·  "Pull from this computer" — uploads without the browser
+- **The 0-byte upload dead-end is gone.** When the browser sends an empty file
+  (cloud-only OneDrive placeholder, drag-out of an email preview — the content
+  never reaches ANY website in those cases), the panel now points to a new
+  **📂 Pull from this computer** picker instead of just explaining the problem.
+- The picker reads the document **straight from the server's disk**, so where
+  the file is stored genuinely doesn't matter: it lists the newest documents
+  from the property folder, Downloads, Desktop and Documents automatically
+  (with size + timestamp so an empty stub is visible), accepts any pasted file
+  or folder path, copies the chosen file into the deal folder, and runs the
+  exact same extraction pipeline. A Python disk-read also triggers OneDrive's
+  own download of placeholder files — the one thing a browser can't do.
+- Upload and disk paths now share one extraction runner, so QA reports,
+  provenance, and the no-API-key panel behave identically on both.
+- Verification: headless end-to-end drive of the picker — typed path →
+  Extract click → 6 T-12 fields committed to sources.json ("no AI used"),
+  plus auto-scan discovery with no typing. Suite: 625 passed; the 4
+  pre-existing data-dependent failures unchanged.
+
+---
+
 ## V5.6.1.1.0 — 2026-07-26  ·  Bulletproof uploads (empty / legacy / mislabeled files)
 - **Fixes "could not extract text from ... .xlsx"** on the reported upload. The
   file card showed **0.0B** — the browser sent an empty file (typical of a
