@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.7.0.0.0 — 2026-07-27  ·  §9 serving, step 1: Windows service + office-network access
+- **`install-service.bat`** (self-elevating) → `deploy/windows/install-lan-service.ps1`:
+  installs NSSM if needed, registers the **EightRockWorkbench** Windows service
+  (auto-start at boot, auto-restart on crash, rotated logs in `logs/`), binds
+  Streamlit to `0.0.0.0:8501`, opens the firewall for **private networks only**,
+  and prints the LAN URLs. Refuses to install from a OneDrive/Dropbox path
+  (spec §9.2). `uninstall-service.bat` reverts cleanly.
+- **Passcode gate** (`core/session.require_passcode`): with `ER_APP_PASSCODE`
+  set — the installer requires one, ≥6 chars — every visitor sees a passcode
+  screen before anything else, in every auth mode (dev-login included), with a
+  constant-time comparison. Interim protection until Auth0/Entra OIDC lands;
+  no-op when the variable is unset, so local dev is unchanged.
+- `docs/ACCESS.md`: new "Office-network access" section.
+- Verification: 6 gate tests (no-op when unconfigured, blocks, wrong-code
+  stays blocked, unlock persists across reruns, whitespace forgiven, gate runs
+  before auth branching). Suite: 631 passed; 4 pre-existing data-dependent
+  failures unchanged.
+
+---
+
 ## V5.6.2.1.0 — 2026-07-26  ·  Location-independent install (movable folder)
 - **The workbench folder can now live anywhere on disk.** Every double-click
   launcher (`start-workbench`, `update-workbench`, `setup-inbox`,

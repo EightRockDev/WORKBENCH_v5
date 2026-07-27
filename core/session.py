@@ -33,12 +33,43 @@ def auth_configured(st) -> bool:
         return False
 
 
+def require_passcode(st) -> None:
+    """Shared-passcode gate for network exposure before real sign-in exists.
+
+    Active whenever ``ER_APP_PASSCODE`` is set (written by the LAN-service
+    installer). Runs BEFORE any auth-mode branching, so exposing the app on
+    the office network is never wide-open even in dev-login or legacy mode.
+    Once OIDC is configured the real login supersedes this; the variable can
+    then be removed from ``.env``.
+    """
+    import hmac
+
+    expected = os.getenv("ER_APP_PASSCODE", "").strip()
+    if not expected:
+        return
+    if st.session_state.get("_passcode_ok"):
+        return
+    st.markdown("## \U0001f512 Eight Rock Workbench")
+    st.caption("Enter the workbench passcode to continue.")
+    with st.form("passcode_gate"):
+        entered = st.text_input("Passcode", type="password", key="_passcode_in")
+        submitted = st.form_submit_button("Enter", type="primary")
+    if submitted and hmac.compare_digest(entered.strip().encode(), expected.encode()):
+        st.session_state["_passcode_ok"] = True
+        return          # unlocked - render the app in this same run
+    if submitted:
+        st.error("Wrong passcode.")
+    st.stop()
+
+
 def resolve_user(st) -> AdminUser | None:
     """Return the active user, or None when the app should run ungated.
 
-    May call ``st.stop()`` internally (login / pending-approval screens) when a
-    real OIDC provider is configured.
+    May call ``st.stop()`` internally (passcode gate / login / pending-approval
+    screens).
     """
+    require_passcode(st)  # network-exposure gate; no-op unless configured
+
     if not pg.is_configured():
         return None  # legacy single-user mode; no pilot auth
 

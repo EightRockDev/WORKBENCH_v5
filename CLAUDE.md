@@ -116,6 +116,8 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
   (AC-A4). Owner Intelligence panel on the Diligence tab (FR-A1). 12 tests green.
 
 **Next (per BUILD-ORDER.md)**
+0. §9 serving step 2: Caddy + domain + Auth0/Entra OIDC for true public HTTPS
+   (step 1 — NSSM service + LAN + passcode gate — shipped in V5.7.0.0.0).
 1. **Live vendor verification**: owner has a BatchData key; run
    `diagnose-skiptrace.bat` on the server and tune `core/skiptrace/live.py` field
    mapping against the real response. VA SCC CIS scraper still unverified (build

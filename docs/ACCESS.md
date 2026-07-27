@@ -91,3 +91,18 @@ users reach it from anywhere:
 Caddy fetches a free HTTPS certificate automatically, and users reach
 `https://workbench.eight-rock.com`. See `docs/SETUP.md` and
 `deploy/windows/README.md` for the full runbook.
+
+## Office-network access (Windows service) — LIVE
+
+One-time, on the server: double-click **`install-service.bat`** (it asks for
+admin rights and a **passcode** of your choosing). From then on:
+
+- The workbench **starts itself with Windows** — no console window, survives
+  reboots and log-offs. Logs land in `logs\service-*.log`.
+- Open it from **any device on the office network** at
+  `http://<server-ip>:8501` (the installer prints the exact address).
+- Every visitor must enter the **passcode** first (`ER_APP_PASSCODE` in
+  `.env`). This is the interim gate until Auth0/Entra sign-in is wired; the
+  firewall rule is private-network-only, so nothing is exposed to the
+  internet.
+- To go back to the double-click console workflow: `uninstall-service.bat`.
