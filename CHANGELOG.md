@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.6.2.1.0 — 2026-07-26  ·  Location-independent install (movable folder)
+- **The workbench folder can now live anywhere on disk.** Every double-click
+  launcher (`start-workbench`, `update-workbench`, `setup-inbox`,
+  `set-skiptrace-key`, `diagnose-skiptrace`) previously hardcoded
+  `C:\WORKBENCH_V5`; they now resolve their own folder (`%~dp0`) and pass it
+  to the PowerShell scripts, so moving the folder breaks nothing.
+- **`ER_PROPERTIES_ROOT`** (optional, in `.env`): points the deal-folder store
+  (`Properties/`) at any path — second drive, NAS — independent of the app
+  folder. Unset keeps the classic sibling layout.
+- Everything else was already relocation-safe: `.env`, `data/workbench.db`,
+  the ETL resolver and git are app-relative; PostgreSQL is a separate service
+  reached via `DATABASE_URL`. Caveats documented: don't place the folder in
+  OneDrive/Dropbox (spec §9.2 — sync corrupts SQLite/git), move `Properties/`
+  alongside (or set the override), and delete `.venv` after a move so `uv`
+  rebuilds its absolute paths.
+- Suite: 625 passed; the 4 pre-existing data-dependent failures unchanged.
+
+---
+
 ## V5.6.2.0.0 — 2026-07-26  ·  "Pull from this computer" — uploads without the browser
 - **The 0-byte upload dead-end is gone.** When the browser sends an empty file
   (cloud-only OneDrive placeholder, drag-out of an email preview — the content

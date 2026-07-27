@@ -4,7 +4,7 @@ REM  Eight Rock Workbench - updater. Double-click to get the latest
 REM  code, dependencies, and database schema. Safe to run anytime.
 REM  Your .env (keys/DB password) is never touched - it is gitignored.
 REM ===================================================================
-cd /d C:\WORKBENCH_V5
+cd /d "%~dp0"
 
 echo === Stopping any running app so files are not locked ===
 taskkill /F /IM streamlit.exe >nul 2>&1
@@ -26,7 +26,7 @@ uv sync
 
 echo.
 echo === Applying database migration (idempotent) ===
-powershell -ExecutionPolicy Bypass -File "C:\WORKBENCH_V5\deploy\windows\migrate-db.ps1"
+powershell -ExecutionPolicy Bypass -File "%~dp0deploy\windows\migrate-db.ps1" -AppDir "%~dp0."
 
 echo.
 echo === Current version ===

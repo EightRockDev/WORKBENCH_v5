@@ -24,6 +24,7 @@ import tempfile
 import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Any
 
@@ -39,8 +40,14 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # work transparently. In local mode the storage layer just translates back
 # to the same absolute path PROPERTIES_ROOT points at, so behavior is
 # identical to the pre-storage-abstraction code.
+# `ER_PROPERTIES_ROOT` overrides the location outright, so the deal folders
+# can live anywhere on disk (second drive, NAS mount) independent of where
+# the app folder sits. Unset -> the classic sibling layout.
+_props_override = os.environ.get("ER_PROPERTIES_ROOT", "").strip()
 PROPERTIES_ROOT = (
-    Path(__file__).resolve().parent.parent.parent / "Properties"
+    Path(_props_override).expanduser()
+    if _props_override
+    else Path(__file__).resolve().parent.parent.parent / "Properties"
 )
 
 # Workbench root (parent of Properties/) — used to compute storage-relative paths.

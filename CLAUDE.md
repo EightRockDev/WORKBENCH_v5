@@ -30,7 +30,11 @@ engine (Python/Streamlit), which this repo was seeded from.
 ## Deployment target & owner context
 
 - **Pilot host:** an always-on **Windows** server. The app lives at
-  **`C:\WORKBENCH_V5`** (local disk — never OneDrive, per spec §9.2).
+  **`C:\WORKBENCH_V5`** (local disk — never OneDrive, per spec §9.2). Since
+  V5.6.2.1.0 the folder is movable: launchers use `%~dp0`, and
+  `ER_PROPERTIES_ROOT` can point the deal store anywhere. After a move,
+  delete `.venv` (uv rebuilds it) and keep `Properties/` a sibling unless
+  the override is set.
 - **Owner is non-technical on infra.** Give exact, copy-pasteable, one-thing-at-
   a-time steps. Known traps to pre-empt every time:
   - After any installer, **open a NEW PowerShell window** before using the tool
