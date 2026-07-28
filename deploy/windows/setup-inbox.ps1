@@ -34,7 +34,19 @@ if ($tokenKey) {
     Write-Host "              disconnect any mailbox already connected)." -ForegroundColor Green
 } else {
     Write-Host "ER_TOKEN_KEY: generating a new encryption key..." -ForegroundColor Yellow
-    $tokenKey = (uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())") | Select-Object -Last 1
+    $uv = (Get-Command uv -ErrorAction SilentlyContinue).Source
+    if (-not $uv) {
+        $spots = @("$env:USERPROFILE\.local\bin\uv.exe",
+                   "$env:LOCALAPPDATA\Programs\uv\uv.exe")
+        $spots += Get-ChildItem "C:\Users" -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { Join-Path $_.FullName ".local\bin\uv.exe" }
+        $uv = $spots | Where-Object { Test-Path $_ } | Select-Object -First 1
+    }
+    if (-not $uv) {
+        Write-Host "uv not found. Run start-workbench.bat once first (it installs uv)." -ForegroundColor Red
+        exit 1
+    }
+    $tokenKey = (& $uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())") | Select-Object -Last 1
     $tokenKey = $tokenKey.Trim()
     if (-not $tokenKey) {
         Write-Host "Could not generate a key. Is uv installed and did 'uv sync' run?" -ForegroundColor Red

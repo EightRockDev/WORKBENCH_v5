@@ -80,10 +80,17 @@ Write-Host "   Saved to .env (passcode hidden)."
 Step "Registering service '$svc'"
 $uv = (Get-Command uv -ErrorAction SilentlyContinue).Source
 if (-not $uv) {
-    $guess = Get-ChildItem "$env:USERPROFILE\.local\bin\uv.exe","$env:LOCALAPPDATA\Programs\uv\uv.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($guess) { $uv = $guess.FullName }
+    # uv installs per-user; check this user's spots, then every profile on
+    # the machine (the app may have been set up under a different account).
+    $spots = @("$env:USERPROFILE\.local\bin\uv.exe",
+               "$env:LOCALAPPDATA\Programs\uv\uv.exe",
+               "$env:USERPROFILE\.cargo\bin\uv.exe")
+    $spots += Get-ChildItem "C:\Users" -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { @((Join-Path $_.FullName ".local\bin\uv.exe"),
+                           (Join-Path $_.FullName "AppData\Local\Programs\uv\uv.exe")) }
+    $uv = $spots | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
-if (-not $uv) { throw "uv.exe not found. Is uv installed?" }
+if (-not $uv) { throw "uv.exe not found anywhere. Run start-workbench.bat once (it auto-installs uv), then re-run this." }
 
 $logDir = Join-Path $AppDir "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null

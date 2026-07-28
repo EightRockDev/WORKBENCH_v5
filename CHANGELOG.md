@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.7.0.1.0 — 2026-07-27  ·  Launchers work from any Windows account (uv resolution)
+- **Fixes `'uv' is not recognized`** when a second Windows account (brian2)
+  runs a workbench set up under another (BrianT) — uv installs per-user, so
+  the new account's PATH doesn't have it.
+- New shared helper **`_find-uv.bat`**: checks PATH, this user's install
+  spots, then **every profile on the machine**, and finally **auto-installs
+  uv via winget** for the current account. `start-workbench`,
+  `update-workbench` and `diagnose-skiptrace` all use it; the service
+  installer and inbox setup PowerShell scripts scan all profiles the same way.
+- Note: the first run under a new account may take a minute while `uv sync`
+  rebuilds the environment for that account.
+
+---
+
 ## V5.7.0.0.1 — 2026-07-27  ·  Updater works from any Windows account
 - `update-workbench.bat` now adds its own folder to git's `safe.directory`
   list before syncing, so a folder created under one Windows account

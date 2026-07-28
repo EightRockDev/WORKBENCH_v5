@@ -28,7 +28,8 @@ if errorlevel 1 (
 
 echo.
 echo === Installing any new dependencies ===
-uv sync
+call "%~dp0_find-uv.bat" || (pause & exit /b 1)
+"%UV%" sync
 
 echo.
 echo === Applying database migration (idempotent) ===
