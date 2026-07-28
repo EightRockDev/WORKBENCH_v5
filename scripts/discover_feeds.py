@@ -53,6 +53,21 @@ KNOWN_ROOTS: dict[str, list[str]] = {
 
 AGOL_SEARCH = "https://www.arcgis.com/sharing/rest/search"
 
+# Generous city bounding boxes (lat_min, lat_max, lng_min, lng_max) - used to
+# verify a candidate layer's records actually sit in the claimed city. AGOL
+# search returns plenty of look-alike layers from OTHER cities (a "Hampton"
+# query surfaced Chesapeake blast-zone parcels); ingesting those under the
+# wrong city would poison the spine with wrong-FIPS ids.
+CITY_BBOX = {
+    "Virginia Beach": (36.55, 36.95, -76.23, -75.87),
+    "Chesapeake":     (36.50, 36.90, -76.50, -76.15),
+    "Hampton":        (36.98, 37.14, -76.48, -76.23),
+    "Portsmouth":     (36.77, 36.91, -76.43, -76.27),
+    "Suffolk":        (36.55, 36.95, -76.78, -76.32),
+    "Norfolk":        (36.82, 36.98, -76.35, -76.16),
+    "Newport News":   (36.93, 37.22, -76.65, -76.35),
+}
+
 MAX_SERVICES_PER_ROOT = 200
 MAX_LAYERS_PER_SERVICE = 25
 TIMEOUT = 25
@@ -75,6 +90,39 @@ def score_fields(field_names: list[str]) -> tuple[int, dict[str, str]]:
     if "apn" not in mapped:
         score = 0                      # no parcel id -> no deterministic 8R id
     return score, mapped
+
+
+def sample_in_city(layer_url: str, city: str, fetch) -> bool | None:
+    """Sample a few real records and check they sit inside the city's box.
+
+    True = verified in-city; False = verified OUT of city (reject);
+    None = could not verify (no coordinates in the sample - keep, but note).
+    """
+    bbox = CITY_BBOX.get(city)
+    if bbox is None:
+        return None
+    data = fetch(f"{layer_url}/query", {
+        "where": "1=1", "outFields": "*", "resultRecordCount": 5,
+        "returnGeometry": "true", "outSR": 4326}) or {}
+    lat_min, lat_max, lng_min, lng_max = bbox
+    inside = outside = 0
+    for feat in (data.get("features") or []):
+        geo = feat.get("geometry") or {}
+        lat = geo.get("y")
+        lng = geo.get("x")
+        if lat is None or lng is None:
+            rings = geo.get("rings") or []
+            if rings and rings[0]:
+                lng, lat = rings[0][0][0], rings[0][0][1]
+        if lat is None or lng is None:
+            continue
+        if lat_min <= lat <= lat_max and lng_min <= lng <= lng_max:
+            inside += 1
+        else:
+            outside += 1
+    if inside + outside == 0:
+        return None
+    return inside >= outside
 
 
 def _get_json(url: str, params: dict | None = None) -> dict | None:
@@ -144,22 +192,33 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json) -> dict[str,
             sources.append(walk_root(root, fetch))
         sources.append(search_agol(city, fetch))
         seen_urls: set[str] = set()
+        rejected: list[str] = []
         for source in sources:
             for layer_url, name, fields in source:
                 if layer_url in seen_urls:
                     continue
                 seen_urls.add(layer_url)
                 score, mapped = score_fields(fields)
-                if score >= MIN_SCORE:
-                    candidates.append((score, {
-                        "market": city, "state": "VA", "county": city,
-                        "kind": "assessor", "platform": "arcgis",
-                        "url": layer_url, "status": "live",
-                        "note": f"auto-discovered: {name}; score {score}; "
-                                f"fields {sorted(mapped)}",
-                    }))
+                if score < MIN_SCORE:
+                    continue
+                verdict = sample_in_city(layer_url, city, fetch)
+                if verdict is False:
+                    rejected.append(f"{name}: records are NOT in {city}")
+                    continue
+                geo_note = "" if verdict else "; geo-verify inconclusive"
+                if "units" in mapped:
+                    score += 3        # unit-bearing layers first, always
+                candidates.append((score, {
+                    "market": city, "state": "VA", "county": city,
+                    "kind": "assessor", "platform": "arcgis",
+                    "url": layer_url, "status": "live",
+                    "note": f"auto-discovered: {name}; score {score}; "
+                            f"fields {sorted(mapped)}{geo_note}",
+                }))
         candidates.sort(key=lambda t: -t[0])
-        out[city] = [spec for _s, spec in candidates[:3]]
+        out[city] = [spec for _s, spec in candidates[:2]]
+        for r in rejected:
+            print(f"   [rejected - wrong city] {city}: {r}")
     return out
 
 

@@ -67,3 +67,58 @@ def test_walk_and_discover_pick_only_qualifying_layers():
 def test_offline_portal_yields_empty_not_crash():
     found = discover(cities=("Suffolk",), fetch=lambda *a, **k: None)
     assert found == {"Suffolk": []}
+
+
+def test_wrong_city_layer_is_rejected_by_geo_sample():
+    """A 'Hampton' candidate whose records sit in Chesapeake must be dropped
+    (the real discovery run surfaced exactly this)."""
+    def fake(url, params=None):
+        if not url.startswith("https://x.test"):
+            return {}
+        if url.endswith("/rest/services"):
+            return {"folders": [], "services": [
+                {"name": "Parcels", "type": "FeatureServer"}]}
+        if url.endswith("Parcels/FeatureServer"):
+            return {"layers": [{"id": 0, "name": "Parcels"}]}
+        if url.endswith("Parcels/FeatureServer/0"):
+            return {"fields": [{"name": "GPIN"}, {"name": "LIVUNIT"},
+                               {"name": "USECODE"}]}
+        if url.endswith("/query"):
+            # Chesapeake coordinates, far south of Hampton's box
+            return {"features": [
+                {"geometry": {"x": -76.30, "y": 36.70}} for _ in range(5)]}
+        return {}
+    from scripts.discover_feeds import discover
+    found = discover(cities=("Hampton",),
+                     extra_roots=("https://x.test/rest/services",), fetch=fake)
+    assert found["Hampton"] == []
+
+
+def test_in_city_layer_passes_geo_sample_and_units_rank_first():
+    def fake(url, params=None):
+        if not url.startswith("https://x.test"):
+            return {}
+        if url.endswith("/rest/services"):
+            return {"folders": [], "services": [
+                {"name": "AddrPts", "type": "FeatureServer"},
+                {"name": "ParcelsNoUnits", "type": "FeatureServer"}]}
+        if url.endswith("FeatureServer"):
+            return {"layers": [{"id": 0, "name": url.split("/")[-2]}]}
+        if url.endswith("AddrPts/FeatureServer/0"):
+            return {"fields": [{"name": "GPIN"}, {"name": "UNITS"},
+                               {"name": "USECODE"}, {"name": "ADDRESS"}]}
+        if url.endswith("ParcelsNoUnits/FeatureServer/0"):
+            return {"fields": [{"name": "GPIN"}, {"name": "USECODE"},
+                               {"name": "YRBLT"}, {"name": "ADDRESS"},
+                               {"name": "OWNER"}, {"name": "TOTALVALUE"}]}
+        if url.endswith("/query"):
+            # Chesapeake box coordinates
+            return {"features": [
+                {"geometry": {"x": -76.28, "y": 36.72}} for _ in range(5)]}
+        return {}
+    from scripts.discover_feeds import discover
+    found = discover(cities=("Chesapeake",),
+                     extra_roots=("https://x.test/rest/services",), fetch=fake)
+    specs = found["Chesapeake"]
+    assert len(specs) == 2
+    assert "AddrPts" in specs[0]["url"]        # unit-bearing layer ranks first

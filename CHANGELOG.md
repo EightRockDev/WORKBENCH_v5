@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.5.0.0 — 2026-07-28  ·  Feed discovery round 2: geo-verification
+The first discovery run on the host found real gold — Chesapeake's own
+Address Points layers carry **units** (score 14) — but also exposed the trap:
+ArcGIS Online search returns look-alike layers from OTHER cities (Hampton's
+"candidates" were Chesapeake blast-zone parcels). Ingesting those would
+poison the spine with wrong-city, wrong-FIPS ids.
+- **Every candidate is now geo-verified**: 5 sample records are pulled from
+  the layer and checked against the claimed city's bounding box. Records in
+  the wrong city → candidate rejected and printed as such. Point and polygon
+  geometries both handled; layers whose samples carry no coordinates pass
+  with a "geo-verify inconclusive" note.
+- Unit-bearing layers now outrank unit-less ones (+3), and only the top 2 per
+  city are written, so Chesapeake's Address Points beat everything else.
+- 2 new tests (wrong-city rejection with the exact Hampton/Chesapeake shape;
+  in-city pass with units ranked first). Suite: 670 passed; 4 pre-existing
+  data-dependent failures unchanged.
+
+---
+
 ## V5.8.4.0.0 — 2026-07-28  ·  Phase 0 round 4: feed discovery + range addresses
 Host round 3 proved the pipeline (Newport News 119/121 matched, 98%) and
 isolated the two remaining blockers: five cities have **no unit-bearing feed**
