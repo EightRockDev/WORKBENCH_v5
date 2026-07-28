@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.6.0.0 — 2026-07-28  ·  Phase 0 round 5: address-point units + proximity matching
+Host round 4: match 41.9%, covered-cities 70.6%, +13 footprint recoveries —
+and two decisive discoveries in the unmapped keys:
+- **Address-point feeds carry units as ROW MULTIPLICITY.** Chesapeake's
+  `UNIT` and Norfolk's `unit_number` fields mean those feeds emit one row per
+  APARTMENT sharing a parcel id. The spine builder now derives
+  `units = rows per (parcel, feed)` when no explicit unit field exists —
+  max across feeds so overlapping sources never double-count, and an
+  explicit unit field always wins. The report prints "units derived from
+  address points".
+- **Proximity last-resort matching**: a large complex's marketing pin and
+  its parcel centroid can sit hundreds of meters apart; after address and
+  strict-radius passes fail, the nearest **multifamily** entity within
+  0.25 mi now matches (never a random house — MF-only), reported as
+  "by proximity".
+- Round-4 aliases: `PRPRTYDSCRP` → use code; `UNIT`/`unit_number` (address
+  designators, NOT counts) and NN's current/previous value + subdivision
+  keys join the ignore list.
+- 4 new tests. Suite: 674 passed; 4 pre-existing data-dependent failures
+  unchanged.
+
+---
+
 ## V5.8.5.0.0 — 2026-07-28  ·  Feed discovery round 2: geo-verification
 The first discovery run on the host found real gold — Chesapeake's own
 Address Points layers carry **units** (score 14) — but also exposed the trap:

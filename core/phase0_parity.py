@@ -41,6 +41,7 @@ import config
 GATE_COMP_OVERLAP = 0.90     # spec 7.3 P0-2
 GATE_RENT_DELTA = 0.05
 MATCH_RADIUS_MILES = 0.075   # ~120 m - same parcel, different geocoders
+PROXIMITY_RADIUS_MILES = 0.25  # last-resort: big complexes geocode far apart
 UNIT_TOLERANCE_PCT = 0.10
 UNIT_TOLERANCE_ABS = 2
 YEAR_TOLERANCE = 2
@@ -84,6 +85,7 @@ class ParityReport:
     matched: int = 0
     matched_by_address: int = 0
     matched_by_latlng: int = 0
+    matched_by_proximity: int = 0
     unit_agreement: int = 0
     unit_disagreement: int = 0
     year_agreement: int = 0
@@ -138,7 +140,8 @@ class ParityReport:
         lines = [
             f"legacy multifamily rows:  {self.legacy_multifamily:,}",
             f"matched to the 8R spine:  {self.matched:,} ({self.match_rate:.1%})"
-            f"  [{self.matched_by_address:,} by address, {self.matched_by_latlng:,} by lat/lng]",
+            f"  [{self.matched_by_address:,} by address, {self.matched_by_latlng:,}"
+            f" by lat/lng, {self.matched_by_proximity:,} by proximity]",
             (f"unit counts agree:        {self.unit_agreement:,}/{unit_total:,}"
              if unit_total else "unit counts agree:        n/a"),
             (f"year built agrees:        {self.year_agreement:,}/{year_total:,}"
@@ -293,6 +296,20 @@ def match_spines(legacy: list[dict], spine_8r: list[dict],
                 if d <= best_d:
                     best, best_d = cand, d
             hit, via = best, "latlng"
+            if hit is None:
+                # Last resort: a big complex's marketing pin and its parcel
+                # centroid can sit hundreds of meters apart. Take the nearest
+                # MULTIFAMILY entity within the wide radius - never a random
+                # house.
+                best, best_d = None, PROXIMITY_RADIUS_MILES
+                for cand in with_coords:
+                    if not _is_mf_entity(cand):
+                        continue
+                    d = _distance_miles(row["latitude"], row["longitude"],
+                                        cand["lat"], cand["lng"])
+                    if d <= best_d:
+                        best, best_d = cand, d
+                hit, via = best, "proximity"
         if hit is None:
             continue
         crosswalk[row["property_id"]] = hit["property_id"]
@@ -300,8 +317,10 @@ def match_spines(legacy: list[dict], spine_8r: list[dict],
         report.matched_by_city[city] = report.matched_by_city.get(city, 0) + 1
         if via == "address":
             report.matched_by_address += 1
-        else:
+        elif via == "latlng":
             report.matched_by_latlng += 1
+        else:
+            report.matched_by_proximity += 1
         _score_fields(row, hit, report)
     return crosswalk
 

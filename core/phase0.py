@@ -85,8 +85,8 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                  "propertyclass", "propclass", "classcd", "class", "classcode",
                  "zoning", "propertyusecode", "usedesc", "usedescription",
                  "landusedescription", "propertyclassdescription", "usecd",
-                 "classdscrp", "usedscrp", "proptype", "propertytype",
-                 "statecode", "luc"),
+                 "classdscrp", "usedscrp", "prprtydscrp", "proptype",
+                 "propertytype", "statecode", "luc"),
     "assessed_value": ("assessedvalue", "totalvalue", "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
                        "currenttotalvalue", "totalcurrentvalue", "assessment",
@@ -114,7 +114,9 @@ _IGNORED_KEYS = re.compile(
     r"documentnumber|assessmntdist|calcacreage|acreage|landsquarefootage|"
     r"mapbookpg|project|hubzone|pspzone|cityowned|censustract|censusblock|"
     r"consideration|grantee|grantor|extension|commercialbuildingarea|"
-    r"nghbrhdcd|vahu6|zone|pstladdress1|pstlcity|pstlzip5|pstlstate)$")
+    r"nghbrhdcd|vahu6|zone|pstladdress1|pstlcity|pstlzip5|pstlstate|"
+    r"unit|unitnumber|cntlndval|cntimpval|prvlndval|prvimpval|subdivcd|"
+    r"subdivdscrp|statedarea)$")
 
 # Use-code fragments that identify multifamily in municipal rolls.
 _MF_USE_FRAGMENTS = (
@@ -169,6 +171,7 @@ class CoverageReport:
     written: int = 0
     skipped_no_parcel_or_latlng: int = 0
     provisional_ids: int = 0
+    units_from_points: int = 0
     by_city: Counter = field(default_factory=Counter)
     mf_by_city: Counter = field(default_factory=Counter)
     unmapped_keys: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
@@ -190,6 +193,7 @@ class CoverageReport:
             f"multifamily (>= {MIN_MF_UNITS} units): {self.multifamily:,}",
             f"written to properties_8r:  {self.written:,}",
             f"provisional (no-APN) ids:  {self.provisional_ids:,}",
+            f"units derived from address points: {self.units_from_points:,}",
             f"unusable (no parcel/latlng): {self.skipped_no_parcel_or_latlng:,}",
             f"P0-1 coverage:             {self.coverage:.1%}"
             f"  (gate >= {GATE_COVERAGE:.0%}: {'PASS' if self.gate_passed else 'not yet'})",
@@ -330,13 +334,13 @@ CREATE INDEX IF NOT EXISTS ix_8r_form ON properties_8r (r8_form);
 
 
 def _iter_muni_assessor_rows(conn: sqlite3.Connection,
-                             cities: tuple[str, ...]) -> Iterator[tuple[str, str, dict]]:
+                             cities: tuple[str, ...]) -> Iterator[tuple[str, str, str, dict]]:
     marks = ",".join("?" for _ in cities)
     cur = conn.execute(
-        f"""SELECT market, state, record FROM muni_records
+        f"""SELECT market, state, source_url, record FROM muni_records
              WHERE kind LIKE 'assessor%' AND market IN ({marks})""",
         cities)
-    for market, state, record in cur:
+    for market, state, source, record in cur:
         try:
             raw = json.loads(record) if record else {}
         except json.JSONDecodeError:
@@ -347,7 +351,7 @@ def _iter_muni_assessor_rows(conn: sqlite3.Connection,
             raw = {**raw["attributes"],
                    **({"x": geo.get("x"), "y": geo.get("y")} if geo else {})}
         if isinstance(raw, dict):
-            yield market, state or "VA", raw
+            yield market, state or "VA", source or "", raw
 
 
 def build_spine(db_path: Path,
@@ -363,7 +367,12 @@ def build_spine(db_path: Path,
         if rebuild:
             conn.execute("DELETE FROM properties_8r")
         now = dt.datetime.now().isoformat(timespec="seconds")
-        for city, state, raw in _iter_muni_assessor_rows(conn, cities):
+        # Address-point feeds (Chesapeake/Norfolk) emit ONE ROW PER APARTMENT
+        # sharing the parcel id - the row count per (parcel, feed) IS the
+        # unit count. Track it; max across feeds so overlapping sources
+        # never double-count.
+        point_counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        for city, state, source, raw in _iter_muni_assessor_rows(conn, cities):
             report.scanned += 1
             row = build_row(city, state, raw, report)
             if row is None:
@@ -374,12 +383,9 @@ def build_spine(db_path: Path,
                 continue
             report.normalized += 1
             report.by_city[city] += 1
+            point_counts[row.property_id][source] += 1
             if spine.is_provisional(row.property_id):
                 report.provisional_ids += 1
-            mf = is_multifamily(row.use_code, row.units)
-            if mf:
-                report.multifamily += 1
-                report.mf_by_city[city] += 1
             conn.execute(
                 """INSERT INTO properties_8r
                    (property_id, fips, apn, address, city, state, zip, units,
@@ -401,6 +407,26 @@ def build_spine(db_path: Path,
                  row.assessed_value, row.owner_name, row.lat, row.lng,
                  row.provenance, now))
             report.written += 1
+
+        # Derive units from address-point multiplicity where no explicit
+        # unit field exists: N apartment-points on one parcel = N units.
+        derived = 0
+        for pid, per_source in point_counts.items():
+            n = max(per_source.values())
+            if n >= 2:
+                cur = conn.execute(
+                    "UPDATE properties_8r SET units = ? "
+                    " WHERE property_id = ? AND units IS NULL", (n, pid))
+                derived += cur.rowcount
+        report.units_from_points = derived
+
+        # Multifamily counts are computed from the FINISHED table (derived
+        # units included), not incrementally.
+        for city, units, use_code in conn.execute(
+                "SELECT city, units, use_code FROM properties_8r"):
+            if is_multifamily(use_code, units):
+                report.multifamily += 1
+                report.mf_by_city[city] += 1
         conn.commit()
     return report
 

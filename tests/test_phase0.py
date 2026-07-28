@@ -281,3 +281,55 @@ def test_norfolk_five_part_address_assembles(tmp_path):
             "SELECT address, sqft FROM properties_8r").fetchone()
     assert addr == "921A W 21st ST"
     assert sqft == 24_000.0
+
+
+def test_units_derived_from_address_point_multiplicity(tmp_path):
+    """Chesapeake/Norfolk address-point feeds: one row PER APARTMENT sharing
+    the parcel id - the row count IS the unit count."""
+    db = tmp_path / "workbench.db"
+    rows = []
+    for i in range(24):
+        rows.append(("Chesapeake", "VA", "assessor", {
+            "MAP_PARCEL": "CH-PTS-1", "address": "100 Battlefield Blvd",
+            "UNIT": str(i + 1), "PROPCLASS": "APARTMENT"}))
+    _seed_muni(db, rows)
+    report = phase0.build_spine(db)
+    assert report.units_from_points == 1
+    with sqlite3.connect(db) as conn:
+        units = conn.execute("SELECT units FROM properties_8r").fetchone()[0]
+    assert units == 24
+    assert report.multifamily == 1        # derived units count toward the gate
+
+
+def test_overlapping_feeds_do_not_double_count_points(tmp_path):
+    """The same parcel appearing in TWO feeds must take the max per-feed
+    count, not the sum."""
+    db = tmp_path / "workbench.db"
+    rows = []
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE muni_records (
+            id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+            kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+        for src, n in (("https://a.test/0", 12), ("https://b.test/0", 1)):
+            for i in range(n):
+                conn.execute(
+                    "INSERT INTO muni_records (market,state,county,kind,"
+                    "source_url,record) VALUES (?,?,?,?,?,?)",
+                    ("Chesapeake", "VA", "Chesapeake", "assessor", src,
+                     json.dumps({"MAP_PARCEL": "CH-DUP-1",
+                                 "PROPCLASS": "APARTMENT", "UNIT": str(i)})))
+        conn.commit()
+    report = phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        units = conn.execute("SELECT units FROM properties_8r").fetchone()[0]
+    assert units == 12
+
+
+def test_explicit_units_beat_point_counting(tmp_path):
+    """A feed with a real unit field is never overridden by row counting."""
+    db = tmp_path / "workbench.db"
+    _seed_muni(db, [_norfolk("EXPL-1", units=48), _norfolk("EXPL-1", units=48)])
+    report = phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        units = conn.execute("SELECT units FROM properties_8r").fetchone()[0]
+    assert units == 48

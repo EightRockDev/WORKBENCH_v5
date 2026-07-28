@@ -259,3 +259,27 @@ def test_aln_street_number_ranges_match_the_first_parcel():
     """Legacy '700-780 Granby St' must key like the assessor's '700 Granby'."""
     assert pp.normalize_address("700-780 Granby St") == \
            pp.normalize_address("700 Granby Street")
+
+
+def test_proximity_fallback_matches_distant_geocodes(tmp_path):
+    """A complex whose legacy pin sits ~0.2 mi from the parcel centroid must
+    still match - to the nearest MULTIFAMILY entity only."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 ("ALN-FAR", "Faraway Pines", "1 Marketing Way", "Norfolk",
+                  100, 1985, 1200.0, "B", 36.9000, -76.3000))
+    # A single-family house NEARER than the complex (but outside the strict
+    # 120 m radius) - the proximity pass must ignore it.
+    conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                 ("8R-51710-house000001", "5 Oak St", "Norfolk",
+                  1, 1950, 36.9019, -76.3000, "SINGLE FAMILY"))
+    # The real complex, ~0.2 miles away with a different address.
+    conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                 ("8R-51710-cplx0000001", "900 Parcel Rd", "Norfolk",
+                  100, 1985, 36.9028, -76.3000, "APARTMENT"))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert report.matched == 1
+    assert report.matched_by_proximity == 1
+    assert report.unit_agreement == 1
