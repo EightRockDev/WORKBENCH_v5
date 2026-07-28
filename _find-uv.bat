@@ -26,6 +26,15 @@ if not defined UV (
 
 if not defined UV (
   echo uv is not installed for this Windows account - installing it now...
+  REM Official standalone installer - no winget needed (winget is often
+  REM broken/uninitialized on a freshly created Windows account).
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://astral.sh/uv/install.ps1 | iex"
+  if exist "%USERPROFILE%\.local\bin\uv.exe" set "UV=%USERPROFILE%\.local\bin\uv.exe"
+  if not defined UV if exist "%LOCALAPPDATA%\Programs\uv\uv.exe" set "UV=%LOCALAPPDATA%\Programs\uv\uv.exe"
+)
+
+if not defined UV (
+  echo The standalone installer did not work - trying winget...
   winget install --id=astral-sh.uv -e --accept-source-agreements --accept-package-agreements
   if exist "%USERPROFILE%\.local\bin\uv.exe" set "UV=%USERPROFILE%\.local\bin\uv.exe"
   if not defined UV if exist "%LOCALAPPDATA%\Programs\uv\uv.exe" set "UV=%LOCALAPPDATA%\Programs\uv\uv.exe"

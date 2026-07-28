@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.7.0.1.1 — 2026-07-27  ·  uv auto-install without winget
+- The uv auto-install now uses the official standalone installer
+  (`astral.sh/uv/install.ps1`) first — winget is frequently broken or
+  uninitialized on a freshly created Windows account (msstore agreement
+  prompt + 0x80071130), exactly what the brian2 account hit. winget remains
+  the fallback.
+
+---
+
 ## V5.7.0.1.0 — 2026-07-27  ·  Launchers work from any Windows account (uv resolution)
 - **Fixes `'uv' is not recognized`** when a second Windows account (brian2)
   runs a workbench set up under another (BrianT) — uv installs per-user, so
