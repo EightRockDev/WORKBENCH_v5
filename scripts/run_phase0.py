@@ -42,10 +42,30 @@ def main() -> int:
     print(report.summary())
     print()
     if report.gate_passed:
-        print("P0-1 GATE PASSED - next step is P0-2 shadow parity.")
+        print("P0-1 GATE PASSED.")
     else:
         print("P0-1 gate not met yet. The 'attribute keys with no mapping'")
         print("list above is what to send back for tuning.")
+
+    # ---- P0-2: shadow parity against the legacy table, when present ------
+    import sqlite3
+    from core import phase0_parity
+    with sqlite3.connect(db) as conn:
+        try:
+            legacy_rows = conn.execute(
+                "SELECT count(*) FROM properties WHERE units >= 10").fetchone()[0]
+        except sqlite3.Error:
+            legacy_rows = 0
+    print()
+    if legacy_rows == 0:
+        print("P0-2 shadow parity: skipped - no legacy `properties` table in this")
+        print("database. Point ER_WORKBENCH_DB at the v2.4.1 workbench.db (which")
+        print("holds BOTH tables after this build step) to run the comparison.")
+        return 0
+    print(f"P0-2 shadow parity: comparing against {legacy_rows:,} legacy rows...")
+    parity = phase0_parity.run_parity(db, db)
+    print()
+    print(parity.summary())
     return 0
 
 

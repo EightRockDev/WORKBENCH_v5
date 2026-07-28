@@ -127,7 +127,7 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    `core/phase0.py` + `run-phase0.bat` (needs the v2.4.1 workbench.db with the
    3.9M muni_records rows copied to `data\` on the host, or `ER_WORKBENCH_DB`).
    `phase0-sweep.bat` = AC-P0-1 ALN sweep (569 refs in 40 files today).
-   Remaining: P0-2 shadow parity, P0-3 cutover, P0-4 purge.
+   P0-2 shadow parity SHIPPED (V5.8.1.0.0, wired into run-phase0.bat). Remaining: P0-3 cutover, P0-4 purge.
 
 ## Built so far (phases complete)
 - V5-P0.5 pilot (auth, admin, concurrency), V5-Walk §10 multi-tenancy + §10.4 UI

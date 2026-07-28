@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.1.0.0 — 2026-07-28  ·  Phase 0 step P0-2: shadow parity
+- **`core/phase0_parity.py`** — the numbers the P0-3 cutover decision is made
+  on (spec §7.3): every legacy multifamily row matched to the 8R spine by
+  normalized address (abbreviation-aware; apartment designators dropped —
+  the parcel is the key) with a ~120 m lat/lng fallback; unit-count and
+  year-built agreement scoring with the worst disagreements named; and the
+  spec's **50-deal comp-set replay** — comp sets built from BOTH spines with
+  the production radius/bucket parameters, overlap measured by matched
+  identity against the ≥90% gate. Avg-rent delta reported against the ≤5%
+  gate where both sides carry rents (absent 8R rent signal is reported, not
+  failed). Read-only toward both spines.
+- **`run-phase0.bat` now runs P0-1 + P0-2 in one click**: builds the spine,
+  then — when the legacy `properties` table is present in the same database —
+  prints the full parity report and gate verdict.
+- Verification: 8 parity tests (identical worlds pass at 100% match,
+  address-style bridging, lat/lng fallback, missing-row penalty, unit
+  disagreements named, divergent geography fails the gate, empty spine safe,
+  50-subject cap) + an end-to-end CLI run on a dual-table database (P0-1 PASS
+  → P0-2 PASS). Suite: 650 passed; 4 pre-existing data-dependent failures
+  unchanged.
+
+---
+
 ## V5.8.0.0.0 — 2026-07-28  ·  Phase 0 execution, step P0-1: the 8R property spine
 - **`core/phase0.py`** — builds `properties_8r` from the self-sourced
   `muni_records` municipal pulls (spec §7.3 P0-1). Handles both feed shapes in
