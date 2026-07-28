@@ -199,3 +199,40 @@ def test_subject_matched_to_non_mf_entity_is_skipped_not_keyerror(tmp_path):
     report = pp.run_parity(db, db)          # must not raise
     assert report.matched == 16             # the mystery row still matches
     assert report.gate_passed               # and doesn't poison the replay
+
+
+def test_multi_parcel_complex_units_recovered_by_footprint(tmp_path):
+    """'700 Acqua: legacy 258 vs 8R 20' - the community spans parcels at
+    700/710/720... with different street numbers. The footprint total (all
+    parcels within ~200m) must recover the unit agreement."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 ("ALN-W", "Acqua at Windy Knolls", "700 Acqua Dr", "Norfolk",
+                  258, 1988, 1300.0, "B", 36.91, -76.31))
+    for i in range(6):    # six buildings, 43 units each, distinct numbers
+        conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                     (f"8R-51710-w{i:011x}", f"{700 + 10 * i} Acqua Drive",
+                      "Norfolk", 43, 1988, 36.91 + i * 0.0002, -76.31,
+                      "APARTMENT"))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert report.matched == 1
+    assert report.unit_agreement == 1
+    assert report.unit_disagreement == 0
+    assert report.footprint_recovered == 1
+
+
+def test_per_city_breakdown_names_cities_without_mf_data(tmp_path):
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    _seed_world(conn, n=10)
+    # A Virginia Beach legacy row with NO 8R counterpart at all.
+    conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 ("ALN-VB", "VB Mystery", "1 Atlantic Ave", "Virginia Beach",
+                  100, 1985, 1400.0, "B", 36.85, -75.98))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    text = report.summary()
+    assert "Virginia Beach" in text
+    assert "no usable multifamily data" in text

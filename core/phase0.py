@@ -64,6 +64,10 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "address_street": ("propertystreetname", "streetname", "situsstreet"),
     "address_suffix": ("propertystreettype", "streettype", "stsuffix",
                        "streetsuffix"),
+    "address_direction": ("propertystreetdirection", "streetdirection",
+                          "stdir", "predirection"),
+    "address_number_suffix": ("propertystreetnumbersuffix",
+                              "streetnumbersuffix"),
     "city": ("city", "situscity", "propertycity", "municipality"),
     "zip": ("zip", "zipcode", "situszip", "propertyzip", "postalcode",
             "addresszip"),
@@ -75,12 +79,14 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                    "effectiveyear", "improvementyearbuilt"),
     "sqft": ("sqft", "squarefeet", "buildingsqft", "bldgsqft", "grosssqft",
              "totalsqft", "finishedsqft", "gba", "grossarea", "bldgarea",
-             "sfla", "totallivingarea", "livingarea", "resflrarea"),
+             "sfla", "totallivingarea", "livingarea", "resflrarea",
+             "residentialfinishedliving"),
     "use_code": ("usecode", "use", "landuse", "landusecode", "propertyuse",
                  "propertyclass", "propclass", "classcd", "class", "classcode",
                  "zoning", "propertyusecode", "usedesc", "usedescription",
                  "landusedescription", "propertyclassdescription", "usecd",
-                 "classdscrp", "proptype", "propertytype", "statecode", "luc"),
+                 "classdscrp", "usedscrp", "proptype", "propertytype",
+                 "statecode", "luc"),
     "assessed_value": ("assessedvalue", "totalvalue", "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
                        "currenttotalvalue", "totalcurrentvalue", "assessment",
@@ -107,7 +113,8 @@ _IGNORED_KEYS = re.compile(
     r"landuseyesorno|fy|fiscalyear|deedbk|deedpg|deedbook|deedpage|"
     r"documentnumber|assessmntdist|calcacreage|acreage|landsquarefootage|"
     r"mapbookpg|project|hubzone|pspzone|cityowned|censustract|censusblock|"
-    r"consideration|grantee|extension)$")
+    r"consideration|grantee|grantor|extension|commercialbuildingarea|"
+    r"nghbrhdcd|vahu6|zone|pstladdress1|pstlcity|pstlzip5|pstlstate)$")
 
 # Use-code fragments that identify multifamily in municipal rolls.
 _MF_USE_FRAGMENTS = (
@@ -227,10 +234,13 @@ def normalize_record(city: str, state: str, raw: dict,
     # ever matches the legacy spine.
     addr = str(out.get("address") or "").strip()
     number = str(out.get("address_number") or "").strip()
+    num_sfx = str(out.get("address_number_suffix") or "").strip()
+    direction = str(out.get("address_direction") or "").strip()
     street = str(out.get("address_street") or "").strip()
     suffix = str(out.get("address_suffix") or "").strip()
     if not addr and street:
-        out["address"] = " ".join(x for x in (number, street, suffix) if x)
+        house = f"{number}{num_sfx}" if number else ""
+        out["address"] = " ".join(x for x in (house, direction, street, suffix) if x)
     elif number and addr and not addr[0].isdigit():
         out["address"] = f"{number} {addr}"
     return out

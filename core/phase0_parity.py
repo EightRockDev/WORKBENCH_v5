@@ -90,6 +90,11 @@ class ParityReport:
     rent_pairs: int = 0
     rent_delta_sum: float = 0.0
     worst_unit_mismatches: list[str] = field(default_factory=list)
+    legacy_by_city: dict = field(default_factory=dict)
+    matched_by_city: dict = field(default_factory=dict)
+    spine_mf_by_city: dict = field(default_factory=dict)
+    footprint_recovered: int = 0    # unit disagreements resolved by summing
+                                    # all 8R parcels within the complex radius
 
     @property
     def match_rate(self) -> float:
@@ -131,6 +136,19 @@ class ParityReport:
             "",
             f"P0-2 GATE: {'PASSED - ready for P0-3 cutover' if self.gate_passed else 'not met yet'}",
         ]
+        if self.footprint_recovered:
+            lines.append(f"(+{self.footprint_recovered:,} unit disagreements "
+                         "resolved by multi-parcel footprint totals)")
+        # Per-city truth: a city whose feed carries no unit data can never
+        # match or replay - naming it turns a mystery into a to-do.
+        lines.append("")
+        lines.append("By city (legacy rows -> matched | spine MF entities):")
+        for city in sorted(self.legacy_by_city, key=lambda c: -self.legacy_by_city[c]):
+            n_leg = self.legacy_by_city.get(city, 0)
+            n_match = self.matched_by_city.get(city, 0)
+            n_mf = self.spine_mf_by_city.get(city, 0)
+            note = "" if n_mf else "   <- feed has no usable multifamily data"
+            lines.append(f"  {city:15} {n_leg:5,} -> {n_match:5,} | {n_mf:6,}{note}")
         if self.worst_unit_mismatches:
             lines.append("")
             lines.append("Largest unit-count disagreements (check these matches):")
@@ -243,6 +261,8 @@ def match_spines(legacy: list[dict], spine_8r: list[dict],
     crosswalk: dict[str, str] = {}
     for row in legacy:
         report.legacy_multifamily += 1
+        city = row.get("city") or "?"
+        report.legacy_by_city[city] = report.legacy_by_city.get(city, 0) + 1
         key = (normalize_address(row.get("address")), (row.get("city") or "").lower())
         hit = by_addr.get(key) if key[0] else None
         via = "address"
@@ -258,6 +278,7 @@ def match_spines(legacy: list[dict], spine_8r: list[dict],
             continue
         crosswalk[row["property_id"]] = hit["property_id"]
         report.matched += 1
+        report.matched_by_city[city] = report.matched_by_city.get(city, 0) + 1
         if via == "address":
             report.matched_by_address += 1
         else:
@@ -282,6 +303,29 @@ def _score_fields(legacy: dict, r8: dict, report: ParityReport) -> None:
             report.year_agreement += 1
         else:
             report.year_disagreement += 1
+
+
+
+
+COMPLEX_RADIUS_MILES = 0.12   # ~200 m - the footprint of a garden community
+
+
+def footprint_units(legacy_row: dict, spine_8r: list[dict]) -> int | None:
+    """Total units of ALL 8R parcels within the complex radius of the legacy
+    point. Large communities sit on many parcels with different street
+    numbers (700/710/720 Acqua Dr) - address grouping alone cannot reassemble
+    them, geography can."""
+    lat, lng = legacy_row.get("latitude"), legacy_row.get("longitude")
+    if lat is None or lng is None:
+        return None
+    total = 0
+    for cand in spine_8r:
+        c_lat, c_lng = cand.get("lat"), cand.get("lng")
+        if c_lat is None or c_lng is None:
+            continue
+        if _distance_miles(lat, lng, c_lat, c_lng) <= COMPLEX_RADIUS_MILES:
+            total += int(cand.get("units") or 0)
+    return total or None
 
 
 def _comp_set(subject: dict, pool: list[dict], lat_key: str, lng_key: str) -> list[str]:
@@ -351,9 +395,40 @@ def run_parity(aln_db: Path, spine_db: Path,
     # property instead of dozens of 1-unit parcels.
     entities = aggregate_8r_parcels(spine_8r)
     crosswalk = match_spines(legacy, entities, report)
+    # Second-chance unit check: a matched complex whose entity units disagree
+    # gets its TRUE footprint total (every parcel within ~200 m, any address).
+    if report.unit_disagreement:
+        entity_by_id = {e["property_id"]: e for e in entities}
+        still_bad: list[str] = []
+        recovered = 0
+        for row in legacy:
+            r8_id = crosswalk.get(row["property_id"])
+            if r8_id is None:
+                continue
+            ent = entity_by_id.get(r8_id)
+            lu, ru = row.get("units"), (ent or {}).get("units")
+            if not lu or not ru:
+                continue
+            if abs(lu - ru) <= max(UNIT_TOLERANCE_ABS, lu * UNIT_TOLERANCE_PCT):
+                continue
+            fp = footprint_units(row, spine_8r)
+            if fp and abs(lu - fp) <= max(UNIT_TOLERANCE_ABS, lu * UNIT_TOLERANCE_PCT):
+                recovered += 1
+            else:
+                shown = fp if fp else ru
+                still_bad.append(
+                    f"{row.get('name') or row.get('address')}: legacy {lu} vs 8R {shown}")
+        if recovered:
+            report.unit_agreement += recovered
+            report.unit_disagreement -= recovered
+            report.footprint_recovered = recovered
+            report.worst_unit_mismatches = still_bad
     # The comp pool must be multifamily on BOTH sides - the legacy load is
     # already units>=10; replaying against every parcel in the county would
     # bury the true comps in single-family noise.
     mf_entities = [e for e in entities if _is_mf_entity(e)]
+    for e in mf_entities:
+        city = e.get("city") or "?"
+        report.spine_mf_by_city[city] = report.spine_mf_by_city.get(city, 0) + 1
     replay_comps(legacy, entities, mf_entities, crosswalk, report, max_subjects)
     return report

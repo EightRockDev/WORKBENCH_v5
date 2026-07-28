@@ -261,3 +261,23 @@ def test_round2_aliases_and_ignores(tmp_path):
             "SELECT zip FROM properties_8r").fetchall()}
     assert 18_000.0 in sqfts
     assert "23320" in zips
+
+
+def test_norfolk_five_part_address_assembles(tmp_path):
+    """Round 3: number + number-suffix + direction + name + type."""
+    db = tmp_path / "workbench.db"
+    row = ("Norfolk", "VA", "assessor", {
+        "gpin": "N5-1", "property_street_number": "921",
+        "property_street_number_suffix": "A",
+        "property_street_direction": "W",
+        "property_street_name": "21st", "property_street_type": "ST",
+        "livingunits": 30, "property_class_description": "APARTMENT",
+        "residential_finished_living": 24_000, "grantor": "OLD OWNER LLC"})
+    _seed_muni(db, [row])
+    report = phase0.build_spine(db)
+    assert not report.unmapped_keys.get("Norfolk")
+    with sqlite3.connect(db) as conn:
+        addr, sqft = conn.execute(
+            "SELECT address, sqft FROM properties_8r").fetchone()
+    assert addr == "921A W 21st ST"
+    assert sqft == 24_000.0

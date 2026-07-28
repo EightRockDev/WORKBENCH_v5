@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.3.0.0 — 2026-07-28  ·  Phase 0 tuning round 3 (footprint totals + per-city truth)
+Host run 3: match 39.7% (was 31%), overlap 24.5% (was 1.7%). This round fixes
+the two structural causes the report exposed:
+- **Multi-parcel complexes**: big communities span parcels with *different*
+  street numbers (700/710/720 Acqua Dr), which address grouping can't
+  reassemble. Unit checks now get a second chance via the **footprint total**
+  — every 8R parcel within ~200 m of the legacy point — and the report counts
+  how many disagreements that resolves.
+- **Per-city breakdown**: the parity report now shows legacy → matched →
+  spine-multifamily counts per city, flagging cities whose municipal feed
+  carries **no usable multifamily data** (Virginia Beach's sales layer,
+  Chesapeake's boundary layer; Hampton/Portsmouth/Suffolk have no live feed).
+  That is the real ceiling on the blended match rate — and the to-do list for
+  new feed wiring.
+- **Norfolk addresses are FIVE fields**: number + number-suffix + direction +
+  name + type ("921A W 21st ST") now assemble fully. `usedscrp` and
+  `residential_finished_living` (sqft) mapped; grantor/postal/zone keys join
+  the ignore list.
+- 3 new tests. Suite: 663 passed; 4 pre-existing data-dependent failures
+  unchanged.
+
+---
+
 ## V5.8.2.1.0 — 2026-07-28  ·  Phase 0 tuning round 2 (P0-2 crash + Norfolk 3-part addresses)
 - **Fixes the `KeyError: '8R-51550-...'` crash** in the comp replay: a legacy
   property whose 8R match carries no unit data (Chesapeake's feed has none)
