@@ -6,6 +6,12 @@ REM  Your .env (keys/DB password) is never touched - it is gitignored.
 REM ===================================================================
 cd /d "%~dp0"
 
+REM Trust this folder for git no matter which Windows account runs the
+REM update (a folder created by one user and updated by another trips
+REM git's "dubious ownership" safety check and blocks the sync).
+set "REPO_FWD=%CD:\=/%"
+git config --global --add safe.directory "%REPO_FWD%" >nul 2>&1
+
 echo === Stopping any running app so files are not locked ===
 taskkill /F /IM streamlit.exe >nul 2>&1
 
@@ -15,7 +21,7 @@ git fetch origin
 git reset --hard origin/main
 if errorlevel 1 (
   echo.
-  echo !! Could not sync. Check your internet connection and try again.
+  echo !! Could not sync. Read the git message above - it usually says exactly what to do.
   pause
   exit /b 1
 )
