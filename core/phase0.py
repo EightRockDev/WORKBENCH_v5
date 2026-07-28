@@ -49,42 +49,58 @@ GATE_COVERAGE = 0.95       # P0-1 gate from spec 7.3
 # ---------------------------------------------------------------------------
 
 _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
-    "apn": ("apn", "gpin", "parcelid", "parcel", "parcelnumber", "parcelno",
-            "pin", "mappin", "acct", "account", "accountnumber", "taxparcelid",
-            "parid", "prop_id", "propertyid", "realestateid", "reid"),
+    # Within each field, earlier aliases WIN over later ones when a record
+    # carries several (e.g. yearbuilt beats effectiveyear).
+    "apn": ("apn", "gpin", "parcelid", "parcel", "mapparcel", "parcelnumber",
+            "parcelno", "pin", "mappin", "acct", "account", "accountnumber",
+            "taxparcelid", "parid", "prop_id", "propertyid", "realestateid",
+            "reid", "lrsn"),
     "address": ("address", "situsaddress", "situs", "propertyaddress",
                 "siteaddress", "locationaddress", "location", "fulladdress",
                 "propertystreet", "streetaddress", "situsaddr", "propaddr"),
+    # Some feeds (Norfolk) split the house number from the street name.
+    "address_number": ("propertystreetnumber", "streetnumber", "housenumber",
+                       "stnum", "situsnumber"),
     "city": ("city", "situscity", "propertycity", "municipality"),
     "zip": ("zip", "zipcode", "situszip", "propertyzip", "postalcode"),
     "units": ("units", "livunit", "livingunits", "numunits", "unitcount",
               "dwellingunits", "totalunits", "resunits", "apartments",
               "numberofunits", "livunits"),
-    "year_built": ("yearbuilt", "yrbuilt", "yrblt", "yearblt", "effyearbuilt",
-                   "actualyearbuilt", "yearbuild", "ayb"),
+    "year_built": ("yearbuilt", "yrbuilt", "yrblt", "yearblt",
+                   "actualyearbuilt", "yearbuild", "ayb", "effyearbuilt",
+                   "effectiveyear"),
     "sqft": ("sqft", "squarefeet", "buildingsqft", "bldgsqft", "grosssqft",
              "totalsqft", "finishedsqft", "gba", "grossarea", "bldgarea",
              "sfla", "totallivingarea", "livingarea"),
     "use_code": ("usecode", "use", "landuse", "landusecode", "propertyuse",
-                 "propertyclass", "class", "classcode", "zoning",
-                 "propertyusecode", "usedesc", "usedescription",
-                 "landusedescription", "proptype", "propertytype",
-                 "statecode", "luc"),
+                 "propertyclass", "propclass", "classcd", "class", "classcode",
+                 "zoning", "propertyusecode", "usedesc", "usedescription",
+                 "landusedescription", "propertyclassdescription", "proptype",
+                 "propertytype", "statecode", "luc"),
     "assessed_value": ("assessedvalue", "totalvalue", "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
-                       "totalcurrentvalue", "assessment", "totalassessment",
-                       "appraisedvalue"),
-    "owner_name": ("owner", "ownername", "owner1", "primaryowner",
-                   "ownersname", "currentowner"),
+                       "currenttotalvalue", "totalcurrentvalue", "assessment",
+                       "totalassessment", "appraisedvalue"),
+    "owner_name": ("owner", "ownername", "ownernme1", "owner1",
+                   "primaryowner", "ownersname", "currentowner"),
     "lat": ("lat", "latitude", "y", "pointy", "centroidy"),
     "lng": ("lng", "lon", "long", "longitude", "x", "pointx", "centroidx"),
 }
 
-_ALIAS_LOOKUP: dict[str, str] = {
-    alias: fieldname
+_ALIAS_LOOKUP: dict[str, tuple[str, int]] = {
+    alias: (fieldname, priority)
     for fieldname, aliases in _FIELD_ALIASES.items()
-    for alias in aliases
+    for priority, alias in enumerate(aliases)
 }
+
+# Feed bookkeeping/geometry columns that carry no property data - kept out of
+# the "no mapping yet" report so it only shows real gaps.
+_IGNORED_KEYS = re.compile(
+    r"^(objectid|globalid|shape.*|.*link$|legal|legaldescription|cntrlno|"
+    r"transfer|transferdate|saledate|saleprice|landvalue|improvementvalue|"
+    r"currentlandvalue|currentimprovementvalue|priorlandvalue|"
+    r"priorimprovementvalue|vacant|government|neighborhood|state|"
+    r"landuseyesorno|fy|fiscalyear)$")
 
 # Use-code fragments that identify multifamily in municipal rolls.
 _MF_USE_FRAGMENTS = (
@@ -179,18 +195,32 @@ class CoverageReport:
 
 def normalize_record(city: str, state: str, raw: dict,
                      report: CoverageReport | None = None) -> dict[str, Any]:
-    """Map one raw municipal attribute dict onto spine fields."""
+    """Map one raw municipal attribute dict onto spine fields.
+
+    When a record carries several aliases for one field (yearbuilt AND
+    effectiveyear), the alias listed earlier in _FIELD_ALIASES wins.
+    """
     out: dict[str, Any] = {}
+    prio: dict[str, int] = {}
     for key, value in (raw or {}).items():
         if value in (None, "", " "):
             continue
-        fieldname = _ALIAS_LOOKUP.get(_norm_key(key))
-        if fieldname is None:
-            if report is not None:
+        norm = _norm_key(key)
+        hit = _ALIAS_LOOKUP.get(norm)
+        if hit is None:
+            if report is not None and not _IGNORED_KEYS.match(norm):
                 report.unmapped_keys[city][key] += 1
             continue
-        if fieldname not in out:      # first alias wins
+        fieldname, priority = hit
+        if fieldname not in out or priority < prio[fieldname]:
             out[fieldname] = value
+            prio[fieldname] = priority
+    # Norfolk-style split address: prepend the house number when the street
+    # field lacks one - without it no address ever matches the legacy spine.
+    addr = str(out.get("address") or "").strip()
+    number = str(out.get("address_number") or "").strip()
+    if number and addr and not addr[0].isdigit():
+        out["address"] = f"{number} {addr}"
     return out
 
 

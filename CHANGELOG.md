@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.2.0.0 — 2026-07-28  ·  Phase 0 tuning round 1 (from the first real host run)
+First run on the real 3.5M-record municipal database: P0-1 passed (719,981
+parcels, 5,416 HR multifamily), P0-2 didn't (31% match, 1.7% comp overlap).
+All four causes identified from the report and fixed:
+- **Norfolk's split addresses**: the feed carries the house number in
+  `property_street_number` separate from the street name — no Norfolk address
+  could ever match. The number is now joined on (new `address_number` field).
+- **Condo-fragmented complexes** ("700 Acqua: legacy 258 vs 8R 1"): a
+  community recorded as dozens of 1-unit parcels at the same situs now
+  aggregates into ONE entity (units summed, coordinate centroid) before
+  matching — with a proximity guard (~250 m clusters) so distinct properties
+  sharing a junk address, and PO boxes, never merge.
+- **Comp replay pool**: was drawing from all 719K parcels; now multifamily
+  entities only, matching the legacy pool's `units ≥ 10` basis.
+- **New aliases from the host report**: `MAP_PARCEL`, `PROPCLASS`, `CLASSCD`,
+  `property_class_description`, `OWNERNME1`, `current_total_value`,
+  `effective_year` (losing to a real `yearbuilt` via new alias priorities),
+  `lrsn`. Bookkeeping keys (OBJECTID, SHAPE.*, links, legal, sale fields) are
+  excluded from the "no mapping yet" report so it shows only real gaps.
+- 8 new tests covering each fix. Suite: 656 passed; 4 pre-existing
+  data-dependent failures unchanged.
+
+---
+
 ## V5.8.1.0.0 — 2026-07-28  ·  Phase 0 step P0-2: shadow parity
 - **`core/phase0_parity.py`** — the numbers the P0-3 cutover decision is made
   on (spec §7.3): every legacy multifamily row matched to the 8R spine by

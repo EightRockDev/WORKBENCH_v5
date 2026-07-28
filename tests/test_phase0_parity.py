@@ -16,7 +16,8 @@ def _mk_db(path):
         latitude REAL, longitude REAL)""")
     conn.execute("""CREATE TABLE properties_8r (
         property_id TEXT PRIMARY KEY, address TEXT, city TEXT,
-        units INTEGER, year_built INTEGER, lat REAL, lng REAL)""")
+        units INTEGER, year_built INTEGER, lat REAL, lng REAL,
+        use_code TEXT)""")
     return conn
 
 
@@ -39,9 +40,9 @@ def _seed_world(conn, n=30, jitter=0.0, addr_style="long", drop_8r: set | None =
             continue
         street = f"{100 + i} Granby Street" if addr_style == "long" else f"{100 + i} Granby St"
         conn.execute(
-            "INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
             (f"8R-51710-{i:012x}", street, "Norfolk",
-             20 + i, 1960 + i, lat + jitter, lng + jitter))
+             20 + i, 1960 + i, lat + jitter, lng + jitter, "APARTMENT"))
     conn.commit()
 
 
@@ -139,3 +140,42 @@ def test_replay_caps_subjects_at_fifty(tmp_path):
     conn.close()
     report = pp.run_parity(db, db)
     assert report.comp_subjects <= 50
+
+
+# ------------------------------------------------------- condo aggregation
+
+def test_condo_fragmented_complex_aggregates_to_one_entity(tmp_path):
+    """A 40-unit community recorded as 40 one-unit parcels at the same situs
+    must compare as ONE 40-unit property (the '700 Acqua: legacy 258 vs 8R 1'
+    failure from the pilot host)."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 ("ALN-C", "Acqua", "700 Acqua Dr", "Norfolk",
+                  40, 1990, 1200.0, "B", 36.90, -76.30))
+    for i in range(40):
+        conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                     (f"8R-51710-c{i:011x}", "700 Acqua Drive", "Norfolk",
+                      1, 1990, 36.90, -76.30, "CONDO HI RISE"))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert report.matched == 1
+    assert report.unit_agreement == 1        # 40 summed units vs legacy 40
+    assert report.unit_disagreement == 0
+
+
+def test_mf_pool_excludes_single_family_from_the_replay(tmp_path):
+    """Single-family parcels must not crowd the 8R comp pool."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    _seed_world(conn, n=20)
+    # Flood with SFH parcels near every subject; the replay must ignore them.
+    for i in range(300):
+        conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                     (f"8R-51710-f{i:011x}", f"{i} Elm St", "Norfolk",
+                      1, 1955, 36.85 + (i % 6) * 0.01,
+                      -76.28 - (i % 5) * 0.01, "SINGLE FAMILY"))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert report.avg_comp_overlap >= 0.90
+    assert report.gate_passed

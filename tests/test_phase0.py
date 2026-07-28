@@ -159,3 +159,65 @@ def test_missing_muni_table_reports_zero_not_crash(tmp_path):
     db = tmp_path / "empty.db"
     sqlite3.connect(db).close()
     assert phase0.has_muni_records(db) == 0
+
+
+# --------------------------------------------- host-run tuning (2026-07-28)
+
+def test_norfolk_split_address_gets_its_house_number(tmp_path):
+    """Norfolk's feed splits number and street; without joining them no
+    address ever matched the legacy spine (31% match on the pilot host)."""
+    db = tmp_path / "workbench.db"
+    row = ("Norfolk", "VA", "assessor+sales", {
+        "gpin": "N-77", "property_street_number": "700",
+        "propertystreet": "Acqua Drive", "livingunits": 40,
+        "usedescription": "APARTMENT"})
+    _seed_muni(db, [row])
+    phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        addr = conn.execute("SELECT address FROM properties_8r").fetchone()[0]
+    assert addr == "700 Acqua Drive"
+
+
+def test_yearbuilt_beats_effectiveyear(tmp_path):
+    """effective_year is a reassessment concept, not construction vintage -
+    it must lose to a real yearbuilt when both are present."""
+    db = tmp_path / "workbench.db"
+    row = ("Norfolk", "VA", "assessor", {
+        "gpin": "Y-1", "yearbuilt": 1965, "effective_year": 1999,
+        "livingunits": 12, "usedescription": "APARTMENT"})
+    _seed_muni(db, [row])
+    phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        year = conn.execute("SELECT year_built FROM properties_8r").fetchone()[0]
+    assert year == 1965
+
+
+def test_chesapeake_and_nn_aliases_map(tmp_path):
+    db = tmp_path / "workbench.db"
+    rows = [
+        ("Chesapeake", "VA", "assessor", {
+            "MAP_PARCEL": "CH-9", "PROPCLASS": "APARTMENT", "livingunits": 18}),
+        ("Newport News", "VA", "assessor", {
+            "attributes": {"PARCELID": "NN-9", "CLASSCD": "405 APARTMENT",
+                           "OWNERNME1": "NN HOLDINGS", "LIVUNIT": 22},
+            "geometry": {"x": -76.4, "y": 37.0}}),
+    ]
+    _seed_muni(db, rows)
+    report = phase0.build_spine(db)
+    assert report.multifamily == 2
+    assert not report.unmapped_keys.get("Chesapeake")
+    with sqlite3.connect(db) as conn:
+        owners = {r[0] for r in conn.execute(
+            "SELECT owner_name FROM properties_8r").fetchall()}
+    assert "NN HOLDINGS" in owners
+
+
+def test_bookkeeping_keys_stay_out_of_the_tuning_report(tmp_path):
+    db = tmp_path / "workbench.db"
+    row = ("Norfolk", "VA", "assessor", {
+        "gpin": "B-1", "livingunits": 15, "usedescription": "APARTMENT",
+        "OBJECTID": 9, "SHAPE.STArea()": 120.5, "legal_description": "LOT 4",
+        "PublicLink": "http://x", "Sale_Price": 100})
+    _seed_muni(db, [row])
+    report = phase0.build_spine(db)
+    assert not report.unmapped_keys.get("Norfolk")

@@ -159,12 +159,74 @@ def _load_8r(conn: sqlite3.Connection, cities: tuple[str, ...]) -> list[dict]:
     try:
         rows = conn.execute(
             f"""SELECT property_id, address, city, units, year_built,
-                       lat, lng FROM properties_8r
+                       lat, lng, use_code FROM properties_8r
                  WHERE city IN ({marks})""",
             cities).fetchall()
     except sqlite3.Error:
         return []
     return [dict(r) for r in rows]
+
+
+def aggregate_8r_parcels(spine_8r: list[dict]) -> list[dict]:
+    """Collapse per-parcel assessor rows into per-COMPLEX entities.
+
+    A 258-unit community often sits on dozens of assessor parcels (condo
+    regimes record every unit as its own 1-unit parcel at the same situs).
+    The legacy spine is per-complex, so parity must compare like with like:
+    rows sharing a normalized (address, city) merge into one entity whose
+    units are SUMMED and whose coordinates are the centroid. The first
+    parcel's 8R id represents the group.
+    """
+    groups: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    loose: list[dict] = []
+    for row in spine_8r:
+        addr = normalize_address(row.get("address"))
+        # A PO box or blank situs is not a physical location - never a
+        # grouping key (distinct properties often share the same junk value).
+        if not addr or addr.startswith("po box"):
+            loose.append(row)
+            continue
+        groups[(addr, (row.get("city") or "").lower())].append(row)
+
+    out: list[dict] = []
+    for members in groups.values():
+        # Same address string but far-apart coordinates = different
+        # properties mislabeled alike; split into proximity clusters
+        # (~2x the match radius) before merging.
+        clusters: list[list[dict]] = []
+        for m in members:
+            placed = False
+            for cluster in clusters:
+                anchor = cluster[0]
+                if (m.get("lat") is None or anchor.get("lat") is None
+                        or _distance_miles(m["lat"], m["lng"],
+                                           anchor["lat"], anchor["lng"])
+                        <= 2 * MATCH_RADIUS_MILES):
+                    cluster.append(m)
+                    placed = True
+                    break
+            if not placed:
+                clusters.append([m])
+        for cluster in clusters:
+            head = dict(cluster[0])
+            if len(cluster) > 1:
+                units = [m.get("units") or 0 for m in cluster]
+                head["units"] = int(sum(units)) if any(units) else head.get("units")
+                lats = [m["lat"] for m in cluster if m.get("lat") is not None]
+                lngs = [m["lng"] for m in cluster if m.get("lng") is not None]
+                if lats and lngs:
+                    head["lat"] = sum(lats) / len(lats)
+                    head["lng"] = sum(lngs) / len(lngs)
+                head["parcel_count"] = len(cluster)
+            out.append(head)
+    out.extend(loose)
+    return out
+
+
+def _is_mf_entity(row: dict) -> bool:
+    from core.phase0 import MIN_MF_UNITS, is_multifamily
+    return is_multifamily(row.get("use_code"), row.get("units")) or (
+        (row.get("units") or 0) >= MIN_MF_UNITS)
 
 
 def match_spines(legacy: list[dict], spine_8r: list[dict],
@@ -277,6 +339,13 @@ def run_parity(aln_db: Path, spine_db: Path,
         spine_8r = _load_8r(conn, cities)
     if not legacy or not spine_8r:
         return report
-    crosswalk = match_spines(legacy, spine_8r, report)
-    replay_comps(legacy, spine_8r, crosswalk, report, max_subjects)
+    # Per-complex entities, so a condo-fragmented community compares as one
+    # property instead of dozens of 1-unit parcels.
+    entities = aggregate_8r_parcels(spine_8r)
+    crosswalk = match_spines(legacy, entities, report)
+    # The comp pool must be multifamily on BOTH sides - the legacy load is
+    # already units>=10; replaying against every parcel in the county would
+    # bury the true comps in single-family noise.
+    mf_entities = [e for e in entities if _is_mf_entity(e)]
+    replay_comps(legacy, mf_entities, crosswalk, report, max_subjects)
     return report
