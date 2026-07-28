@@ -50,4 +50,11 @@ if not defined UV (
   echo    then run this again.
   exit /b 1
 )
+
+REM Keep the Python environment OUTSIDE the shared app folder, one per
+REM Windows account. A .venv inside the repo is owned by whichever account
+REM created it, and a second account can neither use nor delete it
+REM ("Access is denied"). A per-user location ends that class of problem;
+REM the first run for a new account rebuilds it (takes a minute).
+set "UV_PROJECT_ENVIRONMENT=%LOCALAPPDATA%\EightRockWorkbench\venv"
 exit /b 0

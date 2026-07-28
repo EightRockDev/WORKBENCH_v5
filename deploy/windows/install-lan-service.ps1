@@ -108,6 +108,9 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 & $nssm set $svc AppStderr (Join-Path $logDir "service-err.log")
 & $nssm set $svc AppRotateFiles 1
 & $nssm set $svc AppRotateBytes 10485760
+# The service runs as SYSTEM - give it its own environment dir too, outside
+# the app folder, so it never fights user accounts over .venv ownership.
+& $nssm set $svc AppEnvironmentExtra "UV_PROJECT_ENVIRONMENT=C:\ProgramData\EightRockWorkbench\venv"
 & $nssm start $svc | Out-Null
 Write-Host "   Service installed and started."
 

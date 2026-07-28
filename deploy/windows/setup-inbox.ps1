@@ -46,6 +46,7 @@ if ($tokenKey) {
         Write-Host "uv not found. Run start-workbench.bat once first (it installs uv)." -ForegroundColor Red
         exit 1
     }
+    $env:UV_PROJECT_ENVIRONMENT = Join-Path $env:LOCALAPPDATA "EightRockWorkbench\venv"
     $tokenKey = (& $uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())") | Select-Object -Last 1
     $tokenKey = $tokenKey.Trim()
     if (-not $tokenKey) {

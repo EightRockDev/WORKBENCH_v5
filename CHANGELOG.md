@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.7.0.2.0 — 2026-07-27  ·  Per-account Python environment (ends the .venv ownership wars)
+- **Fixes `failed to remove directory ... .venv ... Access is denied`.** The
+  Python environment used to live inside the shared app folder; whichever
+  Windows account created it owned it, and any other account could neither
+  use nor delete it. The environment now lives **outside the repo, one per
+  account** (`%LOCALAPPDATA%\EightRockWorkbench\venv`, via
+  `UV_PROJECT_ENVIRONMENT` set in `_find-uv.bat`); the Windows service gets
+  its own under `C:\ProgramData`. First run per account rebuilds it (about a
+  minute). The old `.venv` in the folder is ignored and can be deleted
+  whenever convenient by the account that owns it.
+- Verified: uv builds and runs this exact project from an external
+  environment path (105 packages, app imports clean).
+
+---
+
 ## V5.7.0.1.1 — 2026-07-27  ·  uv auto-install without winget
 - The uv auto-install now uses the official standalone installer
   (`astral.sh/uv/install.ps1`) first — winget is frequently broken or
