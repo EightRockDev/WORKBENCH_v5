@@ -191,8 +191,29 @@ MUNI_FEEDS: list[FeedSpec] = [
 ]
 
 
+def _extra_feeds() -> list[FeedSpec]:
+    """Feeds discovered on the host by scripts/discover_feeds.py.
+
+    data/feeds_extra.json holds plain FeedSpec dicts; unknown keys are
+    dropped so an older/newer discovery file never breaks the ETL.
+    """
+    path = _DATA_DIR / "feeds_extra.json"
+    if not path.is_file():
+        return []
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    allowed = {f.name for f in dataclasses.fields(FeedSpec)}
+    out: list[FeedSpec] = []
+    for d in raw if isinstance(raw, list) else []:
+        if isinstance(d, dict) and d.get("url"):
+            out.append(FeedSpec(**{k: v for k, v in d.items() if k in allowed}))
+    return out
+
+
 def feeds(status: str | None = "live", market: str | None = None) -> list[FeedSpec]:
-    out = MUNI_FEEDS
+    out = MUNI_FEEDS + _extra_feeds()
     if status:
         out = [f for f in out if f.status == status]
     if market:

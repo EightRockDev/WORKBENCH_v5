@@ -58,7 +58,11 @@ def normalize_address(address: str | None) -> str:
     join key across the two spines' address styles. A unit designator
     (apt/suite/unit/#) and everything after it is dropped: the PARCEL is the
     join key, not the individual unit."""
-    tokens = re.sub(r"[^a-z0-9# ]", " ", (address or "").lower()).split()
+    text = (address or "").lower()
+    # ALN-style street-number RANGES ("700-780 Granby") key on the first
+    # number - the assessor's parcels start there.
+    text = re.sub(r"^\s*(\d+)\s*-\s*\d+", r"\1", text)
+    tokens = re.sub(r"[^a-z0-9# ]", " ", text).split()
     out: list[str] = []
     for t in tokens:
         if t in ("apt", "suite", "unit", "ste") or t.startswith("#"):
@@ -115,6 +119,17 @@ class ParityReport:
                 and self.avg_comp_overlap >= GATE_COMP_OVERLAP
                 and rent_ok)
 
+    @property
+    def covered_match_rate(self) -> float | None:
+        """Match rate restricted to cities where the spine actually has
+        multifamily data - the number the parsing can influence. The blended
+        rate stays the official gate; this one separates "parsing problem"
+        from "feed missing"."""
+        covered = [c for c, n in self.spine_mf_by_city.items() if n > 0]
+        legacy = sum(self.legacy_by_city.get(c, 0) for c in covered)
+        matched = sum(self.matched_by_city.get(c, 0) for c in covered)
+        return (matched / legacy) if legacy else None
+
     def summary(self) -> str:
         rent = (f"{self.avg_rent_delta:.1%}" if self.avg_rent_delta is not None
                 else "n/a (8R rent signal not populated yet)")
@@ -139,6 +154,10 @@ class ParityReport:
         if self.footprint_recovered:
             lines.append(f"(+{self.footprint_recovered:,} unit disagreements "
                          "resolved by multi-parcel footprint totals)")
+        if self.covered_match_rate is not None:
+            lines.append(f"match rate, covered cities only: "
+                         f"{self.covered_match_rate:.1%}  (cities whose feed "
+                         "has multifamily data)")
         # Per-city truth: a city whose feed carries no unit data can never
         # match or replay - naming it turns a mystery into a to-do.
         lines.append("")
@@ -310,7 +329,8 @@ def _score_fields(legacy: dict, r8: dict, report: ParityReport) -> None:
 COMPLEX_RADIUS_MILES = 0.12   # ~200 m - the footprint of a garden community
 
 
-def footprint_units(legacy_row: dict, spine_8r: list[dict]) -> int | None:
+def footprint_units(legacy_row: dict, spine_8r: list[dict],
+                    radius: float = COMPLEX_RADIUS_MILES) -> int | None:
     """Total units of ALL 8R parcels within the complex radius of the legacy
     point. Large communities sit on many parcels with different street
     numbers (700/710/720 Acqua Dr) - address grouping alone cannot reassemble
@@ -323,7 +343,7 @@ def footprint_units(legacy_row: dict, spine_8r: list[dict]) -> int | None:
         c_lat, c_lng = cand.get("lat"), cand.get("lng")
         if c_lat is None or c_lng is None:
             continue
-        if _distance_miles(lat, lng, c_lat, c_lng) <= COMPLEX_RADIUS_MILES:
+        if _distance_miles(lat, lng, c_lat, c_lng) <= radius:
             total += int(cand.get("units") or 0)
     return total or None
 
@@ -411,11 +431,16 @@ def run_parity(aln_db: Path, spine_db: Path,
                 continue
             if abs(lu - ru) <= max(UNIT_TOLERANCE_ABS, lu * UNIT_TOLERANCE_PCT):
                 continue
-            fp = footprint_units(row, spine_8r)
-            if fp and abs(lu - fp) <= max(UNIT_TOLERANCE_ABS, lu * UNIT_TOLERANCE_PCT):
+            tol = max(UNIT_TOLERANCE_ABS, lu * UNIT_TOLERANCE_PCT)
+            fp_wide = footprint_units(row, spine_8r)
+            fp_tight = footprint_units(row, spine_8r,
+                                       radius=COMPLEX_RADIUS_MILES / 2)
+            # Dense districts over-merge at the wide radius (neighboring
+            # complexes double-counted); accept whichever radius agrees.
+            if any(fp and abs(lu - fp) <= tol for fp in (fp_tight, fp_wide)):
                 recovered += 1
             else:
-                shown = fp if fp else ru
+                shown = fp_tight or fp_wide or ru
                 still_bad.append(
                     f"{row.get('name') or row.get('address')}: legacy {lu} vs 8R {shown}")
         if recovered:

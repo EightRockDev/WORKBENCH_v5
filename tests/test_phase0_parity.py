@@ -236,3 +236,26 @@ def test_per_city_breakdown_names_cities_without_mf_data(tmp_path):
     text = report.summary()
     assert "Virginia Beach" in text
     assert "no usable multifamily data" in text
+
+
+def test_covered_match_rate_separates_parsing_from_missing_feeds(tmp_path):
+    """10 Norfolk rows (covered, all match) + 5 Virginia Beach rows (no
+    spine data): blended 66%, covered-cities 100%."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    _seed_world(conn, n=10)
+    for i in range(5):
+        conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                     (f"ALN-VB{i}", f"VB {i}", f"{i} Atlantic Ave",
+                      "Virginia Beach", 50, 1985, 1400.0, "B", 36.85, -75.98))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert abs(report.match_rate - 10 / 15) < 1e-9
+    assert report.covered_match_rate == 1.0
+    assert "covered cities only" in report.summary()
+
+
+def test_aln_street_number_ranges_match_the_first_parcel():
+    """Legacy '700-780 Granby St' must key like the assessor's '700 Granby'."""
+    assert pp.normalize_address("700-780 Granby St") == \
+           pp.normalize_address("700 Granby Street")

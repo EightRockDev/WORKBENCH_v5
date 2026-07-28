@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.4.0.0 — 2026-07-28  ·  Phase 0 round 4: feed discovery + range addresses
+Host round 3 proved the pipeline (Newport News 119/121 matched, 98%) and
+isolated the two remaining blockers: five cities have **no unit-bearing feed**
+(394 of 639 legacy rows), and Norfolk matching is dragged down by ALN-style
+street-number **ranges**. This round:
+- **`discover-feeds.bat`** → `scripts/discover_feeds.py`: probes the public
+  GIS portals of Virginia Beach, Chesapeake, Hampton, Portsmouth and Suffolk
+  (known org roots + ArcGIS Online search), walks every service and layer,
+  scores fields against the spine's alias vocabulary (a layer must carry a
+  parcel id AND units/use-code), and writes qualifying layers to
+  `data/feeds_extra.json`. Runs on the server — the build environment can't
+  reach city portals.
+- **`pull-muni.bat`**: runs the municipal ETL (built-in + discovered feeds)
+  into `data\workbench.db`. `etl_munidata.py` now loads `feeds_extra.json`
+  automatically, ignoring unknown keys.
+- **Range addresses**: legacy "700-780 Granby St" now keys on the first
+  number, matching the assessor's parcel.
+- **Dual-radius footprint**: dense districts over-merged at ~200 m (legacy
+  208 vs 8R 453); the unit check now accepts agreement at either the full or
+  half radius.
+- **Covered-cities match rate** in the report: separates "parsing problem"
+  from "feed missing" (NN 98% proves parsing; the blended rate is a feed
+  problem).
+- 6 new tests (discovery scoring/walking offline, range keys, covered-rate).
+  Suite: 668 passed; 4 pre-existing data-dependent failures unchanged.
+
+---
+
 ## V5.8.3.0.0 — 2026-07-28  ·  Phase 0 tuning round 3 (footprint totals + per-city truth)
 Host run 3: match 39.7% (was 31%), overlap 24.5% (was 1.7%). This round fixes
 the two structural causes the report exposed:
