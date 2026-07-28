@@ -123,8 +123,11 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    mapping against the real response. VA SCC CIS scraper still unverified (build
    env is firewalled from cis.scc.virginia.gov).
 2. Public serving: Caddy + NSSM, DNS, port-forward, Auth0/Entra OIDC.
-3. Phase 0 execution: build `properties_8r` from muni_records using `core/spine.py`,
-   shadow-parity, cutover, purge (§7.3).
+3. Phase 0 execution (§7.3): **P0-1 spine builder SHIPPED (V5.8.0.0.0)** —
+   `core/phase0.py` + `run-phase0.bat` (needs the v2.4.1 workbench.db with the
+   3.9M muni_records rows copied to `data\` on the host, or `ER_WORKBENCH_DB`).
+   `phase0-sweep.bat` = AC-P0-1 ALN sweep (569 refs in 40 files today).
+   Remaining: P0-2 shadow parity, P0-3 cutover, P0-4 purge.
 
 ## Built so far (phases complete)
 - V5-P0.5 pilot (auth, admin, concurrency), V5-Walk §10 multi-tenancy + §10.4 UI

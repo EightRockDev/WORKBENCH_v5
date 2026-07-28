@@ -12,6 +12,36 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.0.0.0 — 2026-07-28  ·  Phase 0 execution, step P0-1: the 8R property spine
+- **`core/phase0.py`** — builds `properties_8r` from the self-sourced
+  `muni_records` municipal pulls (spec §7.3 P0-1). Handles both feed shapes in
+  the wild (Norfolk Socrata flat records; ArcGIS `attributes`/`geometry`
+  nesting) through a generic attribute-alias table (APN/GPIN/PARCELID…,
+  LIVUNIT/UNITS…, YRBLT/YEARBUILT…). IDs are the deterministic
+  `8R-{FIPS}-{APN-hash}` from `core/spine.py`, with geohash provisional IDs
+  when a parcel number is missing; forms/market taxonomy re-derived per §7.2;
+  provenance `8r`. Idempotent — re-runs refresh in place.
+- **Coverage gate**: the report computes P0-1's ≥95%-of-HR-multifamily gate
+  and prints PASS / not-yet, plus a per-city list of **attribute keys that
+  didn't map** — the tuning loop for feeds with unrecognized schemas.
+- **`run-phase0.bat`** — double-click; finds the municipal database
+  (`data\workbench.db` or `ER_WORKBENCH_DB`), builds the spine, prints the
+  gate. Explains exactly what to copy from the v2.4.1 machine when the 3.9M
+  municipal rows aren't on this host yet.
+- **`phase0-sweep.bat`** — the AC-P0-1 verification sweep: word-boundary-aware
+  case-insensitive ALN scan across repo files, filenames, SQLite stores and
+  deal folders. Read-only. Run against this repo it currently reports **569
+  references in 40 files** (matching the spec §7.1 inventory) — the number
+  P0-3/P0-4 must drive to zero.
+- Verification: 11 tests (both feed shapes, deterministic IDs across
+  rebuilds, provisional fallback, gate arithmetic incl. unusable-record
+  penalty, SFH excluded from the gate, unmapped-key reporting, spine rows
+  pass `record_is_clean`) + an end-to-end CLI run on synthetic municipal
+  data (60/60, gate PASS). Suite: 642 passed; 4 pre-existing data-dependent
+  failures unchanged.
+
+---
+
 ## V5.7.0.2.0 — 2026-07-27  ·  Per-account Python environment (ends the .venv ownership wars)
 - **Fixes `failed to remove directory ... .venv ... Access is denied`.** The
   Python environment used to live inside the shared app folder; whichever
