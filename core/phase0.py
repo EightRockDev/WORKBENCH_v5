@@ -53,30 +53,34 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     # carries several (e.g. yearbuilt beats effectiveyear).
     "apn": ("apn", "gpin", "parcelid", "parcel", "mapparcel", "parcelnumber",
             "parcelno", "pin", "mappin", "acct", "account", "accountnumber",
-            "taxparcelid", "parid", "prop_id", "propertyid", "realestateid",
-            "reid", "lrsn"),
+            "taxparcelid", "parid", "parno", "prop_id", "propertyid",
+            "realestateid", "reid", "lrsn"),
     "address": ("address", "situsaddress", "situs", "propertyaddress",
                 "siteaddress", "locationaddress", "location", "fulladdress",
                 "propertystreet", "streetaddress", "situsaddr", "propaddr"),
-    # Some feeds (Norfolk) split the house number from the street name.
+    # Some feeds (Norfolk) split the address into number + name + type.
     "address_number": ("propertystreetnumber", "streetnumber", "housenumber",
                        "stnum", "situsnumber"),
+    "address_street": ("propertystreetname", "streetname", "situsstreet"),
+    "address_suffix": ("propertystreettype", "streettype", "stsuffix",
+                       "streetsuffix"),
     "city": ("city", "situscity", "propertycity", "municipality"),
-    "zip": ("zip", "zipcode", "situszip", "propertyzip", "postalcode"),
+    "zip": ("zip", "zipcode", "situszip", "propertyzip", "postalcode",
+            "addresszip"),
     "units": ("units", "livunit", "livingunits", "numunits", "unitcount",
               "dwellingunits", "totalunits", "resunits", "apartments",
               "numberofunits", "livunits"),
     "year_built": ("yearbuilt", "yrbuilt", "yrblt", "yearblt",
                    "actualyearbuilt", "yearbuild", "ayb", "effyearbuilt",
-                   "effectiveyear"),
+                   "effectiveyear", "improvementyearbuilt"),
     "sqft": ("sqft", "squarefeet", "buildingsqft", "bldgsqft", "grosssqft",
              "totalsqft", "finishedsqft", "gba", "grossarea", "bldgarea",
-             "sfla", "totallivingarea", "livingarea"),
+             "sfla", "totallivingarea", "livingarea", "resflrarea"),
     "use_code": ("usecode", "use", "landuse", "landusecode", "propertyuse",
                  "propertyclass", "propclass", "classcd", "class", "classcode",
                  "zoning", "propertyusecode", "usedesc", "usedescription",
-                 "landusedescription", "propertyclassdescription", "proptype",
-                 "propertytype", "statecode", "luc"),
+                 "landusedescription", "propertyclassdescription", "usecd",
+                 "classdscrp", "proptype", "propertytype", "statecode", "luc"),
     "assessed_value": ("assessedvalue", "totalvalue", "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
                        "currenttotalvalue", "totalcurrentvalue", "assessment",
@@ -100,7 +104,10 @@ _IGNORED_KEYS = re.compile(
     r"transfer|transferdate|saledate|saleprice|landvalue|improvementvalue|"
     r"currentlandvalue|currentimprovementvalue|priorlandvalue|"
     r"priorimprovementvalue|vacant|government|neighborhood|state|"
-    r"landuseyesorno|fy|fiscalyear)$")
+    r"landuseyesorno|fy|fiscalyear|deedbk|deedpg|deedbook|deedpage|"
+    r"documentnumber|assessmntdist|calcacreage|acreage|landsquarefootage|"
+    r"mapbookpg|project|hubzone|pspzone|cityowned|censustract|censusblock|"
+    r"consideration|grantee|extension)$")
 
 # Use-code fragments that identify multifamily in municipal rolls.
 _MF_USE_FRAGMENTS = (
@@ -215,11 +222,16 @@ def normalize_record(city: str, state: str, raw: dict,
         if fieldname not in out or priority < prio[fieldname]:
             out[fieldname] = value
             prio[fieldname] = priority
-    # Norfolk-style split address: prepend the house number when the street
-    # field lacks one - without it no address ever matches the legacy spine.
+    # Norfolk-style split address: assemble number + name + type when the
+    # feed carries the pieces separately - without this no Norfolk address
+    # ever matches the legacy spine.
     addr = str(out.get("address") or "").strip()
     number = str(out.get("address_number") or "").strip()
-    if number and addr and not addr[0].isdigit():
+    street = str(out.get("address_street") or "").strip()
+    suffix = str(out.get("address_suffix") or "").strip()
+    if not addr and street:
+        out["address"] = " ".join(x for x in (number, street, suffix) if x)
+    elif number and addr and not addr[0].isdigit():
         out["address"] = f"{number} {addr}"
     return out
 

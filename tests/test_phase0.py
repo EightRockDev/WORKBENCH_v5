@@ -221,3 +221,43 @@ def test_bookkeeping_keys_stay_out_of_the_tuning_report(tmp_path):
     _seed_muni(db, [row])
     report = phase0.build_spine(db)
     assert not report.unmapped_keys.get("Norfolk")
+
+
+def test_norfolk_three_part_address_assembles(tmp_path):
+    """Round 2: Norfolk splits number + name + TYPE across three fields."""
+    db = tmp_path / "workbench.db"
+    row = ("Norfolk", "VA", "assessor", {
+        "gpin": "N3-1", "property_street_number": "700",
+        "property_street_name": "Acqua", "property_street_type": "DR",
+        "livingunits": 40, "property_class_description": "APARTMENT"})
+    _seed_muni(db, [row])
+    phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        addr = conn.execute("SELECT address FROM properties_8r").fetchone()[0]
+    assert addr == "700 Acqua DR"
+
+
+def test_round2_aliases_and_ignores(tmp_path):
+    db = tmp_path / "workbench.db"
+    rows = [
+        ("Newport News", "VA", "assessor", {
+            "attributes": {"PARCELID": "NN-R2", "USECD": "405",
+                           "CLASSDSCRP": "APARTMENT", "RESFLRAREA": 18_000,
+                           "LIVUNIT": 20, "HUBZONE": "Y", "CENSUSTRACT": "1"},
+            "geometry": {"x": -76.4, "y": 37.0}}),
+        ("Chesapeake", "VA", "assessor", {
+            "MAP_PARCEL": "CH-R2", "PROPCLASS": "APARTMENT",
+            "ADDRESSZIP": "23320", "PARNO": "ignored-lower-priority",
+            "DEEDBK": "111", "DEEDPG": "22", "CALCACREAGE": 2.5}),
+    ]
+    _seed_muni(db, rows)
+    report = phase0.build_spine(db)
+    assert not report.unmapped_keys.get("Newport News")
+    assert not report.unmapped_keys.get("Chesapeake")
+    with sqlite3.connect(db) as conn:
+        sqfts = {r[0] for r in conn.execute(
+            "SELECT sqft FROM properties_8r").fetchall()}
+        zips = {r[0] for r in conn.execute(
+            "SELECT zip FROM properties_8r").fetchall()}
+    assert 18_000.0 in sqfts
+    assert "23320" in zips

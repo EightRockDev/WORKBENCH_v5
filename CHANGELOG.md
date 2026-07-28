@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.2.1.0 — 2026-07-28  ·  Phase 0 tuning round 2 (P0-2 crash + Norfolk 3-part addresses)
+- **Fixes the `KeyError: '8R-51550-...'` crash** in the comp replay: a legacy
+  property whose 8R match carries no unit data (Chesapeake's feed has none)
+  fell outside the multifamily comp pool; the replay now looks subjects up in
+  the full entity set and skips those outside the pool — never crashes.
+- **Norfolk addresses are three fields, not two**: number + street *name* +
+  street *type* (`700` / `Acqua` / `DR`) now assemble into one address.
+- Round-2 aliases from the report: `USECD`, `CLASSDSCRP` (use code),
+  `RESFLRAREA` (sqft), `ADDRESSZIP`, `PARNO`, `improvement_year_built`
+  (lowest-priority vintage). Deed-book/census/acreage bookkeeping keys join
+  the ignore list, so the tuning report shows only real gaps.
+- 3 new regression tests (the exact crash, 3-part assembly, round-2 aliases).
+  Suite: 660 passed; 4 pre-existing data-dependent failures unchanged.
+
+---
+
 ## V5.8.2.0.0 — 2026-07-28  ·  Phase 0 tuning round 1 (from the first real host run)
 First run on the real 3.5M-record municipal database: P0-1 passed (719,981
 parcels, 5,416 HR multifamily), P0-2 didn't (31% match, 1.7% comp overlap).

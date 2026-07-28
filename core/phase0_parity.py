@@ -303,18 +303,26 @@ def _comp_set(subject: dict, pool: list[dict], lat_key: str, lng_key: str) -> li
     return [pid for _d, pid in scored[:config.COMPS_TOTAL_MAX]]
 
 
-def replay_comps(legacy: list[dict], spine_8r: list[dict],
-                 crosswalk: dict[str, str], report: ParityReport,
-                 max_subjects: int = 50) -> None:
-    """The 50-deal replay: comp sets from both spines, overlap by identity."""
-    r8_by_id = {r["property_id"]: r for r in spine_8r}
+def replay_comps(legacy: list[dict], all_entities: list[dict],
+                 mf_pool: list[dict], crosswalk: dict[str, str],
+                 report: ParityReport, max_subjects: int = 50) -> None:
+    """The 50-deal replay: comp sets from both spines, overlap by identity.
+
+    `all_entities` is the full matched universe (subject lookup); `mf_pool`
+    is the multifamily-only comp pool. A subject whose 8R match fell outside
+    the multifamily pool (e.g. a Chesapeake parcel with no unit data) is
+    skipped, never a KeyError.
+    """
+    r8_by_id = {r["property_id"]: r for r in all_entities}
     subjects = [r for r in legacy if r["property_id"] in crosswalk][:max_subjects]
     for subject in subjects:
         legacy_comps = _comp_set(subject, legacy, "latitude", "longitude")
         if not legacy_comps:
             continue
-        r8_subject = r8_by_id[crosswalk[subject["property_id"]]]
-        r8_comps = set(_comp_set(r8_subject, spine_8r, "lat", "lng"))
+        r8_subject = r8_by_id.get(crosswalk[subject["property_id"]])
+        if r8_subject is None:
+            continue
+        r8_comps = set(_comp_set(r8_subject, mf_pool, "lat", "lng"))
         translated = {crosswalk.get(pid) for pid in legacy_comps}
         translated.discard(None)
         if not translated:
@@ -347,5 +355,5 @@ def run_parity(aln_db: Path, spine_db: Path,
     # already units>=10; replaying against every parcel in the county would
     # bury the true comps in single-family noise.
     mf_entities = [e for e in entities if _is_mf_entity(e)]
-    replay_comps(legacy, mf_entities, crosswalk, report, max_subjects)
+    replay_comps(legacy, entities, mf_entities, crosswalk, report, max_subjects)
     return report

@@ -179,3 +179,23 @@ def test_mf_pool_excludes_single_family_from_the_replay(tmp_path):
     report = pp.run_parity(db, db)
     assert report.avg_comp_overlap >= 0.90
     assert report.gate_passed
+
+
+def test_subject_matched_to_non_mf_entity_is_skipped_not_keyerror(tmp_path):
+    """Host crash: KeyError '8R-51550-...' - a legacy subject matched a
+    Chesapeake parcel with no unit data, which the MF-only comp pool
+    excluded. Must skip that subject, never crash."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    _seed_world(conn, n=15)
+    # A legacy property whose only 8R counterpart carries no units/use.
+    conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 ("ALN-CH", "Chesapeake Mystery", "9 Battlefield Blvd",
+                  "Norfolk", 60, 1980, 1100.0, "C", 36.99, -76.20))
+    conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                 ("8R-51550-deadbeef0001", "9 Battlefield Boulevard",
+                  "Norfolk", None, None, 36.99, -76.20, None))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)          # must not raise
+    assert report.matched == 16             # the mystery row still matches
+    assert report.gate_passed               # and doesn't poison the replay
