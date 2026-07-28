@@ -12,6 +12,14 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.7.0.0.1 — 2026-07-27  ·  Updater works from any Windows account
+- `update-workbench.bat` now adds its own folder to git's `safe.directory`
+  list before syncing, so a folder created under one Windows account
+  (BrianT) can be updated from another (brian2) without the "dubious
+  ownership" refusal. Error text no longer blames the network for git errors.
+
+---
+
 ## V5.7.0.0.0 — 2026-07-27  ·  §9 serving, step 1: Windows service + office-network access
 - **`install-service.bat`** (self-elevating) → `deploy/windows/install-lan-service.ps1`:
   installs NSSM if needed, registers the **EightRockWorkbench** Windows service
