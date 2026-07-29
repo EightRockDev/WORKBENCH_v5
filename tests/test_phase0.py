@@ -333,3 +333,60 @@ def test_explicit_units_beat_point_counting(tmp_path):
     with sqlite3.connect(db) as conn:
         units = conn.execute("SELECT units FROM properties_8r").fetchone()[0]
     assert units == 48
+
+
+# ---------------------------------------------------------------------------
+# Round 6: token-aware multifamily matching + coordinate hygiene
+# ---------------------------------------------------------------------------
+
+def test_short_mf_codes_match_whole_tokens_only():
+    """VB zoning 'R-40' (single-family) substring-contains 'r-4' - that bug
+    classified ~116K SFH parcels as multifamily. Short codes now require an
+    exact token."""
+    assert phase0.is_multifamily("R-40", None) is False
+    assert phase0.is_multifamily("R-4", None) is True
+    assert phase0.is_multifamily("MF", None) is True
+    assert phase0.is_multifamily("MFG WAREHOUSE", None) is False
+    assert phase0.is_multifamily("405", None) is True
+    assert phase0.is_multifamily("405 APARTMENT", None) is True
+    assert phase0.is_multifamily("1405", None) is False
+    assert phase0.is_multifamily("APT", None) is True
+
+
+def test_small_plex_forms_are_not_ten_plus_multifamily():
+    """The product bar is >= 10 units (spec 7.3); duplex/triplex are 2-3."""
+    assert phase0.is_multifamily("DUPLEX", None) is False
+    assert phase0.is_multifamily("TRIPLEX", None) is False
+    assert phase0.is_multifamily(None, 12) is True
+
+
+def test_chesapeake_split_address_assembles():
+    """Chesapeake's layer splits the situs into ST_NUM/ST_NAME/ST_TYPE."""
+    m = phase0.normalize_record("Chesapeake", "VA", {
+        "ST_NUM": "701", "ST_NAME": "RIVER WALK", "ST_TYPE": "DR",
+        "GPIN": "123"})
+    assert m["address"] == "701 RIVER WALK DR"
+
+
+def test_round6_aliases_map():
+    m = phase0.normalize_record("Newport News", "VA", {
+        "RESYRBLT": 1987, "TOT_SQ_FT": 9000, "BLDG_USE": "APT",
+        "MASTER_GPIN": "55"})
+    assert m["year_built"] == 1987
+    assert m["sqft"] == 9000
+    assert m["use_code"] == "APT"
+    assert m["apn"] == "55"
+
+
+def test_sanitize_latlng_guards():
+    import math
+    # Web Mercator meters convert to degrees...
+    x = math.radians(-76.28) * 6378137
+    y = 6378137 * math.log(math.tan(math.pi / 4 + math.radians(36.85) / 2))
+    lat, lng = phase0.sanitize_latlng(y, x)
+    assert abs(lat - 36.85) < 1e-6 and abs(lng + 76.28) < 1e-6
+    # ...state-plane feet and null-island junk are dropped, real degrees pass.
+    assert phase0.sanitize_latlng(3_400_000, 12_100_000) == (None, None)
+    assert phase0.sanitize_latlng(0.0, 0.0) == (None, None)
+    assert phase0.sanitize_latlng(36.9, -76.2) == (36.9, -76.2)
+    assert phase0.sanitize_latlng(None, -76.2) == (None, None)

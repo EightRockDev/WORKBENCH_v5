@@ -99,6 +99,7 @@ class ParityReport:
     legacy_by_city: dict = field(default_factory=dict)
     matched_by_city: dict = field(default_factory=dict)
     spine_mf_by_city: dict = field(default_factory=dict)
+    spine_mf_geo_by_city: dict = field(default_factory=dict)  # ...with lat/lng
     footprint_recovered: int = 0    # unit disagreements resolved by summing
                                     # all 8R parcels within the complex radius
 
@@ -164,13 +165,19 @@ class ParityReport:
         # Per-city truth: a city whose feed carries no unit data can never
         # match or replay - naming it turns a mystery into a to-do.
         lines.append("")
-        lines.append("By city (legacy rows -> matched | spine MF entities):")
+        lines.append("By city (legacy rows -> matched | spine MF entities | w/ coords):")
         for city in sorted(self.legacy_by_city, key=lambda c: -self.legacy_by_city[c]):
             n_leg = self.legacy_by_city.get(city, 0)
             n_match = self.matched_by_city.get(city, 0)
             n_mf = self.spine_mf_by_city.get(city, 0)
-            note = "" if n_mf else "   <- feed has no usable multifamily data"
-            lines.append(f"  {city:15} {n_leg:5,} -> {n_match:5,} | {n_mf:6,}{note}")
+            n_geo = self.spine_mf_geo_by_city.get(city, 0)
+            if not n_mf:
+                note = "   <- feed has no usable multifamily data"
+            elif not n_geo:
+                note = "   <- no coordinates in feed (address match only; re-pull)"
+            else:
+                note = ""
+            lines.append(f"  {city:15} {n_leg:5,} -> {n_match:5,} | {n_mf:6,} | {n_geo:6,}{note}")
         if self.worst_unit_mismatches:
             lines.append("")
             lines.append("Largest unit-count disagreements (check these matches):")
@@ -474,5 +481,8 @@ def run_parity(aln_db: Path, spine_db: Path,
     for e in mf_entities:
         city = e.get("city") or "?"
         report.spine_mf_by_city[city] = report.spine_mf_by_city.get(city, 0) + 1
+        if e.get("lat") is not None and e.get("lng") is not None:
+            report.spine_mf_geo_by_city[city] = (
+                report.spine_mf_geo_by_city.get(city, 0) + 1)
     replay_comps(legacy, entities, mf_entities, crosswalk, report, max_subjects)
     return report

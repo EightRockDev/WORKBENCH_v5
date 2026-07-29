@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.7.0.0 — 2026-07-29  ·  Phase 0 round 6: the VB 116K-parcel bug + real coordinates
+The first full-data run exposed two structural bugs; both fixed:
+- **116,780 "multifamily" parcels in Virginia Beach were single-family.**
+  The use-code matcher substring-matched short codes, and VB zoning `R-40`
+  (single-family) contains `r-4`. That pollution buried the P0-2 comp pool
+  and produced the 20.7% comp overlap. Short codes (`mf`, `405`, `r-4`,
+  `apt`) now match whole tokens only; long words (`apartment`,
+  `multifamily`) still match anywhere. Duplex/triplex/quadplex no longer
+  count as multifamily — the product bar is >= 10 units (spec 7.3).
+- **The ETL never stored coordinates for ArcGIS layers**
+  (`returnGeometry: false`), which is why Portsmouth matched 0/45 despite
+  109K records — no lat/lng, no proximity matching. The puller now probes
+  centroid → full-geometry → legacy modes per layer, stamps `geo_lat`/
+  `geo_lng` onto every record, and the spine converts stray Web Mercator
+  meters to degrees while dropping state-plane feet (a missing coordinate
+  matches by address; a wrong one matches the wrong parcel).
+- **Chesapeake addresses now assemble**: its layer splits the situs into
+  `ST_NUM`/`ST_NAME`/`ST_TYPE` — the last two had no alias, so no
+  Chesapeake address ever matched. Plus new aliases from the unmapped-key
+  report (`RESYRBLT`, `TOT_SQ_FT`, `BLDG_USE`, `MASTER_GPIN`,
+  `RECORDED_GPIN`, `ST_CITY`, `ST_ZIPCODE`) and ~30 junk keys ignored.
+- **Self-diagnosing reports**: run-phase0 now prints the top use codes that
+  drove each city's multifamily classification (a wrong alias shows up in
+  one glance), and the parity by-city table gains a "w/ coords" column.
+- Verified: 11 new tests (token matching, Mercator/state-plane guards,
+  ArcGIS geometry-mode probing incl. ring-centroid averaging and old-server
+  fallback, Chesapeake address assembly). Suite: 685 passed.
+
 ## V5.8.6.1.0 — 2026-07-28  ·  Pull hygiene (HR-only, visible extras, lock tolerance)
 The pull-output screenshot explained the missing city data three ways, all
 fixed:

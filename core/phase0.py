@@ -54,47 +54,51 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "apn": ("apn", "gpin", "parcelid", "parcel", "mapparcel", "parcelnumber",
             "parcelno", "pin", "mappin", "acct", "account", "accountnumber",
             "taxparcelid", "parid", "parno", "prop_id", "propertyid",
-            "realestateid", "reid", "lrsn"),
+            "realestateid", "reid", "lrsn", "mastergpin", "recordedgpin"),
     "address": ("address", "situsaddress", "situs", "propertyaddress",
                 "siteaddress", "locationaddress", "location", "fulladdress",
                 "propertystreet", "streetaddress", "situsaddr", "propaddr"),
     # Some feeds (Norfolk) split the address into number + name + type.
     "address_number": ("propertystreetnumber", "streetnumber", "housenumber",
                        "stnum", "situsnumber"),
-    "address_street": ("propertystreetname", "streetname", "situsstreet"),
+    "address_street": ("propertystreetname", "streetname", "situsstreet",
+                       "stname"),
     "address_suffix": ("propertystreettype", "streettype", "stsuffix",
-                       "streetsuffix"),
+                       "streetsuffix", "sttype"),
     "address_direction": ("propertystreetdirection", "streetdirection",
                           "stdir", "predirection"),
     "address_number_suffix": ("propertystreetnumbersuffix",
                               "streetnumbersuffix"),
-    "city": ("city", "situscity", "propertycity", "municipality"),
+    "city": ("city", "situscity", "propertycity", "municipality", "stcity"),
     "zip": ("zip", "zipcode", "situszip", "propertyzip", "postalcode",
-            "addresszip"),
+            "addresszip", "stzipcode"),
     "units": ("units", "livunit", "livingunits", "numunits", "unitcount",
               "dwellingunits", "totalunits", "resunits", "apartments",
               "numberofunits", "livunits"),
     "year_built": ("yearbuilt", "yrbuilt", "yrblt", "yearblt",
-                   "actualyearbuilt", "yearbuild", "ayb", "effyearbuilt",
-                   "effectiveyear", "improvementyearbuilt"),
+                   "actualyearbuilt", "yearbuild", "ayb", "resyrblt",
+                   "effyearbuilt", "effectiveyear", "improvementyearbuilt"),
     "sqft": ("sqft", "squarefeet", "buildingsqft", "bldgsqft", "grosssqft",
-             "totalsqft", "finishedsqft", "gba", "grossarea", "bldgarea",
-             "sfla", "totallivingarea", "livingarea", "resflrarea",
+             "totalsqft", "totsqft", "finishedsqft", "gba", "grossarea",
+             "bldgarea", "sfla", "totallivingarea", "livingarea", "resflrarea",
              "residentialfinishedliving"),
     "use_code": ("usecode", "use", "landuse", "landusecode", "propertyuse",
                  "propertyclass", "propclass", "classcd", "class", "classcode",
                  "zoning", "propertyusecode", "usedesc", "usedescription",
                  "landusedescription", "propertyclassdescription", "usecd",
                  "classdscrp", "usedscrp", "prprtydscrp", "proptype",
-                 "propertytype", "statecode", "luc"),
+                 "propertytype", "statecode", "luc", "bldguse"),
     "assessed_value": ("assessedvalue", "totalvalue", "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
                        "currenttotalvalue", "totalcurrentvalue", "assessment",
                        "totalassessment", "appraisedvalue"),
     "owner_name": ("owner", "ownername", "ownernme1", "owner1",
                    "primaryowner", "ownersname", "currentowner"),
-    "lat": ("lat", "latitude", "y", "pointy", "centroidy"),
-    "lng": ("lng", "lon", "long", "longitude", "x", "pointx", "centroidx"),
+    # geolat/geolng come first: the ETL writes them from the layer's actual
+    # geometry (WGS84-verified), which beats any attribute column.
+    "lat": ("geolat", "lat", "latitude", "y", "pointy", "centroidy"),
+    "lng": ("geolng", "lng", "lon", "long", "longitude", "x", "pointx",
+            "centroidx"),
 }
 
 _ALIAS_LOOKUP: dict[str, tuple[str, int]] = {
@@ -116,14 +120,28 @@ _IGNORED_KEYS = re.compile(
     r"consideration|grantee|grantor|extension|commercialbuildingarea|"
     r"nghbrhdcd|vahu6|zone|pstladdress1|pstlcity|pstlzip5|pstlstate|"
     r"unit|unitnumber|cntlndval|cntimpval|prvlndval|prvimpval|subdivcd|"
-    r"subdivdscrp|statedarea)$")
+    r"subdivdscrp|statedarea|status|ststate|lastediteduser|lastediteddate|"
+    r"fid|objectid1|calcacreag|createdda|lastedite|assessmnt|bldgdiagr|"
+    r"impervarea|lastsaledate|lastsaleprice|deed|pstlzip4|floorcount|"
+    r"resextwall|acres|landval|bldgval|prevprice|story|stories|rooms|"
+    r"bedrooms|noisezone|aicuzzone|taxarea|spx|spy|isprimary)$")
 
-# Use-code fragments that identify multifamily in municipal rolls.
-_MF_USE_FRAGMENTS = (
-    "apartment", "apartments", "multifamily", "multi-family", "multi family",
-    "condo hi rise", "garden apt", "duplex", "triplex", "quadplex",
-    "townhouse rental", "res 4+", "r-4", "mf", "405",   # 405 = VA apartment class
+# Use-code text that identifies multifamily in municipal rolls. Two tiers:
+#   * SUBSTRINGS - long unambiguous words, safe to match anywhere in the code.
+#   * TOKENS - short codes that must match a WHOLE token. Substring-matching
+#     these poisoned the spine: VB zoning "R-40" (single-family!) contains
+#     "r-4", classifying ~116K SFH parcels as multifamily and burying the
+#     P0-2 comp pool. Tokens split on whitespace/commas/slashes but KEEP
+#     hyphens, so "r-4" stays one token distinct from "r-40".
+# Duplex/triplex/quadplex are deliberately absent: the product's multifamily
+# bar is >= 10 units (spec 7.3); 2-4 unit forms only add proximity noise.
+_MF_USE_SUBSTRINGS = (
+    "apartment", "multifamily", "multi-family", "multi family",
+    "condo hi rise", "garden apt", "townhouse rental", "res 4+",
 )
+_MF_USE_TOKENS = frozenset({"mf", "405", "r-4", "apt", "apts"})  # 405 = VA apartment class
+
+_TOKEN_SPLIT = re.compile(r"[\s,/;:()]+")
 
 
 def _norm_key(key: str) -> str:
@@ -137,6 +155,35 @@ def _num(value: Any) -> float | None:
         return float(str(value).replace(",", "").replace("$", ""))
     except (TypeError, ValueError):
         return None
+
+
+# Continental-US sanity box: coordinates outside it are junk for a Hampton
+# Roads spine no matter what a feed claims.
+_US_LAT = (24.0, 50.0)
+_US_LNG = (-130.0, -60.0)
+_MERCATOR_MAX = 20_100_000  # Web Mercator meters bound (~half circumference)
+
+
+def sanitize_latlng(lat: float | None, lng: float | None) -> tuple[float | None, float | None]:
+    """Return plausible WGS84 degrees or (None, None) - never poison.
+
+    ArcGIS servers that ignore outSR hand back Web Mercator meters; those
+    convert deterministically. Virginia state-plane FEET (x ~12M) convert to
+    a longitude outside the US box and are dropped - a missing coordinate
+    matches by address, a wrong one matches the wrong parcel.
+    """
+    if lat is None or lng is None:
+        return None, None
+    if abs(lat) > 90 or abs(lng) > 180:
+        if abs(lat) <= _MERCATOR_MAX and abs(lng) <= _MERCATOR_MAX:
+            import math
+            lng = math.degrees(lng / 6378137.0)
+            lat = math.degrees(2 * math.atan(math.exp(lat / 6378137.0)) - math.pi / 2)
+        else:
+            return None, None
+    if _US_LAT[0] <= lat <= _US_LAT[1] and _US_LNG[0] <= lng <= _US_LNG[1]:
+        return lat, lng
+    return None, None
 
 
 @dataclass
@@ -175,6 +222,10 @@ class CoverageReport:
     by_city: Counter = field(default_factory=Counter)
     mf_by_city: Counter = field(default_factory=Counter)
     unmapped_keys: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
+    # Which use-code values drove the MF classification, per city. A wrong
+    # alias or over-broad fragment shows up here immediately (the VB "R-40"
+    # zoning incident would have been one glance).
+    mf_use_codes: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
 
     @property
     def coverage(self) -> float:
@@ -201,12 +252,19 @@ class CoverageReport:
             "Multifamily by city: " + ", ".join(
                 f"{c} {n:,}" for c, n in self.mf_by_city.most_common()) ,
         ]
+        if self.mf_use_codes:
+            lines.append("")
+            lines.append("Top use codes classified multifamily (wrong codes here = bad aliasing):")
+            for city, codes in self.mf_use_codes.items():
+                top = ", ".join(f"{c or '(units only)'} x{n}"
+                                for c, n in codes.most_common(5))
+                lines.append(f"  {city}: {top}")
         pending = {c: k for c, k in self.unmapped_keys.items() if k}
         if pending:
             lines.append("")
             lines.append("Attribute keys with NO mapping yet (add aliases in core/phase0.py):")
             for city, keys in pending.items():
-                top = ", ".join(k for k, _n in keys.most_common(8))
+                top = ", ".join(k for k, _n in keys.most_common(12))
                 lines.append(f"  {city}: {top}")
         return "\n".join(lines)
 
@@ -254,8 +312,11 @@ def is_multifamily(use_code: str | None, units: float | None) -> bool:
     """Multifamily = an apartment-style use code OR a unit count >= the bar."""
     if units is not None and units >= MIN_MF_UNITS:
         return True
-    token = (use_code or "").lower()
-    return any(fragment in token for fragment in _MF_USE_FRAGMENTS)
+    text = (use_code or "").lower()
+    if any(fragment in text for fragment in _MF_USE_SUBSTRINGS):
+        return True
+    tokens = {t.strip(".") for t in _TOKEN_SPLIT.split(text) if t}
+    return not _MF_USE_TOKENS.isdisjoint(tokens)
 
 
 def build_row(city: str, state: str, raw: dict,
@@ -267,7 +328,7 @@ def build_row(city: str, state: str, raw: dict,
     mapped = normalize_record(city, state, raw, report)
 
     apn = str(mapped.get("apn") or "").strip()
-    lat, lng = _num(mapped.get("lat")), _num(mapped.get("lng"))
+    lat, lng = sanitize_latlng(_num(mapped.get("lat")), _num(mapped.get("lng")))
     if apn and spine.normalize_apn(apn):
         pid = spine.property_id(fips, apn)
     elif lat is not None and lng is not None:
@@ -427,6 +488,7 @@ def build_spine(db_path: Path,
             if is_multifamily(use_code, units):
                 report.multifamily += 1
                 report.mf_by_city[city] += 1
+                report.mf_use_codes[city][(use_code or "").strip()[:40]] += 1
         conn.commit()
     return report
 

@@ -275,25 +275,82 @@ class ArcGISPuller:
             pass
         return None
 
+    # Geometry fetch modes, tried in order on the first page. Without a
+    # coordinate the spine can only match by address - Portsmouth went 0/45
+    # in P0-2 because its layers stored no lat/lng at all.
+    #   centroid: cheap (no polygon payload); hosted layers support it.
+    #   geometry: full shapes for on-prem servers that ignore returnCentroid;
+    #             polygon rings are averaged into a centroid downstream.
+    #   none:     the legacy behavior, for servers that choke on either.
+    _GEO_MODES = ("centroid", "geometry", "none")
+
+    @staticmethod
+    def _geo_params(mode: str) -> dict[str, Any]:
+        if mode == "centroid":
+            return {"returnGeometry": "false", "returnCentroid": "true",
+                    "outSR": 4326}
+        if mode == "geometry":
+            return {"returnGeometry": "true", "outSR": 4326,
+                    "geometryPrecision": 6}
+        return {"returnGeometry": "false"}
+
+    @staticmethod
+    def _feature_xy(ft: dict) -> tuple[Any, Any]:
+        geo = ft.get("centroid") or ft.get("geometry") or {}
+        x, y = geo.get("x"), geo.get("y")
+        if (x is None or y is None) and geo.get("rings"):
+            ring = geo["rings"][0] or []
+            pts = [p for p in ring if isinstance(p, (list, tuple)) and len(p) >= 2]
+            if pts:
+                x = sum(p[0] for p in pts) / len(pts)
+                y = sum(p[1] for p in pts) / len(pts)
+        return x, y
+
     def iter_records(self) -> Iterable[dict]:
         offset = 0
         page = min(self.page, self.max_record_count())
         oid = self._oid_field()
+        geo_mode: str | None = None
         while True:
-            params = {
+            base = {
                 "where": self.where,
                 "outFields": "*",
-                "returnGeometry": "false",
                 "f": "json",
                 "resultOffset": offset,
                 "resultRecordCount": page,
             }
             if oid:  # only order when we know the real OID field
-                params["orderByFields"] = oid
-            data = self._get(params)
-            feats = data.get("features", [])
+                base["orderByFields"] = oid
+            if geo_mode is None:
+                # First page: probe modes until one returns features (and,
+                # for centroid mode, actually carries centroids).
+                data, feats = {}, []
+                for mode in self._GEO_MODES:
+                    try:
+                        data = self._get({**base, **self._geo_params(mode)})
+                    except Exception:
+                        continue
+                    feats = data.get("features", [])
+                    if data.get("error") or not feats:
+                        continue
+                    if mode == "centroid" and not feats[0].get("centroid"):
+                        continue
+                    geo_mode = mode
+                    break
+                if geo_mode is None:
+                    geo_mode = "none"  # empty layer or all probes failed
+            else:
+                data = self._get({**base, **self._geo_params(geo_mode)})
+                feats = data.get("features", [])
             for ft in feats:
-                yield ft.get("attributes", {})
+                attrs = ft.get("attributes", {}) or {}
+                x, y = self._feature_xy(ft)
+                if x is not None and y is not None:
+                    # Distinct keys - never clobber a real attribute column.
+                    # phase0 maps geo_lat/geo_lng at top alias priority and
+                    # converts stray Web Mercator meters to degrees.
+                    attrs = {**attrs, "geo_lat": y, "geo_lng": x}
+                yield attrs
             if not data.get("exceededTransferLimit") or not feats:
                 break
             offset += page
