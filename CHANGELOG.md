@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.10.1.0 — 2026-07-29  ·  Report push shows its errors
+No host report ever arrived on GitHub, and the push helper was swallowing
+every git message (`>nul 2>&1`) - so the failure had no face.
+`_push-report.bat` now prints git's real output; when a push fails, the
+window shows the exact error above a "screenshot this" pointer. One
+screenshot = one fix.
+
 ## V5.8.10.0.0 — 2026-07-29  ·  Socrata discovery: Norfolk's coordinates found a path
 The discover-feeds run confirmed the guards work (bad VB layer rejected by
 name, junk layers by geography) and exposed the last structural gap:
