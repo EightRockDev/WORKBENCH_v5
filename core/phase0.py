@@ -158,6 +158,29 @@ def _norm_key(key: str) -> str:
     return re.sub(r"[^a-z0-9]", "", key.lower())
 
 
+def extract_dict_coords(value: Any) -> tuple[float, float] | None:
+    """(lat, lng) from a Socrata location/point column value, else None.
+
+    Socrata serves coordinates as structured values, not scalars:
+    ``{"latitude": "36.86", "longitude": "-76.28", ...}`` (location type)
+    or GeoJSON ``{"type": "Point", "coordinates": [lng, lat]}``. These must
+    never be str()'d into a text field.
+    """
+    if not isinstance(value, dict):
+        return None
+    lat = value.get("latitude") or value.get("lat")
+    lng = value.get("longitude") or value.get("lng") or value.get("lon")
+    if lat is None or lng is None:
+        coords = value.get("coordinates")
+        if (str(value.get("type", "")).lower() == "point"
+                and isinstance(coords, (list, tuple)) and len(coords) >= 2):
+            lng, lat = coords[0], coords[1]
+    try:
+        return (float(lat), float(lng)) if lat is not None and lng is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
 def _num(value: Any) -> float | None:
     if value is None or isinstance(value, bool):
         return None
@@ -302,6 +325,18 @@ def normalize_record(city: str, state: str, raw: dict,
     prio: dict[str, int] = {}
     for key, value in (raw or {}).items():
         if value in (None, "", " "):
+            continue
+        # Structured coordinate values (Socrata location/point columns)
+        # supply lat/lng only when no scalar column already did - and a
+        # dict must NEVER be assigned to a text field like address.
+        if isinstance(value, (dict, list)):
+            coords = extract_dict_coords(value)
+            if coords is not None:
+                # Weakest priority: any scalar/geo_lat column may override.
+                for fieldname, v in (("lat", coords[0]), ("lng", coords[1])):
+                    if fieldname not in out:
+                        out[fieldname] = v
+                        prio[fieldname] = 999
             continue
         norm = _norm_key(key)
         hit = _ALIAS_LOOKUP.get(norm)

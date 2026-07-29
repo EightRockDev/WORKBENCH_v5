@@ -612,3 +612,23 @@ def test_scan_order_is_deterministic_regardless_of_pull_history(tmp_path):
     with sqlite3.connect(db) as conn:
         use = conn.execute("SELECT use_code FROM properties_8r").fetchone()[0]
     assert use == "A CODE"
+
+
+def test_socrata_location_dicts_become_coords_never_addresses():
+    """Socrata serves coordinates as dicts; they must reach lat/lng and
+    never be str()'d into a text field."""
+    m = phase0.normalize_record("Norfolk", "VA", {
+        "gpin": "123", "propertystreet": "500 Granby St",
+        "location": {"latitude": "36.86", "longitude": "-76.29"}})
+    assert m["lat"] == 36.86 and m["lng"] == -76.29
+    assert m["address"] == "500 Granby St"
+    # GeoJSON point flavor
+    m2 = phase0.normalize_record("Norfolk", "VA", {
+        "gpin": "9", "the_geom": {"type": "Point",
+                                  "coordinates": [-76.29, 36.86]}})
+    assert m2["lat"] == 36.86 and m2["lng"] == -76.29
+    # A scalar latitude column beats the dict when both exist
+    m3 = phase0.normalize_record("Norfolk", "VA", {
+        "gpin": "9", "latitude": "36.90", "longitude": "-76.20",
+        "location": {"latitude": "1.0", "longitude": "2.0"}})
+    assert float(m3["lat"]) == 36.90

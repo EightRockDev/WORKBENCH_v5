@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.10.0.0 — 2026-07-29  ·  Socrata discovery: Norfolk's coordinates found a path
+The discover-feeds run confirmed the guards work (bad VB layer rejected by
+name, junk layers by geography) and exposed the last structural gap:
+**Norfolk's GIS is not ArcGIS**, so the ArcGIS walk finds nothing and the
+Socrata assessment roll has no coordinates. Fixes:
+- **Discovery now probes Socrata catalogs** (`data.norfolk.gov`): searches
+  parcel/real-estate/property/address datasets, scores columns with the
+  same alias vocabulary, +5 for a coordinate column, geo-verifies 5 sample
+  rows against the city bbox, and emits `platform: socrata` feed specs.
+- **Structured coordinate values handled safely**: Socrata location dicts
+  (`{latitude, longitude}`) and GeoJSON points now map to lat/lng at
+  weakest priority — and a dict can never be str()'d into the address
+  field. SODA fetches never send the ArcGIS `f=json` param (SODA 400s on
+  unknown non-$ params).
+- 7 new tests. Next discover-feeds run should finally give Norfolk's
+  backbone coordinates, unlocking lat/lng + proximity matching for its
+  remaining 68 unmatched legacy rows.
+
 ## V5.8.9.1.0 — 2026-07-29  ·  Terminology: "backbone" replaces "spine" in all visible text
 Owner directive: the word is **backbone**. Updated everywhere a human sees
 it — run-phase0/pull-muni .bat text, the P0-1/P0-2 report output, and UI

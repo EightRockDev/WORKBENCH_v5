@@ -122,3 +122,62 @@ def test_in_city_layer_passes_geo_sample_and_units_rank_first():
     specs = found["Chesapeake"]
     assert len(specs) == 2
     assert "AddrPts" in specs[0]["url"]        # unit-bearing layer ranks first
+
+
+# ---------------------------------------------------------------------------
+# Socrata discovery (Norfolk's GIS is not ArcGIS - the walk found nothing)
+# ---------------------------------------------------------------------------
+
+from scripts.discover_feeds import (  # noqa: E402
+    search_socrata, socrata_sample_in_city)
+
+
+def _fake_soda(url, params=None):
+    if url.endswith("/api/catalog/v1"):
+        if (params or {}).get("q") != "parcel":
+            return {"results": []}
+        return {"results": [
+            {"resource": {"id": "abcd-1234", "name": "Real Estate Parcels",
+                          "columns_field_name": ["gpin", "street_address",
+                                                 "location", "use_code"],
+                          "columns_datatype": ["Text", "Text", "Location",
+                                               "Text"]}},
+            {"resource": {"id": "zzzz-9999", "name": "Trails",
+                          "columns_field_name": ["trail", "miles"],
+                          "columns_datatype": ["Text", "Number"]}},
+        ]}
+    if "abcd-1234" in url:
+        return [{"gpin": "123", "street_address": "500 Granby St",
+                 "location": {"latitude": "36.86", "longitude": "-76.29"}}]
+    return []
+
+
+def test_search_socrata_yields_coordinate_bearing_datasets():
+    out = list(search_socrata("Norfolk", soda=_fake_soda))
+    urls = [u for u, *_ in out]
+    assert any("abcd-1234" in u for u in urls)
+    (res_url, name, cols, has_coords) = next(
+        t for t in out if "abcd-1234" in t[0])
+    assert has_coords is True
+    assert "gpin" in cols
+
+
+def test_socrata_sample_geo_verifies_against_bbox():
+    ok = socrata_sample_in_city(
+        "https://data.norfolk.gov/resource/abcd-1234.json", "Norfolk",
+        soda=_fake_soda)
+    assert ok is True
+    # Same rows claimed for Hampton (bbox further north) must be rejected.
+    bad = socrata_sample_in_city(
+        "https://data.norfolk.gov/resource/abcd-1234.json", "Hampton",
+        soda=_fake_soda)
+    assert bad is False
+
+
+def test_discover_emits_socrata_spec_for_norfolk():
+    found = discover(cities=("Norfolk",), fetch=lambda u, p=None: {},
+                     soda=_fake_soda)
+    specs = found["Norfolk"]
+    assert any(s["platform"] == "socrata" and "abcd-1234" in s["url"]
+               for s in specs)
+    assert all("zzzz-9999" not in s["url"] for s in specs)  # no-APN dataset

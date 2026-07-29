@@ -157,6 +157,20 @@ def _get_json(url: str, params: dict | None = None) -> dict | None:
         return None
 
 
+def _soda_get(url: str, params: dict | None = None):
+    """Socrata fetch - NO forced f=json param (SODA treats unknown non-$
+    params as column filters and 400s), and list responses are valid
+    (resource endpoints return JSON arrays)."""
+    import requests
+    try:
+        r = requests.get(url, params=params or {}, timeout=TIMEOUT)
+        r.raise_for_status()
+        data = r.json()
+        return data if isinstance(data, (list, dict)) else None
+    except Exception:
+        return None
+
+
 def walk_root(root: str, fetch=_get_json):
     """Yield (layer_url, layer_name, field_names) for every layer under an
     ArcGIS services directory (including one folder level)."""
@@ -201,7 +215,85 @@ def search_agol(city: str, fetch=_get_json):
                     yield layer_url, item.get("title", ""), fields
 
 
-def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json) -> dict[str, list[dict]]:
+# Cities whose GIS is NOT ArcGIS: their open-data portal is Socrata, so the
+# ArcGIS walk finds nothing (Norfolk: "nothing suitable found" while its
+# assessment roll lives on data.norfolk.gov without coordinates - a Socrata
+# dataset WITH a location column is the fix).
+SOCRATA_PORTALS = {
+    "Norfolk": "https://data.norfolk.gov",
+}
+SOCRATA_QUERIES = ("parcel", "real estate", "property", "address")
+_COORD_DATATYPES = ("point", "location")
+_COORD_COLUMNS = ("latitude", "longitude", "location", "the_geom",
+                  "geocoded_column", "point", "geolocation")
+
+
+def search_socrata(city: str, soda=_soda_get):
+    """Yield (resource_url, name, field_names, has_coords) from a city's
+    Socrata catalog. Only cities in SOCRATA_PORTALS are probed."""
+    portal = SOCRATA_PORTALS.get(city)
+    if not portal:
+        return
+    seen: set[str] = set()
+    for q in SOCRATA_QUERIES:
+        data = soda(f"{portal}/api/catalog/v1",
+                    {"q": q, "limit": 30, "only": "datasets"})
+        if not isinstance(data, dict):
+            continue
+        for item in (data.get("results") or []):
+            res = (item or {}).get("resource") or {}
+            rid = res.get("id")
+            cols = res.get("columns_field_name") or []
+            dtypes = [str(t).lower() for t in (res.get("columns_datatype") or [])]
+            if not rid or rid in seen or not cols:
+                continue
+            seen.add(rid)
+            has_coords = (
+                any(t in _COORD_DATATYPES for t in dtypes)
+                or any(str(c).lower() in _COORD_COLUMNS for c in cols))
+            yield (f"{portal}/resource/{rid}.json",
+                   res.get("name", ""), list(cols), has_coords)
+
+
+def socrata_sample_in_city(resource_url: str, city: str, soda=_soda_get) -> bool | None:
+    """Same contract as sample_in_city, over a SODA resource."""
+    bbox = CITY_BBOX.get(city)
+    if bbox is None:
+        return None
+    rows = soda(resource_url, {"$limit": 5})
+    if not isinstance(rows, list):
+        return None
+    from core.phase0 import extract_dict_coords, _norm_key
+    lat_min, lat_max, lng_min, lng_max = bbox
+    inside = outside = 0
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        lat = lng = None
+        for v in row.values():
+            c = extract_dict_coords(v)
+            if c:
+                lat, lng = c
+                break
+        if lat is None:
+            scal = {_norm_key(k): v for k, v in row.items()
+                    if not isinstance(v, (dict, list))}
+            try:
+                lat = float(scal.get("latitude") or scal.get("lat"))
+                lng = float(scal.get("longitude") or scal.get("lng"))
+            except (TypeError, ValueError):
+                continue
+        if lat_min <= lat <= lat_max and lng_min <= lng <= lng_max:
+            inside += 1
+        else:
+            outside += 1
+    if inside + outside == 0:
+        return None
+    return inside >= outside
+
+
+def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
+             soda=_soda_get) -> dict[str, list[dict]]:
     """{city: [candidate FeedSpec dicts, best first]}"""
     out: dict[str, list[dict]] = {}
     for city in cities:
@@ -238,6 +330,34 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json) -> dict[str,
                     "note": f"auto-discovered: {name}; score {score}; "
                             f"fields {sorted(mapped)}{geo_note}",
                 }))
+        # Socrata portals (cities whose GIS is not ArcGIS at all)
+        for res_url, name, cols, has_coords in search_socrata(city, soda):
+            if res_url in seen_urls:
+                continue
+            seen_urls.add(res_url)
+            score, mapped = score_fields(cols)
+            if has_coords:
+                score += 5            # a coordinate column is the point
+                mapped.setdefault("lat", "(location column)")
+            if score < MIN_SCORE:
+                continue
+            if named_for_other_city(name, res_url, city):
+                rejected.append(f"{name}: layer is named for another city")
+                continue
+            verdict = socrata_sample_in_city(res_url, city, soda)
+            if verdict is False:
+                rejected.append(f"{name}: records are NOT in {city}")
+                continue
+            geo_note = "" if verdict else "; geo-verify inconclusive"
+            if "units" in mapped:
+                score += 3
+            candidates.append((score, {
+                "market": city, "state": "VA", "county": city,
+                "kind": "assessor", "platform": "socrata",
+                "url": res_url, "status": "live",
+                "note": f"auto-discovered (socrata): {name}; score {score}; "
+                        f"fields {sorted(mapped)}{geo_note}",
+            }))
         candidates.sort(key=lambda t: -t[0])
         out[city] = [spec for _s, spec in candidates[:2]]
         for r in rejected:
