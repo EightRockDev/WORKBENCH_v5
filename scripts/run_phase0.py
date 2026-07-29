@@ -35,6 +35,23 @@ def main() -> int:
         print("data\\ (it holds the 3.9M municipal rows) or run etl_munidata.py.")
         return 1
 
+    # Which feeds are actually IN the database - ends any mystery about
+    # whether a pull landed.
+    import sqlite3 as _sq
+    with _sq.connect(db) as conn:
+        rows = conn.execute(
+            """SELECT market, source_url, count(*) FROM muni_records
+                WHERE kind LIKE 'assessor%' GROUP BY market, source_url
+                ORDER BY market""").fetchall()
+    hr = ("Norfolk", "Virginia Beach", "Chesapeake", "Hampton",
+          "Newport News", "Portsmouth", "Suffolk")
+    print()
+    print("Assessor feeds present (Hampton Roads):")
+    for market, url, n in rows:
+        if market in hr:
+            tail = url.rsplit("/", 3)
+            print(f"  {market:15} {n:>9,}  .../{'/'.join(tail[-3:])}")
+
     print()
     print("Building the Eight Rock property spine (properties_8r)...")
     report = phase0.build_spine(db)

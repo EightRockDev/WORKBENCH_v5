@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.6.1.0 — 2026-07-28  ·  Pull hygiene (HR-only, visible extras, lock tolerance)
+The pull-output screenshot explained the missing city data three ways, all
+fixed:
+- **`pull-muni.bat` now pulls Hampton Roads only** (`--hr`): the previous run
+  spent most of its time on Raleigh/Atlanta/Nashville — 2M+ records Phase 0
+  doesn't use.
+- **Discovered feeds are announced**: the ETL prints how many feeds it loaded
+  from `data/feeds_extra.json` and each one's city + URL, so "did my
+  discovered feeds actually run?" is answered on the first line, not by
+  archaeology.
+- **`database is locked` (Alexandria [ERR])**: the ETL now opens SQLite with
+  a 60 s busy timeout, and `pull-muni.bat` reminds the operator to close the
+  app/service first.
+- **`run-phase0.bat` lists the assessor feeds actually present per HR city**
+  (with record counts) before building — ground truth for every future run.
+- Verified offline: extra-feed loading with unknown-key tolerance, HR
+  filtering, and the feed listing rendering. Suite: 674 passed; 4
+  pre-existing data-dependent failures unchanged.
+
+---
+
 ## V5.8.6.0.0 — 2026-07-28  ·  Phase 0 round 5: address-point units + proximity matching
 Host round 4: match 41.9%, covered-cities 70.6%, +13 footprint recoveries —
 and two decisive discoveries in the unmapped keys:

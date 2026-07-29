@@ -387,12 +387,24 @@ def run_feed(feed: FeedSpec, conn: sqlite3.Connection,
     return n
 
 
+HR_MARKETS = ("Norfolk", "Virginia Beach", "Chesapeake", "Hampton",
+              "Newport News", "Portsmouth", "Suffolk")
+
+
 def run_all(app_token: str | None = None, market: str | None = None,
-            limit: int | None = None) -> dict[str, int]:
-    conn = sqlite3.connect(DB_PATH)
+            limit: int | None = None, hr_only: bool = False) -> dict[str, int]:
+    conn = sqlite3.connect(DB_PATH, timeout=60)
+    conn.execute("PRAGMA busy_timeout = 60000")   # tolerate the app reading
     _ensure_schema(conn)
+    extras = _extra_feeds()
+    print(f"  discovered feeds loaded from data/feeds_extra.json: {len(extras)}")
+    for f in extras:
+        print(f"    + {f.market}: {f.url}")
     results: dict[str, int] = {}
-    for feed in feeds(status="live", market=market):
+    todo = feeds(status="live", market=market)
+    if hr_only:
+        todo = [f for f in todo if f.market in HR_MARKETS]
+    for feed in todo:
         key = f"{feed.market}/{feed.kind}"
         try:
             results[key] = run_feed(feed, conn, app_token=app_token, limit=limit)
@@ -410,6 +422,8 @@ def _main(argv: list[str]) -> int:
     ap.add_argument("--list", action="store_true", help="List the feed registry and exit")
     ap.add_argument("--limit", type=int, help="Cap records per feed (testing)")
     ap.add_argument("--app-token", help="Socrata app token (Norfolk/Nashville)")
+    ap.add_argument("--hr", action="store_true",
+                    help="Hampton Roads markets only (skip the Top-25 pulls)")
     args = ap.parse_args(argv)
 
     if args.list:
@@ -427,7 +441,8 @@ def _main(argv: list[str]) -> int:
         return 0
 
     print(f"QUARRY muni-data ETL — {dt.date.today().isoformat()}")
-    run_all(app_token=args.app_token, market=args.market, limit=args.limit)
+    run_all(app_token=args.app_token, market=args.market,
+            limit=args.limit, hr_only=args.hr)
     return 0
 
 
