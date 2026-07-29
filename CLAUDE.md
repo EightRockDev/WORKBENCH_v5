@@ -143,7 +143,10 @@ unacceptable. Every lesson below was paid for — do not relearn any of them.
 ### Why Hampton Roads was slow (root causes, not symptoms)
 1. **Tuning against invisible data.** The DB lives on the host; the build env
    is firewalled from city portals AND from the DB. Each fix required an
-   owner round-trip. At 50-metro scale there are NO round-trips: the pipeline
+   owner round-trip. PARTIALLY SOLVED in V5.8.8.0.0: the host .bats now
+   tee full output to reports/*-latest.txt and auto-push to GitHub - after
+   the owner double-clicks, `git pull` here and READ reports/ instead of
+   asking for screenshots. Check reports/ at the start of every session. At 50-metro scale there are NO round-trips: the pipeline
    must be right-by-construction, self-diagnosing, and self-healing.
 2. **Defaults that silently lose data.** `returnGeometry=false` threw away
    every ArcGIS coordinate; substring matching on short codes ("r-4" in

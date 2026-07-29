@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.8.0.0 — 2026-07-29  ·  Closed-loop reports: host runs push full results to GitHub
+Ends the screenshot workflow. `run-phase0.bat`, `pull-muni.bat`, and
+`discover-feeds.bat` now:
+- tee their complete console output to `reports\phase0-latest.txt` /
+  `pull-latest.txt` / `discover-latest.txt` (UTF-8, live output preserved),
+- auto-commit and push the report via the shared `_push-report.bat`
+  (safe.directory guard, autostash rebase, one retry, inline identity so a
+  host without git user.name still commits),
+- discover-feeds also pushes `data\feeds_extra.json`, so the discovered
+  feed list itself is visible for review before a pull.
+Claude reads the full results from the repo minutes after a double-click —
+including everything that scrolls off screen. Push failure never blocks a
+run; the .bat says where the file is and screenshots remain the fallback.
+(Context: the build environment is firewalled from both the pilot host and
+the city portals — code flows out via GitHub; this makes results flow back
+the same way.)
+
 ## V5.8.7.1.0 — 2026-07-29  ·  Pull resilience: 502 retries + wrong-city layer guard
 The clean HR-only pull surfaced two remaining hazards:
 - **Transient 502s no longer kill a feed**: a VB layer died at offset
