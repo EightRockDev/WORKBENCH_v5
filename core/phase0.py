@@ -60,18 +60,19 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                 "propertystreet", "streetaddress", "situsaddr", "propaddr"),
     # Some feeds (Norfolk) split the address into number + name + type.
     "address_number": ("propertystreetnumber", "streetnumber", "housenumber",
-                       "stnum", "situsnumber"),
+                       "stnum", "situsnumber", "stnumber"),
     "address_street": ("propertystreetname", "streetname", "situsstreet",
                        "stname"),
     "address_suffix": ("propertystreettype", "streettype", "stsuffix",
                        "streetsuffix", "sttype"),
     "address_direction": ("propertystreetdirection", "streetdirection",
-                          "stdir", "predirection"),
+                          "stdir", "predirection", "stprefix"),
     "address_number_suffix": ("propertystreetnumbersuffix",
-                              "streetnumbersuffix"),
+                              "streetnumbersuffix", "addnumwsuffix",
+                              "addrnumsuffix"),
     "city": ("city", "situscity", "propertycity", "municipality", "stcity"),
     "zip": ("zip", "zipcode", "situszip", "propertyzip", "postalcode",
-            "addresszip", "stzipcode"),
+            "addresszip", "stzipcode", "sitezip"),
     "units": ("units", "livunit", "livingunits", "numunits", "unitcount",
               "dwellingunits", "totalunits", "resunits", "apartments",
               "numberofunits", "livunits"),
@@ -87,7 +88,7 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                  "zoning", "propertyusecode", "usedesc", "usedescription",
                  "landusedescription", "propertyclassdescription", "usecd",
                  "classdscrp", "usedscrp", "prprtydscrp", "proptype",
-                 "propertytype", "statecode", "luc", "bldguse"),
+                 "propertytype", "statecode", "luc", "bldguse", "resstrtyp"),
     "assessed_value": ("assessedvalue", "totalvalue", "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
                        "currenttotalvalue", "totalcurrentvalue", "assessment",
@@ -124,7 +125,15 @@ _IGNORED_KEYS = re.compile(
     r"fid|objectid1|calcacreag|createdda|lastedite|assessmnt|bldgdiagr|"
     r"impervarea|lastsaledate|lastsaleprice|deed|pstlzip4|floorcount|"
     r"resextwall|acres|landval|bldgval|prevprice|story|stories|rooms|"
-    r"bedrooms|noisezone|aicuzzone|taxarea|spx|spy|isprimary)$")
+    r"bedrooms|noisezone|aicuzzone|taxarea|spx|spy|isprimary|"
+    r"createduser|createddate|dateadded|floor|comments|fieldverified|"
+    r"dateaddresschanged|dfirmid|ecbfe|ecelevda|topbf|topnhf|blhm|atgar|"
+    r"elevequip|lag|hag|lowelevst|ffe|dimen|section|ownernme2|overlay|"
+    r"lasteditor|lastupdate|cbpa|caseid|enterprise|floodzone|bfe|bldgdate|"
+    r"bath|halfbath|garsf|fp|dtsqft|book|page|prevbook|prevpage|cpn|"
+    r"gp10k|gptax|gpcomp|agrid|taxdistrict|taxdistrictdescription|"
+    r"daypickup|policepatrolzone|policeprecinct|votingprecinct|"
+    r"femazonebldg|watershed)$")
 
 # Use-code text that identifies multifamily in municipal rolls. Two tiers:
 #   * SUBSTRINGS - long unambiguous words, safe to match anywhere in the code.
@@ -138,6 +147,7 @@ _IGNORED_KEYS = re.compile(
 _MF_USE_SUBSTRINGS = (
     "apartment", "multifamily", "multi-family", "multi family",
     "condo hi rise", "garden apt", "townhouse rental", "res 4+",
+    "housing",   # public/subsidized/senior housing = rental multifamily
 )
 _MF_USE_TOKENS = frozenset({"mf", "405", "r-4", "apt", "apts"})  # 405 = VA apartment class
 
@@ -219,6 +229,7 @@ class CoverageReport:
     skipped_no_parcel_or_latlng: int = 0
     provisional_ids: int = 0
     units_from_points: int = 0
+    units_from_points_skipped: int = 0   # non-residential parcels (marinas...)
     by_city: Counter = field(default_factory=Counter)
     mf_by_city: Counter = field(default_factory=Counter)
     unmapped_keys: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
@@ -226,6 +237,10 @@ class CoverageReport:
     # alias or over-broad fragment shows up here immediately (the VB "R-40"
     # zoning incident would have been one glance).
     mf_use_codes: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
+    # WHY each MF row qualified: real unit count >= 10, an MF use code
+    # DESPITE a small known unit count (suspicious - duplexes labeled
+    # "Multi Family"), or an MF use code with no unit data at all.
+    mf_basis: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
 
     @property
     def coverage(self) -> float:
@@ -244,7 +259,8 @@ class CoverageReport:
             f"multifamily (>= {MIN_MF_UNITS} units): {self.multifamily:,}",
             f"written to properties_8r:  {self.written:,}",
             f"provisional (no-APN) ids:  {self.provisional_ids:,}",
-            f"units derived from address points: {self.units_from_points:,}",
+            f"units derived from address points: {self.units_from_points:,}"
+            f"  (skipped non-residential: {self.units_from_points_skipped:,})",
             f"unusable (no parcel/latlng): {self.skipped_no_parcel_or_latlng:,}",
             f"P0-1 coverage:             {self.coverage:.1%}"
             f"  (gate >= {GATE_COVERAGE:.0%}: {'PASS' if self.gate_passed else 'not yet'})",
@@ -259,6 +275,12 @@ class CoverageReport:
                 top = ", ".join(f"{c or '(units only)'} x{n}"
                                 for c, n in codes.most_common(5))
                 lines.append(f"  {city}: {top}")
+        if self.mf_basis:
+            lines.append("")
+            lines.append("Why rows qualified as multifamily (suspicious bucket = code w/ small units):")
+            for city, basis in self.mf_basis.items():
+                parts = ", ".join(f"{k}: {n:,}" for k, n in basis.most_common())
+                lines.append(f"  {city}: {parts}")
         pending = {c: k for c, k in self.unmapped_keys.items() if k}
         if pending:
             lines.append("")
@@ -308,6 +330,23 @@ def normalize_record(city: str, state: str, raw: dict,
     return out
 
 
+def derivation_allowed(use_code: str | None) -> bool:
+    """May address-point multiplicity supply this parcel's unit count?
+
+    ALLOWLIST, not blocklist. A marina has one point per boat slip and a
+    mall one per suite; a subdivision plat puts many points on one
+    single-family parcel — and no blocklist can enumerate every spelling
+    ('BOAT SLIP', '1 FAM RES', 'R-1', numeric class '101'...). So points
+    only count as units when the assessor's code is affirmatively
+    multifamily, or when the parcel has no code at all (pure address-point
+    feeds - the case the derivation exists for).
+    """
+    text = (use_code or "").strip()
+    if not text:
+        return True
+    return is_multifamily(text, None)
+
+
 def is_multifamily(use_code: str | None, units: float | None) -> bool:
     """Multifamily = an apartment-style use code OR a unit count >= the bar."""
     if units is not None and units >= MIN_MF_UNITS:
@@ -317,6 +356,20 @@ def is_multifamily(use_code: str | None, units: float | None) -> bool:
         return True
     tokens = {t.strip(".") for t in _TOKEN_SPLIT.split(text) if t}
     return not _MF_USE_TOKENS.isdisjoint(tokens)
+
+
+def is_mf_ten_plus(use_code: str | None, units: float | None) -> bool:
+    """The PRODUCT definition of multifamily: >= 10 units (spec 7.3).
+
+    A KNOWN unit count always decides — VB labels ~15.7K duplexes
+    "Multi Family", and counting them by label inflated the gate and the
+    comp pool alike. The use code only decides when the feed carries no
+    unit data at all. Shared by the P0-1 gate and the P0-2 comp pool so
+    the two modules can never silently disagree.
+    """
+    if units is not None:
+        return units >= MIN_MF_UNITS
+    return is_multifamily(use_code, None)
 
 
 def build_row(city: str, state: str, raw: dict,
@@ -351,8 +404,12 @@ def build_row(city: str, state: str, raw: dict,
         year_built=int(year_built) if year_built and year_built > 1600 else None,
         sqft=_num(mapped.get("sqft")),
         use_code=use_code,
+        # Third derive param is STORIES (not year built - passing the year
+        # made every styled-less parcel a "high-rise"). No feed maps
+        # stories yet, and the value here is provisional anyway: build_spine
+        # recomputes r8_form from the merged row after all feeds land.
         r8_form=spine.derive_8r_form(use_code, int(units) if units else None,
-                                     int(year_built) if year_built else None),
+                                     None),
         r8_market="Hampton Roads",
         r8_submarket=city,
         assessed_value=_num(mapped.get("assessed_value")),
@@ -397,9 +454,14 @@ CREATE INDEX IF NOT EXISTS ix_8r_form ON properties_8r (r8_form);
 def _iter_muni_assessor_rows(conn: sqlite3.Connection,
                              cities: tuple[str, ...]) -> Iterator[tuple[str, str, str, dict]]:
     marks = ",".join("?" for _ in cities)
+    # Deterministic scan order: the COALESCE merge keeps the first non-NULL
+    # value per field, and rowid order shifts every re-pull (run_feed
+    # DELETEs + re-INSERTs a feed's rows, moving it to the end). Ordering by
+    # source_url makes "which feed wins" identical on every host and run.
     cur = conn.execute(
         f"""SELECT market, state, source_url, record FROM muni_records
-             WHERE kind LIKE 'assessor%' AND market IN ({marks})""",
+             WHERE kind LIKE 'assessor%' AND market IN ({marks})
+             ORDER BY source_url, id""",
         cities)
     for market, state, source, record in cur:
         try:
@@ -455,12 +517,19 @@ def build_spine(db_path: Path,
                     provenance, built_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(property_id) DO UPDATE SET
-                     address=excluded.address, units=excluded.units,
-                     year_built=excluded.year_built, sqft=excluded.sqft,
-                     use_code=excluded.use_code, r8_form=excluded.r8_form,
-                     assessed_value=excluded.assessed_value,
-                     owner_name=excluded.owner_name,
-                     lat=excluded.lat, lng=excluded.lng,
+                     address=COALESCE(properties_8r.address, excluded.address),
+                     units=COALESCE(properties_8r.units, excluded.units),
+                     year_built=COALESCE(properties_8r.year_built,
+                                         excluded.year_built),
+                     sqft=COALESCE(properties_8r.sqft, excluded.sqft),
+                     use_code=COALESCE(properties_8r.use_code,
+                                       excluded.use_code),
+                     assessed_value=COALESCE(properties_8r.assessed_value,
+                                             excluded.assessed_value),
+                     owner_name=COALESCE(properties_8r.owner_name,
+                                         excluded.owner_name),
+                     lat=COALESCE(properties_8r.lat, excluded.lat),
+                     lng=COALESCE(properties_8r.lng, excluded.lng),
                      built_at=excluded.built_at""",
                 (row.property_id, row.fips, row.apn, row.address, row.city,
                  row.state, row.zip, row.units, row.year_built, row.sqft,
@@ -469,26 +538,56 @@ def build_spine(db_path: Path,
                  row.provenance, now))
             report.written += 1
 
-        # Derive units from address-point multiplicity where no explicit
-        # unit field exists: N apartment-points on one parcel = N units.
+        # Derive units from address-point multiplicity: N apartment-points
+        # on one parcel = N units. Allowlist-guarded (see
+        # derivation_allowed): marinas, malls, and single-family plats all
+        # have 10+ points too - Chesapeake classified "BOAT SLIP x92" as
+        # multifamily before this. Derived counts may also RAISE a smaller
+        # stored value: building-card feeds write units=1 per row, and the
+        # first card freezes via COALESCE - 12 points on a "units=1" parcel
+        # means 12, not 1. An explicit LARGER count is never lowered.
         derived = 0
+        skipped_nonres = 0
         for pid, per_source in point_counts.items():
             n = max(per_source.values())
-            if n >= 2:
-                cur = conn.execute(
-                    "UPDATE properties_8r SET units = ? "
-                    " WHERE property_id = ? AND units IS NULL", (n, pid))
-                derived += cur.rowcount
+            if n < 2:
+                continue
+            row = conn.execute(
+                "SELECT use_code, units FROM properties_8r "
+                " WHERE property_id = ?", (pid,)).fetchone()
+            if row is None:
+                continue
+            if not derivation_allowed(row[0]):
+                skipped_nonres += 1
+                continue
+            cur = conn.execute(
+                "UPDATE properties_8r SET units = ? "
+                " WHERE property_id = ? AND (units IS NULL OR units < ?)",
+                (n, pid, n))
+            derived += cur.rowcount
         report.units_from_points = derived
+        report.units_from_points_skipped = skipped_nonres
+
+        # r8_form is a function of the MERGED (use_code, units) - recompute
+        # it once everything (multi-feed COALESCE + point derivation) has
+        # settled, so it can never desync from the row it describes.
+        conn.executemany(
+            "UPDATE properties_8r SET r8_form = ? WHERE property_id = ?",
+            [(spine.derive_8r_form(uc, u, None), pid)
+             for pid, uc, u in conn.execute(
+                 "SELECT property_id, use_code, units FROM properties_8r")])
 
         # Multifamily counts are computed from the FINISHED table (derived
         # units included), not incrementally.
         for city, units, use_code in conn.execute(
                 "SELECT city, units, use_code FROM properties_8r"):
-            if is_multifamily(use_code, units):
+            if is_mf_ten_plus(use_code, units):
                 report.multifamily += 1
                 report.mf_by_city[city] += 1
                 report.mf_use_codes[city][(use_code or "").strip()[:40]] += 1
+                report.mf_basis[city][
+                    "units>=10" if units is not None
+                    else "code only (no units)"] += 1
         conn.commit()
     return report
 

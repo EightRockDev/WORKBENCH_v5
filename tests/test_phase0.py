@@ -390,3 +390,225 @@ def test_sanitize_latlng_guards():
     assert phase0.sanitize_latlng(0.0, 0.0) == (None, None)
     assert phase0.sanitize_latlng(36.9, -76.2) == (36.9, -76.2)
     assert phase0.sanitize_latlng(None, -76.2) == (None, None)
+
+
+# ---------------------------------------------------------------------------
+# Round 7: address-point derivation guard + non-clobbering feed merge
+# ---------------------------------------------------------------------------
+
+def _seed_pointed(db, city, parcel, use, n_points, feed="https://pts.test/0"):
+    """One parcel appearing as N address-point rows in a single feed."""
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE IF NOT EXISTS muni_records (
+            id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+            kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+        for i in range(n_points):
+            conn.execute(
+                "INSERT INTO muni_records (market,state,county,kind,"
+                "source_url,record) VALUES (?,?,?,?,?,?)",
+                (city, "VA", city, "assessor", feed,
+                 json.dumps({"MAP_PARCEL": parcel, "PROPCLASS": use,
+                             "UNITNUMBER": str(i)})))
+        conn.commit()
+
+
+def test_marina_boat_slips_never_become_units(tmp_path):
+    """Chesapeake classified 'BOAT SLIP x92' as multifamily: one address
+    point per slip read as one unit each. Non-residential parcels are now
+    excluded from point-derived units."""
+    db = tmp_path / "workbench.db"
+    _seed_pointed(db, "Chesapeake", "CH-MARINA-1", "BOAT SLIP", 92)
+    report = phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        units = conn.execute("SELECT units FROM properties_8r").fetchone()[0]
+    assert units is None
+    assert report.units_from_points_skipped == 1
+    assert report.multifamily == 0
+
+
+def test_shopping_center_suites_never_become_units(tmp_path):
+    db = tmp_path / "workbench.db"
+    _seed_pointed(db, "Chesapeake", "CH-MALL-1", "Shopping Centers", 41)
+    report = phase0.build_spine(db)
+    assert report.multifamily == 0
+    assert report.units_from_points_skipped == 1
+
+
+def test_single_family_plat_points_never_become_units(tmp_path):
+    """A subdivision plat puts many points on one still-single-family
+    parcel; the assessor's own label must win over point counting."""
+    db = tmp_path / "workbench.db"
+    _seed_pointed(db, "Virginia Beach", "VB-PLAT-1",
+                  "Single Family or Duplex", 15)
+    report = phase0.build_spine(db)
+    assert report.multifamily == 0
+
+
+def test_apartment_labeled_points_still_derive_units(tmp_path):
+    """The guard must not break the legit case - apartment-coded parcels
+    keep deriving units from point multiplicity."""
+    db = tmp_path / "workbench.db"
+    _seed_pointed(db, "Chesapeake", "CH-APTS-1", "Apartments", 24)
+    report = phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        units = conn.execute("SELECT units FROM properties_8r").fetchone()[0]
+    assert units == 24
+    assert report.units_from_points == 1
+    assert report.multifamily == 1
+
+
+def test_later_feed_nulls_do_not_clobber_explicit_values(tmp_path):
+    """Chesapeake has 4 overlapping feeds. A bare address-point row landing
+    AFTER the parcel row must not wipe its units/use code (then re-derive
+    units=3 from multiplicity)."""
+    db = tmp_path / "workbench.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE muni_records (
+            id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+            kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+        conn.execute(
+            "INSERT INTO muni_records (market,state,county,kind,source_url,"
+            "record) VALUES (?,?,?,?,?,?)",
+            ("Chesapeake", "VA", "Chesapeake", "assessor",
+             "https://parcels.test/0",
+             json.dumps({"MAP_PARCEL": "CH-KEEP-1", "LIVUNIT": 48,
+                         "PROPCLASS": "APARTMENTS"})))
+        for i in range(3):
+            conn.execute(
+                "INSERT INTO muni_records (market,state,county,kind,"
+                "source_url,record) VALUES (?,?,?,?,?,?)",
+                ("Chesapeake", "VA", "Chesapeake", "assessor",
+                 "https://points.test/0",
+                 json.dumps({"MAP_PARCEL": "CH-KEEP-1",
+                             "UNITNUMBER": str(i)})))
+        conn.commit()
+    phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        units, use = conn.execute(
+            "SELECT units, use_code FROM properties_8r").fetchone()
+    assert units == 48
+    assert use == "APARTMENTS"
+
+
+# ---------------------------------------------------------------------------
+# Round 7b: adversarial-review regressions (allowlist, r8_form, gate rule)
+# ---------------------------------------------------------------------------
+
+def test_unenumerable_single_family_spellings_never_derive_units(tmp_path):
+    """'1 FAM RES', 'R-1', numeric class '101' - no blocklist can enumerate
+    these. The allowlist (derive only for MF codes or NO code) shuts the
+    whole class down."""
+    for i, use in enumerate(("1 FAM RES", "SINGLE FAM", "R-1", "101")):
+        db = tmp_path / f"wb{i}.db"
+        _seed_pointed(db, "Chesapeake", f"CH-SF-{i}", use, 15)
+        report = phase0.build_spine(db)
+        assert report.multifamily == 0, use
+        assert report.units_from_points_skipped == 1, use
+
+
+def test_subsidized_housing_still_derives_units(tmp_path):
+    db = tmp_path / "wb.db"
+    _seed_pointed(db, "Norfolk", "NF-PH-1", "GOVERNMENT SUBSIDIZED HOUSING", 36)
+    report = phase0.build_spine(db)
+    assert report.units_from_points == 1
+    assert report.multifamily == 1
+
+
+def test_building_card_units_of_one_are_overridden_by_point_count(tmp_path):
+    """CAMA building-card feeds write units=1 per row; COALESCE freezes the
+    first card's 1. Twelve cards on one apartment parcel mean 12 units."""
+    db = tmp_path / "wb.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE muni_records (
+            id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+            kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+        for i in range(12):
+            conn.execute(
+                "INSERT INTO muni_records (market,state,county,kind,"
+                "source_url,record) VALUES (?,?,?,?,?,?)",
+                ("Chesapeake", "VA", "Chesapeake", "assessor",
+                 "https://cards.test/0",
+                 json.dumps({"MAP_PARCEL": "CH-CARDS-9", "LIVUNIT": 1,
+                             "PROPCLASS": "APARTMENTS", "UNITNUMBER": str(i)})))
+        conn.commit()
+    phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        units = conn.execute("SELECT units FROM properties_8r").fetchone()[0]
+    assert units == 12
+
+
+def test_r8_form_is_computed_from_the_merged_row(tmp_path):
+    """Two review-confirmed bugs: build_row passed year_built as the STORIES
+    parameter (everything became 'high-rise'), and a later bare row could
+    clobber r8_form via the upsert CASE. r8_form now recomputes after the
+    merge settles."""
+    db = tmp_path / "wb.db"
+    _seed_muni(db, [_norfolk("FORM-1", units=24)])       # yearbuilt present
+    phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        form = conn.execute("SELECT r8_form FROM properties_8r").fetchone()[0]
+    assert form == "garden"        # NOT 'high-rise' (year is not stories)
+
+
+def test_bare_point_rows_do_not_clobber_r8_form(tmp_path):
+    db = tmp_path / "wb.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE muni_records (
+            id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+            kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+        conn.execute(
+            "INSERT INTO muni_records (market,state,county,kind,source_url,"
+            "record) VALUES (?,?,?,?,?,?)",
+            ("Chesapeake", "VA", "Chesapeake", "assessor",
+             "https://a.test/0",
+             json.dumps({"MAP_PARCEL": "FORM-2", "TOTALUNITS": 200})))
+        conn.execute(
+            "INSERT INTO muni_records (market,state,county,kind,source_url,"
+            "record) VALUES (?,?,?,?,?,?)",
+            ("Chesapeake", "VA", "Chesapeake", "assessor",
+             "https://b.test/0",
+             json.dumps({"MAP_PARCEL": "FORM-2", "UNITNUMBER": "0"})))
+        conn.commit()
+    phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        units, form = conn.execute(
+            "SELECT units, r8_form FROM properties_8r").fetchone()
+    assert units == 200
+    assert form == "mid-rise"      # derive(None, 200) - not 'garden'
+
+
+def test_gate_counts_by_units_when_units_are_known():
+    """The gate and the comp pool share one rule: a known count decides."""
+    assert phase0.is_mf_ten_plus("Multi Family", 2) is False
+    assert phase0.is_mf_ten_plus("Multi Family", 48) is True
+    assert phase0.is_mf_ten_plus("APARTMENT 20-49 UNITS", None) is True
+    assert phase0.is_mf_ten_plus("OFFICE", None) is False
+
+
+def test_scan_order_is_deterministic_regardless_of_pull_history(tmp_path):
+    """COALESCE keeps the first non-NULL; re-pulls move a feed's rows to
+    the end of rowid order. ORDER BY source_url makes the winner stable."""
+    db = tmp_path / "wb.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE muni_records (
+            id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+            kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+        # Feed z inserted FIRST (older pull), feed a inserted second - the
+        # a-feed must still win because it sorts first.
+        conn.execute(
+            "INSERT INTO muni_records (market,state,county,kind,source_url,"
+            "record) VALUES (?,?,?,?,?,?)",
+            ("Chesapeake", "VA", "Chesapeake", "assessor",
+             "https://z.test/0",
+             json.dumps({"MAP_PARCEL": "DET-1", "PROPCLASS": "Z CODE"})))
+        conn.execute(
+            "INSERT INTO muni_records (market,state,county,kind,source_url,"
+            "record) VALUES (?,?,?,?,?,?)",
+            ("Chesapeake", "VA", "Chesapeake", "assessor",
+             "https://a.test/0",
+             json.dumps({"MAP_PARCEL": "DET-1", "PROPCLASS": "A CODE"})))
+        conn.commit()
+    phase0.build_spine(db)
+    with sqlite3.connect(db) as conn:
+        use = conn.execute("SELECT use_code FROM properties_8r").fetchone()[0]
+    assert use == "A CODE"

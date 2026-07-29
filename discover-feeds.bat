@@ -1,8 +1,8 @@
 @echo off
 REM ===================================================================
 REM  Find unit-bearing parcel layers for the uncovered Hampton Roads
-REM  cities (VB, Chesapeake, Hampton, Portsmouth, Suffolk) by probing
-REM  their public GIS portals. Writes data\feeds_extra.json.
+REM  cities (VB, Chesapeake, Hampton, Portsmouth, Suffolk, Norfolk) by
+REM  probing their public GIS portals. Writes data\feeds_extra.json.
 REM  Double-click; takes a few minutes; read-only on the internet.
 REM  The output AND the discovered feed list are pushed to GitHub so
 REM  Claude reads the results directly - no screenshots.

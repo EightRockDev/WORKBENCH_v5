@@ -31,8 +31,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core.phase0 import _ALIAS_LOOKUP, _norm_key  # noqa: E402
 from etl_munidata import named_for_other_city as _named_for_other_city  # noqa: E402
 
+# Norfolk is here for COORDINATES: its Socrata roll has full attributes but
+# no lat/lng at all (parity: "no coordinates in feed"), capping matches at
+# address-only. An ArcGIS parcel layer fixes that.
 TARGET_CITIES = ("Virginia Beach", "Chesapeake", "Hampton", "Portsmouth",
-                 "Suffolk")
+                 "Suffolk", "Norfolk")
 
 KNOWN_ROOTS: dict[str, list[str]] = {
     "Virginia Beach": [
@@ -49,6 +52,11 @@ KNOWN_ROOTS: dict[str, list[str]] = {
     ],
     "Suffolk": [
         "https://services2.arcgis.com/roiGKZTZbeqAsCZi/arcgis/rest/services",
+    ],
+    # Norfolk's GIS lives on its own server (the Socrata roll has no
+    # coordinates); AGOL search is the fallback if this root is offline.
+    "Norfolk": [
+        "https://gis.norfolk.gov/arcgis/rest/services",
     ],
 }
 

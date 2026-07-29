@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.9.0.0 — 2026-07-29  ·  Phase 0 round 7: comp-pool cleanup + 12 review-confirmed fixes
+Driven by the first closed-loop full report (70.7% match, Chesapeake 66/66,
+Portsmouth 31/45) plus an adversarial 16-agent review of the diff. Fixes:
+- **Comp pool cleanup (the 13.8% overlap blocker)**: a KNOWN unit count now
+  decides multifamily for BOTH the P0-1 gate and the P0-2 comp pool
+  (shared `is_mf_ten_plus`); VB's 15.7K "Multi Family"-labeled duplexes no
+  longer pollute either.
+- **Address-point unit derivation is allowlist-guarded**: points only count
+  as units when the parcel's code is affirmatively multifamily or absent.
+  Kills BOAT SLIP marinas, Shopping Center suites, and every un-enumerable
+  single-family spelling ('1 FAM RES', 'R-1', class '101') in one rule.
+  Subsidized/public "housing" codes stay in. Derived counts may RAISE a
+  frozen units=1 from building-card feeds; larger explicit counts never drop.
+- **r8_form fixed twice**: build_row passed year_built into the STORIES
+  parameter (near-everything classified "high-rise" - pre-existing, found
+  by review), and the upsert could clobber it with a bare row's default.
+  r8_form now recomputes from the merged (use_code, units) after all
+  feeds + derivation settle.
+- **Merge hardening**: multi-feed COALESCE keeps first non-NULL per field
+  with a deterministic ORDER BY source_url scan (re-pull history no longer
+  changes which feed wins).
+- **Parity aggregation dedupe**: identical large counts collapse only when
+  centroids agree (~30m) - Allure-at-Edinburgh 5x overcount dies, but four
+  real 24-unit phase buildings at one situs still sum to 96.
+- **Norfolk joins discovery** (its Socrata roll has zero coordinates -
+  parity now flags this per city).
+- 12 new tests from confirmed review findings. Suite: 694 passed.
+
 ## V5.8.8.0.0 — 2026-07-29  ·  Closed-loop reports: host runs push full results to GitHub
 Ends the screenshot workflow. `run-phase0.bat`, `pull-muni.bat`, and
 `discover-feeds.bat` now:

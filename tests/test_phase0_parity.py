@@ -283,3 +283,64 @@ def test_proximity_fallback_matches_distant_geocodes(tmp_path):
     assert report.matched == 1
     assert report.matched_by_proximity == 1
     assert report.unit_agreement == 1
+
+
+# ---------------------------------------------------------------------------
+# Round 7: comp-pool unit floor + parallel-feed dedupe in aggregation
+# ---------------------------------------------------------------------------
+
+def test_known_small_units_beat_mf_label_in_pool():
+    """VB labels 15.7K duplexes 'Multi Family'; a KNOWN unit count under 10
+    keeps them out of the comp pool no matter the label."""
+    assert pp._is_mf_entity({"units": 2, "use_code": "Multi Family"}) is False
+    assert pp._is_mf_entity({"units": 48, "use_code": "Multi Family"}) is True
+    # No unit data at all -> the code still decides (Norfolk-style rolls).
+    assert pp._is_mf_entity({"units": None,
+                             "use_code": "APARTMENT 20-49 UNITS"}) is True
+    assert pp._is_mf_entity({"units": None, "use_code": "OFFICE"}) is False
+
+
+def test_parallel_feed_duplicates_count_once_in_aggregation():
+    """Chesapeake's four overlapping layers put the SAME 280-unit building
+    into the spine several times; summing made Allure at Edinburgh 1,420
+    units vs legacy 280. Identical large counts at one address merge."""
+    rows = [{"property_id": f"8R-x{i}", "address": "1420 Allure Way",
+             "city": "Chesapeake", "units": 280, "year_built": 2015,
+             "lat": 36.7, "lng": -76.25, "use_code": "Apartments"}
+            for i in range(5)]
+    (entity,) = pp.aggregate_8r_parcels(rows)
+    assert entity["units"] == 280
+
+
+def test_distinct_large_parcels_still_sum_in_aggregation():
+    """A real complex spanning parcels with DIFFERENT large counts must
+    keep summing (100 + 180 = 280)."""
+    rows = [{"property_id": "8R-a", "address": "9 Complex Ct",
+             "city": "Chesapeake", "units": 100, "year_built": 1999,
+             "lat": 36.7, "lng": -76.25, "use_code": "Apartments"},
+            {"property_id": "8R-b", "address": "9 Complex Ct",
+             "city": "Chesapeake", "units": 180, "year_built": 1999,
+             "lat": 36.7, "lng": -76.25, "use_code": "Apartments"}]
+    (entity,) = pp.aggregate_8r_parcels(rows)
+    assert entity["units"] == 280
+
+
+def test_condo_regime_small_parcels_still_sum():
+    rows = [{"property_id": f"8R-c{i}", "address": "700 Acqua Dr",
+             "city": "Norfolk", "units": 1, "year_built": 1990,
+             "lat": 36.9, "lng": -76.3, "use_code": "CONDO HI RISE"}
+            for i in range(40)]
+    (entity,) = pp.aggregate_8r_parcels(rows)
+    assert entity["units"] == 40
+
+
+def test_distinct_identical_count_buildings_at_one_address_still_sum():
+    """Four real 24-unit phase buildings share a situs but sit on separate
+    parcels with separate centroids - they must sum to 96, while true feed
+    duplicates (same count, same spot) still collapse."""
+    rows = [{"property_id": f"8R-p{i}", "address": "100 Complex Dr",
+             "city": "Chesapeake", "units": 24, "year_built": 1985,
+             "lat": 36.70 + i * 0.0005, "lng": -76.25,   # ~55m apart
+             "use_code": "Apartments"} for i in range(4)]
+    (entity,) = pp.aggregate_8r_parcels(rows)
+    assert entity["units"] == 96

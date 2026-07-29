@@ -257,8 +257,37 @@ def aggregate_8r_parcels(spine_8r: list[dict]) -> list[dict]:
         for cluster in clusters:
             head = dict(cluster[0])
             if len(cluster) > 1:
-                units = [m.get("units") or 0 for m in cluster]
-                head["units"] = int(sum(units)) if any(units) else head.get("units")
+                # Sum units across the cluster (condo regimes = many 1-unit
+                # parcels), but count a LARGE unit value once when it looks
+                # like the SAME building seen through parallel feeds
+                # (Chesapeake has four overlapping layers - summing made
+                # Allure at Edinburgh 1,420 units against a legacy 280).
+                # Evidence for "same building": identical count AND
+                # coordinates within ~30m (or missing). Distinct phase
+                # buildings with identical counts sit on separate parcels
+                # with separate centroids, so they still sum.
+                from core.phase0 import MIN_MF_UNITS
+                total = 0
+                seen_large: list[dict] = []
+                for m in cluster:
+                    u = int(m.get("units") or 0)
+                    if u >= MIN_MF_UNITS:
+                        dup = False
+                        for prev in seen_large:
+                            if int(prev.get("units") or 0) != u:
+                                continue
+                            plat, plng = prev.get("lat"), prev.get("lng")
+                            mlat, mlng = m.get("lat"), m.get("lng")
+                            if (plat is None or mlat is None
+                                    or _distance_miles(mlat, mlng, plat, plng)
+                                    <= 0.02):
+                                dup = True
+                                break
+                        if dup:
+                            continue
+                        seen_large.append(m)
+                    total += u
+                head["units"] = total if total else head.get("units")
                 lats = [m["lat"] for m in cluster if m.get("lat") is not None]
                 lngs = [m["lng"] for m in cluster if m.get("lng") is not None]
                 if lats and lngs:
@@ -271,9 +300,14 @@ def aggregate_8r_parcels(spine_8r: list[dict]) -> list[dict]:
 
 
 def _is_mf_entity(row: dict) -> bool:
-    from core.phase0 import MIN_MF_UNITS, is_multifamily
-    return is_multifamily(row.get("use_code"), row.get("units")) or (
-        (row.get("units") or 0) >= MIN_MF_UNITS)
+    """Comp-pool membership - the shared >= 10-unit product rule
+    (phase0.is_mf_ten_plus), so the P0-1 gate and this pool can never
+    silently disagree. Known trade-off: a complex whose only unit signal is
+    2-3 building-card rows can be excluded despite an apartment code;
+    letting codes override known counts re-admits VB's 15.7K "Multi
+    Family"-labeled duplexes, which is the bigger error class."""
+    from core.phase0 import is_mf_ten_plus
+    return is_mf_ten_plus(row.get("use_code"), row.get("units"))
 
 
 def match_spines(legacy: list[dict], spine_8r: list[dict],
