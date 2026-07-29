@@ -127,7 +127,101 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    `core/phase0.py` + `run-phase0.bat` (needs the v2.4.1 workbench.db with the
    3.9M muni_records rows copied to `data\` on the host, or `ER_WORKBENCH_DB`).
    `phase0-sweep.bat` = AC-P0-1 ALN sweep (569 refs in 40 files today).
-   P0-2 shadow parity SHIPPED + 4 tuning rounds from real host runs (V5.8.1-V5.8.4). NN matches 98%; blocker = 5 cities lack unit-bearing feeds -> owner runs discover-feeds.bat + pull-muni.bat, then run-phase0.bat. Remaining: P0-3 cutover, P0-4 purge.
+   P0-2 shadow parity SHIPPED + 6 tuning rounds from real host runs (V5.8.1-V5.8.7).
+   Round 6 fixed the two structural bugs: substring MF-code matching (VB zoning
+   R-40 contains "r-4" -> 116K SFH parcels misclassified) and returnGeometry=false
+   (no coordinates stored -> Portsmouth 0/45). Coordinates now pulled as WGS84
+   centroids; wrong-city-named layers rejected; transient 5xx retried. Awaiting
+   post-V5.8.7 run-phase0 report. Remaining: P0-3 cutover, P0-4 purge.
+
+## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
+
+Owner will ask for all 50 metro regions pulled + reconciled **in one turn,
+under 4 hours**. Hampton Roads took ~6 screenshot round-trips; that pace is
+unacceptable. Every lesson below was paid for — do not relearn any of them.
+
+### Why Hampton Roads was slow (root causes, not symptoms)
+1. **Tuning against invisible data.** The DB lives on the host; the build env
+   is firewalled from city portals AND from the DB. Each fix required an
+   owner round-trip. At 50-metro scale there are NO round-trips: the pipeline
+   must be right-by-construction, self-diagnosing, and self-healing.
+2. **Defaults that silently lose data.** `returnGeometry=false` threw away
+   every ArcGIS coordinate; substring matching on short codes ("r-4" in
+   "R-40") manufactured 116K fake multifamily parcels. Both worked "fine" on
+   the first two cities and failed catastrophically on the next five.
+3. **Serial everything.** One feed at a time, 0.2s sleeps, national registry
+   pulled when only 7 cities were needed, whole-DB rebuilds each run.
+
+### Non-negotiable design rules for the 50-metro build
+- **Geometry always**: request WGS84 centroids (probe returnCentroid ->
+  returnGeometry -> legacy per layer, first page only). Convert Web Mercator
+  (abs>180 -> degrees), DROP state-plane feet (converted lng falls outside
+  the US box). A missing coordinate matches by address; a wrong one matches
+  the wrong parcel. (`etl_munidata.ArcGISPuller`, `phase0.sanitize_latlng`.)
+- **Token matching for short codes**: use-code fragments < ~5 chars must
+  match whole tokens (split on whitespace/commas/slashes, KEEP hyphens).
+  Long words may substring. (`phase0._MF_USE_TOKENS`.)
+- **Trust nothing about a layer but its fields + a sample**: score fields
+  against the alias vocabulary, geo-verify 5 sampled records against the
+  metro bbox, AND reject layers named for a different city in the same
+  region (bboxes overlap at borders; VB's org hosts
+  Chesapeake_Norfolk_Streets_Parcels). Guard at discovery AND at pull time
+  so stale feed files cannot poison. (`etl_munidata.named_for_other_city`.)
+- **Retry transient 5xx** (3x, backoff); fail fast on 4xx. Gov ArcGIS
+  servers 502 mid-pagination routinely.
+- **Address-point feeds are unit counters**: one row per apartment sharing a
+  parcel id -> units = row multiplicity per (parcel, feed), max across
+  feeds, never overriding an explicit unit field.
+- **Split addresses are the norm, not the exception**: number / number-suffix
+  / direction / name / type across 2-5 fields (Norfolk: five). Assemble
+  generically from aliases; range addresses ("700-780") key on first number.
+- **Condo/complex fragmentation**: one 258-unit community = dozens of
+  1-unit parcels at the same situs. Aggregate by normalized (address, city),
+  then proximity-cluster, then dual-radius footprint totals for unit
+  reconciliation.
+- **Self-diagnosing reports**: every run prints per-city unmapped keys, top
+  MF-driving use codes, and a w/-coords column. One report must contain a
+  COMPLETE tuning round.
+
+### Architecture for the 4-hour, 50-metro turn
+1. **Config-driven metros, zero per-city code**: a `metros.json` with
+   {metro, cities[], FIPS map, bbox, known ArcGIS/Socrata roots}. The
+   HR-only `--hr` flag generalizes to `--metros <list>`. Never pull outside
+   scope.
+2. **Parallel pulls**: ThreadPool bounded per HOST (2-3 concurrent hosts,
+   1 request in flight per host, keep the politeness sleep). 50 metros x
+   ~3 feeds sequentially would blow the window; parallel across hosts it
+   fits. SQLite writes stay single-writer: pull workers feed a single
+   writer thread (or write per-metro staging DBs, then ATTACH+merge).
+3. **Kill the lock problem for good**: `PRAGMA journal_mode=WAL` on
+   workbench.db (readers never block the pull) or staging-DB swap. Never
+   again "database is locked" because the app was open.
+4. **Discovery at scale**: AGOL public search + state open-data portals per
+   metro, same scoring (apn required, units heavily weighted), auto-write
+   top-2 per city. Budget: discovery for all 50 metros must itself be
+   parallel (it is pure HTTP metadata).
+5. **Alias vocabulary before, not during**: the ~90-alias table in
+   `core/phase0.py` now covers Socrata flat, ArcGIS nested, VA schemas.
+   Before a 50-metro run, sweep each discovered layer's FIELD LIST (free
+   metadata) against the vocabulary and extend aliases for the top unmapped
+   keys UP FRONT - field lists are visible without pulling a single record.
+6. **Order of operations in the turn**: discover all -> verify all ->
+   extend aliases from field metadata -> pull all (parallel) -> build spine
+   (single pass, batched inserts) -> QA report per metro. Each stage fans
+   out; no stage waits on a human.
+7. **Estimate before running**: HR = ~1M records ~= 30 min serial. 50 metros
+   ~= 30-60M records. At that volume: batched executemany (10k rows),
+   json.dumps once, indexes created AFTER load, and per-metro progress
+   lines so a stall is visible immediately.
+
+### Known open items that block 50-metro readiness
+- Hampton + Suffolk still have no unit-bearing parcel layer discovered
+  (portals hide them); the discovery probe list needs state-portal fallbacks
+  (data.virginia.gov-style) before assuming a metro is covered.
+- Near-duplicate layers (Portsmouth x3, ~36K each) waste pull time: dedupe
+  candidate layers by field-signature hash + record count at discovery.
+- `pull-muni.bat` currently requires the app closed; WAL (item 3) removes
+  that operator step entirely.
 
 ## Built so far (phases complete)
 - V5-P0.5 pilot (auth, admin, concurrency), V5-Walk §10 multi-tenancy + §10.4 UI
