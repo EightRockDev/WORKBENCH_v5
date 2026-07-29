@@ -35,7 +35,7 @@ def render_etl_missing_notice(feature: str) -> None:
     _render_find_it(key_suffix=feature)
     st.caption(
         "If it isn't on this machine at all, the public-source refresh (FRED / "
-        "BLS / HUD FMR / permits) is being rebuilt into the 8R data spine and "
+        "BLS / HUD FMR / permits) is being rebuilt into the 8R data backbone and "
         "will populate this automatically when Phase 0 lands."
     )
     with st.expander("Where the app looked", expanded=False):

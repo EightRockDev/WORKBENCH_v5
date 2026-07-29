@@ -76,6 +76,10 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 - Keep the action list to **3-5 items, max**.
 
 ## Owner requests to honor (standing)
+- **Terminology: say "backbone", never "spine"** in anything the owner or an
+  investor sees - reports, .bat text, UI copy, slides, docs (owner directive
+  2026-07-29). Internal identifiers (core/spine.py, build_spine,
+  properties_8r docstrings) may keep "spine"; do not churn code names.
 
 - **End-user ACCESS INSTRUCTIONS** — DONE (first pass): `docs/ACCESS.md` covers
   dev-mode launch (no login), real Auth0/Entra sign-in setup (Google/Microsoft/

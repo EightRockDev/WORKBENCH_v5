@@ -15,5 +15,5 @@ echo.
 "%UV%" run python -u etl_munidata.py --hr 2>&1 | powershell -NoProfile -Command "$input | Tee-Object -Variable out; $out | Set-Content -Path 'reports\pull-latest.txt' -Encoding UTF8"
 call "%~dp0_push-report.bat" reports\pull-latest.txt "pull-muni"
 echo.
-echo Done. Now double-click run-phase0.bat to rebuild the spine.
+echo Done. Now double-click run-phase0.bat to rebuild the backbone.
 pause

@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.9.1.0 — 2026-07-29  ·  Terminology: "backbone" replaces "spine" in all visible text
+Owner directive: the word is **backbone**. Updated everywhere a human sees
+it — run-phase0/pull-muni .bat text, the P0-1/P0-2 report output, and UI
+copy (comps refresh notes, ETL notice). Internal code identifiers
+(`core/spine.py`, `build_spine`) are unchanged to avoid churn; the rule is
+recorded in CLAUDE.md so future features use "backbone" from the start.
+
 ## V5.8.9.0.0 — 2026-07-29  ·  Phase 0 round 7: comp-pool cleanup + 12 review-confirmed fixes
 Driven by the first closed-loop full report (70.7% match, Chesapeake 66/66,
 Portsmouth 31/45) plus an adversarial 16-agent review of the diff. Fixes:

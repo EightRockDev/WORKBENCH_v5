@@ -1,6 +1,6 @@
 @echo off
 REM ===================================================================
-REM  Phase 0 step P0-1: build the Eight Rock property spine
+REM  Phase 0 step P0-1: build the Eight Rock property backbone
 REM  (properties_8r) from the municipal records. Double-click.
 REM  The full report is saved to reports\phase0-latest.txt and pushed
 REM  to GitHub so Claude reads the results directly - no screenshots.

@@ -140,7 +140,7 @@ class ParityReport:
         year_total = self.year_agreement + self.year_disagreement
         lines = [
             f"legacy multifamily rows:  {self.legacy_multifamily:,}",
-            f"matched to the 8R spine:  {self.matched:,} ({self.match_rate:.1%})"
+            f"matched to the 8R backbone: {self.matched:,} ({self.match_rate:.1%})"
             f"  [{self.matched_by_address:,} by address, {self.matched_by_latlng:,}"
             f" by lat/lng, {self.matched_by_proximity:,} by proximity]",
             (f"unit counts agree:        {self.unit_agreement:,}/{unit_total:,}"
@@ -165,7 +165,7 @@ class ParityReport:
         # Per-city truth: a city whose feed carries no unit data can never
         # match or replay - naming it turns a mystery into a to-do.
         lines.append("")
-        lines.append("By city (legacy rows -> matched | spine MF entities | w/ coords):")
+        lines.append("By city (legacy rows -> matched | backbone MF entities | w/ coords):")
         for city in sorted(self.legacy_by_city, key=lambda c: -self.legacy_by_city[c]):
             n_leg = self.legacy_by_city.get(city, 0)
             n_match = self.matched_by_city.get(city, 0)

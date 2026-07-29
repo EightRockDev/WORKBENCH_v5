@@ -771,7 +771,7 @@ def _run_etl_refresh(only: str | None = None) -> None:
         # as a notice rather than a red error.
         st.info("Automated data refresh isn't wired into this deployment yet. "
                 "Public sources (FRED / BLS / HUD / FMR / permits) will be "
-                "refreshed by the 8R data spine (Phase 0). This control "
+                "refreshed by the 8R data backbone (Phase 0). This control "
                 "activates once that pipeline lands.")
         return
 
@@ -981,7 +981,7 @@ def _render_data_sources() -> None:
         st.caption(
             "Each row shows the source URL and the timestamp of the most-"
             "recent puller run that wrote to that table. Refresh is handled "
-            "by the 8R data spine (Phase 0)."
+            "by the 8R data backbone (Phase 0)."
         )
 
         # Render each source as its own row-card so the description and URL

@@ -53,7 +53,7 @@ def main() -> int:
             print(f"  {market:15} {n:>9,}  .../{'/'.join(tail[-3:])}")
 
     print()
-    print("Building the Eight Rock property spine (properties_8r)...")
+    print("Building the Eight Rock property backbone (properties_8r)...")
     report = phase0.build_spine(db)
     print()
     print(report.summary())
