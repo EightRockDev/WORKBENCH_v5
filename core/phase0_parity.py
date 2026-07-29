@@ -40,6 +40,8 @@ import config
 
 GATE_COMP_OVERLAP = 0.90     # spec 7.3 P0-2
 GATE_RENT_DELTA = 0.05
+UNIT_RICH_MIN = 50   # entities at 10+ units before a city counts as
+                     # "carries unit data" for comp-pool evidence rules
 MATCH_RADIUS_MILES = 0.075   # ~120 m - same parcel, different geocoders
 PROXIMITY_RADIUS_MILES = 0.25  # last-resort: big complexes geocode far apart
 UNIT_TOLERANCE_PCT = 0.10
@@ -100,6 +102,7 @@ class ParityReport:
     matched_by_city: dict = field(default_factory=dict)
     spine_mf_by_city: dict = field(default_factory=dict)
     spine_mf_geo_by_city: dict = field(default_factory=dict)  # ...with lat/lng
+    pool_label_only_excluded: dict = field(default_factory=dict)
     footprint_recovered: int = 0    # unit disagreements resolved by summing
                                     # all 8R parcels within the complex radius
 
@@ -178,6 +181,13 @@ class ParityReport:
             else:
                 note = ""
             lines.append(f"  {city:15} {n_leg:5,} -> {n_match:5,} | {n_mf:6,} | {n_geo:6,}{note}")
+        if self.pool_label_only_excluded:
+            excl = ", ".join(f"{c} {n:,}" for c, n in
+                             sorted(self.pool_label_only_excluded.items(),
+                                    key=lambda kv: -kv[1]))
+            lines.append("")
+            lines.append("Comp pool: label-only entities excluded in unit-rich "
+                         f"cities: {excl}")
         if self.worst_unit_mismatches:
             lines.append("")
             lines.append("Largest unit-count disagreements (check these matches):")
@@ -288,6 +298,8 @@ def aggregate_8r_parcels(spine_8r: list[dict]) -> list[dict]:
                         seen_large.append(m)
                     total += u
                 head["units"] = total if total else head.get("units")
+                head["member_units"] = sorted(
+                    (int(m.get("units") or 0) for m in cluster), reverse=True)
                 lats = [m["lat"] for m in cluster if m.get("lat") is not None]
                 lngs = [m["lng"] for m in cluster if m.get("lng") is not None]
                 if lats and lngs:
@@ -501,8 +513,16 @@ def run_parity(aln_db: Path, spine_db: Path,
                 recovered += 1
             else:
                 shown = fp_tight or fp_wide or ru
+                # Show WHAT summed into the entity - an overcount explains
+                # itself when the member unit values are visible (Allure at
+                # Edinburgh read 1,310 vs a legacy 280 with no clue why).
+                members = (ent or {}).get("member_units") or []
+                comp = (" [" + "+".join(str(m) for m in members[:10])
+                        + ("+..." if len(members) > 10 else "") + "]"
+                        if members else "")
                 still_bad.append(
-                    f"{row.get('name') or row.get('address')}: legacy {lu} vs 8R {shown}")
+                    f"{row.get('name') or row.get('address')}: legacy {lu} "
+                    f"vs 8R {shown}{comp}")
         if recovered:
             report.unit_agreement += recovered
             report.unit_disagreement -= recovered
@@ -511,7 +531,29 @@ def run_parity(aln_db: Path, spine_db: Path,
     # The comp pool must be multifamily on BOTH sides - the legacy load is
     # already units>=10; replaying against every parcel in the county would
     # bury the true comps in single-family noise.
-    mf_entities = [e for e in entities if _is_mf_entity(e)]
+    # Comp-pool membership is EVIDENCE-AWARE per city. In a city whose feed
+    # proves it carries unit counts (>= UNIT_RICH_MIN entities at 10+), a
+    # row with an MF-ish label but NO units is presumed small - VB labels
+    # 15,482 unit-less duplexes "Multi Family", and admitting them via the
+    # label held comp overlap at 14%. In a city with no unit signal at all
+    # (Norfolk-style rolls), the label is the only evidence and still counts.
+    units_rich: dict[str, int] = {}
+    for e in entities:
+        u = e.get("units")
+        if u is not None and u >= 10:
+            city = e.get("city") or "?"
+            units_rich[city] = units_rich.get(city, 0) + 1
+    rich = {c for c, n in units_rich.items() if n >= UNIT_RICH_MIN}
+    mf_entities = []
+    for e in entities:
+        if not _is_mf_entity(e):
+            continue
+        if (e.get("units") is None and (e.get("city") or "?") in rich):
+            city = e.get("city") or "?"
+            report.pool_label_only_excluded[city] = (
+                report.pool_label_only_excluded.get(city, 0) + 1)
+            continue
+        mf_entities.append(e)
     for e in mf_entities:
         city = e.get("city") or "?"
         report.spine_mf_by_city[city] = report.spine_mf_by_city.get(city, 0) + 1

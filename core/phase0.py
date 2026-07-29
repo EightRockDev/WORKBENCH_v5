@@ -57,12 +57,13 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
             "realestateid", "reid", "lrsn", "mastergpin", "recordedgpin"),
     "address": ("address", "situsaddress", "situs", "propertyaddress",
                 "siteaddress", "locationaddress", "location", "fulladdress",
-                "propertystreet", "streetaddress", "situsaddr", "propaddr"),
+                "fulladdr", "propaddress", "propertystreet", "streetaddress",
+                "situsaddr", "propaddr", "siteaddre"),
     # Some feeds (Norfolk) split the address into number + name + type.
     "address_number": ("propertystreetnumber", "streetnumber", "housenumber",
-                       "stnum", "situsnumber", "stnumber"),
+                       "stnum", "situsnumber", "stnumber", "strnum"),
     "address_street": ("propertystreetname", "streetname", "situsstreet",
-                       "stname"),
+                       "stname", "strname"),
     "address_suffix": ("propertystreettype", "streettype", "stsuffix",
                        "streetsuffix", "sttype"),
     "address_direction": ("propertystreetdirection", "streetdirection",
@@ -88,8 +89,10 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                  "zoning", "propertyusecode", "usedesc", "usedescription",
                  "landusedescription", "propertyclassdescription", "usecd",
                  "classdscrp", "usedscrp", "prprtydscrp", "proptype",
-                 "propertytype", "statecode", "luc", "bldguse", "resstrtyp"),
-    "assessed_value": ("assessedvalue", "totalvalue", "totalassessed",
+                 "propertytype", "statecode", "luc", "bldguse", "resstrtyp",
+                 "typeprop", "bldgtype"),
+    "assessed_value": ("assessedvalue", "totalvalue", "totvalue",
+                       "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
                        "currenttotalvalue", "totalcurrentvalue", "assessment",
                        "totalassessment", "appraisedvalue"),
@@ -133,7 +136,12 @@ _IGNORED_KEYS = re.compile(
     r"bath|halfbath|garsf|fp|dtsqft|book|page|prevbook|prevpage|cpn|"
     r"gp10k|gptax|gpcomp|agrid|taxdistrict|taxdistrictdescription|"
     r"daypickup|policepatrolzone|policeprecinct|votingprecinct|"
-    r"femazonebldg|watershed)$")
+    r"femazonebldg|watershed|edasite|pstladdress2|frontage|depth|culdesac|"
+    r"lglstartdt|ffh|lowfloor99|highwater9|lengthuni|fips|impvalue|"
+    r"lndvalue|srcagency|currentda|convm|convft|map|wf|mail1|mail2|"
+    r"prevdate|neighborhd|heattype|ac|basement|legaldescr|soildesc|"
+    r"soiltype|propaddresssearch|censusblkgrp|votingdistrict|"
+    r"votingdistrictname|recyclingweek)$")
 
 # Use-code text that identifies multifamily in municipal rolls. Two tiers:
 #   * SUBSTRINGS - long unambiguous words, safe to match anywhere in the code.

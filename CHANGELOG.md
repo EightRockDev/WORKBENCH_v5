@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.11.0.0 — 2026-07-29  ·  Phase 0 round 9: evidence-aware comp pool
+Driven by the round-8 report (85.2% covered match, Chesapeake 66/66,
+comp overlap stuck at 14.3%):
+- **Evidence-aware comp pool**: in a city whose feed proves it carries unit
+  counts (>= 50 entities at 10+ units), a "Multi Family"-style label with
+  NO units is presumed small and stays out of the pool — VB's 15,482
+  label-only duplex rows were the entire 14% overlap ceiling. Cities with
+  no unit data at all (Norfolk) keep counting labels. The report prints
+  exactly what was excluded per city.
+- **Unit-mismatch lines now show their composition** ("legacy 280 vs 8R
+  1310 [655+655]") so the Allure-at-Edinburgh overcount self-explains on
+  the next run instead of needing another guess.
+- **New-feed aliases**: Portsmouth TYPE_PROP/SITE_ADDRE/BLDG_TYPE (its
+  regenerated feeds had unmapped schemas - matches fell 31->14), Hampton
+  TOTVALUE, VB FULL_ADDR/STR_NUM/STR_NAME/PROP_ADDRESS, plus ~35 junk keys
+  ignored.
+- 3 new tests; suite unchanged otherwise.
+
 ## V5.8.10.1.0 — 2026-07-29  ·  Report push shows its errors
 No host report ever arrived on GitHub, and the push helper was swallowing
 every git message (`>nul 2>&1`) - so the failure had no face.

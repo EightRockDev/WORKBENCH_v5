@@ -344,3 +344,65 @@ def test_distinct_identical_count_buildings_at_one_address_still_sum():
              "use_code": "Apartments"} for i in range(4)]
     (entity,) = pp.aggregate_8r_parcels(rows)
     assert entity["units"] == 96
+
+
+# ---------------------------------------------------------------------------
+# Round 9: evidence-aware comp pool + mismatch composition diagnostics
+# ---------------------------------------------------------------------------
+
+def _ent(pid, city, units, use, lat=36.8, lng=-76.28):
+    return {"property_id": pid, "address": f"{pid} Main St", "city": city,
+            "units": units, "year_built": 1990, "lat": lat, "lng": lng,
+            "use_code": use}
+
+
+def test_label_only_entities_excluded_in_unit_rich_cities(tmp_path):
+    """VB has 15K unit-less 'Multi Family' duplex labels AND real unit data;
+    in such a city the label alone is not comp-pool evidence. Norfolk-style
+    cities (no unit data at all) keep counting labels."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 ("L-1", "Subject", "1 Main St", "Virginia Beach",
+                  40, 1990, 1200.0, "B", 36.80, -76.28))
+    # 60 real unit-bearing complexes -> the city is unit-rich...
+    for i in range(60):
+        conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                     (f"8R-r{i}", f"{i} Rich Ave", "Virginia Beach",
+                      30, 1990, 36.80 + i * 0.001, -76.28, "Apartments"))
+    # ...and 40 label-only duplex rows that must stay OUT of the pool.
+    for i in range(40):
+        conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                     (f"8R-d{i}", f"{i} Duplex Ct", "Virginia Beach",
+                      None, 1985, 36.70 + i * 0.001, -76.30, "Multi Family"))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert report.spine_mf_by_city["Virginia Beach"] == 60
+    assert report.pool_label_only_excluded["Virginia Beach"] == 40
+    assert "label-only entities excluded" in report.summary()
+
+
+def test_label_only_entities_kept_where_no_unit_data_exists(tmp_path):
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 ("L-1", "Subject", "1 Main St", "Norfolk",
+                  40, 1990, 1200.0, "B", 36.90, -76.28))
+    for i in range(20):     # label-only, city has NO unit-bearing rows
+        conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                     (f"8R-n{i}", f"{i} Granby St", "Norfolk",
+                      None, 1970, 36.90 + i * 0.001, -76.28,
+                      "APARTMENT 20-49 UNITS"))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert report.spine_mf_by_city["Norfolk"] == 20
+    assert report.pool_label_only_excluded == {}
+
+
+def test_aggregated_entities_carry_member_units():
+    rows = [_ent("8R-a", "Chesapeake", 280, "Apartments"),
+            _ent("8R-b", "Chesapeake", 250, "Apartments")]
+    for r in rows:
+        r["address"] = "1 Complex Way"
+    (entity,) = pp.aggregate_8r_parcels(rows)
+    assert entity["member_units"] == [280, 250]
