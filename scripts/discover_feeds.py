@@ -29,6 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.phase0 import _ALIAS_LOOKUP, _norm_key  # noqa: E402
+from etl_munidata import named_for_other_city as _named_for_other_city  # noqa: E402
 
 TARGET_CITIES = ("Virginia Beach", "Chesapeake", "Hampton", "Portsmouth",
                  "Suffolk")
@@ -90,6 +91,17 @@ def score_fields(field_names: list[str]) -> tuple[int, dict[str, str]]:
     if "apn" not in mapped:
         score = 0                      # no parcel id -> no deterministic 8R id
     return score, mapped
+
+
+def named_for_other_city(layer_name: str, layer_url: str, city: str) -> bool:
+    """True when a layer is titled after a DIFFERENT Hampton Roads city.
+
+    The bbox sample can miss this - neighboring cities' boxes overlap along
+    the border (VB's own AGOL org serves a ``Chesapeake_Norfolk_Streets_
+    Parcels`` layer). The check itself lives in etl_munidata so a stale
+    feeds_extra.json can't poison a pull either.
+    """
+    return _named_for_other_city(f"{layer_name} {layer_url}", city)
 
 
 def sample_in_city(layer_url: str, city: str, fetch) -> bool | None:
@@ -200,6 +212,9 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json) -> dict[str,
                 seen_urls.add(layer_url)
                 score, mapped = score_fields(fields)
                 if score < MIN_SCORE:
+                    continue
+                if named_for_other_city(name, layer_url, city):
+                    rejected.append(f"{name}: layer is named for another city")
                     continue
                 verdict = sample_in_city(layer_url, city, fetch)
                 if verdict is False:

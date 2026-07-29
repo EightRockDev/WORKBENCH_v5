@@ -117,3 +117,94 @@ def test_state_plane_feet_are_dropped_not_poisoned():
                             "geo_lng": 12_100_000})
     assert row is not None
     assert row.lat is None and row.lng is None
+
+
+# ---------------------------------------------------------------------------
+# Transient-error retry (a 502 killed a VB pull at offset 48,000)
+# ---------------------------------------------------------------------------
+
+class _HTTPError(Exception):
+    def __init__(self, status):
+        self.response = type("R", (), {"status_code": status})()
+
+
+class _FakeRequests:
+    """Scripted stand-in for the requests module: pops one response per call."""
+
+    def __init__(self, script):
+        self.script = list(script)
+        self.calls = 0
+
+    def get(self, url, params=None, timeout=None):
+        self.calls += 1
+        item = self.script.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        payload = item
+
+        class _Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return payload
+        return _Resp()
+
+
+def test_get_retries_transient_5xx(monkeypatch):
+    fake = _FakeRequests([_HTTPError(502), _HTTPError(503),
+                          {"features": []}])
+    monkeypatch.setattr(etl, "requests", fake)
+    monkeypatch.setattr(etl.time, "sleep", lambda s: None)
+    puller = etl.ArcGISPuller("https://example.test/FeatureServer/0")
+    assert puller._get({"f": "json"}) == {"features": []}
+    assert fake.calls == 3
+
+
+def test_get_does_not_retry_4xx(monkeypatch):
+    fake = _FakeRequests([_HTTPError(400), {"features": []}])
+    monkeypatch.setattr(etl, "requests", fake)
+    monkeypatch.setattr(etl.time, "sleep", lambda s: None)
+    puller = etl.ArcGISPuller("https://example.test/FeatureServer/0")
+    try:
+        puller._get({"f": "json"})
+        assert False, "4xx must raise immediately"
+    except _HTTPError:
+        pass
+    assert fake.calls == 1
+
+
+# ---------------------------------------------------------------------------
+# Cross-city layer names (VB's org serves Chesapeake_Norfolk_Streets_Parcels)
+# ---------------------------------------------------------------------------
+
+def test_layer_named_for_other_city_is_disqualified():
+    url = ("https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/"
+           "services/Chesapeake_Norfolk_Streets_Parcels/FeatureServer/1")
+    assert etl.named_for_other_city(url, "Virginia Beach") is True
+    # ...but the same layer claimed for Norfolk names Norfolk - allowed.
+    assert etl.named_for_other_city(url, "Norfolk") is False
+    # A city's own portal URL mentions itself - never a rejection.
+    assert etl.named_for_other_city(
+        "https://gis.cityofchesapeake.net/mapping/rest/services/Accela/"
+        "Accela_base_map_pro/MapServer/0", "Chesapeake") is False
+    # "Hampton Roads" is the region, not the city of Hampton.
+    assert etl.named_for_other_city(
+        "https://x.test/Hampton_Roads_Parcels/FeatureServer/0",
+        "Norfolk") is False
+
+
+def test_stale_extra_feeds_file_cannot_poison_a_pull(tmp_path, monkeypatch, capsys):
+    import json as _json
+    (tmp_path / "feeds_extra.json").write_text(_json.dumps([
+        {"market": "Virginia Beach", "state": "VA", "county": "Virginia Beach",
+         "kind": "assessor", "platform": "arcgis", "status": "live",
+         "url": "https://x.test/Chesapeake_Norfolk_Streets_Parcels/FeatureServer/1"},
+        {"market": "Portsmouth", "state": "VA", "county": "Portsmouth",
+         "kind": "assessor", "platform": "arcgis", "status": "live",
+         "url": "https://gis.portsmouthva.gov/arcgis/rest/services/Parcels/FeatureServer/3"},
+    ]))
+    monkeypatch.setattr(etl, "_DATA_DIR", tmp_path)
+    out = etl._extra_feeds()
+    assert [f.market for f in out] == ["Portsmouth"]
+    assert "named for another city" in capsys.readouterr().out

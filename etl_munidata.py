@@ -27,6 +27,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import json
+import re as _re
 import sqlite3
 import sys
 import time
@@ -191,6 +192,27 @@ MUNI_FEEDS: list[FeedSpec] = [
 ]
 
 
+_HR_CITY_NAMES = ("virginia beach", "chesapeake", "hampton", "portsmouth",
+                  "suffolk", "norfolk", "newport news")
+
+
+def named_for_other_city(text_parts: str, city: str) -> bool:
+    """True when a feed's name/URL is titled after a DIFFERENT HR city.
+
+    Whoever hosts it, a layer called ``Chesapeake_Norfolk_Streets_Parcels``
+    holds Chesapeake/Norfolk data - VB's own AGOL org serves exactly that
+    layer. Ingesting it under the wrong market assigns wrong-FIPS 8R ids,
+    so the name is disqualifying on its own. Guarded here (not just in
+    discovery) so a stale feeds_extra.json can never poison a pull.
+    """
+    text = _re.sub(r"[^a-z]+", " ", text_parts.lower())
+    text = text.replace("hampton roads", " ")   # region name, not the city
+    target = _re.sub(r"[^a-z]+", " ", city.lower()).strip()
+    if target in text:
+        return False
+    return any(other in text for other in _HR_CITY_NAMES if other != target)
+
+
 def _extra_feeds() -> list[FeedSpec]:
     """Feeds discovered on the host by scripts/discover_feeds.py.
 
@@ -207,8 +229,15 @@ def _extra_feeds() -> list[FeedSpec]:
     allowed = {f.name for f in dataclasses.fields(FeedSpec)}
     out: list[FeedSpec] = []
     for d in raw if isinstance(raw, list) else []:
-        if isinstance(d, dict) and d.get("url"):
-            out.append(FeedSpec(**{k: v for k, v in d.items() if k in allowed}))
+        if not (isinstance(d, dict) and d.get("url")):
+            continue
+        market = str(d.get("market") or "")
+        if market in HR_MARKETS and named_for_other_city(
+                f"{d.get('url', '')} {d.get('note', '')}", market):
+            print(f"  [skipped] {market}: {d['url']} - layer is named for "
+                  "another city (re-run discover-feeds.bat)")
+            continue
+        out.append(FeedSpec(**{k: v for k, v in d.items() if k in allowed}))
     return out
 
 
@@ -239,11 +268,29 @@ class ArcGISPuller:
         self.where = where
 
     def _get(self, params: dict[str, Any]) -> dict:
+        """Query with retries: gov ArcGIS servers throw transient 502/503s
+        mid-pagination (a VB pull died at offset 48,000 on one 502). 5xx,
+        timeouts and connection drops retry with backoff; 4xx raise at once
+        (the request itself is wrong - retrying can't fix it)."""
         if requests is None:
             raise RuntimeError("requests not available")
-        r = requests.get(self.layer_url + "/query", params=params, timeout=60)
-        r.raise_for_status()
-        return r.json()
+        last: Exception | None = None
+        for delay in (0, 2, 5, 10):
+            if delay:
+                time.sleep(delay)
+            try:
+                r = requests.get(self.layer_url + "/query", params=params,
+                                 timeout=60)
+                r.raise_for_status()
+                return r.json()
+            except Exception as e:
+                status = getattr(getattr(e, "response", None),
+                                 "status_code", None)
+                if status is not None and status < 500:
+                    raise
+                last = e
+        assert last is not None
+        raise last
 
     def _meta(self) -> dict:
         if not hasattr(self, "_meta_cache"):

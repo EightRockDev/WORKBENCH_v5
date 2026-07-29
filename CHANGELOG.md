@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.7.1.0 — 2026-07-29  ·  Pull resilience: 502 retries + wrong-city layer guard
+The clean HR-only pull surfaced two remaining hazards:
+- **Transient 502s no longer kill a feed**: a VB layer died at offset
+  48,000 on one `502 Bad Gateway`. The ArcGIS puller now retries 5xx /
+  timeouts / connection drops up to 3 times with backoff (4xx still fail
+  fast — the request itself is wrong).
+- **Layers named for another city are disqualified** — in discovery AND at
+  pull time. VB's own AGOL org serves `Chesapeake_Norfolk_Streets_Parcels`;
+  the bbox sample can miss it because neighboring cities overlap along the
+  border, and ingesting it under Virginia Beach would mint wrong-FIPS 8R
+  ids. The ETL also skips such feeds from a stale `feeds_extra.json` (with
+  a visible `[skipped]` line), so no re-discovery is strictly required.
+  ("Hampton Roads" is recognized as the region, not the city of Hampton.)
+- Verified: 5 new tests (retry on 502/503, fail-fast on 400, name guard
+  incl. Hampton-Roads exception, stale-file skip). Suite: 690 passed
+  equivalents (685 passed + the 4 known data-dependent smokes + 1 skip).
+
 ## V5.8.7.0.0 — 2026-07-29  ·  Phase 0 round 6: the VB 116K-parcel bug + real coordinates
 The first full-data run exposed two structural bugs; both fixed:
 - **116,780 "multifamily" parcels in Virginia Beach were single-family.**
