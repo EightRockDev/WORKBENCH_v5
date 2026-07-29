@@ -185,6 +185,23 @@ unacceptable. Every lesson below was paid for — do not relearn any of them.
 - **Self-diagnosing reports**: every run prints per-city unmapped keys, top
   MF-driving use codes, and a w/-coords column. One report must contain a
   COMPLETE tuning round.
+- **Allowlist beats blocklist for data guards**: no blocklist enumerates
+  every single-family spelling ('1 FAM RES', 'R-1', numeric class '101').
+  Guard by what you affirmatively accept, not what you reject.
+- **One shared predicate per business rule**: the gate and the comp pool
+  diverged silently on "what is multifamily" - `is_mf_ten_plus` is now the
+  single source. Known unit counts beat labels (VB calls duplexes
+  "Multi Family").
+- **Recompute derived columns after merges settle**: r8_form desynced from
+  (use_code, units) under COALESCE upserts. Any column that is a function
+  of other columns gets recomputed in a final pass, never maintained
+  incrementally.
+- **Deterministic merge order**: rowid order shifts on every re-pull;
+  ORDER BY source_url or the winning feed changes per host/history.
+- **Adversarially review merge-semantics diffs before pushing**: a 16-agent
+  review of round 7 confirmed 3 high-severity defects including a
+  pre-existing stories/year_built parameter swap that misclassified nearly
+  every parcel's building form. Tests alone missed all three.
 
 ### Architecture for the 4-hour, 50-metro turn
 1. **Config-driven metros, zero per-city code**: a `metros.json` with
