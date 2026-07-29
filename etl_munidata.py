@@ -508,6 +508,29 @@ def run_all(app_token: str | None = None, market: str | None = None,
     todo = feeds(status="live", market=market)
     if hr_only:
         todo = [f for f in todo if f.market in HR_MARKETS]
+    # Reconciliation sweep: rows from feeds that are NO LONGER in the
+    # registry linger forever otherwise (run_feed only replaces feeds it
+    # re-pulls). That left retired discovery layers in the DB - including
+    # a "Chesapeake_Parcels_Within_Blast_Zone" layer filed under HAMPTON
+    # from before the wrong-city guard existed. Swept per HR market so
+    # national pulls are untouched.
+    current_urls = {f.url for f in feeds(status=None)}
+    swept = 0
+    for m in HR_MARKETS:
+        rows = conn.execute(
+            "SELECT DISTINCT source_url FROM muni_records WHERE market = ?",
+            (m,)).fetchall()
+        for (url,) in rows:
+            if url and url not in current_urls:
+                cur = conn.execute(
+                    "DELETE FROM muni_records WHERE market = ? "
+                    " AND source_url = ?", (m, url))
+                swept += cur.rowcount
+                print(f"  [swept] {m}: {cur.rowcount:,} stale rows from "
+                      f"retired feed {url}")
+    if swept:
+        conn.commit()
+        print(f"  stale rows removed: {swept:,}")
     for feed in todo:
         key = f"{feed.market}/{feed.kind}"
         try:

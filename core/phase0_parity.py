@@ -93,6 +93,7 @@ class ParityReport:
     year_agreement: int = 0
     year_disagreement: int = 0
     comp_subjects: int = 0
+    comp_subjects_no_coords: int = 0   # 8R side blind (city awaits coords)
     comp_overlap_sum: float = 0.0
     comp_overlaps: list[float] = field(default_factory=list)
     rent_pairs: int = 0
@@ -151,7 +152,9 @@ class ParityReport:
             (f"year built agrees:        {self.year_agreement:,}/{year_total:,}"
              if year_total else "year built agrees:        n/a"),
             "",
-            f"comp-set replay subjects: {self.comp_subjects:,}",
+            f"comp-set replay subjects: {self.comp_subjects:,}"
+            + (f"  (+{self.comp_subjects_no_coords:,} skipped - city has no"
+               " 8R coordinates yet)" if self.comp_subjects_no_coords else ""),
             f"avg comp-set overlap:     {self.avg_comp_overlap:.1%}"
             f"  (gate >= {GATE_COMP_OVERLAP:.0%})",
             f"avg-rent delta:           {rent}  (gate <= {GATE_RENT_DELTA:.0%})",
@@ -450,7 +453,17 @@ def replay_comps(legacy: list[dict], all_entities: list[dict],
     skipped, never a KeyError.
     """
     r8_by_id = {r["property_id"]: r for r in all_entities}
-    subjects = [r for r in legacy if r["property_id"] in crosswalk][:max_subjects]
+    # The comp pools must span the SAME universe on both sides. The 8R
+    # backbone knows ~3x more real complexes than the 639-row legacy set;
+    # ranking nearest-12 against the full backbone pool crowds out the
+    # crosswalked entities and punishes the backbone for BETTER coverage
+    # (overlap sat at 14% with clean data). Restrict the 8R pool to
+    # entities the legacy spine also knows.
+    shared_ids = set(crosswalk.values())
+    shared_pool = [e for e in mf_pool if e["property_id"] in shared_ids]
+    subjects = sorted((r for r in legacy if r["property_id"] in crosswalk),
+                      key=lambda r: (r.get("city") or "", r["property_id"]))
+    subjects = subjects[:max_subjects]
     for subject in subjects:
         legacy_comps = _comp_set(subject, legacy, "latitude", "longitude")
         if not legacy_comps:
@@ -458,10 +471,17 @@ def replay_comps(legacy: list[dict], all_entities: list[dict],
         r8_subject = r8_by_id.get(crosswalk[subject["property_id"]])
         if r8_subject is None:
             continue
-        r8_comps = set(_comp_set(r8_subject, mf_pool, "lat", "lng"))
+        r8_comps = set(_comp_set(r8_subject, shared_pool, "lat", "lng"))
         translated = {crosswalk.get(pid) for pid in legacy_comps}
         translated.discard(None)
         if not translated:
+            continue
+        if not r8_comps:
+            # The 8R side is blind here (subject or its whole city has no
+            # coordinates yet - Norfolk). That is a COORDINATE gap, not a
+            # comp-quality signal; report it separately instead of dragging
+            # the average to zero.
+            report.comp_subjects_no_coords += 1
             continue
         overlap = len(translated & r8_comps) / len(translated)
         report.comp_subjects += 1
@@ -471,7 +491,7 @@ def replay_comps(legacy: list[dict], all_entities: list[dict],
 
 def run_parity(aln_db: Path, spine_db: Path,
                cities: tuple[str, ...] | None = None,
-               max_subjects: int = 50) -> ParityReport:
+               max_subjects: int = 200) -> ParityReport:
     """P0-2 end to end. `aln_db` holds `properties`; `spine_db` holds
     `properties_8r` (they may be the same file)."""
     from core.market_data import HR_CITY_TO_COUNTY_FIPS_5

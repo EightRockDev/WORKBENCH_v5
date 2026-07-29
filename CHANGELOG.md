@@ -12,6 +12,31 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.12.0.0 — 2026-07-29  ·  Round 10: shared-universe comps + host git recovery + stale-feed sweep
+The first auto-pushed report attempt revealed everything at once:
+- **Host push finally diagnosed**: the repo sat on a detached HEAD with a
+  stale half-finished rebase (debris from the earlier silent failures).
+  `_push-report.bat` and `update-workbench.bat` now abort stale rebases,
+  clear `.git/rebase-merge`, and re-attach HEAD to main before any sync.
+- **Comp overlap was structurally capped**: the 8R backbone knows ~3x more
+  real complexes than the 639-row legacy set, so nearest-12 ranking against
+  the full pool punished the backbone for BETTER coverage (overlap froze at
+  14% even after the pool cleanup). The replay now ranks both sides over
+  the SHARED universe (crosswalked entities only) — measuring placement
+  agreement, not coverage difference. Subjects in cities with no 8R
+  coordinates yet (Norfolk) are counted separately instead of dragging the
+  average to zero. Subject cap raised 50 -> 200, spread by city.
+- **Stale-feed sweep in the ETL**: rows from feeds no longer in the
+  registry are deleted per HR market on every pull. This purges retired
+  layers that lingered forever — including 2,908 Chesapeake blast-zone
+  parcels filed under HAMPTON from before the wrong-city guard existed,
+  and the wrong-city VB Streets_Parcels layer (90,468 rows).
+- **Zero-MF cities explain themselves**: a city with parcels but no
+  multifamily prints its top use codes (Portsmouth's next report will name
+  its apartment coding).
+- New aliases (VB STR_TYPE/SUFFIX_TYPE, Portsmouth RESCLSCODE) + ~30 junk
+  keys ignored. 3 new tests; suite green.
+
 ## V5.8.11.0.0 — 2026-07-29  ·  Phase 0 round 9: evidence-aware comp pool
 Driven by the round-8 report (85.2% covered match, Chesapeake 66/66,
 comp overlap stuck at 14.3%):

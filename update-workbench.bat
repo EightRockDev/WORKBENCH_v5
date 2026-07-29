@@ -18,6 +18,12 @@ taskkill /F /IM streamlit.exe >nul 2>&1
 echo.
 echo === Syncing code to the latest pushed version ===
 git fetch origin
+REM Abort any stale rebase and re-attach a detached HEAD before syncing -
+REM a wedged .git state must never block the update.
+git rebase --abort >nul 2>&1
+if exist ".git\rebase-merge" rmdir /s /q ".git\rebase-merge" >nul 2>&1
+if exist ".git\rebase-apply" rmdir /s /q ".git\rebase-apply" >nul 2>&1
+git checkout -B main origin/main >nul 2>&1
 git reset --hard origin/main
 if errorlevel 1 (
   echo.

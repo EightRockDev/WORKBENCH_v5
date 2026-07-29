@@ -17,6 +17,14 @@ set "REPO_FWD=%CD:\=/%"
 git config --global --add safe.directory "%REPO_FWD%" >nul 2>&1
 
 echo [report] Publishing results to GitHub...
+REM Recover from a stale half-finished rebase (earlier silent failures left
+REM .git\rebase-merge behind) and a detached HEAD (commits must land on
+REM main or the push publishes nothing).
+git rebase --abort >nul 2>&1
+if exist ".git\rebase-merge" rmdir /s /q ".git\rebase-merge" >nul 2>&1
+if exist ".git\rebase-apply" rmdir /s /q ".git\rebase-apply" >nul 2>&1
+git symbolic-ref -q HEAD >nul 2>&1
+if errorlevel 1 git checkout -B main
 git add -f "%FILE%"
 if not "%EXTRA%"=="" git add -f "%EXTRA%"
 git -c user.name="Workbench Host" -c user.email="host@eight-rock.local" ^

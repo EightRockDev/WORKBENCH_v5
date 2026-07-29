@@ -65,7 +65,7 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "address_street": ("propertystreetname", "streetname", "situsstreet",
                        "stname", "strname"),
     "address_suffix": ("propertystreettype", "streettype", "stsuffix",
-                       "streetsuffix", "sttype"),
+                       "streetsuffix", "sttype", "strtype", "suffixtype"),
     "address_direction": ("propertystreetdirection", "streetdirection",
                           "stdir", "predirection", "stprefix"),
     "address_number_suffix": ("propertystreetnumbersuffix",
@@ -90,7 +90,7 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                  "landusedescription", "propertyclassdescription", "usecd",
                  "classdscrp", "usedscrp", "prprtydscrp", "proptype",
                  "propertytype", "statecode", "luc", "bldguse", "resstrtyp",
-                 "typeprop", "bldgtype"),
+                 "typeprop", "bldgtype", "resclscode"),
     "assessed_value": ("assessedvalue", "totalvalue", "totvalue",
                        "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
@@ -141,7 +141,12 @@ _IGNORED_KEYS = re.compile(
     r"lndvalue|srcagency|currentda|convm|convft|map|wf|mail1|mail2|"
     r"prevdate|neighborhd|heattype|ac|basement|legaldescr|soildesc|"
     r"soiltype|propaddresssearch|censusblkgrp|votingdistrict|"
-    r"votingdistrictname|recyclingweek)$")
+    r"votingdistrictname|recyclingweek|platinstr|lotnumber|deedinstr|"
+    r"mapbook|mappage|planningsubdivisionid|planningsubdivisionname|"
+    r"totalrooms|zipext|strunit|const|dtgar|foundation|attic|instno|"
+    r"uniqueidz|rbldgfactr|rphysdprc1|rfuncdprc1|recondprc3|requalfctr|"
+    r"firmdate|ecfloodz|issuedate|expdate|firmstatu|pstladdres|bf|"
+    r"newfldzo|newstatic|newsfhat|femasourc)$")
 
 # Use-code text that identifies multifamily in municipal rolls. Two tiers:
 #   * SUBSTRINGS - long unambiguous words, safe to match anywhere in the code.
@@ -272,6 +277,9 @@ class CoverageReport:
     # DESPITE a small known unit count (suspicious - duplexes labeled
     # "Multi Family"), or an MF use code with no unit data at all.
     mf_basis: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
+    # For cities with parcels but ZERO multifamily: their top use-code
+    # values overall, so the missing-MF mystery names its own suspects.
+    no_mf_use_codes: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
 
     @property
     def coverage(self) -> float:
@@ -305,6 +313,13 @@ class CoverageReport:
             for city, codes in self.mf_use_codes.items():
                 top = ", ".join(f"{c or '(units only)'} x{n}"
                                 for c, n in codes.most_common(5))
+                lines.append(f"  {city}: {top}")
+        if self.no_mf_use_codes:
+            lines.append("")
+            lines.append("Cities with parcels but NO multifamily found - their top use codes:")
+            for city, codes in self.no_mf_use_codes.items():
+                top = ", ".join(f"{c or '(blank)'} x{n}"
+                                for c, n in codes.most_common(8))
                 lines.append(f"  {city}: {top}")
         if self.mf_basis:
             lines.append("")
@@ -631,6 +646,15 @@ def build_spine(db_path: Path,
                 report.mf_basis[city][
                     "units>=10" if units is not None
                     else "code only (no units)"] += 1
+        for city in report.by_city:
+            if report.mf_by_city.get(city):
+                continue
+            for (uc,), n in (
+                    (r[:1], r[1]) for r in conn.execute(
+                        """SELECT use_code, count(*) FROM properties_8r
+                            WHERE city = ? GROUP BY use_code
+                            ORDER BY count(*) DESC LIMIT 8""", (city,))):
+                report.no_mf_use_codes[city][(uc or "").strip()[:40]] = n
         conn.commit()
     return report
 

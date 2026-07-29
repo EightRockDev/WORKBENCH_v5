@@ -133,12 +133,13 @@ def test_empty_spine_reports_zero_not_crash(tmp_path):
     report.summary()   # renders without error
 
 
-def test_replay_caps_subjects_at_fifty(tmp_path):
+def test_replay_caps_subjects_at_max(tmp_path):
+    """Default cap is 200 (spread by city); an explicit cap still binds."""
     db = tmp_path / "wb.db"
     conn = _mk_db(db)
     _seed_world(conn, n=80)
     conn.close()
-    report = pp.run_parity(db, db)
+    report = pp.run_parity(db, db, max_subjects=50)
     assert report.comp_subjects <= 50
 
 
@@ -406,3 +407,47 @@ def test_aggregated_entities_carry_member_units():
         r["address"] = "1 Complex Way"
     (entity,) = pp.aggregate_8r_parcels(rows)
     assert entity["member_units"] == [280, 250]
+
+
+# ---------------------------------------------------------------------------
+# Round 10: shared-universe comp replay
+# ---------------------------------------------------------------------------
+
+def test_backbone_only_entities_do_not_crowd_out_comps(tmp_path):
+    """The backbone knows ~3x more complexes than the legacy set; nearest-12
+    against the FULL pool crowded out crosswalked comps and froze overlap at
+    14%. The replay pool is now the shared universe only."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    _seed_world(conn, n=20)
+    # 200 extra 8R-only complexes packed around the same grid - they must
+    # NOT displace the crosswalked comps from the 8R comp sets.
+    for i in range(200):
+        conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                     (f"8R-extra{i}", f"{i} Extra Blvd", "Norfolk",
+                      50, 1980, 36.90 + (i % 20) * 0.002,
+                      -76.30 + (i // 20) * 0.002, "APARTMENTS"))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert report.comp_subjects > 0
+    assert report.avg_comp_overlap >= 0.95
+
+
+def test_coordinate_blind_subjects_are_reported_not_zeroed(tmp_path):
+    """A Norfolk-style city with no 8R coordinates must not drag the comp
+    average to zero - those subjects are counted separately."""
+    db = tmp_path / "wb.db"
+    conn = _mk_db(db)
+    # Legacy rows WITH coordinates; 8R twins WITHOUT any.
+    for i in range(6):
+        conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
+                     (f"L-{i}", f"P{i}", f"{i} Granby St", "Norfolk",
+                      40, 1990, 1200.0, "B", 36.90 + i * 0.001, -76.28))
+        conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
+                     (f"8R-{i}", f"{i} Granby Street", "Norfolk",
+                      40, 1990, None, None, "APARTMENT 20-49 UNITS"))
+    conn.commit(); conn.close()
+    report = pp.run_parity(db, db)
+    assert report.comp_subjects == 0
+    assert report.comp_subjects_no_coords > 0
+    assert "no 8R coordinates yet" in report.summary()
