@@ -1,4 +1,4 @@
-autopilot discover @ 2026-07-30T12:13:27
+autopilot discover @ 2026-07-30T15:47:12
 
 Probing city GIS portals for unit-bearing parcel layers...
 (a few minutes - each city's services are walked layer by layer)
@@ -56,7 +56,7 @@ Suffolk: nothing suitable found (portal may be offline or hides fields until que
 
 Norfolk: 2 candidate layer(s)
    https://data.norfolk.gov/resource/ykcq-76im.json
-      auto-discovered (socrata): Better Buildings Challenge Properties; score 16; fields ['address', 'apn', 'lat', 'lng', 'use_code', 'year_built']
+      auto-discovered (socrata): Better Buildings Challenge Properties; score 17; fields ['address', 'apn', 'lat', 'lng', 'sqft', 'use_code', 'year_built']
    https://data.norfolk.gov/resource/yvpm-8aid.json
       auto-discovered (socrata): Property Assessment and Sales - FY23; score 12; fields ['apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'year_built', 'zip']; geo-verify inconclusive
 
