@@ -726,6 +726,15 @@ def main() -> None:
             render_portfolio()
         return
 
+    if active_module == "granite_loans":
+        # ---- GRANITE Loans (spec 6.1 Tabs 2-5) ----
+        if _is_v2():
+            _v2_topbar(None)
+        if _authz.guard_module("granite", "GRANITE Loans"):
+            from ui.granite_loans import render_granite_loans
+            render_granite_loans()
+        return
+
     if active_module == "help":
         if _is_v2():
             _v2_topbar(None)

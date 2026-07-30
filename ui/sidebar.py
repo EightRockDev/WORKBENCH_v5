@@ -426,6 +426,23 @@ def render_sidebar() -> tuple[str, str | None]:
             )
             return active_module, st.session_state.get("selected_property_id")
 
+        # ---- GRANITE Loans module: no property selector — return early ----
+        if active_module == "granite_loans":
+            st.markdown(
+                f'<div style="background:{c["bg3"]};border:1px solid {c["bdr"]};'
+                f'border-left:3px solid {c["ac"]};border-radius:6px;padding:10px 14px">'
+                f'<div style="color:{c["tx2"]};font-size:12px;line-height:1.5">'
+                f'<b style="color:{c["ac2"]}">GRANITE Loans</b><br>'
+                f'The loan module — who writes multifamily paper here, '
+                f'comparable originations, and any owner entity&#39;s full '
+                f'footprint on the Eight Rock backbone.<br><br>'
+                f'<span style="color:{c["tx3"]};font-size:11px">'
+                f'Radar hit → pierce the entity → dial, in one surface.'
+                f'</span></div></div>',
+                unsafe_allow_html=True,
+            )
+            return active_module, st.session_state.get("selected_property_id")
+
         # ---- Help module: no property selector — return early ----
         if active_module == "help":
             st.markdown(
@@ -752,6 +769,8 @@ def _render_module_switcher() -> str:
          "Pipeline · brokers · refi candidates"),
         ("portfolio",     "📊 Portfolio",
          "All deals · concentration · rate shock"),
+        ("granite_loans", "🏦 GRANITE Loans",
+         "Lenders · loan comps · borrower intel"),
         ("help",          "❓ Help",
          "Plain-English guide to key features"),
     ]

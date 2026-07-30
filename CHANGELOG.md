@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.0.0.0 — 2026-07-30  ·  GRANITE Loans module v1 (spec 6.1, Tabs 2-5)
+The loan module exists as its own surface for the first time — a
+sidebar module ("🏦 GRANITE Loans", gated by the existing `granite`
+permission) with four tabs:
+- **Lenders** — the real lender database: every multifamily lender by
+  market, all years, originations, volume, median loan, and the median
+  rate spread (pulled by the ETL for months but never read anywhere).
+- **Loan Comps** — comparable originations from `hmda_originations`
+  (74K+ rows with previously ZERO readers): amount, LTV, rate spread,
+  purpose, lender, banded around a deal size. Denied applications are
+  excluded.
+- **Borrower Intel** — search any owner entity and see its whole
+  Hampton Roads footprint on the 8R backbone (parcels, units, assessed
+  value, cities), one step from Module A's Resolve Contacts.
+- **Alerts** — the C3 loan-maturity pressure panel moves in; saved-
+  search alert routing to Outreach is the named next step.
+Deterministic data layer in `core/granite_loans.py` (spec 11 - no LLM
+in the core), read-only against the ETL db and the backbone, degrades
+to empty when a source is absent. 3 new tests.
+
 ## V5.10.3.0.0 — 2026-07-30  ·  Publish fix: never git-track the live log
 The 2:51 PM cycle ran perfectly (all 4 steps exit 0) but EVERY publish
 bounced: code releases landed on origin/main mid-cycle, and the host
