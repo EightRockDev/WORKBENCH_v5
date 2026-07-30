@@ -83,6 +83,27 @@ def main() -> int:
     parity = phase0_parity.run_parity(db, db)
     print()
     print(parity.summary())
+
+    # Machine-readable gate state for downstream automation (the cutover
+    # preflight consumes this instead of parsing the text above).
+    import json
+    gates = {
+        "coverage": report.coverage,
+        "p0_1_passed": report.gate_passed,
+        "comp_overlap": parity.avg_comp_overlap,
+        "rent_delta": parity.avg_rent_delta,
+        "rent_pairs": parity.rent_pairs,
+        "match_rate": parity.match_rate,
+        "covered_match_rate": parity.covered_match_rate,
+        "comp_subjects": parity.comp_subjects,
+        "crosswalk_rows": len(parity.crosswalk_records),
+        "p0_2_passed": parity.gate_passed,
+        "rents_stamped": report.rents_stamped,
+        "rents_from_listings": report.rents_from_listings,
+    }
+    out = Path(__file__).resolve().parent.parent / "reports"
+    out.mkdir(exist_ok=True)
+    (out / "phase0-gates.json").write_text(json.dumps(gates, indent=2))
     return 0
 
 

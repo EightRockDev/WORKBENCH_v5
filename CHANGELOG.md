@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.10.2.0.0 — 2026-07-30  ·  Nightly cutover preflight
+`run_phase0.py` now writes machine-readable `phase0-gates.json`, and a
+new 4th autopilot step (`scripts/preflight_cutover.py` →
+`cutover-preflight.txt`) reports distance-to-flip every cycle: P0-1/P0-2
+gates, crosswalk materialized, rent-signal coverage by source, and a
+deal-reference migration dry run, each marked PASS/----, plus the
+flip-day runbook when everything holds. The flip stays a deliberate act
+- the preflight only reports.
+
 ## V5.10.1.0.0 — 2026-07-30  ·  P0-3 round 2: listings rents, deal migration, honest labels
 - **Listings → backbone rent ingest** (`rent_signal.apply_listings_rents`):
   scraped effective rents from `rent_listings` (the ETL listings puller)

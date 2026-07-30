@@ -304,3 +304,25 @@ def test_backbone_is_a_first_class_provenance_source():
     assert provenance.label_for("8r") == "8R Backbone"
     assert provenance.color_for("8r") == config.COLORS["src_8r"]
     assert "self-sourced" in provenance.description_for("8r")
+
+
+# ----------------------------------------------------------- preflight
+
+def test_preflight_runs_and_reports_not_ready(tmp_path, monkeypatch):
+    """Smoke: the nightly preflight step must exit 0 and name the unmet
+    gates on a backbone that is not flip-ready (it only REPORTS)."""
+    import subprocess
+    import sys as _sys
+    spine = _mk_spine_db(tmp_path / "wb.db", [
+        {"property_id": "8R-51710-aaa", "city": "Norfolk", "units": 48}])
+    pp.persist_crosswalk(spine, [("ALN-1", "8R-51710-aaa", "address", 1)])
+    proc = subprocess.run(
+        [_sys.executable, "scripts/preflight_cutover.py"],
+        env={"ER_WORKBENCH_DB": str(spine), "PATH": "/usr/bin:/bin"},
+        capture_output=True, text=True, cwd=str(config.BASE_DIR
+            if hasattr(config, "BASE_DIR") else
+            __import__("pathlib").Path(__file__).resolve().parent.parent))
+    assert proc.returncode == 0, proc.stderr
+    assert "CUTOVER PREFLIGHT: not ready" in proc.stdout
+    assert "crosswalk materialized (1 mappings)" in proc.stdout
+    assert "rent coverage" in proc.stdout

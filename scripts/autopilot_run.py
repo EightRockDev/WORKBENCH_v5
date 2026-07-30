@@ -24,6 +24,7 @@ STEPS = (
     ("discover", ["scripts/discover_feeds.py"], "discover-latest.txt"),
     ("pull", ["etl_munidata.py", "--hr"], "pull-latest.txt"),
     ("phase0", ["scripts/run_phase0.py"], "phase0-latest.txt"),
+    ("preflight", ["scripts/preflight_cutover.py"], "cutover-preflight.txt"),
 )
 
 
@@ -131,7 +132,8 @@ def main() -> int:
     day = datetime.date.today().isoformat()
     outputs: list[Path] = []
     codes: list[int] = []
-    extras = [ROOT / "data" / "feeds_extra.json", REPORTS / "autopilot.log"]
+    extras = [ROOT / "data" / "feeds_extra.json", REPORTS / "autopilot.log",
+              REPORTS / "phase0-gates.json"]
     for name, args, out_name in STEPS:
         out, code = run_step(name, args, out_name)
         outputs.append(out)
