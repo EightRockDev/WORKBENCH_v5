@@ -134,6 +134,11 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 
 **Next (per BUILD-ORDER.md)**
 0. §9 serving step 2: Caddy + domain + Auth0/Entra OIDC for true public HTTPS
+   — INCLUDES zero-downtime deploys (owner commitment 2026-07-29): before
+   ~25 concurrent users, run two app instances behind Caddy and blue-green
+   swap on code updates; sessions live in OIDC cookies + Postgres so
+   restarts never log anyone out. Data updates are already zero-impact
+   (WAL). Autopilot keeps deploying code at 3 AM until blue-green lands.
    (step 1 — NSSM service + LAN + passcode gate — shipped in V5.7.0.0.0).
 1. **Live vendor verification**: owner has a BatchData key; run
    `diagnose-skiptrace.bat` on the server and tune `core/skiptrace/live.py` field
