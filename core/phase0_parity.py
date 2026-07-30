@@ -321,11 +321,25 @@ def aggregate_8r_parcels(spine_8r: list[dict]) -> list[dict]:
                      if m.get("est_avg_rent")), head.get("est_avg_rent"))
                 head["member_units"] = sorted(
                     (int(m.get("units") or 0) for m in cluster), reverse=True)
-                lats = [m["lat"] for m in cluster if m.get("lat") is not None]
-                lngs = [m["lng"] for m in cluster if m.get("lng") is not None]
-                if lats and lngs:
-                    head["lat"] = sum(lats) / len(lats)
-                    head["lng"] = sum(lngs) / len(lngs)
+                # Anchor the complex at its LARGEST member's parcel, not
+                # the mean of every outparcel - a scattered cluster's
+                # centroid lands off-building, shifting every distance
+                # and re-ranking the top-12 comp set (the last concrete
+                # comp-overlap lever, 2026-07-30). Centroid stays the
+                # fallback when no member has both units and coords.
+                anchor = max(
+                    (m for m in cluster if m.get("lat") is not None
+                     and m.get("lng") is not None),
+                    key=lambda m: int(m.get("units") or 0), default=None)
+                if anchor is not None and int(anchor.get("units") or 0) > 0:
+                    head["lat"] = anchor["lat"]
+                    head["lng"] = anchor["lng"]
+                else:
+                    lats = [m["lat"] for m in cluster if m.get("lat") is not None]
+                    lngs = [m["lng"] for m in cluster if m.get("lng") is not None]
+                    if lats and lngs:
+                        head["lat"] = sum(lats) / len(lats)
+                        head["lng"] = sum(lngs) / len(lngs)
                 head["parcel_count"] = len(cluster)
             out.append(head)
     out.extend(loose)

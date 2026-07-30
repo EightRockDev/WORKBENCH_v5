@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.4.0.0 — 2026-07-30  ·  Comp-overlap fix: anchor complexes at the main building
+The last concrete overlap lever: aggregated complexes sat at the MEAN
+of every member parcel's coordinates, so scattered outparcels dragged
+the pin off the building and re-ranked every distance-based top-12 comp
+set. Complexes now anchor at their largest member's parcel (centroid
+stays the fallback). The chained cycles measure the effect within the
+hour - per the 2-cycle deal with the owner: if overlap moves, 90% is in
+reach; if flat, the ceiling is declared at ~67% and comp-overlap goes
+to the backlog.
+
 ## V5.11.3.1.0 — 2026-07-30  ·  IMMEDIATE cadence: cycles chain back-to-back
 Owner escalation: not hourly - immediate. Each cycle re-registers the
 task to fire 2 minutes after it ends, so cycles run continuously all
