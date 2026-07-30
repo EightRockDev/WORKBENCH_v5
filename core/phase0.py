@@ -79,18 +79,23 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
               "numberofunits", "livunits"),
     "year_built": ("yearbuilt", "yrbuilt", "yrblt", "yearblt",
                    "actualyearbuilt", "yearbuild", "ayb", "resyrblt",
+                   "dwellingyearbuilt",
                    "effyearbuilt", "effectiveyear", "improvementyearbuilt"),
     "sqft": ("sqft", "squarefeet", "buildingsqft", "bldgsqft", "grosssqft",
              "totalsqft", "totsqft", "finishedsqft", "gba", "grossarea",
              "bldgarea", "sfla", "totallivingarea", "livingarea", "resflrarea",
-             "residentialfinishedliving"),
+             "residentialfinishedliving", "finishedlivingarea",
+             "grossfloorarea"),
     "use_code": ("usecode", "use", "landuse", "landusecode", "propertyuse",
                  "propertyclass", "propclass", "classcd", "class", "classcode",
+                 # typebldg BEFORE zoning: Portsmouth's feed carries both, and
+                 # its zoning strings (UR-M, T4...) hid the real building type.
+                 "typebldg",
                  "zoning", "propertyusecode", "usedesc", "usedescription",
                  "landusedescription", "propertyclassdescription", "usecd",
                  "classdscrp", "usedscrp", "prprtydscrp", "proptype",
                  "propertytype", "statecode", "luc", "bldguse", "resstrtyp",
-                 "typeprop", "bldgtype", "resclscode"),
+                 "typeprop", "bldgtype", "resclscode", "improvemen", "clas"),
     "assessed_value": ("assessedvalue", "totalvalue", "totvalue",
                        "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
@@ -146,7 +151,8 @@ _IGNORED_KEYS = re.compile(
     r"totalrooms|zipext|strunit|const|dtgar|foundation|attic|instno|"
     r"uniqueidz|rbldgfactr|rphysdprc1|rfuncdprc1|recondprc3|requalfctr|"
     r"firmdate|ecfloodz|issuedate|expdate|firmstatu|pstladdres|bf|"
-    r"newfldzo|newstatic|newsfhat|femasourc)$")
+    r"newfldzo|newstatic|newsfhat|femasourc|"
+    r"siteenergyuse.*|sourceenergyuse.*|energycost.*|rollingyearenddate)$")
 
 # Use-code text that identifies multifamily in municipal rolls. Two tiers:
 #   * SUBSTRINGS - long unambiguous words, safe to match anywhere in the code.
@@ -266,6 +272,7 @@ class CoverageReport:
     provisional_ids: int = 0
     units_from_points: int = 0
     units_from_points_skipped: int = 0   # non-residential parcels (marinas...)
+    coords_backfilled: int = 0           # MF rows given coords by address match
     by_city: Counter = field(default_factory=Counter)
     mf_by_city: Counter = field(default_factory=Counter)
     unmapped_keys: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
@@ -300,6 +307,7 @@ class CoverageReport:
             f"provisional (no-APN) ids:  {self.provisional_ids:,}",
             f"units derived from address points: {self.units_from_points:,}"
             f"  (skipped non-residential: {self.units_from_points_skipped:,})",
+            f"coords backfilled by address (multifamily): {self.coords_backfilled:,}",
             f"unusable (no parcel/latlng): {self.skipped_no_parcel_or_latlng:,}",
             f"P0-1 coverage:             {self.coverage:.1%}"
             f"  (gate >= {GATE_COVERAGE:.0%}: {'PASS' if self.gate_passed else 'not yet'})",
@@ -522,17 +530,23 @@ def _iter_muni_assessor_rows(conn: sqlite3.Connection,
              ORDER BY source_url, id""",
         cities)
     for market, state, source, record in cur:
-        try:
-            raw = json.loads(record) if record else {}
-        except json.JSONDecodeError:
-            raw = {}
-        # ArcGIS rows nest the payload under "attributes"; Socrata rows are flat.
-        if isinstance(raw, dict) and isinstance(raw.get("attributes"), dict):
-            geo = raw.get("geometry") or {}
-            raw = {**raw["attributes"],
-                   **({"x": geo.get("x"), "y": geo.get("y")} if geo else {})}
-        if isinstance(raw, dict):
+        raw = _decode_muni_record(record)
+        if raw is not None:
             yield market, state or "VA", source or "", raw
+
+
+def _decode_muni_record(record: str | None) -> dict | None:
+    """One stored muni_records payload -> a flat attribute dict (or None)."""
+    try:
+        raw = json.loads(record) if record else {}
+    except json.JSONDecodeError:
+        raw = {}
+    # ArcGIS rows nest the payload under "attributes"; Socrata rows are flat.
+    if isinstance(raw, dict) and isinstance(raw.get("attributes"), dict):
+        geo = raw.get("geometry") or {}
+        raw = {**raw["attributes"],
+               **({"x": geo.get("x"), "y": geo.get("y")} if geo else {})}
+    return raw if isinstance(raw, dict) else None
 
 
 def build_spine(db_path: Path,
@@ -630,6 +644,50 @@ def build_spine(db_path: Path,
             derived += cur.rowcount
         report.units_from_points = derived
         report.units_from_points_skipped = skipped_nonres
+
+        # Address-based coordinate backfill: some feeds carry no geometry at
+        # all (Norfolk's Socrata assessor), leaving a whole city's
+        # multifamily backbone coordinate-blind - every comp subject there
+        # is skipped and legacy rows can match by address only. Sibling
+        # records for the SAME street address (building permits, other
+        # layers) usually DO carry verified coordinates; borrow them.
+        # Multifamily rows only (the parity/comp universe), exact
+        # normalized-address match, same city, sanitized like any other
+        # coordinate.
+        from core.phase0_parity import normalize_address
+        blind: dict[str, list[tuple[str, str]]] = defaultdict(list)
+        for pid, city, address, use_code, units in conn.execute(
+                "SELECT property_id, city, address, use_code, units "
+                "  FROM properties_8r "
+                " WHERE (lat IS NULL OR lng IS NULL) "
+                "   AND address IS NOT NULL AND address != ''"):
+            if city in cities and is_mf_ten_plus(use_code, _num(units)):
+                blind[city].append((pid, address))
+        backfilled = 0
+        for city, rows in blind.items():
+            addr_coords: dict[str, tuple[float, float]] = {}
+            for (record,) in conn.execute(
+                    "SELECT record FROM muni_records WHERE market = ? "
+                    " ORDER BY source_url, id", (city,)):
+                raw = _decode_muni_record(record)
+                if not raw:
+                    continue
+                mapped = normalize_record(city, "VA", raw)
+                lat, lng = sanitize_latlng(_num(mapped.get("lat")),
+                                           _num(mapped.get("lng")))
+                if lat is None:
+                    continue
+                key = normalize_address(str(mapped.get("address") or ""))
+                if key and key not in addr_coords:
+                    addr_coords[key] = (lat, lng)
+            updates = [(hit[0], hit[1], pid)
+                       for pid, address in rows
+                       if (hit := addr_coords.get(normalize_address(address)))]
+            conn.executemany(
+                "UPDATE properties_8r SET lat = ?, lng = ? "
+                " WHERE property_id = ?", updates)
+            backfilled += len(updates)
+        report.coords_backfilled = backfilled
 
         # r8_form is a function of the MERGED (use_code, units) - recompute
         # it once everything (multi-feed COALESCE + point derivation) has

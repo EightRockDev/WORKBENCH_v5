@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.9.3.0.0 — 2026-07-30  ·  First clean autopilot cycle → tuning round 11
+The first fully hands-free cycle landed (discover/pull/phase0 all exit 0,
+every report published). Comp overlap 66.8% vs the 90% gate; covered-city
+match 86.8%. Fixes from the report:
+- **Coordinate backfill by address**: Norfolk's Socrata assessor has no
+  geometry, leaving 856 multifamily entities coordinate-blind (all its
+  comp subjects skipped). Multifamily rows missing coords now borrow
+  verified coordinates from sibling records at the same normalized
+  address (building permits, other layers) - same city only, sanitized,
+  never invented. New report line `coords backfilled by address`.
+- **Portsmouth aliasing**: its zoning strings (UR-M, T4...) were masking
+  the real building type; `TYPE_BLDG` now maps to use_code ahead of
+  zoning, with `IMPROVEMEN`/`CLAS` as low-priority fallbacks.
+- **Norfolk aliases**: dwelling_year_built → year_built;
+  finished_living_area / gross_floor_area → sqft; Better-Buildings
+  energy-metric noise keys ignored in the unmapped report.
+- 2 new backfill regression tests (never invents coords for unknown
+  addresses).
+
 ## V5.9.2.1.0 — 2026-07-30  ·  Wake the host: the 3 AM run was silently skipped
 The first nightly autopilot never executed - the host was asleep at 3 AM
 and the schtasks task had neither wake nor missed-run catch-up, so Windows

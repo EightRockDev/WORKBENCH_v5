@@ -307,6 +307,13 @@ scale this is intolerable. Non-negotiable rules:
    chicken-and-egg — new task settings only apply after the host executes
    something once, so the recovery path must ride on the next thing that
    ALREADY runs (or one manual double-click), not on the broken schedule.
+10. **Borrow data already in hand before hunting new feeds.** Norfolk's
+   assessor feed has no geometry and weeks could have gone into finding a
+   coordinate-bearing replacement layer - but the permits feed for the
+   same city (124K rows, already ingested) carries coordinates for the
+   same street addresses. When one feed class lacks a field, check the
+   OTHER feed classes for the same market first; an address join against
+   data you already pulled ships in one commit and works for every city.
 
 ### Known open items that block 50-metro readiness
 - Hampton + Suffolk still have no unit-bearing parcel layer discovered

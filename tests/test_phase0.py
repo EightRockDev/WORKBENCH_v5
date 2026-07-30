@@ -632,3 +632,41 @@ def test_socrata_location_dicts_become_coords_never_addresses():
         "gpin": "9", "latitude": "36.90", "longitude": "-76.20",
         "location": {"latitude": "1.0", "longitude": "2.0"}})
     assert float(m3["lat"]) == 36.90
+
+
+def test_coords_backfilled_from_sibling_feed_by_address(tmp_path):
+    """Norfolk's assessor feed carries no geometry at all, leaving every
+    multifamily row coordinate-blind (all its comp subjects get skipped).
+    A permits row for the SAME address has verified coords - borrow them."""
+    db = tmp_path / "workbench.db"
+    _seed_muni(db, [
+        _norfolk("1234567890"),
+        ("Norfolk", "VA", "permits", {
+            "address": "1234567890 Granby St",
+            "lat": 36.8508, "lng": -76.2859}),
+    ])
+    report = phase0.build_spine(db)
+    assert report.coords_backfilled == 1
+    with sqlite3.connect(db) as conn:
+        lat, lng = conn.execute(
+            "SELECT lat, lng FROM properties_8r").fetchone()
+    assert abs(lat - 36.8508) < 1e-6 and abs(lng - -76.2859) < 1e-6
+
+
+def test_backfill_never_invents_coords_for_unknown_addresses(tmp_path):
+    """No sibling record shares the address -> the row stays coordinate-
+    free (a missing coordinate matches by address; a wrong one matches the
+    wrong parcel)."""
+    db = tmp_path / "workbench.db"
+    _seed_muni(db, [
+        _norfolk("1234567890"),
+        ("Norfolk", "VA", "permits", {
+            "address": "999 Different Ave",
+            "lat": 36.8508, "lng": -76.2859}),
+    ])
+    report = phase0.build_spine(db)
+    assert report.coords_backfilled == 0
+    with sqlite3.connect(db) as conn:
+        lat, lng = conn.execute(
+            "SELECT lat, lng FROM properties_8r").fetchone()
+    assert lat is None and lng is None
