@@ -13,8 +13,8 @@ the blend to flatter the gate; deriving any market-adjustment factor
 from ALN data itself would defeat the ALN-free requirement (spec 7.3).
 
 Source hierarchy (rent_source column, best wins, never downgraded):
-  listings  - scraped asking/effective rents (pullers/listings)   [next]
-  hud_fmr   - county FMR bedroom blend                            [this]
+  listings  - scraped effective rents (pullers/listings via crosswalk)
+  hud_fmr   - county FMR bedroom blend (fills whatever listings miss)
 """
 
 from __future__ import annotations
@@ -84,6 +84,77 @@ def ensure_rent_columns(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE properties_8r ADD COLUMN est_avg_rent REAL")
     if "rent_source" not in cols:
         conn.execute("ALTER TABLE properties_8r ADD COLUMN rent_source TEXT")
+
+
+def apply_listings_rents(spine_db: Path, etl_path: Path | None = None) -> int:
+    """Stamp scraped effective rents (rent_source='listings') on backbone
+    rows. Returns rows updated.
+
+    The listings puller (hampton-roads-etl/pullers/listings) keys its
+    rent_listings rows to LEGACY ALN ids; the persisted property_crosswalk
+    is the bridge until the puller is rekeyed. The crosswalk comes from
+    the PREVIOUS parity run (parity runs after the build), which is safe:
+    8R ids are deterministic, so the mapping is stable run to run - a
+    brand-new property simply picks its listings rent up one cycle later.
+
+    Per legacy property: average each bedroom's effective rent across all
+    successful scrapes (multiple sources disagree slightly), then blend
+    1BR/2BR with the FMR_BLEND core weights renormalized.
+    """
+    path = etl_path or etl_db.resolve_etl_db()
+    if path is None:
+        return 0
+    try:
+        with sqlite3.connect(path) as db:
+            rows = db.execute(
+                """SELECT property_id, effective_one_br_rent,
+                          effective_two_br_rent
+                     FROM rent_listings
+                    WHERE scrape_status = 'success'"""
+            ).fetchall()
+    except sqlite3.Error:      # no rent_listings table yet - scraper not run
+        return 0
+    sums: dict[str, list[list[float]]] = {}
+    for legacy_id, e1, e2 in rows:
+        if not legacy_id:
+            continue
+        acc = sums.setdefault(legacy_id, [[], []])
+        if e1:
+            acc[0].append(float(e1))
+        if e2:
+            acc[1].append(float(e2))
+    per_legacy: dict[str, float] = {}
+    w1 = dict(FMR_BLEND)["fmr_one_bedroom"]
+    w2 = dict(FMR_BLEND)["fmr_two_bedroom"]
+    for legacy_id, (ones, twos) in sums.items():
+        parts = []
+        if ones:
+            parts.append((sum(ones) / len(ones), w1))
+        if twos:
+            parts.append((sum(twos) / len(twos), w2))
+        if parts:
+            per_legacy[legacy_id] = (sum(v * w for v, w in parts)
+                                     / sum(w for _, w in parts))
+    if not per_legacy:
+        return 0
+    updated = 0
+    with sqlite3.connect(spine_db, timeout=60) as conn:
+        ensure_rent_columns(conn)
+        try:
+            xwalk = dict(conn.execute(
+                "SELECT legacy_property_id, r8_property_id "
+                "  FROM property_crosswalk"))
+        except sqlite3.Error:  # first-ever run: parity hasn't built it yet
+            return 0
+        pairs = [(round(rent, 2), xwalk[leg])
+                 for leg, rent in per_legacy.items() if leg in xwalk]
+        for rent, r8_id in pairs:
+            cur = conn.execute(
+                """UPDATE properties_8r
+                      SET est_avg_rent = ?, rent_source = 'listings'
+                    WHERE property_id = ?""", (rent, r8_id))
+            updated += cur.rowcount
+    return updated
 
 
 def apply_rent_signal(spine_db: Path, etl_path: Path | None = None) -> int:

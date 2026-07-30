@@ -83,9 +83,14 @@ def _resolve_subject_metrics(
         "source_date": None,
         "source_file": None,
     }
-    # Determine "user input" status (custom property — no ALN id)
-    is_user_input = (prop.get("status") == "Custom") or (prop.get("aln_id") in (None, ""))
-    out["source_label"] = "User input" if is_user_input else "ALN"
+    # Source of the base record. 8R-backbone rows also have no aln_id, so
+    # check the id prefix BEFORE the no-aln_id-means-custom heuristic —
+    # otherwise every self-sourced property mislabels as "User input".
+    if str(prop.get("property_id") or "").startswith("8R-"):
+        out["source_label"] = "8R Backbone"
+    else:
+        is_user_input = (prop.get("status") == "Custom") or (prop.get("aln_id") in (None, ""))
+        out["source_label"] = "User input" if is_user_input else "ALN"
 
     if folder is None:
         return out
@@ -294,6 +299,8 @@ def _subject_card(prop: dict[str, Any], folder: PropertyFolder | None) -> dict[s
         badge_color = c["src_rr"]
     elif "User" in source_label:
         badge_color = c["ac2"]
+    elif "8R" in source_label:
+        badge_color = c.get("src_8r", c["src_aln"])
     else:
         badge_color = c["src_aln"]
     date_str = f" · {source_date}" if source_date else ""

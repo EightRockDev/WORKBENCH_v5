@@ -198,3 +198,109 @@ def test_read_seam_serves_the_backbone_in_legacy_shape(tmp_path):
 
 def test_read_seam_default_stays_legacy():
     assert config.SPINE_READ_SOURCE == "legacy"
+
+
+# ---------------------------------------------------- listings ingest
+
+def _add_rent_listings(etl_path, rows):
+    with sqlite3.connect(etl_path) as conn:
+        conn.execute("""CREATE TABLE IF NOT EXISTS rent_listings (
+            property_id TEXT, source TEXT, scrape_status TEXT,
+            effective_one_br_rent REAL, effective_two_br_rent REAL,
+            scraped_at TEXT)""")
+        conn.executemany(
+            "INSERT INTO rent_listings VALUES (?,?,?,?,?,?)", rows)
+    return etl_path
+
+
+def test_listings_rents_flow_through_the_crosswalk(tmp_path):
+    """rent_listings keys rows to LEGACY ALN ids; the persisted crosswalk
+    bridges them onto the backbone, beating the FMR estimate."""
+    etl = _mk_etl_db(tmp_path / "etl.db",
+                     [("51710", 2026, 1000, 1100, 1300, 1600, 1800)])
+    _add_rent_listings(etl, [
+        ("ALN-1", "zillow", "success", 1500.0, 1800.0, "t1"),
+        ("ALN-1", "rentcafe", "success", 1520.0, 1820.0, "t2"),
+        ("ALN-1", "zillow", "blocked", 99.0, 99.0, "t3"),   # ignored
+        ("ALN-NOMAP", "zillow", "success", 1400.0, None, "t4"),
+    ])
+    spine = _mk_spine_db(tmp_path / "wb.db", [
+        {"property_id": "8R-51710-aaa", "city": "Norfolk", "units": 48},
+        {"property_id": "8R-51710-bbb", "city": "Norfolk", "units": 30},
+    ])
+    pp.persist_crosswalk(spine, [("ALN-1", "8R-51710-aaa", "address", 1)])
+    assert rent_signal.apply_listings_rents(spine, etl) == 1
+    rent_signal.apply_rent_signal(spine, etl)   # FMR must NOT overwrite
+    with sqlite3.connect(spine) as conn:
+        rows = {pid: (rent, src) for pid, rent, src in conn.execute(
+            "SELECT property_id, est_avg_rent, rent_source"
+            "  FROM properties_8r")}
+    rent, src = rows["8R-51710-aaa"]
+    assert src == "listings"
+    # avg 1BR = 1510 (w .40), avg 2BR = 1810 (w .45) -> blend
+    expected = (1510 * 0.40 + 1810 * 0.45) / 0.85
+    assert abs(rent - round(expected, 2)) < 0.01
+    # The unmapped property fell back to the FMR estimate.
+    assert rows["8R-51710-bbb"][1] == "hud_fmr"
+
+
+def test_listings_ingest_without_crosswalk_is_a_noop(tmp_path):
+    etl = _mk_etl_db(tmp_path / "etl.db", [])
+    _add_rent_listings(etl, [("ALN-1", "zillow", "success", 1500.0, None, "t")])
+    spine = _mk_spine_db(tmp_path / "wb.db", [
+        {"property_id": "8R-51710-aaa", "city": "Norfolk", "units": 48}])
+    assert rent_signal.apply_listings_rents(spine, etl) == 0
+
+
+# ------------------------------------------------ deal-reference migration
+
+def test_migrate_deal_references_is_safe_and_idempotent(tmp_path):
+    from core.cutover import migrate_deal_references
+    db = tmp_path / "pilot.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("CREATE TABLE deals (id INTEGER, property_id TEXT)")
+        conn.execute("CREATE TABLE outreach_touches "
+                     "(id INTEGER, property_id TEXT)")
+        conn.executemany("INSERT INTO deals VALUES (?,?)", [
+            (1, "ALN-1"), (2, "ALN-1"),          # two deals, same property
+            (3, "8R-51710-bbb"),                 # already migrated
+            (4, "ALN-GHOST"),                    # no crosswalk entry
+            (5, None),                           # no property attached
+        ])
+        conn.execute("INSERT INTO outreach_touches VALUES (1, 'ALN-1')")
+        xwalk = {"ALN-1": "8R-51710-aaa"}
+        result = migrate_deal_references(conn, xwalk)
+        assert result.updated == {"deals": 1, "outreach_touches": 1}
+        assert result.already_8r["deals"] == 1
+        assert result.unmapped["deals"] == ["ALN-GHOST"]
+        ids = [r[0] for r in conn.execute(
+            "SELECT property_id FROM deals ORDER BY id")]
+        assert ids == ["8R-51710-aaa", "8R-51710-aaa", "8R-51710-bbb",
+                       "ALN-GHOST", None]
+        # Second run: nothing left to migrate, nothing breaks.
+        again = migrate_deal_references(conn, xwalk)
+        assert again.updated == {"deals": 0, "outreach_touches": 0}
+        assert "1 migrated" in result.summary()
+
+
+def test_migrate_dry_run_changes_nothing(tmp_path):
+    from core.cutover import migrate_deal_references
+    db = tmp_path / "pilot.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("CREATE TABLE deals (id INTEGER, property_id TEXT)")
+        conn.execute("INSERT INTO deals VALUES (1, 'ALN-1')")
+        result = migrate_deal_references(conn, {"ALN-1": "8R-x"},
+                                         dry_run=True)
+        assert result.updated["deals"] == 1   # counted...
+        assert conn.execute("SELECT property_id FROM deals").fetchone()[0] \
+            == "ALN-1"                        # ...but untouched
+
+
+# ----------------------------------------------------------- provenance
+
+def test_backbone_is_a_first_class_provenance_source():
+    from core import provenance
+    assert "8r" in provenance.all_keys()
+    assert provenance.label_for("8r") == "8R Backbone"
+    assert provenance.color_for("8r") == config.COLORS["src_8r"]
+    assert "self-sourced" in provenance.description_for("8r")

@@ -21,13 +21,15 @@ from typing import Literal
 
 import config
 
-ProvenanceKey = Literal["rr", "t12", "aln", "etl", "user", "calc", "unknown"]
+ProvenanceKey = Literal["rr", "t12", "aln", "8r", "etl", "user", "calc",
+                        "unknown"]
 
 # Friendly display labels for each provenance type
 _LABELS: dict[ProvenanceKey, str] = {
     "rr":      "Rent Roll",
     "t12":     "T-12",
     "aln":     "ALN Survey",
+    "8r":      "8R Backbone",
     "etl":     "Public Data (ETL)",
     "user":    "User Input",
     "calc":    "Computed",
@@ -49,6 +51,12 @@ _DESCRIPTIONS: dict[ProvenanceKey, str] = {
         "ALN Apartment Data industry survey. Updated quarterly; can lag "
         "the actual rent roll by 3-6 months. Treat as a benchmark, not a "
         "current operating snapshot."
+    ),
+    "8r": (
+        "Eight Rock's self-sourced property backbone: municipal assessor "
+        "and parcel records, permits, and HUD/listings rent signal, "
+        "rebuilt nightly. Replaces the vendor survey per the Phase-0 "
+        "cutover plan."
     ),
     "etl": (
         "Public-sector data refreshed by `hampton-roads-etl/`. "
@@ -85,4 +93,4 @@ def description_for(key: ProvenanceKey) -> str:
 
 
 def all_keys() -> list[ProvenanceKey]:
-    return ["rr", "t12", "aln", "etl", "user", "calc", "unknown"]
+    return ["rr", "t12", "aln", "8r", "etl", "user", "calc", "unknown"]

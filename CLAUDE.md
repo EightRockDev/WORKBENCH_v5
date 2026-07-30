@@ -159,15 +159,19 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    rent signal v1 (`core/rent_signal.py`, HUD-FMR blend -> `est_avg_rent`,
    makes the rent-delta gate real), persisted `property_crosswalk`, and the
    `config.SPINE_READ_SOURCE` read seam in `data/db.py` (default "legacy").
+   P0-3 round 2 SHIPPED (V5.10.1.0.0): listings->backbone rent ingest via
+   crosswalk (`apply_listings_rents`), `core/cutover.py` deal-reference
+   migration (never guesses, idempotent, dry-run), "8r" provenance key +
+   comp-badge fix (missing aln_id no longer means "User input").
    Remaining before the flip (then P0-4 purge):
    - comp overlap to >= 90% (nightly tuning loop drives this)
-   - listings-scraped rents: `hampton-roads-etl/pullers/listings/` is built
-     but keys rows to ALN ids (runner.py:246) - rekey via crosswalk; FMR
-     alone will not hit the <= 5% delta
-   - `ui/comps.py:94` treats missing aln_id as "User input" - inverts on 8R
-   - provenance keys for hud_fmr/listings (+ 3 ad-hoc badge sites)
-   - deals.property_id migration via crosswalk (Postgres; 8R- prefix
-     discriminates); poc_records is already 8R-keyed
+   - rent delta to <= 5%: needs the listings scraper RUN on the host
+     (pull_listings writes rent_listings; ingest is wired and waiting) -
+     FMR alone will not hit 5%
+   - flip day: run `core.cutover.migrate_deal_references` against the
+     pilot Postgres, set SPINE_READ_SOURCE="8r", full regression suite
+   - cosmetic: inventory "matched to ALN" counters + property_detail
+     "db"->src_aln color read wrong after flip (dual-run only today)
 
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 

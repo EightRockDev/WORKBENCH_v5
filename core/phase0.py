@@ -274,6 +274,7 @@ class CoverageReport:
     units_from_points_skipped: int = 0   # non-residential parcels (marinas...)
     coords_backfilled: int = 0           # MF rows given coords by address match
     rents_stamped: int = 0               # MF rows given a HUD-FMR rent estimate
+    rents_from_listings: int = 0         # rows given scraped listings rents
     by_city: Counter = field(default_factory=Counter)
     mf_by_city: Counter = field(default_factory=Counter)
     unmapped_keys: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
@@ -311,6 +312,9 @@ class CoverageReport:
             f"coords backfilled by address (multifamily): {self.coords_backfilled:,}",
             f"rent estimates stamped (HUD FMR blend): {self.rents_stamped:,}"
             + ("" if self.rents_stamped else "  (ETL db with hud_fmr not found)"),
+            f"rents from scraped listings: {self.rents_from_listings:,}"
+            + ("" if self.rents_from_listings
+               else "  (rent_listings empty or crosswalk not built yet)"),
             f"unusable (no parcel/latlng): {self.skipped_no_parcel_or_latlng:,}",
             f"P0-1 coverage:             {self.coverage:.1%}"
             f"  (gate >= {GATE_COVERAGE:.0%}: {'PASS' if self.gate_passed else 'not yet'})",
@@ -727,11 +731,13 @@ def build_spine(db_path: Path,
                 report.no_mf_use_codes[city][(uc or "").strip()[:40]] = n
         conn.commit()
 
-    # Rent signal v1: stamp HUD-FMR-anchored estimates on the multifamily
-    # rows so the P0-2 rent-delta gate measures something real instead of
-    # passing vacuously. No ETL DB on this machine -> 0, and the report
-    # says so. (Own connection - runs after the build transaction closes.)
+    # Rent signal: scraped listings rents first (best source, mapped via
+    # last run's crosswalk), then HUD-FMR estimates fill every remaining
+    # multifamily row so the P0-2 rent-delta gate measures something real
+    # instead of passing vacuously. No ETL DB on this machine -> 0, and
+    # the report says so. (Own connections - after the build txn closes.)
     from core import rent_signal
+    report.rents_from_listings = rent_signal.apply_listings_rents(db_path)
     report.rents_stamped = rent_signal.apply_rent_signal(db_path)
     return report
 

@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.10.1.0.0 — 2026-07-30  ·  P0-3 round 2: listings rents, deal migration, honest labels
+- **Listings → backbone rent ingest** (`rent_signal.apply_listings_rents`):
+  scraped effective rents from `rent_listings` (the ETL listings puller)
+  now flow onto `properties_8r` through the persisted crosswalk -
+  1BR/2BR blend, averaged across sources, `rent_source='listings'`,
+  always beating and never downgraded by the FMR estimate. Runs in every
+  backbone build; reports its count. This closes the "listings keyed to
+  ALN ids" blocker WITHOUT touching the ETL repo.
+- **Deal-reference migration tool** (`core/cutover.py`): rewrites
+  `deals.property_id` / `outreach_touches.property_id` legacy ids to 8R
+  ids via the crosswalk. Never guesses (unmapped ids counted and left
+  as-is - they still resolve through the read seam), idempotent
+  (`8R-` rows skipped), dry-run mode, works on SQLite and Postgres.
+  Executed at flip time.
+- **Honest labels**: "8r" is a first-class provenance key (teal, "8R
+  Backbone", registry + Data Source Key legend + comp badge). Fixed the
+  comp-page heuristic that would have labeled every self-sourced
+  property "User input" because it lacks an ALN id.
+5 more tests (14 total in tests/test_cutover.py).
+
 ## V5.10.0.0.0 — 2026-07-30  ·  P0-3 cutover foundations (spec 7.3)
 Three structural blockers to cutover removed:
 - **Rent signal v1** (`core/rent_signal.py`): every multifamily backbone
