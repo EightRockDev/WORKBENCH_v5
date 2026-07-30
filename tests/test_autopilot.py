@@ -101,3 +101,11 @@ def test_stranded_commit_from_failed_push_is_published_next_run(tmp_path):
     assert publish([report], "next-night", root=work) is True
     shown = _sh(["git", "show", "main:reports/phase0-latest.txt"], bare)
     assert "stranded run" in shown.stdout
+
+
+def test_schedule_hourly_until_clean_then_nightly():
+    from scripts.autopilot_run import schedule_args, TASK_NAME
+    hourly = schedule_args(False, r"C:\WORKBENCH_V5\autopilot.bat")
+    assert "/SC" in hourly and "HOURLY" in hourly and TASK_NAME in hourly
+    nightly = schedule_args(True, r"C:\WORKBENCH_V5\autopilot.bat")
+    assert "DAILY" in nightly and "03:00" in nightly

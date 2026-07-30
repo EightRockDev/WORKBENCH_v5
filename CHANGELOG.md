@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.9.2.0.0 — 2026-07-29  ·  Run continuously until clean (owner directive)
+A "clean run" = every step exits 0 AND the reports publish to GitHub. Until
+one lands, the autopilot re-registers its own scheduled task to run HOURLY;
+the moment a cycle is verified clean it throttles itself back to nightly
+3:00 AM. The cadence is self-managed via schtasks from inside the cycle -
+no human touches the schedule in either direction. Claude's analysis
+routine runs hourly in lockstep until the clean run, then returns to
+nightly, and the next phase (P0-3 cutover) begins on the first clean data.
+
 ## V5.9.1.0.0 — 2026-07-29  ·  Near-live autopilot: every step publishes as it completes
 Owner wanted to see the log without waiting out the cycle. Each step
 (discover / pull / phase0) now publishes its report + the running log the

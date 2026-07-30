@@ -12,6 +12,7 @@ never stops the later ones (their reports say what happened).
 from __future__ import annotations
 
 import datetime
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -31,7 +32,7 @@ def git(*args: str, root: Path = ROOT) -> subprocess.CompletedProcess:
                           capture_output=True, text=True)
 
 
-def run_step(name: str, args: list[str], out_name: str) -> Path:
+def run_step(name: str, args: list[str], out_name: str) -> tuple[Path, int]:
     REPORTS.mkdir(exist_ok=True)
     out = REPORTS / out_name
     stamp = datetime.datetime.now().isoformat(timespec="seconds")
@@ -41,7 +42,7 @@ def run_step(name: str, args: list[str], out_name: str) -> Path:
         proc = subprocess.run([sys.executable, "-u", *args], cwd=ROOT,
                               stdout=fh, stderr=subprocess.STDOUT, text=True)
     print(f"[{name}] exit {proc.returncode} -> {out.name}", flush=True)
-    return out
+    return out, proc.returncode
 
 
 def publish(files: list[Path], label: str, root: Path = ROOT) -> bool:
@@ -72,21 +73,51 @@ def publish(files: list[Path], label: str, root: Path = ROOT) -> bool:
     return ok
 
 
+TASK_NAME = "EightRockWorkbenchAutopilot"
+
+
+def schedule_args(clean: bool, task_path: str) -> list[str]:
+    """Owner directive: run CONTINUOUSLY until a verified clean cycle
+    (every step exit 0 AND published to GitHub), then settle to nightly.
+    The autopilot manages its own cadence via the scheduled task."""
+    base = ["schtasks", "/Create", "/F", "/TN", TASK_NAME, "/TR", task_path]
+    if clean:
+        return base + ["/SC", "DAILY", "/ST", "03:00"]
+    return base + ["/SC", "HOURLY", "/MO", "1"]
+
+
+def reschedule(clean: bool) -> None:
+    if os.name != "nt":
+        return
+    task_path = str(ROOT / "autopilot.bat")
+    proc = subprocess.run(schedule_args(clean, task_path),
+                          capture_output=True, text=True)
+    mode = "nightly 3:00 AM (clean cycle achieved)" if clean else \
+        "HOURLY until a clean cycle lands"
+    print(f"[schedule] {mode} (schtasks exit {proc.returncode})", flush=True)
+
+
 def main() -> int:
     """Publish EACH step's report the moment it finishes - the owner (and
     Claude) see progress near-live instead of waiting out the whole cycle.
     A final sweep publish catches anything left (incl. the full log)."""
     day = datetime.date.today().isoformat()
     outputs: list[Path] = []
+    codes: list[int] = []
     extras = [ROOT / "data" / "feeds_extra.json", REPORTS / "autopilot.log"]
     for name, args, out_name in STEPS:
-        out = run_step(name, args, out_name)
+        out, code = run_step(name, args, out_name)
         outputs.append(out)
+        codes.append(code)
         step_files = [f for f in [out] + extras if f.exists()]
         publish(step_files, f"{day} {name}")
     files = [f for f in outputs + extras if f.exists()]
     ok = publish(files, f"{day} final")
-    return 0 if ok else 1
+    clean = ok and all(c == 0 for c in codes)
+    print(f"[cycle] {'CLEAN' if clean else 'not clean'} "
+          f"(steps {codes}, published={ok})", flush=True)
+    reschedule(clean)
+    return 0 if clean else 1
 
 
 if __name__ == "__main__":
