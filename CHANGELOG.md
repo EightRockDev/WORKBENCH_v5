@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.9.0.0.0 — 2026-07-29  ·  AUTOPILOT: the whole data loop, hands-free
+Owner directive: "You run this." Done — the operator is out of the loop.
+- **`install-autopilot.bat`** (double-click ONCE): registers a nightly
+  3:00 AM Windows scheduled task and runs the first cycle immediately.
+- **Each cycle**: self-update to origin/main -> uv sync -> discover feeds
+  -> pull Hampton Roads -> rebuild the backbone -> publish every report
+  (discover/pull/phase0 + the autopilot log + feeds_extra.json) to GitHub.
+  Claude reads the reports and pushes fixes; the next night's cycle picks
+  them up automatically. Tuning now needs zero human round-trips.
+- **WAL mode on workbench.db**: readers never block the pull - the
+  app/service stays up during unattended cycles ("close the app first" is
+  gone from pull-muni too).
+- Stage 1 (`scripts/autopilot.py`) is a deliberately boring, stable
+  updater that also repairs every wedged-git state seen on the host;
+  stage 2 (`scripts/autopilot_run.py`) is the evolving pipeline and runs
+  on the freshly updated code.
+- Publish path proven by 4 integration tests against a real local git
+  remote: normal push, detached-HEAD + stale-rebase recovery, idempotent
+  re-run, and racing a concurrent code push.
+
 ## V5.8.13.1.0 — 2026-07-29  ·  Publish helper made corruption-proof
 The brian2 account's publish attempt showed the remaining failure modes in
 one screen: no git identity under that Windows account (the inline identity

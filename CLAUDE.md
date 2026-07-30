@@ -76,6 +76,11 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 - Keep the action list to **3-5 items, max**.
 
 ## Owner requests to honor (standing)
+- **AUTOPILOT is the loop (V5.9.0.0.0)**: a nightly scheduled task on the
+  host runs update -> discover -> pull -> phase0 -> publish. Read
+  reports/ from the repo each session; push fixes; the next cycle applies
+  them. Never ask the owner to run .bats for tuning again -
+  `install-autopilot.bat` was their last required double-click.
 - **Terminology: say "backbone", never "spine"** in anything the owner or an
   investor sees - reports, .bat text, UI copy, slides, docs (owner directive
   2026-07-29). Internal identifiers (core/spine.py, build_spine,

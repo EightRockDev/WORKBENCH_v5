@@ -499,6 +499,12 @@ def run_all(app_token: str | None = None, market: str | None = None,
             limit: int | None = None, hr_only: bool = False) -> dict[str, int]:
     conn = sqlite3.connect(DB_PATH, timeout=60)
     conn.execute("PRAGMA busy_timeout = 60000")   # tolerate the app reading
+    # WAL: readers never block the writer - the pull can run unattended
+    # while the app/service is up (autopilot requirement). Persistent.
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except sqlite3.Error:
+        pass
     _ensure_schema(conn)
     extras = _extra_feeds()
     print(f"  discovered feeds loaded from data/feeds_extra.json: {len(extras)}")

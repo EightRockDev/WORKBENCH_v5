@@ -543,7 +543,12 @@ def build_spine(db_path: Path,
     Idempotent: rows key on the deterministic 8R id; a re-run refreshes them.
     """
     report = CoverageReport()
-    with sqlite3.connect(db_path) as conn:
+    with sqlite3.connect(db_path, timeout=60) as conn:
+        conn.execute("PRAGMA busy_timeout = 60000")
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+        except sqlite3.Error:
+            pass
         conn.executescript(_SPINE_SCHEMA)
         if rebuild:
             conn.execute("DELETE FROM properties_8r")

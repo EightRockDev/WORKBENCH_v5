@@ -9,8 +9,7 @@ REM ===================================================================
 cd /d "%~dp0"
 call "%~dp0_find-uv.bat" || (pause & exit /b 1)
 if not exist reports mkdir reports
-echo NOTE: close the workbench app first (uninstall-service.bat stops the
-echo service) - the database cannot be written while the app holds it.
+echo NOTE: the app may stay open - the database now runs in WAL mode.
 echo.
 "%UV%" run python -u etl_munidata.py --hr 2>&1 | powershell -NoProfile -Command "$input | Tee-Object -Variable out; $out | Set-Content -Path 'reports\pull-latest.txt' -Encoding UTF8"
 call "%~dp0_push-report.bat" reports\pull-latest.txt "pull-muni"
