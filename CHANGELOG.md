@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.10.3.0.0 — 2026-07-30  ·  Publish fix: never git-track the live log
+The 2:51 PM cycle ran perfectly (all 4 steps exit 0) but EVERY publish
+bounced: code releases landed on origin/main mid-cycle, and the host
+could not rebase past them because tracked `reports/autopilot.log` is
+held open for append by the running .bat - Windows locks it, so any git
+operation rewriting that path fails, leaving the branch behind and every
+push rejected non-fast-forward. The next run then could not even update
+its code ("local changes would be overwritten") - same file. Fix: the
+live log is untracked + gitignored forever; publish() ships a COPY
+(`reports/autopilot-run.log`) and self-heals old clones (`git rm
+--cached`); stage-1 does the same and force-checkouts so no dirty
+tracked file can ever block a code update again. Regression test added.
+Recovery on the host: close the stuck window, run update-workbench.bat
+once (its reset --hard clears the wedge), and the cycle self-heals.
+
 ## V5.10.2.1.0 — 2026-07-30  ·  Regression suite driven green (P0-3 gate prep)
 "Full regression suite green" is a P0-3 flip gate. Fixed the four
 standing non-Postgres failures: two stale aln_loader tests updated to

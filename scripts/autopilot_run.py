@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import datetime
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -47,10 +48,21 @@ def run_step(name: str, args: list[str], out_name: str) -> tuple[Path, int]:
 
 
 def publish(files: list[Path], label: str, root: Path = ROOT) -> bool:
-    """Commit + push the run's artifacts. Repairs wedged state first."""
+    """Commit + push the run's artifacts. Repairs wedged state first.
+
+    The LIVE log (reports/autopilot.log) must never be in these files:
+    the .bat holds it open for append, Windows locks it, and any git
+    operation that rewrites the worktree (rebase, checkout, stash pop)
+    then fails - which is how an entire cycle's publishes got rejected
+    non-fast-forward on 2026-07-30. It stays untracked (.gitignore);
+    a COPY (autopilot-run.log) is what ships.
+    """
     for cmd in (("rebase", "--abort"), ("cherry-pick", "--abort"),
                 ("merge", "--abort")):
         git(*cmd, root=root)
+    # Self-heal clones that still track the live log from before the fix.
+    git("rm", "--cached", "--ignore-unmatch", "-q",
+        "reports/autopilot.log", root=root)
     symref = git("symbolic-ref", "-q", "HEAD", root=root)
     if symref.returncode != 0:
         git("checkout", "-B", "main", root=root)
@@ -132,15 +144,26 @@ def main() -> int:
     day = datetime.date.today().isoformat()
     outputs: list[Path] = []
     codes: list[int] = []
-    extras = [ROOT / "data" / "feeds_extra.json", REPORTS / "autopilot.log",
-              REPORTS / "phase0-gates.json"]
+
+    def extras_now() -> list[Path]:
+        files = [ROOT / "data" / "feeds_extra.json",
+                 REPORTS / "phase0-gates.json"]
+        live = REPORTS / "autopilot.log"
+        pub = REPORTS / "autopilot-run.log"
+        try:  # ship a COPY of the live log - never the locked file itself
+            shutil.copyfile(live, pub)
+            files.append(pub)
+        except OSError:
+            pass
+        return [f for f in files if f.exists()]
+
     for name, args, out_name in STEPS:
         out, code = run_step(name, args, out_name)
         outputs.append(out)
         codes.append(code)
-        step_files = [f for f in [out] + extras if f.exists()]
+        step_files = [f for f in [out] if f.exists()] + extras_now()
         publish(step_files, f"{day} {name}")
-    files = [f for f in outputs + extras if f.exists()]
+    files = [f for f in outputs if f.exists()] + extras_now()
     ok = publish(files, f"{day} final")
     clean = ok and all(c == 0 for c in codes)
     print(f"[cycle] {'CLEAN' if clean else 'not clean'} "

@@ -121,3 +121,33 @@ def test_schedule_command_wakes_and_catches_up():
         assert "-StartWhenAvailable" in cmd
     assert "-Daily -At 3am" in schedule_command(True, "x")
     assert "RepetitionInterval" in schedule_command(False, "x")
+
+
+def test_live_log_is_never_tracked_and_a_copy_ships_instead(tmp_path):
+    """2026-07-30: reports/autopilot.log was git-tracked while the running
+    .bat held it open - Windows locks it, every rebase/checkout that had
+    to rewrite it failed, and ALL publishes bounced non-fast-forward.
+    publish() must untrack the live log (self-heal for old clones) while
+    still delivering the report files."""
+    bare, work = _make_repo_pair(tmp_path)
+    (work / "reports").mkdir()
+    live = work / "reports" / "autopilot.log"
+    live.write_text("=== cycle 1 ===\n")
+    # Old-clone state: the live log tracked and pushed.
+    _sh(["git", "add", "-f", str(live)], work)
+    _sh(["git", "commit", "-m", "old design: live log tracked"], work)
+    _sh(["git", "push", "origin", "main"], work)
+    live.write_text("=== cycle 1 ===\n=== cycle 2 (dirty) ===\n")
+
+    report = work / "reports" / "phase0-latest.txt"
+    report.write_text("gate data")
+    assert publish([report], "log-fix", root=work) is True
+    # The live log is untracked afterward - and still on disk, untouched.
+    tracked = _sh(["git", "ls-files", "reports/autopilot.log"], work)
+    assert tracked.stdout.strip() == ""
+    assert "cycle 2" in live.read_text()
+    # The report made it to the remote; the remote tree dropped the log.
+    shown = _sh(["git", "show", "main:reports/phase0-latest.txt"], bare)
+    assert "gate data" in shown.stdout
+    gone = _sh(["git", "show", "main:reports/autopilot.log"], bare)
+    assert gone.returncode != 0

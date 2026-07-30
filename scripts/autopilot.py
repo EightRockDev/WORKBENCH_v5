@@ -35,7 +35,13 @@ def main() -> int:
     if fetched.returncode != 0:
         print("autopilot update: fetch failed:", fetched.stderr.strip())
         return 1
-    result = git("checkout", "-B", "main", "origin/main")
+    # The LIVE log is held open by the .bat that launched us (Windows
+    # locks it) - untrack it so checkout never needs to touch that path,
+    # and FORCE the checkout so no dirty tracked file can block the code
+    # update (2026-07-30: a tracked-and-dirty autopilot.log wedged the
+    # host on old code with every publish rejected non-fast-forward).
+    git("rm", "--cached", "--ignore-unmatch", "-q", "reports/autopilot.log")
+    result = git("checkout", "-f", "-B", "main", "origin/main")
     print((result.stdout + result.stderr).strip())
     print("autopilot update: code at origin/main")
     return 0

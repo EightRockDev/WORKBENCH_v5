@@ -22,3 +22,7 @@ desktop.ini
 /backup/
 *.db-shm
 *.db-wal
+
+# Live autopilot log: held OPEN by the running .bat (Windows locks it),
+# so git must never track it - publish() pushes a COPY (autopilot-run.log).
+reports/autopilot.log

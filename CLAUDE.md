@@ -324,7 +324,20 @@ scale this is intolerable. Non-negotiable rules:
    chicken-and-egg — new task settings only apply after the host executes
    something once, so the recovery path must ride on the next thing that
    ALREADY runs (or one manual double-click), not on the broken schedule.
-10. **Borrow data already in hand before hunting new feeds.** Norfolk's
+10. **Never git-track a file a live process holds open.** The .bat
+   appends every stage's output to reports/autopilot.log via `>>` - the
+   handle stays open for the stage's whole duration, Windows locks the
+   file, and any git operation that must rewrite that path (rebase,
+   stash pop, checkout) fails. Symptom chain observed 2026-07-30:
+   Claude pushed code mid-cycle -> host's pull-rebase couldn't rewrite
+   the locked tracked log -> branch stayed behind -> EVERY publish
+   rejected non-fast-forward -> next stage-1 checkout refused on the
+   dirty file -> host wedged on old code (a remote-only unfixable state;
+   update-workbench.bat's reset --hard is the rescue). Design rule:
+   live/locked files stay untracked+gitignored; publish a COPY. Also:
+   stage-1 must force-checkout - a boring `checkout -B` can still be
+   vetoed by one dirty tracked file.
+11. **Borrow data already in hand before hunting new feeds.** Norfolk's
    assessor feed has no geometry and weeks could have gone into finding a
    coordinate-bearing replacement layer - but the permits feed for the
    same city (124K rows, already ingested) carries coordinates for the
