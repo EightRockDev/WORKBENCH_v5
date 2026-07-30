@@ -107,7 +107,10 @@ def schedule_command(clean: bool, task_path: str) -> str:
     if clean:
         trig = "New-ScheduledTaskTrigger -Daily -At 3am"
     else:
-        trig = ("New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) "
+        # IMMEDIATE chaining (owner directive): the next cycle starts 2
+        # minutes after this one ends - back-to-back all day. The hourly
+        # repetition is only a safety net if a cycle dies mid-run.
+        trig = ("New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) "
                 "-RepetitionInterval (New-TimeSpan -Hours 1)")
     return (
         f"$a = New-ScheduledTaskAction -Execute '{task_path}'; "
@@ -132,8 +135,8 @@ def reschedule(clean: bool) -> None:
         # Fall back to plain schtasks (no wake support, but a schedule).
         proc = subprocess.run(schedule_args(clean, task_path),
                               capture_output=True, text=True)
-    mode = "nightly 3:00 AM (clean cycle achieved)" if clean else \
-        "HOURLY until a clean cycle lands"
+    mode = "nightly 3:00 AM (stable)" if clean else \
+        "IMMEDIATE - next cycle in 2 minutes (dev cadence)"
     print(f"[schedule] {mode} (wake+catchup, exit {proc.returncode})",
           flush=True)
 

@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.3.1.0 — 2026-07-30  ·  IMMEDIATE cadence: cycles chain back-to-back
+Owner escalation: not hourly - immediate. Each cycle re-registers the
+task to fire 2 minutes after it ends, so cycles run continuously all
+day; the hourly repetition remains only as a safety net if a cycle
+dies. DEV_MODE=False restores nightly.
+
 ## V5.11.3.0.0 — 2026-07-30  ·  Dev cadence: cycles run HOURLY, not nightly
 Owner directive: this is a system under active build, not a deployed
 one - nothing waits for 3 AM. The autopilot re-registers itself hourly
