@@ -337,7 +337,14 @@ scale this is intolerable. Non-negotiable rules:
    live/locked files stay untracked+gitignored; publish a COPY. Also:
    stage-1 must force-checkout - a boring `checkout -B` can still be
    vetoed by one dirty tracked file.
-11. **Borrow data already in hand before hunting new feeds.** Norfolk's
+11. **"Done" means data on the owner's screen — nothing else.** GRANITE
+   Loans shipped as "done" and rendered three empty tabs on the host
+   (the ETL db isn't there; the alert sweep hadn't run a cycle yet).
+   Code merged + tests green = "built, awaiting data" AT BEST. Before
+   claiming a feature: name what the owner will SEE, on their machine,
+   and when. If a data dependency is missing on the host, say so in the
+   same sentence.
+12. **Borrow data already in hand before hunting new feeds.** Norfolk's
    assessor feed has no geometry and weeks could have gone into finding a
    coordinate-bearing replacement layer - but the permits feed for the
    same city (124K rows, already ingested) carries coordinates for the
