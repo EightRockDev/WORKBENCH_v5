@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.1.0.0 — 2026-07-30  ·  Continuous alert sweep (spec 6.1 monitoring)
+Alerts stop being pull-based panels: a deterministic sweep
+(`core/alerts.py`) now runs as the 5th autopilot step after every
+backbone rebuild, diffing against the previous cycle's snapshot and
+persisting durable, deduped alerts (`alerts` table): new multifamily
+entities on the backbone, and material unit-count moves (>= 10 units).
+First-ever sweep seeds silently. The GRANITE Loans Alerts tab shows the
+open hit list with one-click dismiss; sweep results also publish as
+reports/alerts-latest.txt every cycle. Next: routing alert hits into
+Outreach dial lists. 2 new tests.
+
 ## V5.11.0.0.0 — 2026-07-30  ·  GRANITE Loans module v1 (spec 6.1, Tabs 2-5)
 The loan module exists as its own surface for the first time — a
 sidebar module ("🏦 GRANITE Loans", gated by the existing `granite`

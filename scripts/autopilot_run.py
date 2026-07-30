@@ -25,6 +25,7 @@ STEPS = (
     ("discover", ["scripts/discover_feeds.py"], "discover-latest.txt"),
     ("pull", ["etl_munidata.py", "--hr"], "pull-latest.txt"),
     ("phase0", ["scripts/run_phase0.py"], "phase0-latest.txt"),
+    ("alerts", ["scripts/run_alerts.py"], "alerts-latest.txt"),
     ("preflight", ["scripts/preflight_cutover.py"], "cutover-preflight.txt"),
 )
 

@@ -110,6 +110,27 @@ def render_granite_loans() -> None:
                        "pierce the entity to a human with Module A.")
 
     with tab_alerts:
+        # Durable alerts from the nightly sweep (core/alerts.py).
+        from core.alerts import dismiss, open_alerts
+        from core.phase0 import find_workbench_db
+        db = find_workbench_db()
+        sweep_rows = open_alerts(db) if db else []
+        if sweep_rows:
+            st.markdown(f"**{len(sweep_rows)} open alerts** from the "
+                        "nightly backbone sweep")
+            for a in sweep_rows[:50]:
+                col_a, col_b = st.columns([6, 1])
+                with col_a:
+                    st.markdown(f"**{a['headline']}**  \n"
+                                f"{a['detail']} · {a['created_at'][:10]}")
+                with col_b:
+                    if st.button("Dismiss", key=f"gl_dismiss_{a['id']}"):
+                        dismiss(db, a["id"])
+                        st.rerun()
+        else:
+            st.caption("No open sweep alerts — the nightly cycle writes "
+                       "them here when the backbone changes.")
+        st.divider()
         # Reuse the C3 loan-maturity pressure panel (county HMDA volume +
         # 2020-22 purchase cohort) so the loan surface owns its alert.
         try:
