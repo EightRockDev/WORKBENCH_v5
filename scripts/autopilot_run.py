@@ -56,8 +56,11 @@ def publish(files: list[Path], label: str, root: Path = ROOT) -> bool:
         git("add", "-f", str(f), root=root)
     committed = git("commit", "-m", f"autopilot report: {label}", root=root)
     if committed.returncode != 0:
-        print("[publish] nothing new to publish")
-        return True
+        print("[publish] nothing new to commit this run")
+    # ALWAYS sync + push: a failed push on a previous run (e.g. the very
+    # first cycle, waiting on the one-time GitHub authorize) leaves a
+    # stranded local commit that "nothing new" would otherwise orphan
+    # forever. Pushing an already-pushed branch is a harmless no-op.
     git("pull", "--rebase", "--autostash", "origin", "main", root=root)
     pushed = git("push", "origin", "main", root=root)
     if pushed.returncode != 0:

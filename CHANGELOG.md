@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.9.0.2.0 — 2026-07-29  ·  Stranded-commit fix: reports can never be orphaned
+The first autopilot cycle committed its reports but the push waited on the
+one-time GitHub authorize; the next run would have said "nothing new" and
+orphaned that commit forever. `publish()` now ALWAYS syncs and pushes
+(pushing an up-to-date branch is a no-op), so any stranded reports ride out
+on the next cycle automatically. Regression test added (5 publish
+integration tests total). Lesson recorded: early-return paths in delivery
+code must prove the remote is caught up, not just that nothing changed
+locally.
+
 ## V5.9.0.1.0 — 2026-07-29  ·  The updater installs the Autopilot itself
 One human action left, total: run `update-workbench.bat` once. It now
 registers the nightly Autopilot task automatically (if missing) and kicks

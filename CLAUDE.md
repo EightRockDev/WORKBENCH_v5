@@ -288,7 +288,11 @@ scale this is intolerable. Non-negotiable rules:
    simulation = zero turns. When a channel fails once in the field, STOP
    and simulate the whole path locally before shipping the next
    single-bug fix.
-7. **Automation-first deployment (the 50-metro order of operations)**:
+7. **Delivery early-returns must prove the remote is caught up.** The
+   first autopilot cycle stranded its committed-but-unpushed reports
+   behind a "nothing new to commit" early return. Always push; an
+   up-to-date push is free.
+8. **Automation-first deployment (the 50-metro order of operations)**:
    step 1 is deploying and PROVING the autopilot loop (self-update ->
    run -> publish -> read), with zero data. Only then does data work
    begin, because from that moment every fix flows without a human. Never

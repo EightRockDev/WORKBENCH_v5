@@ -84,3 +84,20 @@ def test_publish_survives_remote_moving_ahead(tmp_path):
     assert publish([report], "raced", root=work) is True
     shown = _sh(["git", "show", "main:reports/phase0-latest.txt"], bare)
     assert "report after remote moved" in shown.stdout
+
+
+def test_stranded_commit_from_failed_push_is_published_next_run(tmp_path):
+    """First cycle: commit succeeded but push failed (auth pending). The
+    next run has nothing new to commit - it must STILL push the stranded
+    commit instead of orphaning it behind "nothing new"."""
+    bare, work = _make_repo_pair(tmp_path)
+    (work / "reports").mkdir()
+    report = work / "reports" / "phase0-latest.txt"
+    report.write_text("stranded run")
+    # Simulate the failed-push state: local commit exists, remote never saw it.
+    _sh(["git", "add", "-f", str(report)], work)
+    _sh(["git", "commit", "-m", "autopilot report: stranded"], work)
+    # publish() with unchanged files -> "nothing new" path -> must push anyway.
+    assert publish([report], "next-night", root=work) is True
+    shown = _sh(["git", "show", "main:reports/phase0-latest.txt"], bare)
+    assert "stranded run" in shown.stdout
