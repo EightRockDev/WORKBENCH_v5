@@ -1,0 +1,102 @@
+[
+  {
+    "market": "Virginia Beach",
+    "state": "VA",
+    "county": "Virginia Beach",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Residential_Address_Points_w_Housing_Structure/FeatureServer/0",
+    "status": "live",
+    "note": "auto-discovered: Residential_Address_Points_w_Housing_Structure/Residential Address Points w Housing Structure; score 12; fields ['address', 'apn', 'assessed_value', 'lat', 'lng', 'use_code', 'year_built', 'zip']"
+  },
+  {
+    "market": "Virginia Beach",
+    "state": "VA",
+    "county": "Virginia Beach",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services3.arcgis.com/16nyMR1mdhEaLG41/arcgis/rest/services/PrivateParcels_Ranked_081920/FeatureServer/0",
+    "status": "live",
+    "note": "auto-discovered: Private Parcels Ranked_081920; score 9; fields ['address', 'apn', 'lat', 'lng', 'use_code']"
+  },
+  {
+    "market": "Chesapeake",
+    "state": "VA",
+    "county": "Chesapeake",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0",
+    "status": "live",
+    "note": "auto-discovered: Accela_base_map_pro/Address Points; score 17; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']"
+  },
+  {
+    "market": "Chesapeake",
+    "state": "VA",
+    "county": "Chesapeake",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0",
+    "status": "live",
+    "note": "auto-discovered: Address_Points/Address Points; score 17; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']"
+  },
+  {
+    "market": "Hampton",
+    "state": "VA",
+    "county": "Hampton",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44",
+    "status": "live",
+    "note": "auto-discovered: CZM_Hampton_Data; score 12; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']"
+  },
+  {
+    "market": "Hampton",
+    "state": "VA",
+    "county": "Hampton",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/42",
+    "status": "live",
+    "note": "auto-discovered: CZM_Hampton_Data; score 12; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']"
+  },
+  {
+    "market": "Portsmouth",
+    "state": "VA",
+    "county": "Portsmouth",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3",
+    "status": "live",
+    "note": "auto-discovered: Parcels; score 12; fields ['address', 'apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'zip']"
+  },
+  {
+    "market": "Portsmouth",
+    "state": "VA",
+    "county": "Portsmouth",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3",
+    "status": "live",
+    "note": "auto-discovered: Parcels_Real_Estate_View; score 12; fields ['address', 'apn', 'assessed_value', 'owner_name', 'sqft', 'use_code', 'zip']"
+  },
+  {
+    "market": "Norfolk",
+    "state": "VA",
+    "county": "Norfolk",
+    "kind": "assessor",
+    "platform": "socrata",
+    "url": "https://data.norfolk.gov/resource/ykcq-76im.json",
+    "status": "live",
+    "note": "auto-discovered (socrata): Better Buildings Challenge Properties; score 16; fields ['address', 'apn', 'lat', 'lng', 'use_code', 'year_built']"
+  },
+  {
+    "market": "Norfolk",
+    "state": "VA",
+    "county": "Norfolk",
+    "kind": "assessor",
+    "platform": "socrata",
+    "url": "https://data.norfolk.gov/resource/yvpm-8aid.json",
+    "status": "live",
+    "note": "auto-discovered (socrata): Property Assessment and Sales - FY23; score 12; fields ['apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'year_built', 'zip']; geo-verify inconclusive"
+  }
+]
