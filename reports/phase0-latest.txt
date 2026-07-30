@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-07-30T17:48:12
+autopilot phase0 @ 2026-07-30T18:21:50
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,519,467
@@ -61,7 +61,7 @@ P0-1 GATE PASSED.
 P0-2 shadow parity: comparing against 13,657 legacy rows...
 
 legacy multifamily rows:  639
-matched to the 8R backbone: 471 (73.7%)  [125 by address, 293 by lat/lng, 53 by proximity]
+matched to the 8R backbone: 471 (73.7%)  [125 by address, 294 by lat/lng, 52 by proximity]
 unit counts agree:        154/240
 year built agrees:        116/222
 
