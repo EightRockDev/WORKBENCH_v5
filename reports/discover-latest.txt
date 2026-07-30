@@ -1,4 +1,4 @@
-autopilot discover @ 2026-07-30T16:52:36
+autopilot discover @ 2026-07-30T17:26:54
 
 Probing city GIS portals for unit-bearing parcel layers...
 (a few minutes - each city's services are walked layer by layer)
