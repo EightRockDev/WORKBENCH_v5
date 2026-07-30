@@ -76,6 +76,14 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 - Keep the action list to **3-5 items, max**.
 
 ## Owner requests to honor (standing)
+- **Continuous learning discipline (owner directive 2026-07-29)**: every
+  mistake, surprise, or discovered constraint gets written to THIS FILE in
+  the SAME commit as its fix - never batched, never deferred to
+  end-of-session, never waiting to be told. A lesson that exists only in
+  a conversation is considered lost. Before starting any task, re-read
+  the relevant sections here; after any failure, the first question is
+  "which recorded rule did this violate, or which new rule does it
+  create?"
 - **AUTOPILOT is the loop (V5.9.0.0.0)**: a nightly scheduled task on the
   host runs update -> discover -> pull -> phase0 -> publish. Read
   reports/ from the repo each session; push fixes; the next cycle applies
