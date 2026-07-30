@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.10.0.0.0 — 2026-07-30  ·  P0-3 cutover foundations (spec 7.3)
+Three structural blockers to cutover removed:
+- **Rent signal v1** (`core/rent_signal.py`): every multifamily backbone
+  row gets a HUD-FMR bedroom-blended monthly rent estimate
+  (`est_avg_rent`, `rent_source='hud_fmr'`), stamped at the end of every
+  backbone build. The P0-2 rent-delta gate now MEASURES something - it
+  previously passed vacuously because the backbone had no rent data at
+  all. FMR is a 40th-percentile standard, so the first honest delta will
+  be large; listings-scraped rents (pullers/listings, already built in
+  the ETL repo) are the layer that closes it. Deliberately NOT tuned to
+  flatter the gate - deriving a market factor from ALN would defeat the
+  ALN-free requirement.
+- **Persisted crosswalk** (`property_crosswalk` table): the legacy->8R id
+  mapping was built in memory every parity run and thrown away; it now
+  materializes with match method + parcel count on every run. This is
+  the migration path for deal references at flip time.
+- **Cutover read seam** (`config.SPINE_READ_SOURCE`, default "legacy"):
+  `data/db.py list_properties/get_property` - the funnel every UI and
+  engine read goes through - can serve `properties_8r` adapted to the
+  legacy row shape, with legacy ids resolving through the crosswalk.
+  Fields the backbone can't source yet are explicit Nones, never
+  fabricated; filters it can't answer (management, asset class) return
+  empty rather than wrong. Flips ONLY after the P0-2 gates hold.
+9 new tests (tests/test_cutover.py). Remaining before flip: comp-page
+source-label heuristic treats missing aln_id as "User input"; listings
+puller keys rows to ALN ids; provenance key for hud_fmr/listings;
+deals.property_id migration via crosswalk (Postgres).
+
 ## V5.9.3.0.0 — 2026-07-30  ·  First clean autopilot cycle → tuning round 11
 The first fully hands-free cycle landed (discover/pull/phase0 all exit 0,
 every report published). Comp overlap 66.8% vs the 90% gate; covered-city

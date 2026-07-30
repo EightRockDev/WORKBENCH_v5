@@ -106,6 +106,9 @@ class ParityReport:
     pool_label_only_excluded: dict = field(default_factory=dict)
     footprint_recovered: int = 0    # unit disagreements resolved by summing
                                     # all 8R parcels within the complex radius
+    # (legacy_id, r8_id, match_method, parcel_count) - persisted to the
+    # property_crosswalk table so P0-3 cutover can migrate deal references.
+    crosswalk_records: list = field(default_factory=list)
 
     @property
     def match_rate(self) -> float:
@@ -160,6 +163,8 @@ class ParityReport:
             f"avg-rent delta:           {rent}  (gate <= {GATE_RENT_DELTA:.0%})",
             "",
             f"P0-2 GATE: {'PASSED - ready for P0-3 cutover' if self.gate_passed else 'not met yet'}",
+            f"crosswalk persisted:      {len(self.crosswalk_records):,} "
+            "legacy->8R mappings (property_crosswalk)",
         ]
         if self.footprint_recovered:
             lines.append(f"(+{self.footprint_recovered:,} unit disagreements "
@@ -219,11 +224,19 @@ def _load_8r(conn: sqlite3.Connection, cities: tuple[str, ...]) -> list[dict]:
     try:
         rows = conn.execute(
             f"""SELECT property_id, address, city, units, year_built,
-                       lat, lng, use_code FROM properties_8r
+                       lat, lng, use_code, est_avg_rent FROM properties_8r
                  WHERE city IN ({marks})""",
             cities).fetchall()
     except sqlite3.Error:
-        return []
+        # Backbone predating the rent-signal columns.
+        try:
+            rows = conn.execute(
+                f"""SELECT property_id, address, city, units, year_built,
+                           lat, lng, use_code FROM properties_8r
+                     WHERE city IN ({marks})""",
+                cities).fetchall()
+        except sqlite3.Error:
+            return []
     return [dict(r) for r in rows]
 
 
@@ -301,6 +314,11 @@ def aggregate_8r_parcels(spine_8r: list[dict]) -> list[dict]:
                         seen_large.append(m)
                     total += u
                 head["units"] = total if total else head.get("units")
+                # Rent estimate survives aggregation: any stamped member
+                # supplies it (FMR is county-wide, so members agree).
+                head["est_avg_rent"] = next(
+                    (m.get("est_avg_rent") for m in cluster
+                     if m.get("est_avg_rent")), head.get("est_avg_rent"))
                 head["member_units"] = sorted(
                     (int(m.get("units") or 0) for m in cluster), reverse=True)
                 lats = [m["lat"] for m in cluster if m.get("lat") is not None]
@@ -369,6 +387,9 @@ def match_spines(legacy: list[dict], spine_8r: list[dict],
         if hit is None:
             continue
         crosswalk[row["property_id"]] = hit["property_id"]
+        report.crosswalk_records.append(
+            (row["property_id"], hit["property_id"], via,
+             int(hit.get("parcel_count") or 1)))
         report.matched += 1
         report.matched_by_city[city] = report.matched_by_city.get(city, 0) + 1
         if via == "address":
@@ -381,7 +402,39 @@ def match_spines(legacy: list[dict], spine_8r: list[dict],
     return crosswalk
 
 
+def persist_crosswalk(spine_db: Path, records: list) -> int:
+    """Materialize the legacy->8R id mapping (spec 7.3 P0-3: 'migrate deal
+    references via crosswalk'). Until now the mapping was built in memory
+    every parity run and thrown away - nothing downstream could use it.
+    Full refresh each run; the match cascade is deterministic, so the
+    table is stable run to run. Destroyed in P0-4 after the 30-day soak."""
+    with sqlite3.connect(spine_db, timeout=60) as conn:
+        conn.execute("""CREATE TABLE IF NOT EXISTS property_crosswalk (
+            legacy_property_id TEXT PRIMARY KEY,
+            r8_property_id     TEXT NOT NULL,
+            match_method       TEXT NOT NULL,
+            parcel_count       INTEGER NOT NULL DEFAULT 1,
+            built_at           TEXT NOT NULL
+        )""")
+        conn.execute("""CREATE INDEX IF NOT EXISTS ix_crosswalk_r8
+                        ON property_crosswalk (r8_property_id)""")
+        conn.execute("DELETE FROM property_crosswalk")
+        import datetime as _dt
+        now = _dt.datetime.now().isoformat(timespec="seconds")
+        conn.executemany(
+            "INSERT OR REPLACE INTO property_crosswalk VALUES (?,?,?,?,?)",
+            [(leg, r8, via, n, now) for leg, r8, via, n in records])
+        conn.commit()
+    return len(records)
+
+
 def _score_fields(legacy: dict, r8: dict, report: ParityReport) -> None:
+    # Rent gate input: ALN surveyed avg rent vs the backbone's estimate.
+    # Only pairs where BOTH sides have a value count - no value, no vote.
+    lr, rr = legacy.get("avg_rent"), r8.get("est_avg_rent")
+    if lr and rr:
+        report.rent_pairs += 1
+        report.rent_delta_sum += abs(lr - rr) / lr
     lu, ru = legacy.get("units"), r8.get("units")
     if lu and ru:
         tolerance = max(UNIT_TOLERANCE_ABS, lu * UNIT_TOLERANCE_PCT)
@@ -507,6 +560,9 @@ def run_parity(aln_db: Path, spine_db: Path,
     # property instead of dozens of 1-unit parcels.
     entities = aggregate_8r_parcels(spine_8r)
     crosswalk = match_spines(legacy, entities, report)
+    # Materialize the mapping for P0-3 (deal-reference migration + the
+    # cutover read path both consume this table).
+    persist_crosswalk(spine_db, report.crosswalk_records)
     # Second-chance unit check: a matched complex whose entity units disagree
     # gets its TRUE footprint total (every parcel within ~200 m, any address).
     if report.unit_disagreement:

@@ -273,6 +273,7 @@ class CoverageReport:
     units_from_points: int = 0
     units_from_points_skipped: int = 0   # non-residential parcels (marinas...)
     coords_backfilled: int = 0           # MF rows given coords by address match
+    rents_stamped: int = 0               # MF rows given a HUD-FMR rent estimate
     by_city: Counter = field(default_factory=Counter)
     mf_by_city: Counter = field(default_factory=Counter)
     unmapped_keys: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
@@ -308,6 +309,8 @@ class CoverageReport:
             f"units derived from address points: {self.units_from_points:,}"
             f"  (skipped non-residential: {self.units_from_points_skipped:,})",
             f"coords backfilled by address (multifamily): {self.coords_backfilled:,}",
+            f"rent estimates stamped (HUD FMR blend): {self.rents_stamped:,}"
+            + ("" if self.rents_stamped else "  (ETL db with hud_fmr not found)"),
             f"unusable (no parcel/latlng): {self.skipped_no_parcel_or_latlng:,}",
             f"P0-1 coverage:             {self.coverage:.1%}"
             f"  (gate >= {GATE_COVERAGE:.0%}: {'PASS' if self.gate_passed else 'not yet'})",
@@ -509,6 +512,8 @@ CREATE TABLE IF NOT EXISTS properties_8r (
     owner_name     TEXT,
     lat            REAL,
     lng            REAL,
+    est_avg_rent   REAL,
+    rent_source    TEXT,
     provenance     TEXT NOT NULL DEFAULT '8r',
     built_at       TEXT NOT NULL
 );
@@ -564,6 +569,8 @@ def build_spine(db_path: Path,
         except sqlite3.Error:
             pass
         conn.executescript(_SPINE_SCHEMA)
+        from core.rent_signal import ensure_rent_columns
+        ensure_rent_columns(conn)   # pre-rent-signal DBs migrate in place
         if rebuild:
             conn.execute("DELETE FROM properties_8r")
         now = dt.datetime.now().isoformat(timespec="seconds")
@@ -719,6 +726,13 @@ def build_spine(db_path: Path,
                             ORDER BY count(*) DESC LIMIT 8""", (city,))):
                 report.no_mf_use_codes[city][(uc or "").strip()[:40]] = n
         conn.commit()
+
+    # Rent signal v1: stamp HUD-FMR-anchored estimates on the multifamily
+    # rows so the P0-2 rent-delta gate measures something real instead of
+    # passing vacuously. No ETL DB on this machine -> 0, and the report
+    # says so. (Own connection - runs after the build transaction closes.)
+    from core import rent_signal
+    report.rents_stamped = rent_signal.apply_rent_signal(db_path)
     return report
 
 

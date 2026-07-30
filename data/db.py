@@ -101,6 +101,136 @@ def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
 
 
 # ---------------------------------------------------------------------------
+# P0-3 cutover read seam (spec 7.3)
+#
+# Every UI/engine read funnels through list_properties/get_property, so the
+# spine cutover has exactly one seam: when config.SPINE_READ_SOURCE is
+# "8r", these two functions serve the self-sourced backbone
+# (properties_8r) adapted to the legacy row shape, and legacy ids keep
+# resolving through the property_crosswalk table. Default stays "legacy"
+# until the P0-2 gates hold.
+# ---------------------------------------------------------------------------
+
+def _read_source() -> str:
+    import config
+    return getattr(config, "SPINE_READ_SOURCE", "legacy")
+
+
+def _r8_to_legacy_shape(row: dict[str, Any]) -> dict[str, Any]:
+    """Adapt one backbone row to the dict shape the read sites expect.
+
+    Consumers were written against legacy `properties` columns
+    (latitude/longitude, avg_rent, property_type...). The backbone keeps
+    its own names; this is the ONLY translation point. Fields the
+    backbone cannot source yet are explicit Nones - never fabricated.
+    """
+    units = row.get("units")
+    sqft = row.get("sqft")
+    avg_sqft = (sqft / units) if sqft and units else None
+    avg_rent = row.get("est_avg_rent")
+    return {
+        "property_id": row["property_id"],
+        "aln_id": None,                     # 8R-native rows have no vendor id
+        "name": row.get("address"),         # rolls carry no marketing name
+        "address": row.get("address"),
+        "city": row.get("city"),
+        "state": row.get("state"),
+        "zip": row.get("zip"),
+        "units": units,
+        "year_built": row.get("year_built"),
+        "avg_sqft": avg_sqft,
+        "avg_rent": avg_rent,
+        "rent_per_sqft": (avg_rent / avg_sqft)
+                         if avg_rent and avg_sqft else None,
+        "occupancy_pct": None,              # awaits self-sourced survey data
+        "asset_class": None,                # awaits 8r_class (spec 7.2)
+        "property_type": row.get("r8_form"),
+        "market": row.get("r8_market"),
+        "submarket": row.get("r8_submarket"),
+        "owner": row.get("owner_name"),
+        "management_company": None,         # awaits Module A resolution
+        "latitude": row.get("lat"),
+        "longitude": row.get("lng"),
+        "assessed_value": row.get("assessed_value"),
+        "use_code": row.get("use_code"),
+        "source_file": "properties_8r",
+        "provenance": row.get("provenance") or "8r",
+        "rent_source": row.get("rent_source"),
+    }
+
+
+def _list_properties_8r(
+    *, city=None, state=None, cities=None, units_min=None, units_max=None,
+    search=None, management_company=None, require_latlng=False,
+    market=None, asset_class=None, limit=500, db_path=DB_PATH,
+) -> list[dict[str, Any]]:
+    where: list[str] = []
+    params: list[Any] = []
+    if city:
+        where.append("city = ?")
+        params.append(city)
+    if state:
+        where.append("state = ?")
+        params.append(state)
+    if cities:
+        where.append(f"city IN ({', '.join('?' for _ in cities)})")
+        params.extend(cities)
+    if units_min is not None:
+        where.append("units >= ?")
+        params.append(units_min)
+    if units_max is not None:
+        where.append("units <= ?")
+        params.append(units_max)
+    if search:
+        where.append("(address LIKE ? OR city LIKE ?)")
+        params.extend([f"%{search}%", f"%{search}%"])
+    if market:
+        where.append("r8_market = ?")
+        params.append(market)
+    if management_company:
+        # The backbone has no management data until Module A resolves it;
+        # a management filter can honestly match nothing.
+        return []
+    if asset_class:
+        # 8r_class not derived yet (spec 7.2) - same honest empty result.
+        return []
+    if require_latlng:
+        where.append("lat IS NOT NULL AND lng IS NOT NULL")
+    sql = "SELECT * FROM properties_8r"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY address LIMIT ?"
+    params.append(limit)
+    with get_connection(db_path) as conn:
+        try:
+            rows = conn.execute(sql, params).fetchall()
+        except sqlite3.Error:
+            return []
+    return [_r8_to_legacy_shape(dict(r)) for r in rows]
+
+
+def _get_property_8r(property_id: str,
+                     db_path: Path = DB_PATH) -> dict[str, Any] | None:
+    with get_connection(db_path) as conn:
+        try:
+            row = conn.execute(
+                "SELECT * FROM properties_8r WHERE property_id = ?",
+                (property_id,)).fetchone()
+            if row is None and not property_id.startswith("8R-"):
+                # A legacy id (deal reference, saved favorite) resolves
+                # through the crosswalk so nothing breaks at flip time.
+                row = conn.execute(
+                    """SELECT p.* FROM properties_8r p
+                         JOIN property_crosswalk x
+                           ON x.r8_property_id = p.property_id
+                        WHERE x.legacy_property_id = ?""",
+                    (property_id,)).fetchone()
+        except sqlite3.Error:
+            return None
+        return _r8_to_legacy_shape(dict(row)) if row else None
+
+
+# ---------------------------------------------------------------------------
 # Queries
 # ---------------------------------------------------------------------------
 
@@ -127,6 +257,13 @@ def list_properties(
     `units_min`/`units_max` are inclusive. `require_latlng` filters out
     properties without geocoded coordinates (useful for the comps map).
     """
+    if _read_source() == "8r":
+        return _list_properties_8r(
+            city=city, state=state, cities=cities, units_min=units_min,
+            units_max=units_max, search=search,
+            management_company=management_company,
+            require_latlng=require_latlng, market=market,
+            asset_class=asset_class, limit=limit, db_path=db_path)
     where: list[str] = []
     params: list[Any] = []
 
@@ -238,7 +375,10 @@ def get_property(
     property_id: str,
     db_path: Path = DB_PATH,
 ) -> dict[str, Any] | None:
-    """Look up a single property by its `property_id` (ALN API Id)."""
+    """Look up a single property by its `property_id` (ALN API Id, or an
+    8R backbone id / crosswalked legacy id when the cutover flag is on)."""
+    if _read_source() == "8r":
+        return _get_property_8r(property_id, db_path=db_path)
     with get_connection(db_path) as conn:
         row = conn.execute(
             "SELECT * FROM properties WHERE property_id = ?",

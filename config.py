@@ -18,7 +18,7 @@ from __future__ import annotations
 # *** BUMP THIS ON EVERY CHANGE and add a CHANGELOG.md entry (owner directive). ***
 # ---------------------------------------------------------------------------
 
-WORKBENCH_VERSION = "V5.9.3.0.0"
+WORKBENCH_VERSION = "V5.10.0.0.0"
 
 
 # ---------------------------------------------------------------------------
@@ -235,6 +235,19 @@ COMPS_BUCKET2_RADIUS_MILES = 5.0
 COMPS_BUCKET2_MAX = 4
 
 COMPS_TOTAL_MAX = COMPS_BUCKET1_MAX + COMPS_BUCKET2_MAX  # 12
+
+
+# ---------------------------------------------------------------------------
+# Phase 0 cutover (spec 7.3, P0-3)
+# ---------------------------------------------------------------------------
+# Which property spine the read layer (data/db.py) serves:
+#   "legacy" - the licensed vendor table `properties` (P0-2 dual-run default)
+#   "8r"     - the self-sourced backbone `properties_8r`, adapted to the
+#              legacy row shape, legacy ids resolved via property_crosswalk
+# Flip to "8r" ONLY after the P0-2 gates hold (comp overlap >= 90%,
+# rent delta <= 5%). Env override ER_SPINE_READ_SOURCE wins for testing.
+import os as _os
+SPINE_READ_SOURCE = _os.environ.get("ER_SPINE_READ_SOURCE", "legacy")
 
 
 # ---------------------------------------------------------------------------

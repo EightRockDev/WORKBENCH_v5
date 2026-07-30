@@ -153,8 +153,21 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    Round 6 fixed the two structural bugs: substring MF-code matching (VB zoning
    R-40 contains "r-4" -> 116K SFH parcels misclassified) and returnGeometry=false
    (no coordinates stored -> Portsmouth 0/45). Coordinates now pulled as WGS84
-   centroids; wrong-city-named layers rejected; transient 5xx retried. Awaiting
-   post-V5.8.7 run-phase0 report. Remaining: P0-3 cutover, P0-4 purge.
+   centroids; wrong-city-named layers rejected; transient 5xx retried.
+   First CLEAN hands-free cycle 2026-07-30 (comp overlap 66.8% vs 90% gate;
+   covered-city match 86.8%). **P0-3 foundations SHIPPED (V5.10.0.0.0)**:
+   rent signal v1 (`core/rent_signal.py`, HUD-FMR blend -> `est_avg_rent`,
+   makes the rent-delta gate real), persisted `property_crosswalk`, and the
+   `config.SPINE_READ_SOURCE` read seam in `data/db.py` (default "legacy").
+   Remaining before the flip (then P0-4 purge):
+   - comp overlap to >= 90% (nightly tuning loop drives this)
+   - listings-scraped rents: `hampton-roads-etl/pullers/listings/` is built
+     but keys rows to ALN ids (runner.py:246) - rekey via crosswalk; FMR
+     alone will not hit the <= 5% delta
+   - `ui/comps.py:94` treats missing aln_id as "User input" - inverts on 8R
+   - provenance keys for hud_fmr/listings (+ 3 ad-hoc badge sites)
+   - deals.property_id migration via crosswalk (Postgres; 8R- prefix
+     discriminates); poc_records is already 8R-keyed
 
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
