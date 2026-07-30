@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.13.1.0 — 2026-07-29  ·  Publish helper made corruption-proof
+The brian2 account's publish attempt showed the remaining failure modes in
+one screen: no git identity under that Windows account (the inline identity
+flags sat on a caret-continued line the LF corruption split), a leftover
+cherry-pick wedging the repo, and the missing phase0 report (deleted when
+the branch repair abandoned the broken detached commits).
+`_push-report.bat` rewritten defensively: repo-local committer identity via
+plain `git config` lines, NO caret continuations anywhere, aborts for
+rebase AND cherry-pick AND merge debris, and a friendly skip when the
+report file does not exist. `update-workbench.bat` gets the same extra
+aborts. All CRLF.
+
 ## V5.8.13.0.0 — 2026-07-29  ·  Norfolk federation fix + CRLF-safe batch files
 The Norfolk-enabled pull surfaced two final plumbing defects:
 - **Socrata catalogs federate**: Norfolk's search returned New York City's
