@@ -18,19 +18,27 @@ from pathlib import Path
 
 import pytest
 
-# Make hampton-roads-etl importable from tests
+# Make hampton-roads-etl importable from tests. The ETL repo is a SIBLING
+# of the workbench in production (GRANITE/{python_workbench,
+# hampton-roads-etl}); a standalone checkout doesn't have it, and that
+# must be a clean SKIP, not a collection error that kills the whole run.
 _ETL_DIR = Path(__file__).resolve().parents[2] / "hampton-roads-etl"
 if str(_ETL_DIR) not in sys.path:
     sys.path.insert(0, str(_ETL_DIR))
 
-from pullers.listings.apartments_com import ApartmentsDotComScraper  # noqa: E402
-from pullers.listings.concessions import (  # noqa: E402
-    ParsedConcession,
-    compute_effective_rent,
-    parse_concession_text,
-)
-from pullers.listings.rentcafe import RentCafeScraper  # noqa: E402
-from pullers.listings.zillow import ZillowScraper  # noqa: E402
+try:
+    from pullers.listings.apartments_com import ApartmentsDotComScraper
+    from pullers.listings.concessions import (
+        ParsedConcession,
+        compute_effective_rent,
+        parse_concession_text,
+    )
+    from pullers.listings.rentcafe import RentCafeScraper
+    from pullers.listings.zillow import ZillowScraper
+except ModuleNotFoundError:  # pragma: no cover - layout-dependent
+    pytest.skip(
+        "hampton-roads-etl not present alongside this checkout",
+        allow_module_level=True)
 
 _FIXTURES_DIR = Path(__file__).parent / "fixtures" / "listings"
 

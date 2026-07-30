@@ -214,14 +214,20 @@ def test_load_xlsx_basic(tmp_path):
 
 
 def test_load_skips_rows_missing_required_fields(tmp_path):
+    """No name -> dropped. No API Id but an ALN Id -> KEPT under the
+    aln-<id> fallback key (the multi-state loader deliberately stopped
+    silently dropping such rows). No id of any kind -> dropped."""
     path = _build_fixture_xlsx(tmp_path, [
         _good_row(),
         _good_row(**{"Property Name": None, "API Id": "uuid-no-name"}),
-        _good_row(**{"API Id": None}),
+        _good_row(**{"API Id": None}),                       # ALN Id fallback
+        _good_row(**{"API Id": None, "ALN Id": None,
+                     "Property Name": "No Ids At All"}),     # unidentifiable
     ])
     rows = load_aln_xlsx(path)
-    assert len(rows) == 1  # only the good row survives
-    assert rows[0]["property_id"] == "uuid-test-001"
+    ids = {r["property_id"] for r in rows}
+    assert ids == {"uuid-test-001", "aln-100001"}
+    assert all(r["name"] for r in rows)   # the nameless row is gone
 
 
 def test_load_dedupes_by_property_id(tmp_path):
@@ -262,14 +268,19 @@ def test_load_missing_file_raises(tmp_path):
         load_aln_xlsx(tmp_path / "nope.xlsx")
 
 
-def test_load_missing_sheet_raises(tmp_path):
-    """xlsx with the wrong sheet name should raise a clear error."""
+def test_load_ignores_non_aln_sheets(tmp_path):
+    """A workbook with no ALN data sheet loads as EMPTY, not an error:
+    the multi-sheet loader walks every non-Cover sheet and skips any
+    whose headers aren't ALN property data (cover pages, notes tabs)."""
     wb = openpyxl.Workbook()
     wb.active.title = "Wrong Name"
+    wb.active.append(["Just", "Some", "Notes"])
     path = tmp_path / "bad.xlsx"
     wb.save(path)
-    with pytest.raises(ValueError, match="ALN Property Data"):
-        load_aln_xlsx(path)
+    assert load_aln_xlsx(path) == []
+    # A truly missing FILE still raises loudly.
+    with pytest.raises(FileNotFoundError):
+        load_aln_xlsx(tmp_path / "nope.xlsx")
 
 
 # ---------------------------------------------------------------------------

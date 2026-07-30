@@ -490,8 +490,10 @@ def test_add_custom_property_appends_to_existing(tmp_path: Path):
 
 
 @pytest.mark.skipif(
-    not PROPERTIES_ROOT.is_dir(),
-    reason="real Properties/ folder not present in this checkout",
+    not PROPERTIES_ROOT.is_dir()
+    or not any(PROPERTIES_ROOT.glob("*Dove-Landing*")),
+    reason="full Properties/ library not present in this checkout "
+           "(a partial folder with a stray property or two doesn't count)",
 )
 def test_smoke_real_properties_folder():
     """Confirm we can walk Brian's actual Properties/ + load Dove Landing's deal."""

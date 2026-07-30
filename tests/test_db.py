@@ -265,9 +265,24 @@ def test_list_distinct_cities(tmp_path):
 # ---------------------------------------------------------------------------
 
 
+def _real_aln_db_loaded() -> bool:
+    """True only when workbench.db holds the real ALN library - a stub or
+    muni-only db (autopilot checkouts) must SKIP the smoke, not fail it."""
+    if not DB_PATH.is_file():
+        return False
+    try:
+        import sqlite3
+        with sqlite3.connect(DB_PATH) as conn:
+            return conn.execute(
+                "SELECT count(*) FROM properties").fetchone()[0] >= 100
+    except Exception:
+        return False
+
+
 @pytest.mark.skipif(
-    not DB_PATH.is_file(),
-    reason="real workbench.db not present (run aln_loader.sync first)",
+    not _real_aln_db_loaded(),
+    reason="real ALN-loaded workbench.db not present "
+           "(run aln_loader.sync first)",
 )
 def test_smoke_real_db_returns_hampton_roads_class_c():
     """Confirm the real DB query returns the ~164 Hampton Roads Class C
