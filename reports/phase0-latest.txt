@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-07-30T12:35:58
+autopilot phase0 @ 2026-07-30T16:09:07
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,519,468
+Assessor records available: 3,519,467
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,125  .../Accela_base_map_pro/MapServer/0
@@ -9,7 +9,7 @@ Assessor feeds present (Hampton Roads):
   Chesapeake         92,581  .../OpenData/MapServer/15
   Hampton               716  .../CZM_Hampton_Data/FeatureServer/42
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
-  Newport News       54,438  .../Parcel/MapServer/0
+  Newport News       54,437  .../Parcel/MapServer/0
   Norfolk            74,253  .../data.norfolk.gov/resource/g7sg-tivf.json
   Norfolk            10,295  .../data.norfolk.gov/resource/ykcq-76im.json
   Norfolk            74,637  .../data.norfolk.gov/resource/yvpm-8aid.json
@@ -20,12 +20,15 @@ Assessor feeds present (Hampton Roads):
 
 Building the Eight Rock property backbone (properties_8r)...
 
-muni records scanned:      785,018
-parcels normalized:        785,018
+muni records scanned:      785,017
+parcels normalized:        785,017
 multifamily (>= 10 units): 18,764
-written to properties_8r:  785,018
+written to properties_8r:  785,017
 provisional (no-APN) ids:  197
-units derived from address points: 588  (skipped non-residential: 5,323)
+units derived from address points: 588  (skipped non-residential: 5,322)
+coords backfilled by address (multifamily): 205
+rent estimates stamped (HUD FMR blend): 0  (ETL db with hud_fmr not found)
+rents from scraped listings: 0  (rent_listings empty or crosswalk not built yet)
 unusable (no parcel/latlng): 0
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
@@ -39,7 +42,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
 
 Cities with parcels but NO multifamily found - their top use codes:
   Hampton: Residential x664, Non-Residential x16, R-11 One Family Residential x8, Accessory x3, R-9 One Family Residential x2, R-33 One Family Residential x1, R-22 One Family Residential x1, R-15 One Family Residential x1
-  Portsmouth: UR-M x396, UR x160, GR x133, HR x64, T4 x52, GMU x41, NMU x21, T5 x18
+  Portsmouth: 9 x314, 18 x181, 7 x139, 5 x80, 3 x27, 2 x23, 29 x19, (blank) x17
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Norfolk: code only (no units): 858, units>=10: 5
@@ -48,9 +51,9 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Virginia Beach: code only (no units): 15,482, units>=10: 212
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
-  Norfolk: dwelling_year_built, finished_living_area, property_name, gross_floor_area, number_of_buildings, rolling_year_end_date, site_energy_use, site_energy_use_units, source_energy_use, source_energy_use_units, energy_cost, energy_cost_per_square_foot
+  Norfolk: property_name, number_of_buildings, national_median_site_energy, national_median_site_energy_1, national_median_source_energy, national_median_source_energy_1, percent_difference_from
   Hampton: VGIN_GEOID, VGIN_LASTU, NEW_ZONE_S, NOTES, EC_FLOOD_1, EC_FLOOD_2
-  Portsmouth: PREV_INST_, COMBLDFACT, COMPHDPRC1, COMFNDPRC2, COMECDPRC3, FRONT, TYPE_BLDG, IMPROVEMEN, CLAS, LOC_ZIP, OWNER_ST_N, MP
+  Portsmouth: PREV_INST_, COMBLDFACT, COMPHDPRC1, COMFNDPRC2, COMECDPRC3, FRONT, LOC_ZIP, OWNER_ST_N, MP, ACRES_A, LOT_SEQ_A, ACPRICE_A
   Virginia Beach: STR_DIR, Area, Info, Score, Rank_1
 
 P0-1 GATE PASSED.
@@ -58,21 +61,22 @@ P0-1 GATE PASSED.
 P0-2 shadow parity: comparing against 13,657 legacy rows...
 
 legacy multifamily rows:  639
-matched to the 8R backbone: 440 (68.9%)  [125 by address, 281 by lat/lng, 34 by proximity]
-unit counts agree:        154/239
-year built agrees:        96/169
+matched to the 8R backbone: 471 (73.7%)  [125 by address, 293 by lat/lng, 53 by proximity]
+unit counts agree:        154/240
+year built agrees:        116/222
 
-comp-set replay subjects: 191  (+8 skipped - city has no 8R coordinates yet)
-avg comp-set overlap:     66.8%  (gate >= 90%)
+comp-set replay subjects: 196  (+3 skipped - city has no 8R coordinates yet)
+avg comp-set overlap:     66.9%  (gate >= 90%)
 avg-rent delta:           n/a (8R rent signal not populated yet)  (gate <= 5%)
 
 P0-2 GATE: not met yet
+crosswalk persisted:      471 legacy->8R mappings (property_crosswalk)
 (+30 unit disagreements resolved by multi-parcel footprint totals)
-match rate, covered cities only: 86.8%  (cities whose feed has multifamily data)
+match rate, covered cities only: 93.2%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
   Virginia Beach    174 ->   171 |    211 |    211
-  Norfolk           124 ->    64 |    856 |      0   <- no coordinates in feed (address match only; re-pull)
+  Norfolk           124 ->    95 |    856 |    204
   Newport News      121 ->   120 |    283 |    283
   Hampton            75 ->     5 |      0 |      0   <- feed has no usable multifamily data
   Chesapeake         66 ->    66 |    522 |    522
