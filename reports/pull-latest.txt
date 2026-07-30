@@ -1,0 +1,30 @@
+autopilot pull @ 2026-07-30T12:19:36
+
+QUARRY muni-data ETL — 2026-07-30
+  discovered feeds loaded from data/feeds_extra.json: 10
+    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Residential_Address_Points_w_Housing_Structure/FeatureServer/0
+    + Virginia Beach: https://services3.arcgis.com/16nyMR1mdhEaLG41/arcgis/rest/services/PrivateParcels_Ranked_081920/FeatureServer/0
+    + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
+    + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
+    + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
+    + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/42
+    + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
+    + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
+    + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
+    + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
+  [OK] Norfolk/assessor+sales                   74253 records
+  [OK] Norfolk/permits                         124790 records
+  [OK] Virginia Beach/assessor+sales                0 records
+  [OK] Virginia Beach/permits                  103116 records
+  [OK] Newport News/assessor+sales              54438 records
+  [OK] Chesapeake/assessor                      92581 records
+  [OK] Virginia Beach/assessor                 177893 records
+  [OK] Virginia Beach/assessor                    374 records
+  [OK] Chesapeake/assessor                     110125 records
+  [OK] Chesapeake/assessor                     116298 records
+  [OK] Hampton/assessor                           703 records
+  [OK] Hampton/assessor                           716 records
+  [OK] Portsmouth/assessor                      36464 records
+  [OK] Portsmouth/assessor                      36241 records
+  [OK] Norfolk/assessor                         10295 records
+  [OK] Norfolk/assessor                         74637 records
