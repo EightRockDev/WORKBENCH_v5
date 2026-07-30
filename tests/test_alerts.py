@@ -22,16 +22,16 @@ def _spine(path, rows):
 
 def test_first_sweep_seeds_silently_then_detects_changes(tmp_path):
     db = _spine(tmp_path / "wb.db", [("8R-a", "1 Main St", 50)])
-    assert alerts.run_sweep(db) == {"new_mf": 0, "units_jump": 0}  # seed
+    assert alerts.run_sweep(db) == {"new_mf": 0, "units_jump": 0, "owner_change": 0}  # seed
     # Next build: a new complex appears and an existing one grows.
     _spine(db, [("8R-a", "1 Main St", 80), ("8R-b", "2 Oak Ave", 32)])
     counts = alerts.run_sweep(db)
-    assert counts == {"new_mf": 1, "units_jump": 1}
+    assert counts == {"new_mf": 1, "units_jump": 1, "owner_change": 0}
     kinds = {a["kind"]: a for a in alerts.open_alerts(db)}
     assert "2 Oak Ave" in kinds["new_mf"]["headline"]
     assert "50 -> 80" in kinds["units_jump"]["detail"]
     # Re-running the same sweep never duplicates.
-    assert alerts.run_sweep(db) == {"new_mf": 0, "units_jump": 0}
+    assert alerts.run_sweep(db) == {"new_mf": 0, "units_jump": 0, "owner_change": 0}
     assert len(alerts.open_alerts(db)) == 2
 
 
@@ -43,3 +43,28 @@ def test_dismiss_hides_an_alert(tmp_path):
     a = alerts.open_alerts(db)[0]
     alerts.dismiss(db, a["id"])
     assert alerts.open_alerts(db) == []
+
+
+def test_owner_change_fires_the_traded_alert(tmp_path):
+    """An owner-name flip on the assessor roll = the property traded -
+    the best-timed outreach signal there is. Case/whitespace noise is
+    not a trade."""
+    db = tmp_path / "wb.db"
+    with sqlite3.connect(db) as conn:
+        conn.executescript(_SPINE_SCHEMA)
+        conn.execute(
+            """INSERT INTO properties_8r
+               (property_id, fips, address, city, units, use_code,
+                owner_name, built_at)
+               VALUES ('8R-a','51710','1 Main St','Norfolk',50,
+                       'APARTMENT','OLD OWNER LLC','t')""")
+    alerts.run_sweep(db)                               # seed
+    with sqlite3.connect(db) as conn:                  # same owner, recased
+        conn.execute("UPDATE properties_8r SET owner_name='Old Owner llc '")
+    assert alerts.run_sweep(db)["owner_change"] == 0
+    with sqlite3.connect(db) as conn:                  # real trade
+        conn.execute("UPDATE properties_8r SET owner_name='NEW CAPITAL LP'")
+    counts = alerts.run_sweep(db)
+    assert counts["owner_change"] == 1
+    a = [x for x in alerts.open_alerts(db) if x["kind"] == "owner_change"][0]
+    assert "NEW CAPITAL LP" in a["detail"] and "Old Owner" in a["detail"]

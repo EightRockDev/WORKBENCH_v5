@@ -12,6 +12,9 @@ v1 alert kinds:
   units_jump   - an existing entity's unit count changed materially
                  (>= 10 units delta): renovation, expansion, or a feed
                  correction worth re-underwriting against
+  owner_change - the assessor's owner name flipped: the property TRADED.
+                 New owners restructure, refinance, and sell off pieces -
+                 this is the single best-timed outreach moment there is
 
 Dedup contract: one open alert per (kind, property_id); re-running a
 sweep never duplicates. The sweep is pure SQL over workbench.db - no
@@ -41,6 +44,7 @@ CREATE TABLE IF NOT EXISTS alerts (
 CREATE TABLE IF NOT EXISTS alert_snapshot (
     property_id TEXT PRIMARY KEY,
     units       INTEGER,
+    owner_name  TEXT,
     seen_at     TEXT NOT NULL
 );
 """
@@ -53,19 +57,24 @@ def run_sweep(db_path: Path) -> dict[str, int]:
     silently - everything would be "new")."""
     from core.phase0 import is_mf_ten_plus
     now = dt.datetime.now().isoformat(timespec="seconds")
-    counts = {"new_mf": 0, "units_jump": 0}
+    counts = {"new_mf": 0, "units_jump": 0, "owner_change": 0}
     with sqlite3.connect(db_path, timeout=60) as conn:
         conn.executescript(_SCHEMA)
-        prior = dict(conn.execute(
-            "SELECT property_id, units FROM alert_snapshot"))
+        cols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(alert_snapshot)")}
+        if "owner_name" not in cols:   # pre-owner-change snapshots migrate
+            conn.execute(
+                "ALTER TABLE alert_snapshot ADD COLUMN owner_name TEXT")
+        prior = {pid: (u, o) for pid, u, o in conn.execute(
+            "SELECT property_id, units, owner_name FROM alert_snapshot")}
         current: dict[str, tuple] = {}
-        for pid, city, addr, uc, units in conn.execute(
-                "SELECT property_id, city, address, use_code, units "
-                "  FROM properties_8r"):
+        for pid, city, addr, uc, units, owner in conn.execute(
+                "SELECT property_id, city, address, use_code, units, "
+                "       owner_name FROM properties_8r"):
             if is_mf_ten_plus(uc, units):
-                current[pid] = (city, addr, units)
+                current[pid] = (city, addr, units, owner)
         seeding = not prior
-        for pid, (city, addr, units) in current.items():
+        for pid, (city, addr, units, owner) in current.items():
             if seeding:
                 continue
             if pid not in prior:
@@ -78,7 +87,20 @@ def run_sweep(db_path: Path) -> dict[str, int]:
                      f"{units or '?'} units · {city}", now))
                 counts["new_mf"] += max(cur.rowcount, 0)
             else:
-                old_u = prior[pid]
+                old_u, old_owner = prior[pid]
+                if (owner and old_owner
+                        and owner.strip().upper()
+                        != old_owner.strip().upper()):
+                    cur = conn.execute(
+                        """INSERT OR IGNORE INTO alerts
+                           (kind, property_id, city, headline, detail,
+                            created_at)
+                           VALUES ('owner_change', ?, ?, ?, ?, ?)""",
+                        (pid, city,
+                         f"Ownership changed: {addr or pid}",
+                         f"{old_owner} -> {owner} · {units or '?'} units"
+                         f" · {city}", now))
+                    counts["owner_change"] += max(cur.rowcount, 0)
                 if (units and old_u
                         and abs(int(units) - int(old_u)) >= UNITS_JUMP_MIN):
                     cur = conn.execute(
@@ -92,8 +114,9 @@ def run_sweep(db_path: Path) -> dict[str, int]:
                     counts["units_jump"] += max(cur.rowcount, 0)
         conn.execute("DELETE FROM alert_snapshot")
         conn.executemany(
-            "INSERT INTO alert_snapshot VALUES (?,?,?)",
-            [(pid, u, now) for pid, (_, _, u) in current.items()])
+            "INSERT INTO alert_snapshot VALUES (?,?,?,?)",
+            [(pid, u, o, now)
+             for pid, (_, _, u, o) in current.items()])
         conn.commit()
     return counts
 

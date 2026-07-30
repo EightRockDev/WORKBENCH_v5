@@ -17,7 +17,8 @@ def main() -> int:
         return 0
     counts = alerts.run_sweep(db)
     print(f"alert sweep: {counts['new_mf']} new multifamily, "
-          f"{counts['units_jump']} unit-count moves")
+          f"{counts['units_jump']} unit-count moves, "
+          f"{counts.get('owner_change', 0)} ownership changes")
     for a in alerts.open_alerts(db, limit=25):
         print(f"  [{a['kind']}] {a['headline']}  ({a['detail']})")
     return 0

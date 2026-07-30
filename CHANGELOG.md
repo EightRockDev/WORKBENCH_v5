@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.2.0.0 — 2026-07-30  ·  Ownership-change alerts (sale detection)
+The sweep now catches the best-timed outreach signal there is: an
+owner-name flip on the assessor roll means the property TRADED. Alert
+kind `owner_change` shows old -> new owner with units and city;
+case/whitespace-only renames are ignored; snapshot migrates in place.
+1 new test.
+
 ## V5.11.1.0.0 — 2026-07-30  ·  Continuous alert sweep (spec 6.1 monitoring)
 Alerts stop being pull-based panels: a deterministic sweep
 (`core/alerts.py`) now runs as the 5th autopilot step after every
