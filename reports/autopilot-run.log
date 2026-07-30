@@ -27,3 +27,5 @@ Checked 107 packages in 10ms
 [discover] exit 0 -> discover-latest.txt
 [publish] pushed to GitHub
 [pull] exit 0 -> pull-latest.txt
+[publish] pushed to GitHub
+[phase0] exit 0 -> phase0-latest.txt

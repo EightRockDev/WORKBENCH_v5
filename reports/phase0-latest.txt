@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-07-30T16:09:07
+autopilot phase0 @ 2026-07-30T17:15:27
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,519,467
@@ -27,8 +27,8 @@ written to properties_8r:  785,017
 provisional (no-APN) ids:  197
 units derived from address points: 588  (skipped non-residential: 5,322)
 coords backfilled by address (multifamily): 205
-rent estimates stamped (HUD FMR blend): 0  (ETL db with hud_fmr not found)
-rents from scraped listings: 0  (rent_listings empty or crosswalk not built yet)
+rent estimates stamped (HUD FMR blend): 18,764
+rents from scraped listings: 1
 unusable (no parcel/latlng): 0
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
@@ -67,7 +67,7 @@ year built agrees:        116/222
 
 comp-set replay subjects: 196  (+3 skipped - city has no 8R coordinates yet)
 avg comp-set overlap:     66.9%  (gate >= 90%)
-avg-rent delta:           n/a (8R rent signal not populated yet)  (gate <= 5%)
+avg-rent delta:           26.4%  (gate <= 5%)
 
 P0-2 GATE: not met yet
 crosswalk persisted:      471 legacy->8R mappings (property_crosswalk)
