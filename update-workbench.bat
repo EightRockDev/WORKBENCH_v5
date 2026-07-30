@@ -49,5 +49,18 @@ echo === Current version ===
 findstr /C:"WORKBENCH_VERSION =" config.py
 
 echo.
+echo === Ensuring the nightly Autopilot is installed ===
+schtasks /Query /TN "EightRockWorkbenchAutopilot" >nul 2>&1
+if errorlevel 1 (
+  schtasks /Create /F /TN "EightRockWorkbenchAutopilot" /TR "\"%~dp0autopilot.bat\"" /SC DAILY /ST 03:00
+  echo Autopilot installed - the full data cycle now runs itself nightly
+  echo at 3:00 AM and publishes every report to GitHub for Claude.
+  echo Starting the first cycle in the background now...
+  start "EightRockAutopilot" /min cmd /c "%~dp0autopilot.bat"
+) else (
+  echo Autopilot already installed - runs nightly at 3:00 AM.
+)
+
+echo.
 echo Update complete. Double-click start-workbench.bat to launch.
 pause

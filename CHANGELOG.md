@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.9.0.1.0 — 2026-07-29  ·  The updater installs the Autopilot itself
+One human action left, total: run `update-workbench.bat` once. It now
+registers the nightly Autopilot task automatically (if missing) and kicks
+off the first cycle in a background window - no separate installer to
+find. `install-autopilot.bat` remains for manual reinstall.
+
 ## V5.9.0.0.0 — 2026-07-29  ·  AUTOPILOT: the whole data loop, hands-free
 Owner directive: "You run this." Done — the operator is out of the loop.
 - **`install-autopilot.bat`** (double-click ONCE): registers a nightly
