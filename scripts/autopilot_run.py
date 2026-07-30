@@ -167,9 +167,18 @@ def main() -> int:
     files = [f for f in outputs if f.exists()] + extras_now()
     ok = publish(files, f"{day} final")
     clean = ok and all(c == 0 for c in codes)
+    # DEV CADENCE (owner directive 2026-07-30): the system is under active
+    # build - cycles run HOURLY regardless of cleanliness so data and code
+    # flow all day. Flip DEV_MODE to False when the owner declares the
+    # build stable; nightly 3 AM resumes automatically.
+    DEV_MODE = True
+    if DEV_MODE:
+        clean_sched = False
+    else:
+        clean_sched = clean
     print(f"[cycle] {'CLEAN' if clean else 'not clean'} "
           f"(steps {codes}, published={ok})", flush=True)
-    reschedule(clean)
+    reschedule(clean_sched)
     return 0 if clean else 1
 
 

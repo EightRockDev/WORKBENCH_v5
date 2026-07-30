@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.3.0.0 — 2026-07-30  ·  Dev cadence: cycles run HOURLY, not nightly
+Owner directive: this is a system under active build, not a deployed
+one - nothing waits for 3 AM. The autopilot re-registers itself hourly
+after every cycle (clean or not) while DEV_MODE=True in
+scripts/autopilot_run.py; flipping it to False restores
+nightly-when-clean. Data, alerts, and code fixes now flow all day.
+
 ## V5.11.2.1.0 — 2026-07-30  ·  Ownership changes: recorded, not alerted (owner ruling)
 A fresh trade is a poor outreach target - trade notifications removed.
 Every observed owner transition now records silently to the
