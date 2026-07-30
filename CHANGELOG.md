@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.4.1.0 — 2026-07-30  ·  Owner correction: anchor at the ADDRESS, period
+The complex sits where its address sits. The head parcel carries the
+cluster's address, so its own geocode is the anchor - never an
+outparcel average, never the largest building (V5.11.4.0.0's rule,
+reverted same hour). Fallbacks only when the head has no coords.
+
 ## V5.11.4.0.0 — 2026-07-30  ·  Comp-overlap fix: anchor complexes at the main building
 The last concrete overlap lever: aggregated complexes sat at the MEAN
 of every member parcel's coordinates, so scattered outparcels dragged
