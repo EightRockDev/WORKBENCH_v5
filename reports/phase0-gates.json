@@ -1,9 +1,9 @@
 {
   "coverage": 1.0,
   "p0_1_passed": true,
-  "comp_overlap": 0.6688585932208382,
-  "rent_delta": 0.263919259254733,
-  "rent_pairs": 291,
+  "comp_overlap": 0.6639884633507084,
+  "rent_delta": 0.2647207822726942,
+  "rent_pairs": 290,
   "match_rate": 0.7370892018779343,
   "covered_match_rate": 0.931958762886598,
   "comp_subjects": 196,

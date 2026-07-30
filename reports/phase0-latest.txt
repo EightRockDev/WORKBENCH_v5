@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-07-30T18:21:50
+autopilot phase0 @ 2026-07-30T18:54:26
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,519,467
@@ -61,13 +61,13 @@ P0-1 GATE PASSED.
 P0-2 shadow parity: comparing against 13,657 legacy rows...
 
 legacy multifamily rows:  639
-matched to the 8R backbone: 471 (73.7%)  [125 by address, 294 by lat/lng, 52 by proximity]
-unit counts agree:        154/240
+matched to the 8R backbone: 471 (73.7%)  [125 by address, 293 by lat/lng, 53 by proximity]
+unit counts agree:        154/239
 year built agrees:        116/222
 
 comp-set replay subjects: 196  (+3 skipped - city has no 8R coordinates yet)
-avg comp-set overlap:     66.9%  (gate >= 90%)
-avg-rent delta:           26.4%  (gate <= 5%)
+avg comp-set overlap:     66.4%  (gate >= 90%)
+avg-rent delta:           26.5%  (gate <= 5%)
 
 P0-2 GATE: not met yet
 crosswalk persisted:      471 legacy->8R mappings (property_crosswalk)
