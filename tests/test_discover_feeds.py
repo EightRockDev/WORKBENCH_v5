@@ -141,10 +141,17 @@ def _fake_soda(url, params=None):
                           "columns_field_name": ["gpin", "street_address",
                                                  "location", "use_code"],
                           "columns_datatype": ["Text", "Text", "Location",
-                                               "Text"]}},
+                                               "Text"]},
+             "metadata": {"domain": "data.norfolk.gov"}},
             {"resource": {"id": "zzzz-9999", "name": "Trails",
                           "columns_field_name": ["trail", "miles"],
-                          "columns_datatype": ["Text", "Number"]}},
+                          "columns_datatype": ["Text", "Number"]},
+             "metadata": {"domain": "data.norfolk.gov"}},
+            {"resource": {"id": "nyc0-0000",
+                          "name": "Property Valuation and Assessment Data",
+                          "columns_field_name": ["gpin", "units", "use_code"],
+                          "columns_datatype": ["Text", "Number", "Text"]},
+             "metadata": {"domain": "data.cityofnewyork.us"}},
         ]}
     if "abcd-1234" in url:
         return [{"gpin": "123", "street_address": "500 Granby St",
@@ -181,3 +188,12 @@ def test_discover_emits_socrata_spec_for_norfolk():
     assert any(s["platform"] == "socrata" and "abcd-1234" in s["url"]
                for s in specs)
     assert all("zzzz-9999" not in s["url"] for s in specs)  # no-APN dataset
+
+
+def test_federated_foreign_domain_datasets_are_rejected():
+    """Socrata catalogs federate: Norfolk's search returned NYC's assessment
+    roll, whose id then 404s on data.norfolk.gov. Foreign-domain results
+    never become feeds."""
+    out = list(search_socrata("Norfolk", soda=_fake_soda))
+    assert all("nyc0-0000" not in u for u, *_ in out)
+    assert any("abcd-1234" in u for u, *_ in out)

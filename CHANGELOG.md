@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.13.0.0 — 2026-07-29  ·  Norfolk federation fix + CRLF-safe batch files
+The Norfolk-enabled pull surfaced two final plumbing defects:
+- **Socrata catalogs federate**: Norfolk's search returned New York City's
+  assessment roll ("Tax Classes 1,2,3,4"), whose dataset id then 404'd on
+  data.norfolk.gov. Discovery now restricts the catalog search to the
+  portal's own domain AND verifies each result's home domain. Requires one
+  discover-feeds re-run to replace the two bogus Norfolk specs.
+- **Batch files had LF-only line endings**, which Windows cmd misparses -
+  the publish step crashed trying to execute the word "new" (split out of
+  "Nothing new to publish"). All .bat/.ps1 files rewritten CRLF and pinned
+  via .gitattributes (eol=crlf) so every future checkout stays safe.
+The stale-feed sweep (239,957 wrong-city/retired rows removed) and the
+one-time GitHub sign-in both verified working in the same run.
+
 ## V5.8.12.1.0 — 2026-07-29  ·  One-time GitHub sign-in for report publishing
 The recovered publish step got as far as the push - which raised GitHub's
 sign-in window (the host had never authenticated for pushing; that popup

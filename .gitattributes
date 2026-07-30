@@ -1,0 +1,5 @@
+# Windows cmd misparses batch files with LF-only endings (commands split
+# mid-line - a publish step once tried to execute the word "new"). Force
+# CRLF on checkout for everything cmd/PowerShell executes.
+*.bat text eol=crlf
+*.ps1 text eol=crlf

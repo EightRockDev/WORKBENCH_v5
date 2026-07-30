@@ -234,14 +234,25 @@ def search_socrata(city: str, soda=_soda_get):
     portal = SOCRATA_PORTALS.get(city)
     if not portal:
         return
+    domain = portal.split("//", 1)[-1].strip("/")
     seen: set[str] = set()
     for q in SOCRATA_QUERIES:
+        # Socrata catalogs FEDERATE: without a domain restriction the search
+        # returns datasets hosted on other portals (Norfolk's catalog served
+        # up New York City's assessment roll, whose id then 404s on
+        # data.norfolk.gov). Restrict the search AND verify each result's
+        # home domain.
         data = soda(f"{portal}/api/catalog/v1",
-                    {"q": q, "limit": 30, "only": "datasets"})
+                    {"q": q, "limit": 30, "only": "datasets",
+                     "domains": domain, "search_context": domain})
         if not isinstance(data, dict):
             continue
         for item in (data.get("results") or []):
             res = (item or {}).get("resource") or {}
+            home = str(((item or {}).get("metadata") or {})
+                       .get("domain") or "").lower()
+            if home and home != domain:
+                continue
             rid = res.get("id")
             cols = res.get("columns_field_name") or []
             dtypes = [str(t).lower() for t in (res.get("columns_datatype") or [])]
