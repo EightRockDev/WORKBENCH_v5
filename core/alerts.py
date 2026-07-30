@@ -12,9 +12,10 @@ v1 alert kinds:
   units_jump   - an existing entity's unit count changed materially
                  (>= 10 units delta): renovation, expansion, or a feed
                  correction worth re-underwriting against
-  owner_change - the assessor's owner name flipped: the property TRADED.
-                 New owners restructure, refinance, and sell off pieces -
-                 this is the single best-timed outreach moment there is
+Ownership changes are RECORDED, not alerted (owner ruling
+2026-07-30): a fresh trade is a poor outreach target, but the deed-chain
+history feeds the radar's tenure score - `ownership_changes` keeps every
+observed transition for later pulls.
 
 Dedup contract: one open alert per (kind, property_id); re-running a
 sweep never duplicates. The sweep is pure SQL over workbench.db - no
@@ -40,6 +41,16 @@ CREATE TABLE IF NOT EXISTS alerts (
     status      TEXT NOT NULL DEFAULT 'open',
     created_at  TEXT NOT NULL,
     UNIQUE (kind, property_id)
+);
+CREATE TABLE IF NOT EXISTS ownership_changes (
+    id          INTEGER PRIMARY KEY,
+    property_id TEXT NOT NULL,
+    old_owner   TEXT,
+    new_owner   TEXT,
+    city        TEXT,
+    units       INTEGER,
+    observed_at TEXT NOT NULL,
+    UNIQUE (property_id, old_owner, new_owner)
 );
 CREATE TABLE IF NOT EXISTS alert_snapshot (
     property_id TEXT PRIMARY KEY,
@@ -92,14 +103,10 @@ def run_sweep(db_path: Path) -> dict[str, int]:
                         and owner.strip().upper()
                         != old_owner.strip().upper()):
                     cur = conn.execute(
-                        """INSERT OR IGNORE INTO alerts
-                           (kind, property_id, city, headline, detail,
-                            created_at)
-                           VALUES ('owner_change', ?, ?, ?, ?, ?)""",
-                        (pid, city,
-                         f"Ownership changed: {addr or pid}",
-                         f"{old_owner} -> {owner} · {units or '?'} units"
-                         f" · {city}", now))
+                        """INSERT OR IGNORE INTO ownership_changes
+                           (property_id, old_owner, new_owner, city, units,
+                            observed_at) VALUES (?,?,?,?,?,?)""",
+                        (pid, old_owner, owner, city, units, now))
                     counts["owner_change"] += max(cur.rowcount, 0)
                 if (units and old_u
                         and abs(int(units) - int(old_u)) >= UNITS_JUMP_MIN):

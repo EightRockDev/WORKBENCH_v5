@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.2.1.0 — 2026-07-30  ·  Ownership changes: recorded, not alerted (owner ruling)
+A fresh trade is a poor outreach target - trade notifications removed.
+Every observed owner transition now records silently to the
+`ownership_changes` table (the self-built deed chain feeding the radar
+tenure score, pullable anytime); the Alerts tab keeps only actionable
+kinds (new_mf, units_jump).
+
 ## V5.11.2.0.0 — 2026-07-30  ·  Ownership-change alerts (sale detection)
 The sweep now catches the best-timed outreach signal there is: an
 owner-name flip on the assessor roll means the property TRADED. Alert

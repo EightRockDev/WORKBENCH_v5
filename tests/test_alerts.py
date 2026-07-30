@@ -47,8 +47,8 @@ def test_dismiss_hides_an_alert(tmp_path):
 
 def test_owner_change_fires_the_traded_alert(tmp_path):
     """An owner-name flip on the assessor roll = the property traded -
-    the best-timed outreach signal there is. Case/whitespace noise is
-    not a trade."""
+    recorded silently to ownership_changes (deed-chain history for
+    the radar tenure score) - never an alert. Case noise is not a trade."""
     db = tmp_path / "wb.db"
     with sqlite3.connect(db) as conn:
         conn.executescript(_SPINE_SCHEMA)
@@ -66,5 +66,9 @@ def test_owner_change_fires_the_traded_alert(tmp_path):
         conn.execute("UPDATE properties_8r SET owner_name='NEW CAPITAL LP'")
     counts = alerts.run_sweep(db)
     assert counts["owner_change"] == 1
-    a = [x for x in alerts.open_alerts(db) if x["kind"] == "owner_change"][0]
-    assert "NEW CAPITAL LP" in a["detail"] and "Old Owner" in a["detail"]
+    # Recorded, NOT alerted (owner ruling): history table only.
+    assert not [x for x in alerts.open_alerts(db)
+                if x["kind"] == "owner_change"]
+    row = sqlite3.connect(db).execute(
+        "SELECT old_owner, new_owner FROM ownership_changes").fetchone()
+    assert row == ("Old Owner llc ", "NEW CAPITAL LP")
