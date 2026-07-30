@@ -17,6 +17,7 @@ taskkill /F /IM streamlit.exe >nul 2>&1
 
 echo.
 echo === Syncing code to the latest pushed version ===
+git remote set-url origin https://github.com/EightRockDev/WORKBENCH_v5.git >nul 2>&1
 git fetch origin
 REM Abort any stale rebase and re-attach a detached HEAD before syncing -
 REM a wedged .git state must never block the update.

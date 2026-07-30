@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.8.12.1.0 — 2026-07-29  ·  One-time GitHub sign-in for report publishing
+The recovered publish step got as far as the push - which raised GitHub's
+sign-in window (the host had never authenticated for pushing; that popup
+IS git asking for permission to publish). Made it a one-time event:
+- remote re-pointed to the repo's current name (WORKBENCH_v5 - stored
+  credentials key on the URL, and the old granite URL forced a redirect),
+- Git Credential Manager pinned as the credential store so the browser
+  sign-in persists in Windows Credential Manager.
+Owner signs in once via "Sign in with your browser"; every future publish
+is silent.
+
 ## V5.8.12.0.0 — 2026-07-29  ·  Round 10: shared-universe comps + host git recovery + stale-feed sweep
 The first auto-pushed report attempt revealed everything at once:
 - **Host push finally diagnosed**: the repo sat on a detached HEAD with a

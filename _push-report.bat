@@ -17,6 +17,12 @@ set "REPO_FWD=%CD:\=/%"
 git config --global --add safe.directory "%REPO_FWD%" >nul 2>&1
 
 echo [report] Publishing results to GitHub...
+REM One-time-friendly auth: point the remote at the repo's CURRENT name
+REM (renamed from granite - stored credentials key on the URL) and make
+REM sure Git Credential Manager persists the sign-in, so the GitHub
+REM popup appears at most once ever.
+git remote set-url origin https://github.com/EightRockDev/WORKBENCH_v5.git >nul 2>&1
+git config --global credential.helper >nul 2>&1 || git config --global credential.helper manager
 REM Recover from a stale half-finished rebase (earlier silent failures left
 REM .git\rebase-merge behind) and a detached HEAD (commits must land on
 REM main or the push publishes nothing).
