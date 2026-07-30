@@ -243,6 +243,44 @@ unacceptable. Every lesson below was paid for — do not relearn any of them.
    json.dumps once, indexes created AFTER load, and per-metro progress
    lines so a stall is visible immediately.
 
+### Operator-loop lessons (2026-07-29 marathon - owner directive: NEVER repeat)
+The data pipeline converged in ~3 rounds; the OPERATOR LOOP burned ~10 more
+human turns on delivery-channel failures discovered serially. At 50-metro
+scale this is intolerable. Non-negotiable rules:
+
+1. **The delivery channel IS the product.** Before shipping anything over a
+   channel (report publishing, host self-update), prove the channel with
+   integration tests that simulate the target end-to-end (local bare git
+   remote, fake portals, wedged states). The publish path's 4 integration
+   tests should have been written BEFORE the first report was ever asked
+   for - they were written tenth, and each missing one cost a human turn.
+2. **Windows delivery rules, always**: .gitattributes `*.bat/*.ps1 eol=crlf`
+   from day one; batch files are THIN LAUNCHERS ONLY (a few stable lines);
+   all logic in Python; never caret line-continuations; never assume the
+   file survives its own self-update (stable-updater/evolving-payload
+   split: autopilot.py boring, autopilot_run.py evolving).
+3. **Assume nothing about host state - set it in code**: repo-local git
+   user.name/email, safe.directory, credential.helper, remote URL - every
+   run, idempotently. Multi-account Windows hosts guarantee at least one
+   account is missing each of these.
+4. **Wedged states accumulate and mutate**: each failed git op leaves
+   debris (stale rebase-merge, abandoned cherry-pick, detached HEAD) that
+   breaks the NEXT op differently. Recovery clears ALL states every time,
+   not the one last seen.
+5. **Interactive auth is a designed one-time event**: scheduled tasks run
+   "when user is logged on" so the single credential prompt can appear
+   once; everything else is non-interactive forever.
+6. **Serial failure discovery is the real cost.** Six delivery bugs found
+   one-per-human-turn = six turns. The same six found by one local
+   simulation = zero turns. When a channel fails once in the field, STOP
+   and simulate the whole path locally before shipping the next
+   single-bug fix.
+7. **Automation-first deployment (the 50-metro order of operations)**:
+   step 1 is deploying and PROVING the autopilot loop (self-update ->
+   run -> publish -> read), with zero data. Only then does data work
+   begin, because from that moment every fix flows without a human. Never
+   again tune a pipeline through an unproven operator loop.
+
 ### Known open items that block 50-metro readiness
 - Hampton + Suffolk still have no unit-bearing parcel layer discovered
   (portals hide them); the discovery probe list needs state-portal fallbacks
