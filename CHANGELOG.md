@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.9.2.1.0 — 2026-07-30  ·  Wake the host: the 3 AM run was silently skipped
+The first nightly autopilot never executed - the host was asleep at 3 AM
+and the schtasks task had neither wake nor missed-run catch-up, so Windows
+skipped it without a trace. The task is now registered via PowerShell
+`Register-ScheduledTask` with `-WakeToRun` (wakes the machine for the run)
+and `-StartWhenAvailable` (a missed run fires as soon as the machine is
+back), plus `-MultipleInstances IgnoreNew` and a 3-hour execution limit.
+Plain schtasks remains as a fallback if PowerShell registration fails.
+Hourly-until-clean and nightly-at-3 both carry the wake/catch-up settings.
+Regression test added (test_schedule_command_wakes_and_catches_up).
+
 ## V5.9.2.0.0 — 2026-07-29  ·  Run continuously until clean (owner directive)
 A "clean run" = every step exits 0 AND the reports publish to GitHub. Until
 one lands, the autopilot re-registers its own scheduled task to run HOURLY;

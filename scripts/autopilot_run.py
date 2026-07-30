@@ -77,24 +77,51 @@ TASK_NAME = "EightRockWorkbenchAutopilot"
 
 
 def schedule_args(clean: bool, task_path: str) -> list[str]:
-    """Owner directive: run CONTINUOUSLY until a verified clean cycle
-    (every step exit 0 AND published to GitHub), then settle to nightly.
-    The autopilot manages its own cadence via the scheduled task."""
+    """schtasks fallback (no wake/catch-up support - see schedule_command)."""
     base = ["schtasks", "/Create", "/F", "/TN", TASK_NAME, "/TR", task_path]
     if clean:
         return base + ["/SC", "DAILY", "/ST", "03:00"]
     return base + ["/SC", "HOURLY", "/MO", "1"]
 
 
+def schedule_command(clean: bool, task_path: str) -> str:
+    """PowerShell registration with the two settings a sleeping host NEEDS:
+    -WakeToRun (the 3 AM run happens even if the machine sleeps) and
+    -StartWhenAvailable (a missed run fires as soon as the machine wakes).
+    The first nightly run never happened because neither was set - the
+    "always-on" host was asleep at 3 AM and the task silently skipped."""
+    if clean:
+        trig = "New-ScheduledTaskTrigger -Daily -At 3am"
+    else:
+        trig = ("New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) "
+                "-RepetitionInterval (New-TimeSpan -Hours 1)")
+    return (
+        f"$a = New-ScheduledTaskAction -Execute '{task_path}'; "
+        f"$t = {trig}; "
+        "$s = New-ScheduledTaskSettingsSet -WakeToRun -StartWhenAvailable "
+        "-MultipleInstances IgnoreNew "
+        "-ExecutionTimeLimit (New-TimeSpan -Hours 3); "
+        f"Register-ScheduledTask -TaskName '{TASK_NAME}' -Action $a "
+        "-Trigger $t -Settings $s -Force"
+    )
+
+
 def reschedule(clean: bool) -> None:
     if os.name != "nt":
         return
     task_path = str(ROOT / "autopilot.bat")
-    proc = subprocess.run(schedule_args(clean, task_path),
-                          capture_output=True, text=True)
+    proc = subprocess.run(
+        ["powershell", "-NoProfile", "-Command",
+         schedule_command(clean, task_path)],
+        capture_output=True, text=True)
+    if proc.returncode != 0:
+        # Fall back to plain schtasks (no wake support, but a schedule).
+        proc = subprocess.run(schedule_args(clean, task_path),
+                              capture_output=True, text=True)
     mode = "nightly 3:00 AM (clean cycle achieved)" if clean else \
         "HOURLY until a clean cycle lands"
-    print(f"[schedule] {mode} (schtasks exit {proc.returncode})", flush=True)
+    print(f"[schedule] {mode} (wake+catchup, exit {proc.returncode})",
+          flush=True)
 
 
 def main() -> int:

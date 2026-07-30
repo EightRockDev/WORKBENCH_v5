@@ -297,6 +297,16 @@ scale this is intolerable. Non-negotiable rules:
    run -> publish -> read), with zero data. Only then does data work
    begin, because from that moment every fix flows without a human. Never
    again tune a pipeline through an unproven operator loop.
+9. **Never assume always-on.** The "always-on" pilot host slept through
+   the first 3 AM run and Windows skipped the task without a trace — a
+   schedule alone is not execution. Every scheduled dependency must be
+   registered with wake (`-WakeToRun`) AND missed-run catch-up
+   (`-StartWhenAvailable`), and the loop must independently verify that
+   the run actually happened (reports on the remote), never infer it
+   from the schedule existing. Corollary: scheduling fixes are
+   chicken-and-egg — new task settings only apply after the host executes
+   something once, so the recovery path must ride on the next thing that
+   ALREADY runs (or one manual double-click), not on the broken schedule.
 
 ### Known open items that block 50-metro readiness
 - Hampton + Suffolk still have no unit-bearing parcel layer discovered

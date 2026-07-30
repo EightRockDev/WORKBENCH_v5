@@ -109,3 +109,15 @@ def test_schedule_hourly_until_clean_then_nightly():
     assert "/SC" in hourly and "HOURLY" in hourly and TASK_NAME in hourly
     nightly = schedule_args(True, r"C:\WORKBENCH_V5\autopilot.bat")
     assert "DAILY" in nightly and "03:00" in nightly
+
+
+def test_schedule_command_wakes_and_catches_up():
+    """The first nightly run was silently skipped: the host slept through
+    3 AM and the task had neither wake nor catch-up. Both are mandatory."""
+    from scripts.autopilot_run import schedule_command
+    for clean in (True, False):
+        cmd = schedule_command(clean, r"C:\WORKBENCH_V5\autopilot.bat")
+        assert "-WakeToRun" in cmd
+        assert "-StartWhenAvailable" in cmd
+    assert "-Daily -At 3am" in schedule_command(True, "x")
+    assert "RepetitionInterval" in schedule_command(False, "x")
