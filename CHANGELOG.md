@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.9.1.0.0 — 2026-07-29  ·  Near-live autopilot: every step publishes as it completes
+Owner wanted to see the log without waiting out the cycle. Each step
+(discover / pull / phase0) now publishes its report + the running log the
+moment it finishes, so GitHub shows progress within minutes instead of at
+cycle end. The final sweep publish remains as the catch-all.
+
 ## V5.9.0.2.0 — 2026-07-29  ·  Stranded-commit fix: reports can never be orphaned
 The first autopilot cycle committed its reports but the push waited on the
 one-time GitHub authorize; the next run would have said "nothing new" and

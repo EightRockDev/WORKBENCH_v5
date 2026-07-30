@@ -73,12 +73,19 @@ def publish(files: list[Path], label: str, root: Path = ROOT) -> bool:
 
 
 def main() -> int:
+    """Publish EACH step's report the moment it finishes - the owner (and
+    Claude) see progress near-live instead of waiting out the whole cycle.
+    A final sweep publish catches anything left (incl. the full log)."""
+    day = datetime.date.today().isoformat()
     outputs: list[Path] = []
-    for name, args, out_name in STEPS:
-        outputs.append(run_step(name, args, out_name))
     extras = [ROOT / "data" / "feeds_extra.json", REPORTS / "autopilot.log"]
+    for name, args, out_name in STEPS:
+        out = run_step(name, args, out_name)
+        outputs.append(out)
+        step_files = [f for f in [out] + extras if f.exists()]
+        publish(step_files, f"{day} {name}")
     files = [f for f in outputs + extras if f.exists()]
-    ok = publish(files, datetime.date.today().isoformat())
+    ok = publish(files, f"{day} final")
     return 0 if ok else 1
 
 
