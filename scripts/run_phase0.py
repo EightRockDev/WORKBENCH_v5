@@ -15,6 +15,66 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core import phase0  # noqa: E402
 
 
+
+def _learn_use_codes(db) -> list[str]:
+    """Teach the spine which numeric use codes mean apartments, per city.
+
+    Only touches cities whose roll publishes opaque codes AND that currently
+    find no multifamily — where the text rules already work, learning could
+    only introduce error. Every decision is printed with its evidence: these
+    rules change what the comp engine sees, so they must be auditable rather
+    than magic.
+    """
+    import sqlite3
+    from collections import Counter
+    from core import use_code_learn as ucl
+
+    out = ["Learning apartment use codes from matched properties:"]
+    with sqlite3.connect(db) as conn:
+        try:
+            crosswalk = conn.execute(
+                "SELECT legacy_id, r8_id FROM property_crosswalk").fetchall()
+        except sqlite3.Error:
+            return out + ["  (no property_crosswalk yet - nothing to learn from)"]
+        if not crosswalk:
+            return out + ["  (crosswalk empty - nothing to learn from)"]
+
+        # Cities that found nothing: the only ones worth teaching.
+        blind = [c for (c,) in conn.execute(
+            """SELECT DISTINCT city FROM properties_8r
+                WHERE city IS NOT NULL AND city <> ''""")]
+        taught = 0
+        for city in sorted(blind):
+            rows = conn.execute(
+                """SELECT p8.use_code, p8.units
+                     FROM property_crosswalk x
+                     JOIN properties_8r p8 ON p8.property_id = x.r8_id
+                     JOIN properties leg   ON leg.property_id = x.legacy_id
+                    WHERE p8.city = ? AND leg.units >= 10""", (city,)).fetchall()
+            mf_codes = [uc for uc, units in rows
+                        if units is None and ucl.is_opaque(uc)]
+            if not mf_codes:
+                continue
+            citywide = Counter()
+            for uc, n in conn.execute(
+                    """SELECT use_code, count(*) FROM properties_8r
+                        WHERE city = ? GROUP BY use_code""", (city,)):
+                citywide[str(uc or "").strip()] = n
+            learning = ucl.learn_city(city, mf_codes, citywide)
+            out.extend("  " + line for line in learning.describe())
+            if learning.accepted_codes:
+                import datetime as _dt
+                ucl.save(conn, learning,
+                         _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"))
+                taught += len(learning.accepted_codes)
+        if not taught:
+            out.append("  no new codes met the evidence bar this run")
+        else:
+            out.append(f"  learned {taught} code(s) - they take effect on the "
+                       f"next run-phase0 (re-run to see the new counts)")
+    return out
+
+
 def main() -> int:
     db = phase0.find_workbench_db()
     if db is None:
@@ -83,6 +143,15 @@ def main() -> int:
     parity = phase0_parity.run_parity(db, db)
     print()
     print(parity.summary())
+
+    # ---- Learn opaque use codes, then rebuild what they unlock -----------
+    # Parity runs first on purpose: it writes property_crosswalk, which is the
+    # only evidence linking a KNOWN apartment property to a specific parcel.
+    # Without that link there is nothing to learn "18 means apartments" from.
+    print()
+    learn_report = _learn_use_codes(db)
+    for line in learn_report:
+        print(line)
 
     # Machine-readable gate state for downstream automation (the cutover
     # preflight consumes this instead of parsing the text above).

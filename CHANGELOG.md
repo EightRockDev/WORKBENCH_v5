@@ -12,6 +12,49 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.8.0.0 — 2026-07-31  ·  learn apartment use codes where the roll publishes numbers
+Three Hampton Roads cities report no multifamily. The Phase 0 diagnostic
+already said why, and it is three unrelated problems, not one:
+
+| City | Records | Cause |
+|---|---|---|
+| Hampton | **716** | wrong layer — a coastal-zone study subset, not the ~50K parcel roll |
+| Portsmouth | 36,464 | full roll, but use codes are bare integers (`9`, `18`, `7`) |
+| Suffolk | 0 | no feed discovered |
+
+Portsmouth is fixed here. `core.phase0.is_multifamily` recognises use codes by
+TEXT — "Apartment", "Multi Family", "MF" — which works for Norfolk, Virginia
+Beach and Chesapeake and is useless against integers. Guessing what `18` means
+would be inventing data, so it is **learned** instead: the crosswalk already
+links 45 known Portsmouth apartment properties to specific parcels, so the
+codes those parcels carry can be counted.
+
+Conservative on purpose, because the failure is asymmetric — sweeping in a
+generic code would bury tens of thousands of houses in the comp pool, exactly
+what VB zoning "R-40" did by substring-matching "r-4". A code is accepted only
+with >= 3 supporting parcels, >= 25% of the city's known multifamily, and
+<= 10% of the entire roll (apartments are always a small minority). Every
+candidate is printed with its evidence, accepted or not, so a rule can be
+audited before it changes what the comp engine sees. Learning runs only for
+cities whose codes are opaque AND that currently find nothing; where the text
+rules work, it stays out of the way. A known unit count still wins — a duplex
+on the apartment code is still a duplex.
+
+The learned map is per-city data in `learned_mf_use_codes`, not code:
+Portsmouth's `18` says nothing about Suffolk's `18`. Re-learning replaces
+rather than accumulates, so a corrected roll cannot leave a stale rule in
+force.
+
+18 tests, including the full Portsmouth scenario end to end — 36K parcels
+finding zero multifamily, then the code learned, then those parcels
+classifying — and the rejection cases that keep "Residential" out.
+
+Hampton and Suffolk need feed work, which needs network access this
+environment does not have: every municipal GIS, Socrata and Census host is
+blocked here. That work has to run on the operator's machine.
+
+---
+
 ## V5.13.7.1.0 — 2026-07-31  ·  stop depending on winget for NSSM
 `install-service.bat` sat at ">> Checking NSSM" with no output, then failed
 with "Could not install NSSM". Two faults: winget's output was piped to

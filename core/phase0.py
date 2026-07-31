@@ -431,6 +431,28 @@ def is_multifamily(use_code: str | None, units: float | None) -> bool:
     return not _MF_USE_TOKENS.isdisjoint(tokens)
 
 
+def is_mf_ten_plus_for_city(city: str | None, use_code: str | None,
+                            units: float | None,
+                            learned: dict[str, set[str]] | None = None) -> bool:
+    """`is_mf_ten_plus`, plus any code this city has been taught.
+
+    Rolls that publish bare numeric use codes ("9", "18") match none of the
+    text rules, so Portsmouth reported zero multifamily across 36,464 parcels.
+    `core.use_code_learn` derives those codes from properties already known to
+    be apartments; this is where that learning takes effect. A known unit
+    count still wins, exactly as before — the learned map only speaks when the
+    feed carries no units at all.
+    """
+    if units is not None:
+        return units >= MIN_MF_UNITS
+    if is_multifamily(use_code, None):
+        return True
+    if learned and city:
+        from core.use_code_learn import is_multifamily_learned
+        return is_multifamily_learned(city, use_code, learned)
+    return False
+
+
 def is_mf_ten_plus(use_code: str | None, units: float | None) -> bool:
     """The PRODUCT definition of multifamily: >= 10 units (spec 7.3).
 
@@ -711,15 +733,21 @@ def build_spine(db_path: Path,
 
         # Multifamily counts are computed from the FINISHED table (derived
         # units included), not incrementally.
+        from core.use_code_learn import load as _load_learned
+        learned = _load_learned(conn)
         for city, units, use_code in conn.execute(
                 "SELECT city, units, use_code FROM properties_8r"):
-            if is_mf_ten_plus(use_code, units):
+            if is_mf_ten_plus_for_city(city, use_code, units, learned):
                 report.multifamily += 1
                 report.mf_by_city[city] += 1
                 report.mf_use_codes[city][(use_code or "").strip()[:40]] += 1
-                report.mf_basis[city][
-                    "units>=10" if units is not None
-                    else "code only (no units)"] += 1
+                if units is not None:
+                    basis = "units>=10"
+                elif is_multifamily(use_code, None):
+                    basis = "code only (no units)"
+                else:
+                    basis = "learned code (no units)"
+                report.mf_basis[city][basis] += 1
         for city in report.by_city:
             if report.mf_by_city.get(city):
                 continue
