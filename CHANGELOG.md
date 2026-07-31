@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.7.0.0 — 2026-07-31  ·  make the go-live steps double-clickable
+Two instructions failed the moment the owner tried them, both because they
+assumed knowledge the scripts should carry themselves.
+
+`install-service.bat` installed only BLUE, so the go-live plan said to run
+the PowerShell script twice by hand — which failed outright: PowerShell does
+not execute a script from the working directory without `.\`, and the shell
+was in `system32`. It now installs BOTH colours in one double-click, prompting
+for the passcode once, and stops on the first failure instead of pressing on.
+
+Caddy had no installer of its own — it was buried inside `install.ps1`, which
+also installs Postgres and the app services. `install-caddy.bat` /
+`deploy/windows/install-caddy.ps1` now do just the front door, in the order
+go-live actually follows: winget-install Caddy, substitute the domain into
+`Caddyfile.active`, **validate the config before registering anything**,
+report whether 8501/8502 are actually answering their health checks, register
+the service, open 80/443, and state plainly that no certificate is issued
+until DNS resolves and the router forwards both ports.
+
+---
+
 ## V5.13.6.2.0 — 2026-07-31  ·  fix: the Appearance work crashed the topbar
 V5.13.4.0.0 shipped a broken `ui/theme_panel.py`. Moving `_identity()` out of
 the panel was done as a text-slice edit, and the slice landed the function
