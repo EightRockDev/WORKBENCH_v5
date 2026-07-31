@@ -1395,46 +1395,58 @@ body.v2-on-diligence .v2-dd-inspector {{ display: block; }}
 }}
 .v2-prop-grid {{
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
   margin: 4px 0 12px 0;
 }}
+/* Property card, 2026-07-30 overhaul: NO underlines anywhere (the old
+   cards underlined name, address, and every stat value - they read as a
+   page of raw hyperlinks), gold accent rail on hover, class rendered as
+   a colored chip, occupancy color-coded. */
 .v2-prop-card {{
   display: block;
+  position: relative;
   background: {v['card']};
   border: 1px solid {v['line']};
+  border-left: 3px solid transparent;
   border-radius: 12px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   text-decoration: none !important;
   color: inherit;
   transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }}
+.v2-prop-card * {{ text-decoration: none !important; }}
 .v2-prop-card:hover {{
   border-color: {v['gold']};
-  box-shadow: 0 4px 18px rgba(184, 151, 56, 0.10);
-  transform: translateY(-1px);
+  border-left-color: {v['gold']};
+  box-shadow: 0 6px 22px rgba(184, 151, 56, 0.14);
+  transform: translateY(-2px);
 }}
 .v2-prop-card-name {{
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: {v['ink']};
-  text-decoration: underline;
-  text-decoration-color: {v['gold']};
-  text-underline-offset: 3px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }}
+.v2-prop-card:hover .v2-prop-card-name {{ color: {v['gold']}; }}
 .v2-prop-card-addr {{
-  font-size: 12px;
+  font-size: 11.5px;
   color: {v['ink_3']};
-  margin-top: 4px;
-  text-decoration: underline;
-  text-decoration-color: {v['line']};
-  text-underline-offset: 3px;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }}
 .v2-prop-card-stats {{
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid {v['line']};
 }}
 .v2-prop-card-stats > div {{
   display: flex;
@@ -1443,20 +1455,36 @@ body.v2-on-diligence .v2-dd-inspector {{ display: block; }}
 .v2-prop-card-stats .lbl {{
   font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   color: {v['ink_3']};
   font-weight: 600;
 }}
 .v2-prop-card-stats .val {{
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   color: {v['ink']};
-  text-decoration: underline;
-  text-decoration-color: {v['gold']};
-  text-underline-offset: 2px;
   margin-top: 2px;
 }}
+.v2-prop-card-stats .val.occ-hi {{ color: #15803d; }}
+.v2-prop-card-stats .val.occ-mid {{ color: #b45309; }}
+.v2-prop-card-stats .val.occ-lo {{ color: #b91c1c; }}
+.v2-cls-chip {{
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-top: 2px;
+}}
+.v2-cls-A {{ background: #dcfce7; color: #15803d; }}
+.v2-cls-B {{ background: #dbeafe; color: #1d4ed8; }}
+.v2-cls-C {{ background: #fef3c7; color: #b45309; }}
+.v2-cls-D {{ background: #fee2e2; color: #b91c1c; }}
+.v2-cls-x {{ background: {v['line']}; color: {v['ink_3']}; }}
 
 /* --- Hide Streamlit file_uploader's "200MB per file" hint copy ---
    It's noisy and not useful for Brian's workflow. Hide the secondary
@@ -3462,15 +3490,25 @@ def _render_v2_property_grid(properties: list[dict]) -> None:
             occ_str = "—"
 
         addr_line = ", ".join(x for x in [addr, f"{city}, {state}".strip(", ")] if x)
+        # Class -> colored chip; occupancy -> color-coded (>=95 green,
+        # 90-95 amber, <90 red). "-" values stay neutral.
+        cls_key = cls if cls in ("A", "B", "C", "D") else "x"
+        occ_cls = ""
+        if isinstance(occ, (int, float)):
+            pct = occ if occ > 1 else occ * 100.0
+            occ_cls = (" occ-hi" if pct >= 95 else
+                       " occ-mid" if pct >= 90 else " occ-lo")
         cards.append(
             f'<a class="v2-prop-card" href="?prop={pid}">'
             f'<div class="v2-prop-card-name">{name}</div>'
             f'<div class="v2-prop-card-addr">{addr_line}</div>'
             f'<div class="v2-prop-card-stats">'
-            f'<div><span class="lbl">UNITS</span><span class="val">{units_str}</span></div>'
-            f'<div><span class="lbl">CLASS</span><span class="val">{cls}</span></div>'
-            f'<div><span class="lbl">BUILT</span><span class="val">{built_str}</span></div>'
-            f'<div><span class="lbl">OCC</span><span class="val">{occ_str}</span></div>'
+            f'<div><span class="lbl">Units</span><span class="val">{units_str}</span></div>'
+            f'<div><span class="lbl">Class</span>'
+            f'<span class="v2-cls-chip v2-cls-{cls_key}">{cls}</span></div>'
+            f'<div><span class="lbl">Built</span><span class="val">{built_str}</span></div>'
+            f'<div><span class="lbl">Occ</span>'
+            f'<span class="val{occ_cls}">{occ_str}</span></div>'
             f'</div>'
             f'</a>'
         )

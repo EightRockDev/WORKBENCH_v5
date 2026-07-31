@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.12.1.0.0 — 2026-07-30  ·  UI overhaul round 1: the property cards
+The landing-page cards the owner flagged ("the layout sucks") were the
+old link-styled design: name, address, AND every stat value underlined
+- a page full of raw hyperlinks with zero hierarchy. Rebuilt:
+- No underlines anywhere on a card; name ellipsizes cleanly and turns
+  gold on hover; gold accent rail + lift on hover.
+- Class renders as a colored chip (A green / B blue / C amber / D red).
+- Occupancy is color-coded (>=95% green, 90-95% amber, <90% red) - scan
+  the grid and the weak assets jump out.
+- Stats row divided from the header; tighter grid density (300px min).
+Verified by rendering inject_v2_theme() end-to-end. Next UI rounds:
+landing hero/search, deal-analysis workspace.
+
 ## V5.12.0.0.0 — 2026-07-30  ·  The workbench feeds itself: in-app HMDA/HUD pullers
 New autopilot step `publicdata` (between pull and phase0): the
 workbench now pulls FFIEC HMDA multifamily originations + lender
