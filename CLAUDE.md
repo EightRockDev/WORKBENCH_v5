@@ -377,6 +377,16 @@ scale this is intolerable. Non-negotiable rules:
    every version indicator shown to the owner must read the real
    WORKBENCH_VERSION (the topbar pill's hard-coded "v2.1.4" nearly
    sent the debug down another wrong path).
+15. **Secrets must be loaded in the context that USES them.** The app
+   loads .env at startup, so HUD_API_TOKEN "worked" in every app-side
+   mental test - but autopilot steps run as bare scripts where nothing
+   had loaded .env, so the token the owner added (exactly as
+   instructed) was invisible to every cycle and the HUD pull skipped
+   forever (2026-07-31). Any module a headless step imports must load
+   .env itself (dotenv, never overriding real env). And when a gate
+   skips, the report line must say WHY ("no token visible" vs
+   "already pulled") - a bare "skipping" hides the variable you're
+   actually debugging.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /

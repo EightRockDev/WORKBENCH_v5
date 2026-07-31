@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.1.3.0 — 2026-07-31  ·  autopilot can finally SEE the HUD token
+core/public_data.py read HUD_API_TOKEN from os.environ, but nothing in
+the autopilot path ever loaded .env - only the app side does. So a
+token added to C:\WORKBENCH_V5\.env (exactly as instructed) was
+invisible to every cycle and the FMR pull skipped forever. The module
+now loads .env itself (never overriding real env vars; proven by an
+import test that reads a token present only in .env), and the skip
+line states WHY ("no HUD_API_TOKEN visible" vs "already pulled live"),
+so the next report is a definitive answer instead of ambiguity.
+
 ## V5.13.1.2.0 — 2026-07-31  ·  V2 theme ACTUALLY default (verified by rendering)
 V5.13.1.0.0 claimed the V2 default but patched a DUPLICATE gate in
 ui/components.py; app.py renders through ui/v2_theme_05292026.is_v2(),

@@ -31,6 +31,16 @@ from pathlib import Path
 from core import etl_db
 from core.market_data import HR_CITY_TO_COUNTY_FIPS_5
 
+# Autopilot runs this module OUTSIDE the app, where nothing else has
+# loaded .env - without this, HUD_API_TOKEN added to C:\WORKBENCH_V5\.env
+# is invisible to every cycle and the FMR pull skips forever (the exact
+# failure verified on the host 2026-07-31). Never overrides real env vars.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:
+    pass
+
 HMDA_API = "https://ffiec.cfpb.gov/v2/data-browser-api/view/csv"
 HUD_FMR_API = "https://www.huduser.gov/hudapi/public/fmr/data"
 GLEIF_API = "https://api.gleif.org/api/v1/lei-records"
@@ -227,7 +237,11 @@ def pull_hud_fmr(db_path: Path | None = None) -> int:
     except sqlite3.Error:
         pass
     if is_fresh(db, "hud_fmr", days=90) and (not token or pulled_by_us):
-        print("  [hud_fmr] fresh - skipping")
+        # Say WHY in the report - "fresh - skipping" alone hid the real
+        # question (is a token even visible?) during the 2026-07-31 debug.
+        why = ("already pulled live with token" if pulled_by_us
+               else "no HUD_API_TOKEN visible to this run")
+        print(f"  [hud_fmr] fresh - skipping ({why})")
         return 0
     if not token:
         print("  [hud_fmr] HUD_API_TOKEN not set - skipping. Free token:")
