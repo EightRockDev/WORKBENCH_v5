@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.1.0.0 — 2026-07-31  ·  V2 theme is now the DEFAULT
+All the redesigned UI (landing cards, compact hero, verdict-graded
+stat bar) lived behind ER_THEME=v2 - never set on the pilot host, so
+the owner saw the legacy V1 layout despite current code. V2 is now the
+default; ER_THEME=v1 restores the old layout if ever needed.
+
 ## V5.13.0.1.0 — 2026-07-31  ·  New HUD token forces the first live pull
 The 90-day freshness gate would have ignored a newly added
 HUD_API_TOKEN until the copied data aged out. A token now forces the
