@@ -6,6 +6,10 @@ REM  Your .env (keys/DB password) is never touched - it is gitignored.
 REM ===================================================================
 cd /d "%~dp0"
 
+REM Never stop to ask "Should I try again? (y/n)" - fail fast instead
+REM so the retry logic below (not a human) handles locked files.
+set "GIT_ASK_YESNO=false"
+
 REM Trust this folder for git no matter which Windows account runs the
 REM update (a folder created by one user and updated by another trips
 REM git's "dubious ownership" safety check and blocks the sync).
@@ -26,8 +30,15 @@ git cherry-pick --abort >nul 2>&1
 git merge --abort >nul 2>&1
 if exist ".git\rebase-merge" rmdir /s /q ".git\rebase-merge" >nul 2>&1
 if exist ".git\rebase-apply" rmdir /s /q ".git\rebase-apply" >nul 2>&1
-git checkout -B main origin/main >nul 2>&1
-git reset --hard origin/main
+REM Sync CODE without touching reports\ - the Autopilot data cycle may be
+REM running right now with a report file (e.g. reports\pull-latest.txt)
+REM held open, and Windows blocks git from rewriting an open file. A full
+REM "reset --hard" trips over that lock and aborts the whole sync (seen
+REM 2026-07-31). Reports are cycle OUTPUT anyway - the next cycle rewrites
+REM and fully re-syncs them itself; the updater only needs the code.
+git symbolic-ref HEAD refs/heads/main >nul 2>&1
+git reset --soft origin/main >nul 2>&1
+git checkout -f origin/main -- . ":(exclude)reports"
 if errorlevel 1 (
   echo.
   echo !! Could not sync. Read the git message above - it usually says exactly what to do.

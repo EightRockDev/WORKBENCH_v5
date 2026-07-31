@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.1.1.0 — 2026-07-31  ·  updater no longer collides with a running cycle
+`update-workbench.bat` did a full `git reset --hard`, which tries to
+rewrite `reports\*.txt` - files the in-flight Autopilot cycle holds
+open on Windows. The lock aborted the entire sync ("unable to unlink
+old 'reports/pull-latest.txt'"), so the owner could not pull new code
+mid-cycle. The updater now syncs everything EXCEPT `reports\`
+(cycle output the next cycle rewrites and re-syncs itself anyway) and
+sets `GIT_ASK_YESNO=false` so git never stalls on a y/n prompt.
+
 ## V5.13.1.0.0 — 2026-07-31  ·  V2 theme is now the DEFAULT
 All the redesigned UI (landing cards, compact hero, verdict-graded
 stat bar) lived behind ER_THEME=v2 - never set on the pilot host, so

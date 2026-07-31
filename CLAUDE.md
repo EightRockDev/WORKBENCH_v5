@@ -351,6 +351,18 @@ scale this is intolerable. Non-negotiable rules:
    same street addresses. When one feed class lacks a field, check the
    OTHER feed classes for the same market first; an address join against
    data you already pulled ships in one commit and works for every city.
+13. **The manual updater must survive a running cycle.** With cycles
+   chaining back-to-back all day, "run update-workbench.bat" is almost
+   always issued MID-CYCLE - and its `reset --hard` tried to rewrite
+   `reports\pull-latest.txt` while the pull step held it open, so the
+   Windows lock aborted the whole sync and the owner stayed on old code
+   (2026-07-31). Lesson 10's rule covered tracked-but-locked LIVE logs;
+   the step reports are tracked by design and locked only while their
+   step runs, so the updater must simply not touch them: sync code with
+   `checkout -f origin/main -- . ":(exclude)reports"` + soft reset, and
+   set GIT_ASK_YESNO=false so git fails fast instead of prompting y/n.
+   Any recovery tool the owner runs by hand must assume the system is
+   busy at that exact moment.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /
