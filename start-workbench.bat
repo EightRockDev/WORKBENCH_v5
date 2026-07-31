@@ -5,6 +5,7 @@ REM  Always cd's to its own folder first, so the workbench can live
 REM  anywhere on disk - the location is never hardcoded.
 REM ===================================================================
 cd /d "%~dp0"
+title Eight Rock Workbench
 call "%~dp0_find-uv.bat" || (pause & exit /b 1)
 set ER_DEV_LOGIN=1
 echo Starting Eight Rock Workbench...

@@ -7,6 +7,7 @@ REM  The full output is saved to reports\pull-latest.txt and pushed
 REM  to GitHub so Claude reads the results directly - no screenshots.
 REM ===================================================================
 cd /d "%~dp0"
+title Municipal data pull - press a key to close when finished
 call "%~dp0_find-uv.bat" || (pause & exit /b 1)
 if not exist reports mkdir reports
 echo NOTE: the app may stay open - the database now runs in WAL mode.

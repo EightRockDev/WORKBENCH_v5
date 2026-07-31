@@ -5,6 +5,7 @@ REM  code, dependencies, and database schema. Safe to run anytime.
 REM  Your .env (keys/DB password) is never touched - it is gitignored.
 REM ===================================================================
 cd /d "%~dp0"
+title Update workbench - press a key to close when finished
 
 REM Never stop to ask "Should I try again? (y/n)" - fail fast instead
 REM so the retry logic below (not a human) handles locked files.

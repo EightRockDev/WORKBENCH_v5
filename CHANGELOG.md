@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.2.1.0 — 2026-07-31  ·  tell the launcher windows apart
+The owner screenshotted a console reading "this window closes itself when
+done" in a tab labelled `run-phase0`, with no way to know whether it ever
+would. Two different tools looked identical on screen: `autopilot.bat` really
+does self-close (`exit /b 0`), while `run-phase0.bat` and every other
+double-click launcher end in `pause` and wait for a keypress forever — correct
+for a hand-run tool, indistinguishable from a hang.
+
+Each launcher now sets its own window title, so a waiting window says
+"press a key to close when finished" in the title bar. Autopilot titles itself
+RUNNING then DONE, and writes `reports\autopilot-status.txt` so its state can
+be checked without reading a 30-45 minute log.
+
+---
+
 ## V5.13.2.0.0 — 2026-07-31  ·  AC-P0-1 de-identification + Appearance panel
 The owner opened the app and still saw ALN badges on every Property Card row,
 "vs ALN 7.24%" in Calibration, the product still reading QUARRY, a dead avatar,

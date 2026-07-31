@@ -8,6 +8,7 @@ REM  The output AND the discovered feed list are pushed to GitHub so
 REM  Claude reads the results directly - no screenshots.
 REM ===================================================================
 cd /d "%~dp0"
+title Feed discovery - press a key to close when finished
 call "%~dp0_find-uv.bat" || (pause & exit /b 1)
 if not exist reports mkdir reports
 "%UV%" run python -u scripts/discover_feeds.py 2>&1 | powershell -NoProfile -Command "$input | Tee-Object -Variable out; $out | Set-Content -Path 'reports\discover-latest.txt' -Encoding UTF8"

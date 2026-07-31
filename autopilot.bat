@@ -7,8 +7,12 @@ REM  scheduled task by install-autopilot.bat; safe to double-click too.
 REM  Full log: reports\autopilot.log
 REM ===================================================================
 cd /d "%~dp0"
+title Eight Rock Autopilot - RUNNING
 echo Eight Rock Autopilot is running silently (30-45 min).
 echo Progress log: reports\autopilot.log - this window closes itself when done.
+echo To check from anywhere: type reports\autopilot-status.txt
+if not exist reports mkdir reports
+> reports\autopilot-status.txt echo RUNNING - started %date% %time%
 call "%~dp0_find-uv.bat" || exit /b 1
 if not exist reports mkdir reports
 echo === Eight Rock Autopilot start %date% %time% === >> reports\autopilot.log
@@ -16,4 +20,6 @@ echo === Eight Rock Autopilot start %date% %time% === >> reports\autopilot.log
 "%UV%" sync >> reports\autopilot.log 2>&1
 "%UV%" run python -u scripts/autopilot_run.py >> reports\autopilot.log 2>&1
 echo === Eight Rock Autopilot end %date% %time% === >> reports\autopilot.log
+> reports\autopilot-status.txt echo DONE - finished %date% %time%
+title Eight Rock Autopilot - DONE
 exit /b 0
