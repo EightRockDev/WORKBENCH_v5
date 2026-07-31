@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.11.4.2.0 — 2026-07-30  ·  Overlap ceiling declared at ~67%; centroid restored
+The 2-cycle deal concluded: centroid 66.9%, largest-parcel 66.4%,
+address-parcel 66.4% - measured on live cycles hours apart. Centroid
+(the best config) is restored; comp overlap moves to the BACKLOG per
+the owner's call. The remaining ~23 points are a replay-methodology
+question (assessor-built pools vs a survey vendor's curated list), not
+a data-tuning one. Dual-run continues; users unaffected; the nightly
+loop keeps measuring for free. Build focus pivots to the visible
+queue: in-workbench HMDA/HUD pullers, UI overhaul, alert->outreach.
+
 ## V5.11.4.1.0 — 2026-07-30  ·  Owner correction: anchor at the ADDRESS, period
 The complex sits where its address sits. The head parcel carries the
 cluster's address, so its own geocode is the anchor - never an

@@ -352,6 +352,15 @@ scale this is intolerable. Non-negotiable rules:
    OTHER feed classes for the same market first; an address join against
    data you already pulled ships in one commit and works for every city.
 
+### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
+Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /
+address-parcel 66.4%. Coordinates are a live lever but no anchor beats
+the centroid; the residual ~23 points vs the 90% gate are methodology
+(assessor pools rank differently than the vendor's curated survey).
+Do NOT resume anchor tuning; revisit via replay-methodology review
+when cutover becomes the priority again. Rent gate path: listings
+scraper (26.4% FMR baseline measured).
+
 ### Known open items that block 50-metro readiness
 - Hampton + Suffolk still have no unit-bearing parcel layer discovered
   (portals hide them); the discovery probe list needs state-portal fallbacks
