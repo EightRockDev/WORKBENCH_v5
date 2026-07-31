@@ -1,0 +1,5 @@
+autopilot publicdata @ 2026-07-30T21:05:16
+
+ETL db: C:\WORKBENCH_V5\data\hampton_roads.db
+  [hmda] fresh (pulled within 30 days) - skipping
+  [hud_fmr] fresh - skipping
