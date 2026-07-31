@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.5.2.0 — 2026-07-31  ·  SQLite in WAL mode before the pilot goes multi-user
+The pilot runs a blue-green service PAIR against a single `workbench.db`,
+with the hourly autopilot writing to the same file. Connections were opened
+with `sqlite3.connect(path)` and nothing else, so the database used the
+default rollback journal: one writer blocks every reader for the length of
+its transaction, surfacing as "database is locked" in the UI. `.gitignore`
+has listed `*.db-wal` / `*.db-shm` all along — WAL was intended and never
+switched on.
+
+Connections now set `journal_mode=WAL` (readers proceed through a write),
+`busy_timeout=10000` (wait for a lock instead of failing instantly),
+`synchronous=NORMAL` (safe under WAL — survives a process crash, risks only
+the last commits on power loss) and `foreign_keys=ON`. WAL is a persistent
+property of the file, so this is a no-op after the first connection, and a
+failure to set it degrades to the old journal rather than raising: WAL does
+not work on network shares, which is also why the deploy scripts refuse to
+run from OneDrive.
+
+Caught while auditing the go-live path, not from a report — with one service
+it would rarely bite, and the pilot is about to be the first time two
+processes serve the same file.
+
+---
+
 ## V5.13.5.1.0 — 2026-07-31  ·  one service-naming scheme across the deploy path
 `install.ps1` registered a single service called `Workbench` on 8501 while
 `install-lan-service.ps1` puts `WorkbenchBlue` on the same port — running the

@@ -362,3 +362,46 @@ def test_migrate_tolerates_a_missing_db_or_table(tmp_path):
     empty = tmp_path / "empty.db"
     sqlite3.connect(empty).close()
     assert migrate_legacy_columns(empty) == []
+
+
+# ---------------------------------------------------------------------------
+# Multi-process safety: blue-green pair + autopilot share one workbench.db
+# ---------------------------------------------------------------------------
+
+def test_connection_uses_wal_and_waits_for_locks(tmp_path):
+    from data.db import get_connection
+
+    db = tmp_path / "w.db"
+    with get_connection(db) as conn:
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0].lower() == "wal"
+        assert conn.execute("PRAGMA busy_timeout").fetchone()[0] == 10000
+        # 1 == NORMAL
+        assert conn.execute("PRAGMA synchronous").fetchone()[0] == 1
+
+
+def test_a_reader_is_not_blocked_by_an_open_write(tmp_path):
+    """The failure this prevents: one service mid-write made every other
+    reader raise 'database is locked' instead of waiting."""
+    import sqlite3
+    from data.db import get_connection
+
+    db = tmp_path / "w.db"
+    with get_connection(db) as setup:
+        setup.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+        setup.execute("INSERT INTO t VALUES (1, 'before')")
+        setup.commit()
+
+    writer = sqlite3.connect(db, timeout=10.0)
+    writer.execute("PRAGMA journal_mode=WAL")
+    writer.execute("BEGIN IMMEDIATE")
+    writer.execute("UPDATE t SET v='after' WHERE id=1")
+    try:
+        # Reader sees the pre-commit value and does NOT raise.
+        with get_connection(db) as reader:
+            assert reader.execute("SELECT v FROM t WHERE id=1").fetchone()[0] == "before"
+    finally:
+        writer.commit()
+        writer.close()
+
+    with get_connection(db) as after:
+        assert after.execute("SELECT v FROM t WHERE id=1").fetchone()[0] == "after"

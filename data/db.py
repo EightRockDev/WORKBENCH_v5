@@ -133,11 +133,39 @@ def force_resync() -> int:
     return sync(None, DB_PATH, SCHEMA_PATH)
 
 
+def _apply_pragmas(conn: sqlite3.Connection) -> None:
+    """Make the file safe for several processes at once.
+
+    The pilot runs a blue-green service PAIR against this one file, and the
+    hourly autopilot writes to it too. Under SQLite's default rollback
+    journal a single writer blocks every reader for the length of its
+    transaction, which surfaces as "database is locked" in the UI. WAL lets
+    readers carry on through a write, which is exactly this access pattern.
+
+    WAL is a persistent property of the database file, so this is a no-op
+    after the first connection. It is unavailable on network shares — the
+    deploy scripts already refuse to run from OneDrive/Dropbox for the same
+    reason — so a failure here degrades to the old journal rather than
+    raising.
+    """
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        # Wait rather than fail instantly when another process holds a lock.
+        conn.execute("PRAGMA busy_timeout=10000")
+        # Safe with WAL: survives process crash, only risks the last commits
+        # on a full power loss, and avoids an fsync per transaction.
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+    except sqlite3.Error:
+        pass
+
+
 @contextlib.contextmanager
 def get_connection(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
     """Context-managed SQLite connection with `Row` factory for dict-like access."""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, timeout=10.0)
     conn.row_factory = sqlite3.Row
+    _apply_pragmas(conn)
     try:
         yield conn
     finally:
