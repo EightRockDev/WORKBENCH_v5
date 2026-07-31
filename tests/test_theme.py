@@ -304,3 +304,48 @@ def test_identity_ignores_a_cleared_preview():
         st.session_state["_preview_role"] = blank
         assert tp.identity()["preview"] is None
     del st.session_state["_preview_role"]
+
+
+# ---------------------------------------------------------------------------
+# Decorator placement (regression, V5.13.4.0.0 -> V5.13.6.2.0)
+# ---------------------------------------------------------------------------
+# A text-slice edit inserted `_identity` directly beneath the
+# `@st.dialog("Appearance")` decorator that belonged to `open_theme_dialog`.
+# `_identity` therefore became a dialog: calling it rendered a modal and
+# returned None, so `render_avatar_button` crashed on `_who["name"]` and took
+# the entire topbar down on every page.
+#
+# The earlier tests here sidestepped importing ui.theme_panel at all because
+# it raised under a bare interpreter — and that avoidance is precisely what
+# let the bug ship. The import is the test.
+
+def test_theme_panel_imports_cleanly():
+    import importlib
+
+    import ui.theme_panel as panel
+    importlib.reload(panel)
+
+
+def test_identity_helper_returns_a_dict_not_a_dialog():
+    """If the @st.dialog decorator slips onto this function it returns None."""
+    import ui.theme_panel as panel
+
+    who = panel._identity()
+    assert isinstance(who, dict), (
+        "_identity() returned %r — a Streamlit dialog decorator has almost "
+        "certainly been attached to it" % (who,))
+    for key in ("name", "roles", "preview", "admin", "backend"):
+        assert key in who
+
+
+def test_only_the_dialog_entry_point_is_decorated():
+    """Exactly one function in the panel may carry @st.dialog."""
+    import inspect
+    import re
+
+    import ui.theme_panel as panel
+
+    src = inspect.getsource(panel)
+    decorated = re.findall(r"@st\.dialog\([^)]*\)\s*\ndef (\w+)", src)
+    assert decorated == ["open_theme_dialog"], (
+        f"@st.dialog is on {decorated}, expected only open_theme_dialog")

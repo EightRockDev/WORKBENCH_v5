@@ -12,6 +12,32 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.6.2.0 — 2026-07-31  ·  fix: the Appearance work crashed the topbar
+V5.13.4.0.0 shipped a broken `ui/theme_panel.py`. Moving `_identity()` out of
+the panel was done as a text-slice edit, and the slice landed the function
+directly beneath the `@st.dialog("Appearance")` decorator that belonged to
+`open_theme_dialog`. `_identity` therefore *became* a dialog: calling it
+rendered a modal and returned None, so `render_avatar_button` raised
+`TypeError: 'NoneType' object is not subscriptable` on `_who["name"]` — and
+because the avatar renders in the topbar, every page died with a traceback.
+
+Caught by the end-of-session browser check, not by the suite, and the reason
+is worth recording: the theme tests deliberately avoided importing
+`ui.theme_panel` because it raised under a bare interpreter. That avoidance
+was treated as a harness quirk to work around. It was the bug, already
+present and already visible. Three tests now import the module, assert
+`_identity()` returns a dict rather than None, and assert that
+`open_theme_dialog` is the ONLY function carrying `@st.dialog` — verified by
+reintroducing the fault and watching them fail.
+
+Second decorator casualty of the same editing style today: `get_connection`
+lost `@contextlib.contextmanager` the same way in V5.13.5.2.0 and was caught
+by the tests immediately.
+
+Suite: 865 passed, 4 skipped, 0 failed against Postgres.
+
+---
+
 ## V5.13.6.1.0 — 2026-07-31  ·  the whole suite is green; guard the RLS superuser trap
 Standing up a real Postgres to test the migration turned the 61 long-standing
 "errors" in the suite into actual results for the first time. They were

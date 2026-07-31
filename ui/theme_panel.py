@@ -249,7 +249,6 @@ def _render_website_tab() -> None:
 # Dialog
 # ---------------------------------------------------------------------------
 
-@st.dialog("Appearance", width="large")
 def _identity() -> dict:
     """Thin alias — the logic lives in core.theme_prefs so it stays testable."""
     return theme_prefs.identity()
@@ -278,6 +277,7 @@ def _render_identity_card() -> None:
     st.divider()
 
 
+@st.dialog("Appearance", width="large")
 def open_theme_dialog() -> None:
     name = theme_prefs.current_display_name()
     try:
