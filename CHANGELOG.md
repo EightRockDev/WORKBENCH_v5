@@ -12,6 +12,52 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.5.0.0 — 2026-07-31  ·  read monthly-grid T-12s correctly; blue-green deploy actually works
+**T-12 grid extraction (root cause of the 71% expense miss).** A real
+statement (Franklin Group / Yardi export, 295 rows x 14 columns) reported
+285,532 of operating expenses against its own stated 989,583. The sheet was
+being dumped into the prompt as a raw grid: one row per GL line, twelve
+monthly columns, and a `Total` column the model had no way to identify. It
+read across the months.
+
+`core/t12_grid.py` now resolves the grid deterministically before any model
+sees it (section 11 keeps the core LLM-free): detect the header row of period
+columns, prefer the statement's own `Total` column, fall back to summing the
+periods, and emit an `ANNUAL TOTALS` block ahead of the raw grid. On the file
+in question that produces 1,363,689 income / 989,908 opex with the nine
+expense categories summing to exactly the printed total. Preferring the
+sheet's own Total matters: re-deriving it invites a rounding argument with
+the owner's accountant. The raw grid is still passed through, so monthly
+seasonality is not lost.
+
+The prompt carried the other half of the failure. It now states that ANNUAL
+TOTALS figures are already full-year, that these statements print a summary
+AND a repeating GL detail section so categories must be counted once, and —
+the big one — that every expense dollar must land somewhere: a combined line
+like "Taxes & Insurance" that maps to no single schema field goes into the
+closest one with a note rather than being dropped, which is how a partial set
+arises. Below-the-line items (debt service, capex, replacement reserves) are
+explicitly excluded from opex, and the model must flag its own failure to tie
+out instead of silently returning a fraction.
+
+**Blue-green deploy was not installable.** `deploy-swap.ps1` restarts services
+named `WorkbenchBlue` / `WorkbenchGreen` and its header cited
+`install-lan-service.ps1 -Name/-Port` — parameters that did not exist. The
+installer hard-coded one service, `EightRockWorkbench`, on 8501. Running it
+twice, as the go-live plan says to, would have re-registered the same service
+and left Caddy with a single upstream; the swap script would then have found
+neither colour, skipped both, and exited 0 reporting "zero-downtime deploy
+complete". Same false-green shape as the updater bug earlier today.
+
+The installer now takes `-Name`/`-Port`, rejects any pair Caddy does not
+route, gives each colour its own service, log files, firewall rule and uv
+environment (a shared one lets both services sync into the same tree during a
+swap), and prints the exact command for the second colour. The swap script
+counts what is installed before touching anything: none is an error, one is a
+loud warning that restarting means real downtime.
+
+---
+
 ## V5.13.4.0.0 — 2026-07-31  ·  batch upload, account identity, honest QA wording
 **Multi-file ingestion.** The uploader took one document at a time. It now
 accepts a batch: every file is staged to disk first, so one unreadable file

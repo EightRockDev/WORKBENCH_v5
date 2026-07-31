@@ -6,7 +6,9 @@
 #  users never see a restart. Pure ASCII (PowerShell 5.1 rule).
 #
 #  Prereq: two NSSM services named WorkbenchBlue / WorkbenchGreen running
-#  streamlit on ports 8501 / 8502 (install-lan-service.ps1 -Name/-Port).
+#  streamlit on ports 8501 / 8502. Create them with:
+#    install-lan-service.ps1                                 (blue, 8501)
+#    install-lan-service.ps1 -Name WorkbenchGreen -Port 8502 (green)
 #  Safe to run any time; exits nonzero if an instance never comes healthy.
 # ===========================================================================
 $ErrorActionPreference = "Stop"
@@ -21,6 +23,27 @@ function Wait-Healthy([int]$Port) {
         Start-Sleep -Seconds 2
     }
     return $false
+}
+
+# Count what is actually installed BEFORE touching anything. Skipping missing
+# services and then exiting 0 reported "zero-downtime deploy complete" on a
+# machine where no service existed at all - a false green.
+$installed = @()
+foreach ($pair in @(@("WorkbenchBlue", 8501), @("WorkbenchGreen", 8502))) {
+    if (Get-Service -Name $pair[0] -ErrorAction SilentlyContinue) { $installed += $pair[0] }
+}
+if ($installed.Count -eq 0) {
+    Write-Host "[swap] NEITHER WorkbenchBlue nor WorkbenchGreen is installed."
+    Write-Host "[swap] Nothing was restarted. Install them first:"
+    Write-Host "[swap]   install-lan-service.ps1                                  (blue, 8501)"
+    Write-Host "[swap]   install-lan-service.ps1 -Name WorkbenchGreen -Port 8502   (green)"
+    exit 1
+}
+if ($installed.Count -eq 1) {
+    Write-Host ("[swap] WARNING: only {0} is installed." -f $installed[0])
+    Write-Host "[swap] Restarting it WILL drop connections - there is no second"
+    Write-Host "[swap] colour for Caddy to route to. Install the other half for"
+    Write-Host "[swap] real zero-downtime deploys."
 }
 
 foreach ($pair in @(@("WorkbenchBlue", 8501), @("WorkbenchGreen", 8502))) {
@@ -39,5 +62,9 @@ foreach ($pair in @(@("WorkbenchBlue", 8501), @("WorkbenchGreen", 8502))) {
     }
     Write-Host ("[swap] {0} healthy - users were served by the other color" -f $name)
 }
-Write-Host "[swap] zero-downtime deploy complete - both colors on new code."
+if ($installed.Count -eq 2) {
+    Write-Host "[swap] zero-downtime deploy complete - both colours on new code."
+} else {
+    Write-Host ("[swap] {0} restarted on new code (single-colour, brief downtime)." -f $installed[0])
+}
 exit 0

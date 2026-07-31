@@ -83,6 +83,29 @@ Rules:
 - If only a P&L summary is shown (no line detail), populate totalRevenue/
   totalOpex/noi and leave detail breakouts null
 
+Reading a monthly grid (Yardi/RealPage/AppFolio and agent-branded exports):
+- If an "ANNUAL TOTALS" block appears, EVERY figure in it is already the
+  full year. Use those numbers directly. Do not add up monthly columns, and
+  do not take a single month's column as the year.
+- These statements usually print a SUMMARY section and then repeat the same
+  categories as GL detail further down. Count each category ONCE. If both are
+  present, prefer the summary category totals.
+
+Every expense dollar must land somewhere:
+- The category names on the statement will not match this schema exactly.
+  Map to the closest field rather than dropping a line -- a dropped category
+  is the single most common extraction failure.
+- A COMBINED line you cannot split (e.g. "Taxes & Insurance") goes entirely
+  into the closest field, with the combination called out in
+  extraction_notes. Never discard it because it spans two fields.
+- Anything with no reasonable home belongs in t12_expenses.other.
+- Exclude below-the-line items from totalOpex: debt service, capital
+  expenditures, replacement reserves and other non-operating costs are NOT
+  operating expenses.
+- Before returning, check that your expense fields sum to roughly the
+  statement's own Operating Expense total. If they do not, say so in
+  extraction_notes with both numbers -- do not silently return a partial set.
+
 Document content follows:
 
 """
@@ -250,6 +273,19 @@ def extract_text_from_pdf(pdf_path: Path, max_pages: int = 30) -> list[tuple[int
     return out
 
 
+def _annual_block(rows, sheet_name: str) -> str | None:
+    """Resolved full-year totals for a period-grid statement, if it is one.
+
+    Never allowed to break ingestion: a sheet this cannot read still reaches
+    the model as the raw grid it always did.
+    """
+    try:
+        from core.t12_grid import normalized_annual_text
+        return normalized_annual_text(rows, sheet_name)
+    except Exception:
+        return None
+
+
 def extract_text_from_xlsx(xlsx_path: Path) -> str:
     """Concat all sheet contents to plain text.
 
@@ -266,8 +302,14 @@ def extract_text_from_xlsx(xlsx_path: Path) -> str:
                                     data_only=True)
         chunks = []
         for sheet in wb.worksheets:
+            rows = list(sheet.iter_rows(values_only=True))
+            # A monthly grid gets a resolved annual block FIRST, so the model
+            # never has to guess which of thirteen columns is the year.
+            annual = _annual_block(rows, sheet.title)
+            if annual:
+                chunks.append("\n" + annual)
             chunks.append(f"\n--- SHEET: {sheet.title} ---\n")
-            for row in sheet.iter_rows(values_only=True):
+            for row in rows:
                 chunks.append("\t".join(str(c) if c is not None else "" for c in row))
         return "\n".join(chunks)
 
@@ -276,10 +318,13 @@ def extract_text_from_xlsx(xlsx_path: Path) -> str:
         book = xlrd.open_workbook(file_contents=payload)
         chunks = []
         for sheet in book.sheets():
+            rows = [[c.value for c in sheet.row(r)] for r in range(sheet.nrows)]
+            annual = _annual_block(rows, sheet.name)
+            if annual:
+                chunks.append("\n" + annual)
             chunks.append(f"\n--- SHEET: {sheet.name} ---\n")
-            for r in range(sheet.nrows):
-                chunks.append("\t".join(str(c.value) if c.value != "" else ""
-                                         for c in sheet.row(r)))
+            for row in rows:
+                chunks.append("\t".join(str(c) if c != "" else "" for c in row))
         return "\n".join(chunks)
 
     payload = xlsx_path.read_bytes()

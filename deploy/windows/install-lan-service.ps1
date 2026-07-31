@@ -6,19 +6,42 @@
     2. Prompts for a workbench passcode (required before exposing the app
        beyond this machine) and writes ER_APP_PASSCODE + ER_DEV_LOGIN=1
        into .env.
-    3. Registers/updates service "EightRockWorkbench": streamlit bound to
-       0.0.0.0:8501, auto-start at boot, auto-restart on crash, logs to
-       logs\service-*.log.
-    4. Opens Windows Firewall TCP 8501 for the private (LAN) profile only.
+    3. Registers/updates one BLUE-GREEN service (-Name/-Port): streamlit
+       bound to 0.0.0.0:<port>, auto-start at boot, auto-restart on crash,
+       logs to logs\service-<name>-*.log.
+    4. Opens Windows Firewall TCP <port> for the private (LAN) profile only.
+
+  Run it TWICE for zero-downtime deploys - once with the defaults
+  (WorkbenchBlue / 8501), once with -Name WorkbenchGreen -Port 8502. Caddy
+  load-balances the pair and deploy-swap.ps1 restarts them one at a time.
     5. Prints the address(es) to open from other devices.
 
   Run via the double-click wrapper install-service.bat (self-elevating).
   ASCII only - Windows PowerShell 5.1 reads .ps1 as ANSI.
 #>
-param([string]$AppDir = "C:\WORKBENCH_V5")
+param(
+    [string]$AppDir = "C:\WORKBENCH_V5",
+    # Blue-green pair (deploy-swap.ps1 restarts these by name). Run once with
+    # the defaults, then again with -Name WorkbenchGreen -Port 8502.
+    [string]$Name   = "WorkbenchBlue",
+    [int]$Port      = 8501
+)
 $ErrorActionPreference = "Stop"
-$svc = "EightRockWorkbench"
+$svc = $Name
 Set-Location $AppDir
+
+# deploy-swap.ps1 and deploy/windows/Caddyfile both hard-code this pair. A
+# third name would install fine and then never be restarted or routed to, so
+# refuse it rather than leave a service nothing knows about.
+$known = @{ "WorkbenchBlue" = 8501; "WorkbenchGreen" = 8502 }
+if (-not $known.ContainsKey($Name)) {
+    throw ("Name must be WorkbenchBlue or WorkbenchGreen (got '{0}'). " +
+           "Caddy and deploy-swap only know those two." -f $Name)
+}
+if ($known[$Name] -ne $Port) {
+    throw ("{0} must run on port {1}, not {2} - Caddy routes by port." -f
+           $Name, $known[$Name], $Port)
+}
 
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
         ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -97,36 +120,48 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
 & $nssm stop $svc 2>$null | Out-Null
 & $nssm remove $svc confirm 2>$null | Out-Null
-& $nssm install $svc $uv run python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501 --server.headless true
+& $nssm install $svc $uv run python -m streamlit run app.py --server.address 0.0.0.0 --server.port $Port --server.headless true
 & $nssm set $svc AppDirectory $AppDir
-& $nssm set $svc DisplayName "Eight Rock Workbench"
-& $nssm set $svc Description "Eight Rock Workbench v5 (Streamlit) - auto-starts with Windows"
+& $nssm set $svc DisplayName ("Eight Rock Workbench (" + $Name + ")")
+& $nssm set $svc Description ("Eight Rock Workbench v5 (Streamlit) on port " + $Port + " - auto-starts with Windows")
 & $nssm set $svc Start SERVICE_AUTO_START
 & $nssm set $svc AppExit Default Restart
 & $nssm set $svc AppRestartDelay 5000
-& $nssm set $svc AppStdout (Join-Path $logDir "service-out.log")
-& $nssm set $svc AppStderr (Join-Path $logDir "service-err.log")
+& $nssm set $svc AppStdout (Join-Path $logDir ("service-" + $Name + "-out.log"))
+& $nssm set $svc AppStderr (Join-Path $logDir ("service-" + $Name + "-err.log"))
 & $nssm set $svc AppRotateFiles 1
 & $nssm set $svc AppRotateBytes 10485760
-# The service runs as SYSTEM - give it its own environment dir too, outside
-# the app folder, so it never fights user accounts over .venv ownership.
-& $nssm set $svc AppEnvironmentExtra "UV_PROJECT_ENVIRONMENT=C:\ProgramData\EightRockWorkbench\venv"
+# The service runs as SYSTEM - give it its own environment dir outside the
+# app folder, so it never fights user accounts over .venv ownership. Each
+# colour gets a SEPARATE dir: sharing one means both services can `uv run`
+# into the same tree at once during a swap and corrupt it mid-sync.
+& $nssm set $svc AppEnvironmentExtra ("UV_PROJECT_ENVIRONMENT=C:\ProgramData\EightRockWorkbench\venv-" + $Name)
 & $nssm start $svc | Out-Null
 Write-Host "   Service installed and started."
 
 # --- 4. Firewall (LAN only) ----------------------------------------------
-Step "Opening firewall TCP 8501 (private networks only)"
-Remove-NetFirewallRule -DisplayName "Eight Rock Workbench" -ErrorAction SilentlyContinue
-New-NetFirewallRule -DisplayName "Eight Rock Workbench" -Direction Inbound `
-    -Action Allow -Protocol TCP -LocalPort 8501 -Profile Private,Domain | Out-Null
+Step ("Opening firewall TCP " + $Port + " (private networks only)")
+$fwName = "Eight Rock Workbench (" + $Name + ")"
+Remove-NetFirewallRule -DisplayName $fwName -ErrorAction SilentlyContinue
+New-NetFirewallRule -DisplayName $fwName -Direction Inbound `
+    -Action Allow -Protocol TCP -LocalPort $Port -Profile Private,Domain | Out-Null
 
 # --- 5. Addresses ---------------------------------------------------------
 Step "Done. Open the workbench from any device on your network:"
-Write-Host "   This computer:  http://localhost:8501" -ForegroundColor Green
+Write-Host ("   This computer:  http://localhost:" + $Port) -ForegroundColor Green
 Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp,Manual -ErrorAction SilentlyContinue |
     Where-Object { $_.IPAddress -notlike "169.254*" -and $_.IPAddress -ne "127.0.0.1" } |
-    ForEach-Object { Write-Host ("   Other devices:  http://" + $_.IPAddress + ":8501") -ForegroundColor Green }
+    ForEach-Object { Write-Host ("   Other devices:  http://" + $_.IPAddress + ":" + $Port) -ForegroundColor Green }
 Write-Host ""
 Write-Host "Everyone gets the passcode prompt first. The service starts itself" -ForegroundColor Cyan
 Write-Host "after every reboot - no more start-workbench window needed." -ForegroundColor Cyan
 Write-Host "(start-workbench.bat still works for a manual console run.)" -ForegroundColor Cyan
+
+if ($Name -eq "WorkbenchBlue") {
+    Write-Host ""
+    Write-Host "NEXT: install the GREEN half so deploys have no downtime:" -ForegroundColor Yellow
+    Write-Host "  powershell -ExecutionPolicy Bypass -File deploy\windows\install-lan-service.ps1 -Name WorkbenchGreen -Port 8502" -ForegroundColor Yellow
+} else {
+    Write-Host ""
+    Write-Host "Both colours installed. Verify with: .\deploy\windows\deploy-swap.ps1" -ForegroundColor Green
+}
