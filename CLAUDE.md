@@ -367,6 +367,12 @@ pull in-workbench, freshness-gated, LEI names cached in `lei_names`.
 HUD FMR live-pull awaits owner adding free HUD_API_TOKEN to .env.
 Listings scraper (rent-gate path) remains the next data build.
 
+### Module C (spec 6.1) — COMPLETE as of V5.12.2.0.0
+Radar v2 scoring + GRANITE Loans surface (Tabs 2-5) + continuous alert
+sweep + alert->outreach routing (GRANITE Alerts "To Outreach" ->
+outreach_queue -> Outreach panel Sweep queue). Remaining polish lives
+in the UI queue, not Module C scope.
+
 ### Known open items that block 50-metro readiness
 - Hampton + Suffolk still have no unit-bearing parcel layer discovered
   (portals hide them); the discovery probe list needs state-portal fallbacks

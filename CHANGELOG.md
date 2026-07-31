@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.12.2.0.0 — 2026-07-30  ·  Alert -> Outreach routing (Module C complete)
+Spec 6.1's "alert routing to the Outreach Engine" ships: every sweep
+alert on the GRANITE Alerts tab has a "📞 To Outreach" button that
+routes it into a durable dial queue (`outreach_queue`), and the
+Outreach panel now opens with the 🎯 Sweep queue - the routed targets,
+oldest first, each one step from Resolve Contacts and the compliant
+call list. Worked targets clear with one click; routing and working
+are idempotent. This closes the radar-hit -> pierce -> dial loop the
+gap map showed as three disconnected surfaces. 1 new test.
+
 ## V5.12.1.1.0 — 2026-07-30  ·  Two more panels find their data
 The loan-maturity alert panel and the rent-listings panel both
 hard-coded the legacy v2.4.1 sibling path (hampton-roads-etl/) instead

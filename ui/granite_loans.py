@@ -118,12 +118,18 @@ def render_granite_loans() -> None:
         if sweep_rows:
             st.markdown(f"**{len(sweep_rows)} open alerts** from the "
                         "nightly backbone sweep")
+            from core.alerts import queue_for_outreach
             for a in sweep_rows[:50]:
-                col_a, col_b = st.columns([6, 1])
+                col_a, col_b, col_c = st.columns([6, 1.4, 1])
                 with col_a:
                     st.markdown(f"**{a['headline']}**  \n"
                                 f"{a['detail']} · {a['created_at'][:10]}")
                 with col_b:
+                    if st.button("📞 To Outreach",
+                                 key=f"gl_route_{a['id']}"):
+                        queue_for_outreach(db, a["id"])
+                        st.rerun()
+                with col_c:
                     if st.button("Dismiss", key=f"gl_dismiss_{a['id']}"):
                         dismiss(db, a["id"])
                         st.rerun()

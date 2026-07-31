@@ -72,3 +72,21 @@ def test_owner_change_fires_the_traded_alert(tmp_path):
     row = sqlite3.connect(db).execute(
         "SELECT old_owner, new_owner FROM ownership_changes").fetchone()
     assert row == ("Old Owner llc ", "NEW CAPITAL LP")
+
+
+def test_alert_routes_to_outreach_queue(tmp_path):
+    """Spec 6.1: alert routing to the Outreach Engine. Routing moves the
+    alert out of the open list and into the dial queue; working it
+    clears the queue; both idempotent."""
+    db = _spine(tmp_path / "wb.db", [("8R-a", "1 Main St", 50)])
+    alerts.run_sweep(db)
+    _spine(db, [("8R-a", "1 Main St", 50), ("8R-b", "2 Oak Ave", 32)])
+    alerts.run_sweep(db)
+    a = alerts.open_alerts(db)[0]
+    alerts.queue_for_outreach(db, a["id"])
+    alerts.queue_for_outreach(db, a["id"])          # idempotent
+    assert alerts.open_alerts(db) == []             # routed, not open
+    q = alerts.outreach_queue(db)
+    assert len(q) == 1 and q[0]["property_id"] == "8R-b"
+    alerts.mark_worked(db, a["id"])
+    assert alerts.outreach_queue(db) == []

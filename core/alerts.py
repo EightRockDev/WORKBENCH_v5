@@ -143,6 +143,58 @@ def open_alerts(db_path: Path, limit: int = 200) -> list[dict]:
         return []
 
 
+def queue_for_outreach(db_path: Path, alert_id: int) -> None:
+    """Route a sweep alert into the outreach dial queue (spec 6.1:
+    'alert routing to the Outreach Engine'). Idempotent per alert."""
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("""CREATE TABLE IF NOT EXISTS outreach_queue (
+            alert_id    INTEGER PRIMARY KEY,
+            property_id TEXT NOT NULL,
+            headline    TEXT,
+            detail      TEXT,
+            city        TEXT,
+            status      TEXT NOT NULL DEFAULT 'queued',
+            queued_at   TEXT NOT NULL)""")
+        row = conn.execute(
+            "SELECT property_id, headline, detail, city FROM alerts "
+            " WHERE id = ?", (alert_id,)).fetchone()
+        if row:
+            conn.execute(
+                """INSERT OR IGNORE INTO outreach_queue
+                   (alert_id, property_id, headline, detail, city, queued_at)
+                   VALUES (?,?,?,?,?,?)""",
+                (alert_id, *row, dt.datetime.now().isoformat(
+                    timespec="seconds")))
+            conn.execute(
+                "UPDATE alerts SET status = 'routed' WHERE id = ?",
+                (alert_id,))
+        conn.commit()
+
+
+def outreach_queue(db_path: Path, limit: int = 100) -> list[dict]:
+    """The dial list: queued sweep targets, oldest first (work the
+    backlog down)."""
+    try:
+        with sqlite3.connect(db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                """SELECT alert_id, property_id, headline, detail, city,
+                          queued_at FROM outreach_queue
+                    WHERE status = 'queued'
+                    ORDER BY queued_at ASC LIMIT ?""", (limit,)).fetchall()
+        return [dict(r) for r in rows]
+    except sqlite3.Error:
+        return []
+
+
+def mark_worked(db_path: Path, alert_id: int) -> None:
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "UPDATE outreach_queue SET status = 'worked' WHERE alert_id = ?",
+            (alert_id,))
+        conn.commit()
+
+
 def dismiss(db_path: Path, alert_id: int) -> None:
     with sqlite3.connect(db_path) as conn:
         conn.execute("UPDATE alerts SET status = 'dismissed' WHERE id = ?",

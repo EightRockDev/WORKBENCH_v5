@@ -43,6 +43,7 @@ def render_outreach(prop: dict | None = None) -> None:
         return
 
     can_send = perms is None or perms.can("send_outreach")
+    _render_sweep_queue()
     tabs = st.tabs(["☎️ Call list", "✉️ Direct mail", "🧾 Audit log", "🚫 Opt-outs"])
 
     with tabs[0]:
@@ -53,6 +54,31 @@ def render_outreach(prop: dict | None = None) -> None:
         _render_audit(org_id)
     with tabs[3]:
         _render_optouts(org_id)
+
+
+def _render_sweep_queue() -> None:
+    """Sweep targets routed from GRANITE Alerts (spec 6.1: alert routing
+    to the Outreach Engine) - the day starts with this list."""
+    from core.alerts import mark_worked, outreach_queue
+    from core.phase0 import find_workbench_db
+    db = find_workbench_db()
+    rows = outreach_queue(db) if db else []
+    if not rows:
+        return
+    st.markdown(f"**🎯 Sweep queue — {len(rows)} routed targets** "
+                "(from GRANITE Alerts; oldest first)")
+    for r in rows[:25]:
+        col_a, col_b = st.columns([6, 1])
+        with col_a:
+            st.markdown(f"**{r['headline']}**  \n"
+                        f"{r['detail']} · queued {r['queued_at'][:10]} — "
+                        "open it in Deal Analysis, run Resolve Contacts, "
+                        "then dial from the call list below.")
+        with col_b:
+            if st.button("Worked", key=f"or_q_{r['alert_id']}"):
+                mark_worked(db, r["alert_id"])
+                st.rerun()
+    st.divider()
 
 
 # ---------------------------------------------------------------------------
