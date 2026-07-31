@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.2.2.0 — 2026-07-31  ·  the update never actually stopped the app
+The owner updated, restarted and hard-refreshed, and the topbar pill still
+read a stale version while `config.py` on disk read the new one. The app is
+launched as **python.exe** (`uv run python -m streamlit run app.py`), but
+`update-workbench.bat` stopped it with `taskkill /F /IM streamlit.exe` —
+which matched no process, and whose error was swallowed by `>nul 2>&1`. The
+old server kept running with the previous modules resident, so no amount of
+browser refreshing could show new code: Python does not reload modules on
+an HTTP request.
+
+Both launchers now stop whatever is **listening on 8501/8502** by PID, which
+is independent of how the app was started. `update-workbench.bat` then
+re-checks the ports and warns loudly if something is still bound instead of
+reporting success; `start-workbench.bat` clears a stale server before
+launching, so a plain double-click is enough to recover.
+
+This is the root cause of the whole day's "the fix isn't showing up" loop —
+including the earlier conclusion that the work had landed in the wrong repo.
+That conclusion was correct and separate, but this bug would have hidden the
+corrected work too.
+
+---
+
 ## V5.13.2.1.0 — 2026-07-31  ·  tell the launcher windows apart
 The owner screenshotted a console reading "this window closes itself when
 done" in a tab labelled `run-phase0`, with no way to know whether it ever

@@ -18,8 +18,30 @@ set "REPO_FWD=%CD:\=/%"
 git config --global --add safe.directory "%REPO_FWD%" >nul 2>&1
 
 echo === Stopping any running app so files are not locked ===
+REM The app runs as python.exe ("uv run python -m streamlit run app.py"), so
+REM `taskkill /IM streamlit.exe` never matched it and the error was swallowed
+REM by >nul. Every update left the OLD server running with the previous code
+REM still loaded in memory - which is why the topbar pill kept reporting a
+REM stale version after an update + restart + browser refresh. Kill whatever
+REM is actually listening on the workbench ports; that is launch-agnostic.
+for %%P in (8501 8502) do (
+  for /f "tokens=5" %%I in ('netstat -ano ^| findstr /r /c:":%%P .*LISTENING"') do (
+    taskkill /F /PID %%I >nul 2>&1
+  )
+)
 taskkill /F /IM streamlit.exe >nul 2>&1
 
+echo.
+set "STILLUP="
+for %%P in (8501 8502) do (
+  for /f "tokens=5" %%I in ('netstat -ano ^| findstr /r /c:":%%P .*LISTENING"') do set "STILLUP=%%I"
+)
+if defined STILLUP (
+  echo [warn] something is STILL listening on 8501/8502 ^(pid %STILLUP%^).
+  echo        The app may keep serving the old code - close that window first.
+) else (
+  echo Old app stopped.
+)
 echo.
 echo === Syncing code to the latest pushed version ===
 git remote set-url origin https://github.com/EightRockDev/WORKBENCH_v5.git >nul 2>&1
