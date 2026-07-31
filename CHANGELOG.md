@@ -12,6 +12,45 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.3.0.0 — 2026-07-31  ·  P0.5: concurrent editing is safe (FR-9.3, AC-9.3)
+`data/concurrency.py` implemented optimistic concurrency and soft locks in
+full — and nothing in the app called any of it. Two analysts on the same deal
+silently overwrote each other: `save_deal()` was a blind `write_text`, last
+writer wins, no signal to either party. BUILD-ORDER listed the admin page and
+concurrency as remaining for P0.5; the admin page was in fact already built
+and wired, so this closes the piece that was actually missing.
+
+**FR-9.3.1 compare-and-set.** `DealState` carries `row_version` / `updated_by`
+/ `updated_at`, mirroring the Postgres audit columns. `save_deal()` takes the
+version the editor loaded and refuses to write when disk has moved past it,
+returning a `SaveResult` with the winner's name and their copy of the deal.
+Omitting the version keeps last-writer-wins, so the single-user desktop path
+and existing fixtures are unchanged. Files predating this load as version 0.
+
+**FR-9.3.2 conflict resolution.** The losing save gets a side-by-side of the
+four headline numbers — theirs vs yours — and two explicit buttons. Dial
+state is never auto-merged: averaging two people's underwriting would invent
+a deal neither of them ran. Lever toggles in the value-add panel are the one
+exception and do merge, because they touch a single list field; that merge
+re-reads the winner's deal and re-applies only the lever set.
+
+**FR-9.3.3 presence.** The Underwriting tab takes a heartbeat soft lock and
+shows who else has the deal open, above the dials. It is advisory — it never
+blocks an edit, and it stays silent when Postgres isn't configured, so the
+desktop path is untouched.
+
+Honest bound, documented in the code: on the file-backed store the version
+check and the write are two operations, not one transaction, so a collision
+inside that window can still slip through. The soft lock is what keeps two
+editors apart; the version check is what makes a lost update visible instead
+of silent. Records needing true atomicity live in Postgres and go through
+`optimistic_update()`.
+
+Six tests cover the two-browser case (AC-9.3), the retry path, legacy
+unversioned files, corrupt files, and the unchanged single-user path.
+
+---
+
 ## V5.13.2.4.0 — 2026-07-31  ·  autopilot actually runs hourly now
 The dev cadence was documented as hourly but ran back-to-back all day, which
 is why a console window kept reappearing every couple of minutes. The

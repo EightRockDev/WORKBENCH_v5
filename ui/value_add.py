@@ -343,7 +343,22 @@ def _render_value_add_levers(
             new_deal = deal.model_copy(
                 update={"selected_levers": sorted(new_selected_ids)}
             )
-            save_deal(target_folder.path, new_deal)
+            # FR-9.3.1. Lever toggles touch one field, so a co-worker's
+            # concurrent dial edit is safe to merge onto: reload, re-apply
+            # just the levers, save. Only warn if even that races.
+            res = save_deal(target_folder.path, new_deal,
+                            expected_version=deal.row_version)
+            if not res.ok and res.their_deal is not None:
+                merged = res.their_deal.model_copy(
+                    update={"selected_levers": sorted(new_selected_ids)}
+                )
+                res = save_deal(target_folder.path, merged,
+                                expected_version=res.version)
+            if not res.ok:
+                st.warning(
+                    "Someone else is saving this deal right now — your lever "
+                    "change didn't stick. Toggle it again."
+                )
             # Don't st.rerun() here — checkbox state is already correct on
             # this render. Rerunning would just flicker the page.
 

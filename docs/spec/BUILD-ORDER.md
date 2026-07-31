@@ -81,10 +81,16 @@ in this repo — the infrastructure half of orders 2–3:
 - `.streamlit/secrets.toml.example`, `docs/SETUP.md` — OIDC config + runbook.
 
 **Remaining for order 2 (V5-P0.5):** the SQLite→Postgres migration of the
-existing v2.4.1 app tables, the FR-9.3.1/9.3.2 optimistic-concurrency *save
-path + conflict UI* wired into the app, and the FR-9.4.1–9.4.4 **admin page**
-(users table UI, invite/approve, role assignment, pending-approval gate)
-against the schema above.
+existing v2.4.1 app tables.
+
+Done since this page was written — verify before rebuilding:
+- FR-9.4.1–9.4.4 **admin page** — `ui/admin.py`, wired in `app.py` behind the
+  `is_admin` server-side gate (users table, invite/approve, role assignment,
+  pending-approval).
+- FR-9.3.1/9.3.2/9.3.3 **concurrency save path + conflict UI + presence** —
+  `save_deal()` compare-and-set with `row_version`, the conflict dialog in
+  `ui/underwriting.py`, and the soft-lock presence banner (V5.13.3.0.0).
+  AC-9.3 covered by tests in `tests/test_property_io.py`.
 
 > **Note on build order vs. the spec's own tension:** Section 13 lists P0 (data
 > independence) first, but the office-server pilot work (P0.5) is what's active

@@ -566,7 +566,15 @@ def _render_dials(
         if folder is None:
             folder = ensure_property_folder(prop)
             st.success(f"📁 Created folder `{folder.folder_name}`")
-        save_deal(folder.path, new_deal)
+        # FR-9.3.1: save against the version this session loaded, so a
+        # co-worker's save between our load and our write is caught instead
+        # of overwritten. `deal` is the state we rendered the dials from.
+        res = save_deal(folder.path, new_deal,
+                        expected_version=deal.row_version,
+                        actor=_current_actor())
+        if not res.ok:
+            _render_save_conflict(st, folder, new_deal, res)
+            return deal
         st.caption("✓ saved")
         # Trigger an immediate rerun so the rest of the page (and other tabs)
         # pick up the new folder via the next discover_property_folders() call.
@@ -574,6 +582,97 @@ def _render_dials(
 
     return new_deal
 
+
+
+# ---------------------------------------------------------------------------
+# FR-9.3.2 — save-conflict resolution
+# ---------------------------------------------------------------------------
+
+def _current_actor() -> str:
+    """Display name for the save stamp; falls back to the OS user locally."""
+    try:
+        from core import auth
+        u = auth.current_user()
+        if u is not None:
+            return u.display_name
+    except Exception:
+        pass
+    import getpass
+    try:
+        return getpass.getuser()
+    except Exception:
+        return "unknown"
+
+
+def render_presence_banner(st, prop) -> None:
+    """FR-9.3.3: say who else has this deal open, before anyone loses work.
+
+    Degrades to silence when Postgres is not configured (single-user desktop),
+    so the local path is unaffected. Presence is advisory only — it never
+    blocks an edit; FR-9.3.1 is the thing that actually protects the write.
+    """
+    pid = str((prop or {}).get("property_id") or "")
+    if not pid:
+        return
+    try:
+        from core import auth
+        from data.concurrency import acquire_or_refresh_lock
+        user = auth.current_user()
+        org_id = getattr(user, "org_id", None)
+        if user is None or not org_id:
+            return
+        lock = acquire_or_refresh_lock(org_id, "deal", pid, str(user.oid))
+    except Exception:
+        # No Postgres / no org context — presence is a nicety, not a gate.
+        return
+    if lock.held and not lock.mine:
+        st.info(
+            f"👥 Someone else has this deal open (since {lock.since:%H:%M}). "
+            "You can still edit — you'll be told before anything is overwritten."
+        )
+
+
+def _render_save_conflict(st, folder, mine, res) -> None:
+    """Show what collided and let the analyst pick — never auto-resolve.
+
+    Auto-merging dial state would silently invent a deal neither person
+    underwrote, so both versions are shown and the choice is explicit.
+    """
+    who = res.conflict_by or "someone else"
+    when = f" at {res.conflict_at}" if res.conflict_at else ""
+    st.error(
+        f"⚠️ **{who}** saved this deal{when} while you were editing. "
+        "Your change was **not** written — nothing of theirs was lost."
+    )
+    theirs = res.their_deal
+    if theirs is not None:
+        c1, c2 = st.columns(2)
+        with c1:
+            st.caption(f"**Theirs (v{res.version}, on disk now)**")
+            st.write({"Purchase price": f"${theirs.pp:,.0f}",
+                      "NOI": f"${theirs.noi:,.0f}",
+                      "Down payment": f"{theirs.dp:.0f}%",
+                      "Exit cap": f"{theirs.xc:.2f}%"})
+        with c2:
+            st.caption("**Yours (unsaved)**")
+            st.write({"Purchase price": f"${mine.pp:,.0f}",
+                      "NOI": f"${mine.noi:,.0f}",
+                      "Down payment": f"{mine.dp:.0f}%",
+                      "Exit cap": f"{mine.xc:.2f}%"})
+
+    b1, b2 = st.columns(2)
+    with b1:
+        if st.button("↻ Discard mine, load theirs", use_container_width=True,
+                     key="conflict_take_theirs"):
+            st.rerun()
+    with b2:
+        if st.button("⤴ Overwrite with mine", type="primary",
+                     use_container_width=True, key="conflict_take_mine"):
+            # Re-stamp against what is on disk NOW — a deliberate, logged
+            # override rather than a blind write.
+            save_deal(folder.path, mine, expected_version=res.version,
+                      actor=_current_actor())
+            st.rerun()
 
 # ---------------------------------------------------------------------------
 # Live metrics tile row
@@ -1591,6 +1690,10 @@ def render_underwriting(
 ) -> None:
     units = prop.get("units")
     city = prop.get("city") or ""
+
+    # FR-9.3.3 presence — surfaced before the dials so a second editor sees it
+    # while there is still time to coordinate.
+    render_presence_banner(st, prop)
 
     # Load existing deal.json or build a sensible default from the property record
     deal = None

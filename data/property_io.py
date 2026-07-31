@@ -18,6 +18,7 @@ trusted as-is. The legacy server.py + wb_parsers.py owns that workflow.
 
 from __future__ import annotations
 
+import datetime as _dt
 import json
 import re
 import tempfile
@@ -180,6 +181,28 @@ class DealState(BaseModel):
             "sum of these. Persists in deal.json."
         ),
     )
+    # --- optimistic concurrency (added 2026-07-31; spec FR-9.3.1) ---
+    # deal.json is shared state the moment two people open the same property.
+    # These mirror the `row_version` / audit columns the Postgres tables carry
+    # (§9.3) so the file store enforces the same compare-and-set rule.
+    # Files written before this default to 0, which is the "unversioned" case
+    # save_deal() accepts on a first write.
+    row_version: int = Field(
+        0,
+        ge=0,
+        description=(
+            "Monotonic save counter (FR-9.3.1). save_deal() refuses to write "
+            "when the on-disk value has moved past the one the editor loaded."
+        ),
+    )
+    updated_by: str | None = Field(
+        None,
+        description="Display name of whoever last saved (FR-9.3.2 conflict dialog).",
+    )
+    updated_at: str | None = Field(
+        None,
+        description="ISO-8601 UTC timestamp of the last save (FR-9.3.2).",
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -341,17 +364,86 @@ def load_deal(folder: Path) -> DealState | None:
     return DealState.model_validate(raw)
 
 
-def save_deal(folder: Path, deal: DealState) -> None:
+@dataclass(frozen=True)
+class SaveResult:
+    """Outcome of a `save_deal` call (FR-9.3.1 / FR-9.3.2).
+
+    `ok` False means nothing was written and the caller is holding stale
+    state. `their_deal` is what is actually on disk, so the UI can offer a
+    side-by-side instead of a bare "try again".
+    """
+    ok: bool
+    version: int
+    conflict_by: str | None = None
+    conflict_at: str | None = None
+    their_deal: "DealState | None" = None
+
+
+def _disk_version(storage, key: str) -> tuple[int, str | None, str | None]:
+    """Read just the concurrency stamp off the stored file.
+
+    A malformed or half-written file must not block a save — it reports
+    version 0, which only matters against an explicit expected_version.
+    """
+    if not storage.is_file(key):
+        return 0, None, None
+    try:
+        raw = json.loads(storage.read_text(key))
+    except (json.JSONDecodeError, OSError):
+        return 0, None, None
+    if not isinstance(raw, dict):
+        return 0, None, None
+    v = raw.get("row_version") or 0
+    return (int(v) if isinstance(v, (int, float)) else 0,
+            raw.get("updated_by"), raw.get("updated_at"))
+
+
+def save_deal(
+    folder: Path,
+    deal: DealState,
+    expected_version: int | None = None,
+    actor: str | None = None,
+) -> SaveResult:
     """Write `deal.json` with stable key ordering and `s-*` aliases.
 
-    The storage backend handles atomic write semantics (LocalDiskStorage uses
-    tempfile+rename in the same dir; GraphStorage uses Graph PUT which is
-    atomic by API contract). Legacy keys (`s-pp`, `s-noi`, ...) are emitted
-    via Pydantic aliases so the file stays compatible with the legacy HTML
-    workbench.
+    Legacy keys (`s-pp`, `s-noi`, ...) are emitted via Pydantic aliases so the
+    file stays compatible with the legacy HTML workbench.
+
+    Concurrency (FR-9.3.1): pass `expected_version` — the `row_version` the
+    editor loaded — to get compare-and-set. If the on-disk version has moved,
+    nothing is written and the returned `SaveResult` carries who changed it
+    and their copy, for the FR-9.3.2 dialog. Omitting `expected_version`
+    keeps the historical last-writer-wins behaviour, which is what the
+    single-user desktop path and the test-suite fixtures rely on.
+
+    Honest bound: the version check and the write are two operations against
+    a blob store, not one transaction, so a collision inside that millisecond
+    window can still slip through. The Postgres soft lock (FR-9.3.3) is what
+    keeps two editors off the same record in the first place; this is the
+    backstop that makes a lost update visible instead of silent. Records that
+    need true atomicity live in Postgres and go through
+    `data.concurrency.optimistic_update`.
     """
     from core.storage import get_storage
     storage = get_storage()
+    key = f"{_rel(folder)}/deal.json"
+
+    disk_v, disk_by, disk_at = _disk_version(storage, key)
+    if expected_version is not None and disk_v != expected_version:
+        their = None
+        try:
+            their = load_deal(folder)
+        except Exception:            # a corrupt file must not mask the conflict
+            their = None
+        return SaveResult(ok=False, version=disk_v, conflict_by=disk_by,
+                          conflict_at=disk_at, their_deal=their)
+
+    deal = deal.model_copy(update={
+        "row_version": disk_v + 1,
+        "updated_by": actor or deal.updated_by,
+        "updated_at": _dt.datetime.now(_dt.timezone.utc)
+                         .replace(microsecond=0).isoformat(),
+    })
     out = deal.model_dump(by_alias=True)
 
     # Stable ordering: legacy slider keys first (in canonical order),
@@ -367,7 +459,8 @@ def save_deal(folder: Path, deal: DealState) -> None:
             ordered[k] = out[k]
 
     payload = json.dumps(ordered, indent=2) + "\n"
-    storage.write_text(f"{_rel(folder)}/deal.json", payload)
+    storage.write_text(key, payload)
+    return SaveResult(ok=True, version=deal.row_version)
 
 
 def load_sources(folder: Path) -> dict[str, Any] | None:

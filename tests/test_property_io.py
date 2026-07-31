@@ -561,3 +561,111 @@ def test_smoke_crossroads_29_amf_migration():
         pytest.skip("no deal.json in Crossroads-29")
     # Confirm migration: stale $15k value → 4%
     assert deal.amf == 4.0
+
+
+# ---------------------------------------------------------------------------
+# FR-9.3.1 / FR-9.3.2 — optimistic concurrency on deal.json (AC-9.3)
+# ---------------------------------------------------------------------------
+
+def _deal(**kw):
+    base = dict(pp=1_000_000, noi=80_000, dp=30, ir=6.5, vac=8, rg=3,
+                eg=3, xc=6.5, hp=5)
+    base.update(kw)
+    return DealState(**base)
+
+
+def test_save_stamps_a_monotonic_version_and_author(tmp_path: Path):
+    f = tmp_path / "prop"
+    f.mkdir()
+
+    r1 = save_deal(f, _deal(), actor="Brian")
+    assert r1.ok and r1.version == 1
+    assert load_deal(f).updated_by == "Brian"
+
+    r2 = save_deal(f, _deal(pp=1_100_000), actor="Damian")
+    assert r2.ok and r2.version == 2
+    on_disk = load_deal(f)
+    assert on_disk.updated_by == "Damian"
+    assert on_disk.updated_at  # ISO stamp present
+
+
+def test_second_editor_cannot_silently_clobber_the_first(tmp_path: Path):
+    """AC-9.3: two browsers open the same deal; the loser is told, not ignored."""
+    f = tmp_path / "prop"
+    f.mkdir()
+    save_deal(f, _deal(pp=1_000_000), actor="Brian")
+
+    # Both analysts load the same version.
+    brian = load_deal(f)
+    damian = load_deal(f)
+    assert brian.row_version == damian.row_version == 1
+
+    # Damian saves first and wins.
+    won = save_deal(f, damian.model_copy(update={"pp": 1_200_000}),
+                    expected_version=damian.row_version, actor="Damian")
+    assert won.ok and won.version == 2
+
+    # Brian saves against the version he loaded — refused, with attribution.
+    lost = save_deal(f, brian.model_copy(update={"pp": 900_000}),
+                     expected_version=brian.row_version, actor="Brian")
+    assert lost.ok is False
+    assert lost.conflict_by == "Damian"
+    assert lost.conflict_at
+    assert lost.their_deal is not None and lost.their_deal.pp == 1_200_000
+
+    # Critically: Damian's number is still on disk. Nothing was lost.
+    assert load_deal(f).pp == 1_200_000
+
+
+def test_retry_against_the_current_version_succeeds(tmp_path: Path):
+    f = tmp_path / "prop"
+    f.mkdir()
+    save_deal(f, _deal(), actor="Brian")
+    stale = load_deal(f)
+    save_deal(f, stale.model_copy(update={"pp": 2_000_000}),
+              expected_version=stale.row_version, actor="Damian")
+
+    lost = save_deal(f, stale.model_copy(update={"pp": 3_000_000}),
+                     expected_version=stale.row_version, actor="Brian")
+    assert not lost.ok
+
+    # Reload, re-apply, save again — the documented recovery path.
+    fresh = load_deal(f)
+    won = save_deal(f, fresh.model_copy(update={"pp": 3_000_000}),
+                    expected_version=fresh.row_version, actor="Brian")
+    assert won.ok
+    assert load_deal(f).pp == 3_000_000
+
+
+def test_omitting_expected_version_keeps_last_writer_wins(tmp_path: Path):
+    """The single-user desktop path must not start failing."""
+    f = tmp_path / "prop"
+    f.mkdir()
+    save_deal(f, _deal(pp=1), actor="Brian")
+    r = save_deal(f, _deal(pp=2))          # no expected_version
+    assert r.ok and r.version == 2
+    assert load_deal(f).pp == 2
+
+
+def test_first_save_of_an_unversioned_legacy_file_is_allowed(tmp_path: Path):
+    """deal.json written before FR-9.3.1 has no row_version — treat it as 0."""
+    f = tmp_path / "prop"
+    f.mkdir()
+    (f / "deal.json").write_text(json.dumps({
+        "s-pp": 500_000, "s-noi": 40_000, "s-dp": 30, "s-ir": 6.0,
+        "s-vac": 7, "s-rg": 3, "s-eg": 3, "s-xc": 6.0, "s-hp": 5,
+    }))
+    legacy = load_deal(f)
+    assert legacy.row_version == 0
+
+    r = save_deal(f, legacy.model_copy(update={"pp": 550_000}),
+                  expected_version=0, actor="Brian")
+    assert r.ok and r.version == 1
+
+
+def test_corrupt_file_does_not_block_a_save(tmp_path: Path):
+    f = tmp_path / "prop"
+    f.mkdir()
+    (f / "deal.json").write_text("{ this is not json")
+    r = save_deal(f, _deal(), actor="Brian")
+    assert r.ok and r.version == 1
