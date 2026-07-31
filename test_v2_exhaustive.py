@@ -172,13 +172,13 @@ t("B3: ER_THEME=v1 -> False", b3_v1_explicit)
 
 def b4_empty():
     os.environ['ER_THEME'] = ''
-    assert is_v2() == False
-t("B4: ER_THEME='' -> False", b4_empty)
+    assert is_v2() == True, "V2 is the default (owner 2026-07-31)"
+t("B4: ER_THEME='' -> True (V2 default)", b4_empty)
 
 def b5_unset():
     os.environ.pop('ER_THEME', None)
-    assert is_v2() == False
-t("B5: ER_THEME unset -> False", b5_unset)
+    assert is_v2() == True, "V2 is the default (owner 2026-07-31)"
+t("B5: ER_THEME unset -> True (V2 default)", b5_unset)
 
 # Reset to v2 for subsequent tests
 os.environ['ER_THEME'] = 'v2'
@@ -246,7 +246,8 @@ def c7_version_label_format():
     """Version format updated 5/29 EOD: now 'v2.0.X (MMDDYYYY) · Quiet Operator'
     where X is the build/patch number that increments per V2 change."""
     label = get_v2_version_label()
-    assert label.startswith('v2.'), f'Got: {label}'
+    from config import WORKBENCH_VERSION
+    assert label.startswith(WORKBENCH_VERSION), f'Got: {label}'
     assert 'Quiet Operator' in label
     assert '(' in label and ')' in label, "Date should be in parens"
     # Extract the date portion
@@ -290,7 +291,8 @@ def d1_topbar():
     render_v2_topbar(GOOD_PROP)
     out = ''.join(captured)  # v2.1.2 — topbar is now a columns row (multi-markdown)
     assert 'QUARRY' in out  # renamed from WORKBENCH in v2.1.0
-    assert 'v2.' in out  # version pill is lowercase v2.X.Y
+    from config import WORKBENCH_VERSION
+    assert WORKBENCH_VERSION in out  # pill shows the REAL workbench version
     assert 'Crossroads Townhomes' in out
     assert 'BM' in out  # avatar initials
 t("D1: Topbar happy path", d1_topbar)
@@ -924,8 +926,8 @@ def l3_v2_switch_pill_no_prop():
 t("L3: V2 switch pill works with no property selected", l3_v2_switch_pill_no_prop)
 
 def l4_v1_floating_pill_renders_in_v1_mode():
-    # Simulate V1 mode by unsetting ER_THEME, calling render, restoring
-    os.environ.pop('ER_THEME', None)
+    # V1 mode now requires EXPLICIT ER_THEME=v1 (V2 is the default)
+    os.environ['ER_THEME'] = 'v1'
     captured.clear()
     render_v1_switch_button(GOOD_PROP['property_id'])
     out = captured[-1] if captured else ''
@@ -945,7 +947,7 @@ def l5_v1_floating_pill_noop_in_v2():
 t("L5: V1 floating pill is no-op when V2 is active", l5_v1_floating_pill_noop_in_v2)
 
 def l6_v1_floating_pill_no_prop():
-    os.environ.pop('ER_THEME', None)
+    os.environ['ER_THEME'] = 'v1'
     captured.clear()
     render_v1_switch_button(None)
     out = captured[-1] if captured else ''
@@ -1304,12 +1306,13 @@ t("O9: V2_VERSION constant exists in vX.Y.Z format", o9_v2_version_constant_exis
 
 def o10_version_pill_in_topbar():
     """The version pill (v2.0.X) must render in the V2 topbar."""
-    from ui.v2_theme_05292026 import render_v2_topbar, V2_VERSION
+    from ui.v2_theme_05292026 import render_v2_topbar
+    from config import WORKBENCH_VERSION
     captured.clear()
     render_v2_topbar(GOOD_PROP)
     out = captured[-1]
     assert 'v2-version-pill' in out
-    assert V2_VERSION in out, f"Version {V2_VERSION} missing from topbar"
+    assert WORKBENCH_VERSION in out, f"Version {WORKBENCH_VERSION} missing from topbar"
 t("O10: V2 version pill renders in topbar with current build number", o10_version_pill_in_topbar)
 
 def o11_subject_tab_verdict_hide_css():
@@ -1709,7 +1712,7 @@ def t2_section_card_keeps_icon_in_v1():
     import os as _os
     from ui.components import section_card
     prior = _os.environ.get("ER_THEME", "")
-    _os.environ["ER_THEME"] = ""
+    _os.environ["ER_THEME"] = "v1"
     captured.clear()
     try:
         with section_card("Sale History", icon="🏛️"):
@@ -1729,7 +1732,7 @@ def t3_v2_strip_icon_helper():
     from ui.components import v2_strip_icon
     prior = _os.environ.get("ER_THEME", "")
     # V1 mode → no-op
-    _os.environ["ER_THEME"] = ""
+    _os.environ["ER_THEME"] = "v1"
     try:
         assert v2_strip_icon("🎨 Data Source Color Key") == "🎨 Data Source Color Key"
         assert v2_strip_icon("### 📋 Comp Call Checklist") == "### 📋 Comp Call Checklist"

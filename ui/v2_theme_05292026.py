@@ -73,8 +73,10 @@ V2 = {
 # ---------------------------------------------------------------------------
 
 def is_v2() -> bool:
-    """True iff ER_THEME=v2 in the environment. Single source of truth."""
-    return os.environ.get("ER_THEME", "").lower() == "v2"
+    """Single source of truth for the theme gate. V2 is the DEFAULT
+    (owner 2026-07-31); ER_THEME=v1 restores the legacy layout. Unset
+    OR empty both mean v2 - only an explicit other value disables it."""
+    return (os.environ.get("ER_THEME") or "v2").lower() == "v2"
 
 
 def _eight_rock_logo_data_uri() -> str:
@@ -708,19 +710,26 @@ def _et_clock_now() -> str:
 #                 FOCUSES the field (was: navigate to ?home=1). Opening a
 #                 property clears the box so the dropdown dismisses.
 #
+# Internal theme-feature ratchet ONLY (test_v2_exhaustive asserts each
+# feature phase against it). NEVER shown to the owner: the topbar pill
+# is the truth-teller for what code is running, so everything displayed
+# uses the real WORKBENCH_VERSION below. (The pill showing a stale
+# hard-coded "v2.1.4" misled the 2026-07-31 rollout debug.)
 V2_VERSION = "v2.1.4"
+
+from config import WORKBENCH_VERSION as _WB_VERSION
 
 
 def get_v2_version_label() -> str:
-    """Full version label — V2.0.X (MMDDYYYY) · Quiet Operator. Shown in
-    the topbar version pill + V1 switch button tooltip."""
+    """Full version label shown in the topbar version pill + V1 switch
+    button tooltip. Uses the one real WORKBENCH_VERSION."""
     today = dt.date.today().strftime("%m%d%Y")
-    return f"{V2_VERSION} ({today}) · Quiet Operator"
+    return f"{_WB_VERSION} ({today}) · Quiet Operator"
 
 
 def get_v2_version_short() -> str:
-    """Short form for the topbar pill — just 'v2.0.X'."""
-    return V2_VERSION
+    """Short form for the topbar pill — the real workbench version."""
+    return _WB_VERSION
 
 
 # ---------------------------------------------------------------------------

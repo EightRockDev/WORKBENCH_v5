@@ -363,6 +363,20 @@ scale this is intolerable. Non-negotiable rules:
    set GIT_ASK_YESNO=false so git fails fast instead of prompting y/n.
    Any recovery tool the owner runs by hand must assume the system is
    busy at that exact moment.
+14. **Never claim a UI change without rendering it yourself.** The V2
+   default "fix" (V5.13.1.0.0) patched a duplicate gate in
+   ui/components.py while app.py renders through
+   ui/v2_theme_05292026.is_v2() - so the owner updated, saw the new
+   version pill AND the old layout, and rightly called it a false
+   truth (2026-07-31). Two rules from it: (a) when a gate/constant
+   exists in two places, grep for ALL copies and collapse to one
+   source of truth before claiming anything; (b) for any user-visible
+   change, launch the app headless in the container and SCREENSHOT it
+   (streamlit run + Playwright against /opt/pw-browsers/chromium) -
+   the screenshot, not the diff or the tests, is the proof. Corollary:
+   every version indicator shown to the owner must read the real
+   WORKBENCH_VERSION (the topbar pill's hard-coded "v2.1.4" nearly
+   sent the debug down another wrong path).
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /

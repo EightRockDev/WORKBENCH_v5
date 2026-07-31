@@ -55,7 +55,10 @@ def _is_v2_mode() -> bool:
     # V2 is the DEFAULT theme (owner 2026-07-31: the redesigned UI was
     # invisible because ER_THEME was never set on the pilot host).
     # Set ER_THEME=v1 to fall back to the legacy layout.
-    return os.environ.get("ER_THEME", "v2").lower() == "v2"
+    # MUST match ui/v2_theme_05292026.py:is_v2() exactly - the 2026-07-31
+    # "still V1 at V5.13.1.1.0" bug was patching THIS copy and not that
+    # one, which is the copy app.py actually renders through.
+    return (os.environ.get("ER_THEME") or "v2").lower() == "v2"
 
 
 _LEADING_ICON_RE = re.compile(r"^(#+\s+)?[^\w\s]+\s+(?=\w)")

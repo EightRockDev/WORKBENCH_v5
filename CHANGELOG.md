@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.1.2.0 — 2026-07-31  ·  V2 theme ACTUALLY default (verified by rendering)
+V5.13.1.0.0 claimed the V2 default but patched a DUPLICATE gate in
+ui/components.py; app.py renders through ui/v2_theme_05292026.is_v2(),
+which still required ER_THEME=v2 - so the host showed V1 at
+V5.13.1.1.0 and the owner caught it. Fixed the real gate (unset OR
+empty -> v2; only ER_THEME=v1 restores legacy), pointed the duplicate
+at identical logic, and replaced the topbar pill's stale hard-coded
+"v2.1.4" with the real WORKBENCH_VERSION. THIS time the fix was
+verified by launching the app headless and screenshotting the V2
+landing (Quarry hero, class-chip cards, occupancy colors) before push.
+
 ## V5.13.1.1.0 — 2026-07-31  ·  updater no longer collides with a running cycle
 `update-workbench.bat` did a full `git reset --hard`, which tries to
 rewrite `reports\*.txt` - files the in-flight Autopilot cycle holds
