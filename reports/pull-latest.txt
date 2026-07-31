@@ -1,6 +1,6 @@
-autopilot pull @ 2026-07-30T23:35:05
+autopilot pull @ 2026-07-31T00:07:42
 
-QUARRY muni-data ETL — 2026-07-30
+QUARRY muni-data ETL — 2026-07-31
   discovered feeds loaded from data/feeds_extra.json: 10
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Residential_Address_Points_w_Housing_Structure/FeatureServer/0
     + Virginia Beach: https://services3.arcgis.com/16nyMR1mdhEaLG41/arcgis/rest/services/PrivateParcels_Ranked_081920/FeatureServer/0
@@ -12,7 +12,7 @@ QUARRY muni-data ETL — 2026-07-30
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
     + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
-  [ERR] Norfolk/assessor+sales                 500 Server Error: Server Error for url: https://data.norfolk.gov/resource/g7sg-tivf.json?%24limit=50000&%24offset=0&%24order=%3Aid
+  [OK] Norfolk/assessor+sales                   74253 records
   [OK] Norfolk/permits                         124790 records
   [OK] Virginia Beach/assessor+sales                0 records
   [OK] Virginia Beach/permits                  103116 records
