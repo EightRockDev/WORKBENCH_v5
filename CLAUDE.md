@@ -382,6 +382,12 @@ _favorite_listings.json to skip bot-blocked search. Watch
 reports/listings-latest.txt for scrape statuses; blocked sources want
 manual URLs, not code fixes.
 
+### Section 9 step 2 (public serving) — blue-green machinery SHIPPED V5.13.0.0.0
+Caddyfile has the 8501/8502 health-checked pair; deploy-swap.ps1 does
+one-at-a-time restarts. NOT LIVE until the host installs Caddy + two
+NSSM services (WorkbenchBlue/WorkbenchGreen via install-lan-service.ps1)
++ domain + OIDC. Say "built, awaiting host install" - not done.
+
 ### Known open items that block 50-metro readiness
 - Hampton + Suffolk still have no unit-bearing parcel layer discovered
   (portals hide them); the discovery probe list needs state-portal fallbacks

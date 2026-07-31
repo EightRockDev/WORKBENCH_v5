@@ -14,7 +14,16 @@
 }
 
 workbench.eight-rock.com {
-	reverse_proxy 127.0.0.1:8501 {
+	# Blue-green upstream pair (zero-downtime deploys, owner commitment
+	# 2026-07-29): BLUE on 8501, GREEN on 8502. Caddy health-checks both
+	# and routes to whichever is alive; deploy-swap.ps1 restarts them one
+	# at a time so users never see a restart.
+	reverse_proxy 127.0.0.1:8501 127.0.0.1:8502 {
+		lb_policy first
+		health_uri /_stcore/health
+		health_interval 3s
+		health_timeout 2s
+		fail_duration 10s
 		header_up Host {host}
 		header_up X-Real-IP {remote_host}
 		header_up X-Forwarded-For {remote_host}

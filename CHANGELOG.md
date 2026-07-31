@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.0.0.0 — 2026-07-31  ·  Section 9 step 2 begins: zero-downtime blue-green serving
+The owner's commitment (2026-07-29): before ~25 concurrent users, no
+one ever sees a restart. The serving stack now supports it:
+- Caddyfile: BLUE (8501) + GREEN (8502) upstream pair with 3s health
+  checks against Streamlit's /_stcore/health - Caddy routes to whichever
+  color is alive.
+- deploy/windows/deploy-swap.ps1 (pure ASCII): restarts the two app
+  services one at a time, waiting for each to pass health before
+  touching the other; aborts safely if a color never comes healthy.
+Built + verified in-repo; goes LIVE when the host runs the serving
+install (Caddy + the two NSSM services + domain) - the remaining §9
+step-2 pieces are that install plus Auth0/Entra OIDC for public HTTPS.
+
 ## V5.12.5.0.0 — 2026-07-30  ·  Listings scraper ported in-workbench (rent-gate data source)
 The proven hampton-roads-etl rent scrapers (apartments.com, Zillow,
 RentCafe, property sites) now live IN the workbench (`etl_listings/`)
