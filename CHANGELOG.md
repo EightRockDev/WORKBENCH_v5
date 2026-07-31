@@ -12,6 +12,38 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.4.0.0 — 2026-07-31  ·  batch upload, account identity, honest QA wording
+**Multi-file ingestion.** The uploader took one document at a time. It now
+accepts a batch: every file is staged to disk first, so one unreadable file
+no longer blocks the readable ones beside it, and extraction runs
+sequentially because each pass writes the same `sources.json`.
+
+**Removed the "Pull from this computer" picker.** It existed to work around
+0-byte cloud-only OneDrive stubs. Brian never used it, and it carried 113
+lines of directory-scanning. The 0-byte case now names the offending files
+and says what to do (open the file so it downloads locally, then re-drop it)
+instead of pointing at a panel that no longer exists.
+
+**Account identity on the avatar.** "How do I know who I'm logged in as?" had
+no good answer — the only indicator was a caption at the bottom of the
+sidebar with no role information. The avatar tooltip now names the signed-in
+user and their roles, and the dialog opens with an identity card: name,
+email, roles, admin flag, auth backend, and org. Critically it shows an
+active §10.4 role preview in a warning — an admin previewing as another
+preset is seeing someone else's app, and that must never be silent.
+`identity()` lives in `core.theme_prefs`, not the panel, so it is importable
+without a Streamlit script-run context and therefore testable.
+
+**Extraction QA wording.** A tie-out failure read
+"1,564,561 vs 1,363,689 expected (14.7% off)", which on a first-ever upload
+reads as though the workbench held a prior expectation about the deal and was
+contradicting the owner's own statement. Both figures always come from the
+uploaded document: one printed on it, one derived by summing what was
+extracted. Failures now read "X from adding up the revenue lines vs Y on the
+statement's Total Revenue line — 14.7% apart".
+
+---
+
 ## V5.13.3.1.0 — 2026-07-31  ·  fix: wrapped sources.json value crashed Underwriting
 The Underwriting tab died with `TypeError: '>' not supported between
 instances of 'dict' and 'int'` on a real deal. `sources.json` stores values

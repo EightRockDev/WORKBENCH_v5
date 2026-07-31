@@ -270,3 +270,37 @@ def test_every_registry_token_exists_in_the_shipped_palette():
         for scope, key, _label in tokens:
             source = tp.DEFAULT_CHROME if scope == "chrome" else tp.DEFAULT_CONTENT
             assert key in source, f"{scope}.{key} is not a real theme token"
+
+
+# ---------------------------------------------------------------------------
+# Account identity on the avatar (FR-9.4 visibility)
+# ---------------------------------------------------------------------------
+
+def test_identity_reports_local_dev_without_an_org(monkeypatch):
+    who = tp.identity()
+    assert who["name"]
+    assert who["backend"] in {"local dev (no login)", "not signed in",
+                              "single sign-on"}
+    assert who["preview"] is None
+
+
+def test_identity_surfaces_an_active_role_preview(monkeypatch):
+    """§10.4: previewing as another role changes what the app shows, so it
+    must be visible on the account card — not silently in effect."""
+    import streamlit as st
+
+    st.session_state["_preview_role"] = "Analyst (read-only)"
+    try:
+        who = tp.identity()
+        assert who["preview"] == "Analyst (read-only)"
+    finally:
+        del st.session_state["_preview_role"]
+
+
+def test_identity_ignores_a_cleared_preview():
+    import streamlit as st
+
+    for blank in ("", "— none —", "None"):
+        st.session_state["_preview_role"] = blank
+        assert tp.identity()["preview"] is None
+    del st.session_state["_preview_role"]

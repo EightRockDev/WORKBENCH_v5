@@ -250,6 +250,34 @@ def _render_website_tab() -> None:
 # ---------------------------------------------------------------------------
 
 @st.dialog("Appearance", width="large")
+def _identity() -> dict:
+    """Thin alias — the logic lives in core.theme_prefs so it stays testable."""
+    return theme_prefs.identity()
+
+
+def _render_identity_card() -> None:
+    who = _identity()
+    role_txt = ", ".join(who["roles"]) if who["roles"] else "no role claims"
+    if who["admin"]:
+        role_txt += " · admin"
+    st.markdown(
+        f"**{who['name']}**"
+        + (f"  \n<span style='color:{config.COLORS['tx3']};font-size:11px'>"
+           f"{who['email']}</span>" if who["email"] else ""),
+        unsafe_allow_html=True,
+    )
+    st.caption(f"Role: {role_txt}")
+    st.caption(f"Signed in via: {who['backend']}"
+               + (f" · org `{who['org']}`" if who["org"] else ""))
+    if who["preview"]:
+        st.warning(
+            f"👁 You are **previewing as “{who['preview']}”** — the app is "
+            "showing what that role sees, not your own access. Clear the "
+            "preview picker in the sidebar to return to your own view."
+        )
+    st.divider()
+
+
 def open_theme_dialog() -> None:
     name = theme_prefs.current_display_name()
     try:
@@ -258,8 +286,9 @@ def open_theme_dialog() -> None:
     except Exception:
         backend = "local"
 
+    _render_identity_card()
     st.markdown(
-        f"**{name}** · theme saved to your login "
+        f"Theme saved to your login "
         f"<span style='color:{config.COLORS['tx3']};font-size:11px'>"
         f"({backend})</span>",
         unsafe_allow_html=True,
@@ -323,8 +352,14 @@ def render_avatar_button() -> None:
     accent = chrome.get("ac", "#D4A017")
     scope = f".st-key-{_AVATAR_KEY}"
 
-    if st.button(initials, key=_AVATAR_KEY,
-                 help="Appearance — colours, fonts and themes"):
+    _who = _identity()
+    _tip = _who["name"]
+    if _who["roles"]:
+        _tip += " · " + ", ".join(_who["roles"])
+    if _who["preview"]:
+        _tip += f"  ⚠ previewing as {_who['preview']}"
+    _tip += "  —  click for account & appearance"
+    if st.button(initials, key=_AVATAR_KEY, help=_tip):
         open_theme_dialog()
 
     st.markdown(

@@ -147,17 +147,27 @@ def _tie_check(
     tolerance: float,
     severity: Severity,
     units: str = "",
+    actual_label: str = "extracted",
+    expected_label: str = "stated on the document",
 ) -> QACheck | None:
     """Compare two figures that should agree. None when either side is absent -
-    a missing figure is not a failed tie-out, it is simply not checkable."""
+    a missing figure is not a failed tie-out, it is simply not checkable.
+
+    BOTH figures come from the uploaded document — one printed on it, one
+    derived by summing what was extracted from it. The wording matters: an
+    earlier "X vs Y expected" phrasing read as though the workbench held a
+    prior expectation about the deal and was contradicting the owner's own
+    statement, on a first-ever upload. It never does; these are always
+    self-consistency checks.
+    """
     if expected is None or actual is None:
         return None
     var = _variance(expected, actual)
     passed = var <= tolerance
     fmt = (lambda v: f"{v:,.0f}{units}") if abs(expected) >= 100 else (lambda v: f"{v:,.4g}{units}")
     detail = (
-        f"{fmt(actual)} vs {fmt(expected)} expected"
-        + (f" ({var:.1%} off)" if not passed else "")
+        f"{fmt(actual)} {actual_label} vs {fmt(expected)} {expected_label}"
+        + (f" — {var:.1%} apart" if not passed else "")
     )
     return QACheck(check_id, title, passed, severity, detail,
                    expected=expected, actual=actual, variance_pct=var)
@@ -206,7 +216,9 @@ def validate_t12(sources: dict[str, Any]) -> list[QACheck]:
         derived = gpr + (other or 0.0) - sum(v for v in losses if v is not None)
         checks.append(_tie_check(
             "T12-REV-SUM", "Revenue lines tie to Total Revenue",
-            total_revenue, derived, SUM_TOLERANCE, "error"))
+            total_revenue, derived, SUM_TOLERANCE, "error",
+            actual_label="from adding up the revenue lines",
+            expected_label="on the statement's Total Revenue line"))
 
     # Operating expenses + fixed charges must tie to Total Opex.
     line_items = [_num(v) for v in list(exp.values()) + list(fixed.values())]
@@ -214,13 +226,17 @@ def validate_t12(sources: dict[str, Any]) -> list[QACheck]:
     if present and total_opex is not None:
         checks.append(_tie_check(
             "T12-OPEX-SUM", "Expense lines tie to Total Operating Expenses",
-            total_opex, sum(present), SUM_TOLERANCE, "error"))
+            total_opex, sum(present), SUM_TOLERANCE, "error",
+            actual_label=f"from adding up the {len(present)} expense lines read",
+            expected_label="on the statement's Total Operating Expenses line"))
 
     # NOI is definitional.
     if total_revenue is not None and total_opex is not None:
         checks.append(_tie_check(
             "T12-NOI", "Revenue - Expenses ties to NOI",
-            total_revenue - total_opex, noi, SUM_TOLERANCE, "error"))
+            total_revenue - total_opex, noi, SUM_TOLERANCE, "error",
+            actual_label="on the statement's NOI line",
+            expected_label="from Total Revenue minus Total Operating Expenses"))
 
     # A loss line larger than gross potential rent is a sign convention error.
     if gpr is not None:

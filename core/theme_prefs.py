@@ -197,6 +197,46 @@ def current_display_name() -> str:
         return "User"
 
 
+
+def identity() -> dict:
+    """Who is signed in, what role is in effect, and how auth was resolved.
+
+    Lives here rather than in the panel so it is importable without a
+    Streamlit script-run context (the panel's dialog decorators are not).
+    Defensive throughout: the avatar must render on the desktop path where
+    there is no OIDC round-trip and no org, so every lookup degrades to a
+    label rather than raising.
+    """
+    out = {"name": "User", "email": "", "roles": [], "org": None,
+           "backend": "local dev (no login)", "preview": None, "admin": False}
+    try:
+        from core.auth import current_user
+        u = current_user()
+        out["name"] = u.display_name
+        out["email"] = getattr(u, "email", "") or ""
+        out["roles"] = list(getattr(u, "roles", ()) or ())
+        out["admin"] = bool(getattr(u, "is_admin", False)
+                            or getattr(u, "is_internal", False))
+        if getattr(u, "is_anonymous", False):
+            out["backend"] = "not signed in"
+        elif getattr(u, "oid", "") == "local-dev":
+            out["backend"] = "local dev (no login)"
+        else:
+            out["backend"] = "single sign-on"
+    except Exception:
+        pass
+    try:
+        import streamlit as _st
+        out["org"] = _st.session_state.get("org_id")
+        # §10.4: an admin can be previewing the app as another role preset.
+        # That changes what the app shows, so it belongs on the identity card.
+        pick = _st.session_state.get("_preview_role")
+        if pick and pick not in ("", "— none —", "None"):
+            out["preview"] = pick
+    except Exception:
+        pass
+    return out
+
 def initials_for(name: str) -> str:
     """Two-letter avatar initials from a display name.
 

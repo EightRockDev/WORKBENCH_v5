@@ -34,12 +34,12 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
             "90 min → 5 min."
         ),
     ):
-        uploaded = st.file_uploader(
-            "Drop a document (T-12, rent roll, or OM)",
+        uploaded_files = st.file_uploader(
+            "Drop documents (T-12, rent roll, OM — several at once is fine)",
             type=["pdf", "xlsx", "xls", "csv"],
-            accept_multiple_files=False,
+            accept_multiple_files=True,
             key=f"docing_upload_{fp.name}",
-        )
+        ) or []
 
         # Document-type override
         col1, col2 = st.columns([1, 2])
@@ -60,39 +60,49 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
 
         doc_type = None if dt_override == "auto" else dt_override
 
-        if uploaded is not None:
-            payload = bytes(uploaded.getbuffer())
+        # Stage every upload to disk first, so one unreadable file doesn't
+        # block the readable ones in the same batch.
+        staged: list[Path] = []
+        empties: list[str] = []
+        for up in uploaded_files:
+            payload = bytes(up.getbuffer())
             if not payload:
-                # The browser sent a 0-byte stub (cloud-only OneDrive file or
-                # a drag straight out of an email preview). No website can
-                # read those - but THIS app runs on the same machine as the
-                # file, so the from-disk picker below reads it directly.
-                st.error(
-                    f"**The browser sent {uploaded.name} as 0 bytes** (this "
-                    "happens with OneDrive cloud-only files and email "
-                    "drag-outs - the content never reaches any website). "
-                    "**Use \"Pull from this computer\" below instead** - it "
-                    "reads the file straight from disk and doesn't care "
-                    "where it's stored.")
-            else:
-                target_dir = fp / "ingest-uploads"
-                target_dir.mkdir(parents=True, exist_ok=True)
-                target = target_dir / uploaded.name
-                target.write_bytes(payload)
-                if st.button(
-                    f"🤖 Extract from {uploaded.name}",
-                    key=f"docing_run_{fp.name}",
-                    type="primary",
-                ):
-                    _run_extraction(target, doc_type, overwrite, fp, c)
+                # A 0-byte stub: cloud-only OneDrive file, or a drag straight
+                # out of an email preview. The content never reaches the
+                # browser, so there is nothing to save.
+                empties.append(up.name)
+                continue
+            target_dir = fp / "ingest-uploads"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target = target_dir / up.name
+            target.write_bytes(payload)
+            staged.append(target)
 
-        _render_disk_picker(fp, c, doc_type, overwrite)
+        if empties:
+            st.error(
+                "**The browser sent these as 0 bytes:** "
+                + ", ".join(f"`{n}`" for n in empties)
+                + ". That happens with OneDrive cloud-only files and drags "
+                "straight out of an email preview — the content never "
+                "reaches the browser. Open the file once so it downloads "
+                "locally (or save it out of the email first), then drop it "
+                "again."
+            )
+
+        if staged:
+            label = (f"🤖 Extract from {staged[0].name}" if len(staged) == 1
+                     else f"🤖 Extract all {len(staged)} documents")
+            if st.button(label, key=f"docing_run_{fp.name}", type="primary"):
+                # Sequential on purpose: each extraction writes into the same
+                # sources.json, so running them concurrently would race.
+                for i, target in enumerate(staged, 1):
+                    if len(staged) > 1:
+                        st.markdown(f"**{i}/{len(staged)} · {target.name}**")
+                    _run_extraction(target, doc_type, overwrite, fp, c)
 
         # ---- Show ingestion log ----
         _render_ingestion_log(fp, c)
 
-
-_DOC_SUFFIXES = (".xlsx", ".xlsm", ".xls", ".csv", ".pdf")
 
 
 def _run_extraction(target: Path, doc_type, overwrite: bool, fp: Path, c: dict) -> None:
@@ -123,119 +133,6 @@ def _run_extraction(target: Path, doc_type, overwrite: bool, fp: Path, c: dict) 
             st.caption(f"{prefix}: {result.extraction_notes}")
         _render_qa_report(fp, c)
         _render_extracted(result.extracted, c)
-
-
-def _candidate_files(root: Path, limit: int = 30) -> list[Path]:
-    """Documents under `root` (one level of subfolders), newest first."""
-    hits: list[Path] = []
-    try:
-        entries = list(root.iterdir())
-    except OSError:
-        return []
-    for entry in entries:
-        try:
-            if entry.is_file() and entry.suffix.lower() in _DOC_SUFFIXES:
-                hits.append(entry)
-            elif entry.is_dir() and not entry.name.startswith("."):
-                for sub in entry.iterdir():
-                    if sub.is_file() and sub.suffix.lower() in _DOC_SUFFIXES:
-                        hits.append(sub)
-        except OSError:
-            continue
-    hits.sort(key=lambda f: f.stat().st_mtime, reverse=True)
-    return hits[:limit]
-
-
-def _default_scan_roots(fp: Path) -> list[Path]:
-    """Places documents usually land on the host, in scan order."""
-    roots = [fp]                                   # the property folder itself
-    home = Path.home()
-    for name in ("Downloads", "Desktop", "Documents"):
-        d = home / name
-        if d.is_dir():
-            roots.append(d)
-    return roots
-
-
-def _render_disk_picker(fp: Path, c: dict, doc_type, overwrite: bool) -> None:
-    """Read a document straight from this computer's disk - no browser upload.
-
-    Exists because the browser cannot read cloud-only OneDrive placeholders
-    or files dragged from an email preview (they arrive as 0 bytes). The app
-    runs on the same machine as the files, so a direct disk read sidesteps
-    the browser entirely - and opening a OneDrive placeholder from Python
-    makes Windows download the real content automatically.
-    """
-    with st.expander("📂 Pull from this computer instead (no upload needed)",
-                     expanded=False):
-        st.caption(
-            "Reads the file straight from disk - works no matter where it's "
-            "stored (OneDrive included). Showing the newest documents from "
-            "the property folder, Downloads, Desktop and Documents; or paste "
-            "any full path.")
-        typed = st.text_input(
-            "File or folder path (optional)",
-            key=f"docing_disk_path_{fp.name}",
-            placeholder=r"C:\Users\you\Downloads\Crossroads T12.xlsx  (or a folder)",
-        )
-
-        typed_path = Path(typed.strip().strip('"')) if typed.strip() else None
-        if typed_path is not None and typed_path.is_file():
-            candidates = [typed_path]
-        elif typed_path is not None and typed_path.is_dir():
-            candidates = _candidate_files(typed_path)
-            if not candidates:
-                st.warning(f"No documents (.xlsx/.xls/.csv/.pdf) found in {typed_path}")
-        elif typed_path is not None:
-            st.warning(f"Path not found: {typed_path}")
-            candidates = []
-        else:
-            candidates = []
-            seen: set = set()
-            for root in _default_scan_roots(fp):
-                for f in _candidate_files(root, limit=10):
-                    r = str(f.resolve())
-                    if r not in seen:
-                        seen.add(r)
-                        candidates.append(f)
-            candidates = candidates[:30]
-
-        if not candidates:
-            return
-
-        def _label(f: Path) -> str:
-            try:
-                kb = f.stat().st_size / 1024
-                stamp = dt.datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
-            except OSError:
-                kb, stamp = 0, "?"
-            return f"{f.name}  ({kb:,.0f} KB, {stamp})"
-
-        chosen = st.selectbox(
-            "Pick the document", candidates, format_func=_label,
-            key=f"docing_disk_pick_{fp.name}")
-        if st.button("🤖 Extract from this file", type="primary",
-                     key=f"docing_disk_run_{fp.name}"):
-            source = Path(chosen)
-            try:
-                payload = source.read_bytes()
-            except OSError as exc:
-                st.error(f"Could not read {source.name}: {exc}")
-                return
-            if not payload:
-                st.error(
-                    f"{source.name} really is 0 bytes on disk. If it lives in "
-                    "OneDrive, right-click it in File Explorer and choose "
-                    "'Always keep on this device', wait for the green check, "
-                    "then try again.")
-                return
-            # Copy into the property folder so the doc travels with the deal.
-            target_dir = fp / "ingest-uploads"
-            target_dir.mkdir(parents=True, exist_ok=True)
-            target = target_dir / source.name
-            if source.resolve() != target.resolve():
-                target.write_bytes(payload)
-            _run_extraction(target, doc_type, overwrite, fp, c)
 
 
 def _render_needs_api_key(reason: str, fp: Path) -> None:
