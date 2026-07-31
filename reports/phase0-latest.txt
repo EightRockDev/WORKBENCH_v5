@@ -1,12 +1,12 @@
-autopilot phase0 @ 2026-07-31T04:14:16
+autopilot phase0 @ 2026-07-31T04:46:50
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,519,467
+Assessor records available: 3,519,468
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,125  .../Accela_base_map_pro/MapServer/0
   Chesapeake        116,298  .../Address_Points/MapServer/0
-  Chesapeake         92,581  .../OpenData/MapServer/15
+  Chesapeake         92,582  .../OpenData/MapServer/15
   Hampton               716  .../CZM_Hampton_Data/FeatureServer/42
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
   Newport News       54,437  .../Parcel/MapServer/0
@@ -20,10 +20,10 @@ Assessor feeds present (Hampton Roads):
 
 Building the Eight Rock property backbone (properties_8r)...
 
-muni records scanned:      785,017
-parcels normalized:        785,017
+muni records scanned:      785,018
+parcels normalized:        785,018
 multifamily (>= 10 units): 18,764
-written to properties_8r:  785,017
+written to properties_8r:  785,018
 provisional (no-APN) ids:  197
 units derived from address points: 588  (skipped non-residential: 5,322)
 coords backfilled by address (multifamily): 205
