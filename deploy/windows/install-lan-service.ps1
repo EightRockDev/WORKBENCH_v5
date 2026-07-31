@@ -24,8 +24,16 @@ param(
     # Blue-green pair (deploy-swap.ps1 restarts these by name). Run once with
     # the defaults, then again with -Name WorkbenchGreen -Port 8502.
     [string]$Name   = "WorkbenchBlue",
-    [int]$Port      = 8501
+    [int]$Port      = 8501,
+    # 0.0.0.0 = reachable directly on the LAN (no reverse proxy).
+    # 127.0.0.1 = Caddy fronts it; the port must NOT be exposed, so the
+    # firewall rule is skipped automatically.
+    [string]$BindAddress = "0.0.0.0",
+    # Reuse the passcode already in .env without prompting. Used for the
+    # SECOND colour so installing the pair asks once, not twice.
+    [switch]$KeepPasscode
 )
+$lanMode = ($BindAddress -eq "0.0.0.0")
 $ErrorActionPreference = "Stop"
 $svc = $Name
 Set-Location $AppDir
@@ -82,11 +90,21 @@ if (Test-Path $envPath) {
     $line = Get-Content $envPath | Where-Object { $_ -match "^ER_APP_PASSCODE=" } | Select-Object -First 1
     if ($line) { $existing = $line.Substring("ER_APP_PASSCODE=".Length) }
 }
-if ($existing) {
-    Write-Host "   A passcode is already set. Press Enter to keep it, or type a new one."
+if ($KeepPasscode) {
+    if (-not $existing) {
+        throw ("-KeepPasscode was given but no ER_APP_PASSCODE exists in " +
+               "$envPath. Install the first colour (WorkbenchBlue) before " +
+               "the second, so a passcode is set once.")
+    }
+    Write-Host "   Reusing the passcode already in .env."
+    $pc = $existing
+} else {
+    if ($existing) {
+        Write-Host "   A passcode is already set. Press Enter to keep it, or type a new one."
+    }
+    $pc = Read-Host "Passcode"
+    if (-not $pc -and $existing) { $pc = $existing }
 }
-$pc = Read-Host "Passcode"
-if (-not $pc -and $existing) { $pc = $existing }
 if (-not $pc -or $pc.Trim().Length -lt 6) {
     Write-Host "Passcode must be at least 6 characters. Nothing changed." -ForegroundColor Red
     exit 1
@@ -120,7 +138,7 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
 & $nssm stop $svc 2>$null | Out-Null
 & $nssm remove $svc confirm 2>$null | Out-Null
-& $nssm install $svc $uv run python -m streamlit run app.py --server.address 0.0.0.0 --server.port $Port --server.headless true
+& $nssm install $svc $uv run python -m streamlit run app.py --server.address $BindAddress --server.port $Port --server.headless true
 & $nssm set $svc AppDirectory $AppDir
 & $nssm set $svc DisplayName ("Eight Rock Workbench (" + $Name + ")")
 & $nssm set $svc Description ("Eight Rock Workbench v5 (Streamlit) on port " + $Port + " - auto-starts with Windows")
@@ -140,18 +158,30 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 Write-Host "   Service installed and started."
 
 # --- 4. Firewall (LAN only) ----------------------------------------------
-Step ("Opening firewall TCP " + $Port + " (private networks only)")
 $fwName = "Eight Rock Workbench (" + $Name + ")"
-Remove-NetFirewallRule -DisplayName $fwName -ErrorAction SilentlyContinue
-New-NetFirewallRule -DisplayName $fwName -Direction Inbound `
-    -Action Allow -Protocol TCP -LocalPort $Port -Profile Private,Domain | Out-Null
+if ($lanMode) {
+    Step ("Opening firewall TCP " + $Port + " (private networks only)")
+    Remove-NetFirewallRule -DisplayName $fwName -ErrorAction SilentlyContinue
+    New-NetFirewallRule -DisplayName $fwName -Direction Inbound `
+        -Action Allow -Protocol TCP -LocalPort $Port -Profile Private,Domain | Out-Null
+} else {
+    # Caddy owns the public side. Remove any rule a previous LAN-mode run
+    # left behind, so the app port does not stay open to the network.
+    Step ("Closing firewall TCP " + $Port + " (Caddy fronts this instance)")
+    Remove-NetFirewallRule -DisplayName $fwName -ErrorAction SilentlyContinue
+}
 
 # --- 5. Addresses ---------------------------------------------------------
-Step "Done. Open the workbench from any device on your network:"
-Write-Host ("   This computer:  http://localhost:" + $Port) -ForegroundColor Green
-Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp,Manual -ErrorAction SilentlyContinue |
-    Where-Object { $_.IPAddress -notlike "169.254*" -and $_.IPAddress -ne "127.0.0.1" } |
-    ForEach-Object { Write-Host ("   Other devices:  http://" + $_.IPAddress + ":" + $Port) -ForegroundColor Green }
+if ($lanMode) {
+    Step "Done. Open the workbench from any device on your network:"
+    Write-Host ("   This computer:  http://localhost:" + $Port) -ForegroundColor Green
+    Get-NetIPAddress -AddressFamily IPv4 -PrefixOrigin Dhcp,Manual -ErrorAction SilentlyContinue |
+        Where-Object { $_.IPAddress -notlike "169.254*" -and $_.IPAddress -ne "127.0.0.1" } |
+        ForEach-Object { Write-Host ("   Other devices:  http://" + $_.IPAddress + ":" + $Port) -ForegroundColor Green }
+} else {
+    Step "Done. This instance listens on localhost only - reach it through Caddy."
+    Write-Host ("   Local health check:  http://127.0.0.1:" + $Port + "/_stcore/health") -ForegroundColor Green
+}
 Write-Host ""
 Write-Host "Everyone gets the passcode prompt first. The service starts itself" -ForegroundColor Cyan
 Write-Host "after every reboot - no more start-workbench window needed." -ForegroundColor Cyan

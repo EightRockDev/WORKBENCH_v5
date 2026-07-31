@@ -29,16 +29,36 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 
 `install.ps1` installs Python 3.12, uv, PostgreSQL 16, Caddy, and NSSM; creates
 the `workbench` database; applies `db\pilot_schema.sql`; runs `uv sync`;
-registers the **Workbench** service (Streamlit on 127.0.0.1:8501) and the
-**Caddy** service; and opens the firewall for 80/443.
+registers the blue-green pair **WorkbenchBlue** (127.0.0.1:8501) and
+**WorkbenchGreen** (127.0.0.1:8502) plus the **Caddy** service; and opens the
+firewall for 80/443. It asks for the app passcode once.
+
+Both colours are required: Caddy load-balances them and `deploy-swap.ps1`
+restarts one at a time, which is what makes a deploy invisible to users. With
+only one installed, a restart is a real outage.
+
+### LAN mode (no Caddy, no domain)
+
+To reach the app directly on the office network instead, skip `install.ps1`
+and run the service installer twice — it binds `0.0.0.0` and opens the
+firewall for the private profile only:
+
+```powershell
+.\deploy\windows\install-lan-service.ps1                                  # blue, 8501
+.\deploy\windows\install-lan-service.ps1 -Name WorkbenchGreen -Port 8502  # green
+```
 
 ## Service management (NSSM)
 
 ```powershell
-nssm status  Workbench      # or: Caddy
-nssm restart Workbench
-nssm stop    Workbench
-# logs: C:\WORKBENCH_V5\logs\workbench.out.log / .err.log
+nssm status  WorkbenchBlue      # or: WorkbenchGreen, Caddy
+nssm restart WorkbenchBlue
+nssm stop    WorkbenchGreen
+# logs: C:\WORKBENCH_V5\logs\service-WorkbenchBlue-out.log / -err.log
+
+# Deploy new code with no downtime (restarts each colour in turn,
+# waiting for the health check before touching the other):
+.\deploy\windows\deploy-swap.ps1
 ```
 
 ## Manual steps only you can do

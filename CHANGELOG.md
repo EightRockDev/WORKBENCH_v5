@@ -12,6 +12,31 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.5.1.0 — 2026-07-31  ·  one service-naming scheme across the deploy path
+`install.ps1` registered a single service called `Workbench` on 8501 while
+`install-lan-service.ps1` puts `WorkbenchBlue` on the same port — running the
+full-stack installer and the service installer left two services fighting for
+8501, and `deploy-swap.ps1` would have found neither. `install.ps1` now
+delegates to the service installer for both colours instead of rolling its
+own, retiring any old `Workbench` service it finds.
+
+The service installer gained `-BindAddress`: `0.0.0.0` for direct LAN access
+(opens the private-profile firewall rule, as before) and `127.0.0.1` when
+Caddy fronts it, which skips the rule *and removes any left by an earlier LAN
+run* so the raw port does not stay exposed after switching modes. `-KeepPasscode`
+lets the pair be installed with one prompt rather than two.
+
+`tests/test_deploy_scripts.py` now holds the deploy path to the same standard
+as the app: ASCII-only (PowerShell 5.1 reads .ps1 as ANSI), balanced
+delimiters, every script agreeing on the blue-green names and ports, Caddy
+routing to both, per-colour uv environments, localhost mode not opening the
+firewall, no stale single-service registration, the swap failing loudly on an
+empty machine, and the launcher/updater stopping the process they actually
+start. Twenty-five checks over files that are otherwise run once, by hand, on
+go-live day — the worst possible place to find a disagreement.
+
+---
+
 ## V5.13.5.0.0 — 2026-07-31  ·  read monthly-grid T-12s correctly; blue-green deploy actually works
 **T-12 grid extraction (root cause of the 71% expense miss).** A real
 statement (Franklin Group / Yardi export, 295 rows x 14 columns) reported

@@ -109,20 +109,23 @@ Push-Location $AppDir
 try { uv sync --frozen } catch { uv sync }
 Pop-Location
 
-# --- 6. Streamlit as a Windows service via NSSM ----------------------------
-Step "Registering 'Workbench' service (NSSM) on 127.0.0.1:8501"
-$uvPath = (Get-Command uv).Source
-# Remove prior definition so re-runs are clean
+# --- 6. Streamlit services (blue-green) via NSSM ---------------------------
+# Delegated to install-lan-service.ps1 so there is ONE service-naming scheme.
+# This script used to register a single service called "Workbench" on 8501,
+# which collided with the WorkbenchBlue that install-lan-service.ps1 puts on
+# the same port, and which deploy-swap.ps1 would never find.
+Step "Registering WorkbenchBlue (8501) + WorkbenchGreen (8502) on localhost"
+$lan = Join-Path $AppDir "deploy\windows\install-lan-service.ps1"
+# Retire the pre-blue-green service if this box was installed before the split.
 cmd /c "nssm stop Workbench" 2>$null
 cmd /c "nssm remove Workbench confirm" 2>$null
-nssm install Workbench $uvPath "run streamlit run app.py --server.address 127.0.0.1 --server.port 8501 --server.headless true --browser.gatherUsageStats false"
-nssm set Workbench AppDirectory $AppDir
-nssm set Workbench AppEnvironmentExtra "PYTHONUNBUFFERED=1"
-nssm set Workbench Start SERVICE_AUTO_START
-nssm set Workbench AppStdout (Join-Path $AppDir "logs\workbench.out.log")
-nssm set Workbench AppStderr (Join-Path $AppDir "logs\workbench.err.log")
-New-Item -ItemType Directory -Force -Path (Join-Path $AppDir "logs") | Out-Null
-nssm start Workbench
+# Blue prompts for the passcode; green reuses it, so the pair asks once.
+& powershell -NoProfile -ExecutionPolicy Bypass -File $lan `
+    -AppDir $AppDir -Name "WorkbenchBlue" -Port 8501 -BindAddress "127.0.0.1"
+if ($LASTEXITCODE -ne 0) { throw "Failed to install WorkbenchBlue" }
+& powershell -NoProfile -ExecutionPolicy Bypass -File $lan `
+    -AppDir $AppDir -Name "WorkbenchGreen" -Port 8502 -BindAddress "127.0.0.1" -KeepPasscode
+if ($LASTEXITCODE -ne 0) { throw "Failed to install WorkbenchGreen" }
 
 # --- 7. Caddy as a service -------------------------------------------------
 Step "Configuring Caddy for $Domain"
