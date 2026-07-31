@@ -87,6 +87,19 @@ _FIELD_WEIGHTS = {"apn": 4, "units": 5, "use_code": 3, "year_built": 2,
                   "assessed_value": 1}
 MIN_SCORE = 7      # needs apn + (units or use_code) at minimum
 
+# Every Hampton Roads city has tens of thousands of parcels (Suffolk, the
+# smallest, ~30K). A layer with a few hundred rows is a study extract or a
+# subset, not the roll. Hampton's accepted feed had 716 records against a
+# ~50K-parcel city, which is why the city reported no multifamily at all -
+# nothing about the FIELDS was wrong, so field scoring alone never caught it.
+PLAUSIBLE_ROLL_MIN = 5_000
+
+# Scoring adjustments by size. A real roll should outrank a subset, but a
+# subset is still better than nothing when a city has no other candidate, so
+# this demotes rather than rejects.
+SIZE_BONUS = 4
+SIZE_PENALTY = 6
+
 
 def score_fields(field_names: list[str]) -> tuple[int, dict[str, str]]:
     """(score, {spine_field: layer_field}) for one layer's field list."""
@@ -99,6 +112,30 @@ def score_fields(field_names: list[str]) -> tuple[int, dict[str, str]]:
     if "apn" not in mapped:
         score = 0                      # no parcel id -> no deterministic 8R id
     return score, mapped
+
+
+def layer_record_count(layer_url: str, fetch) -> int | None:
+    """How many records the layer actually serves, or None if it won't say.
+
+    Cheap: `returnCountOnly` asks the server for a number, not the data.
+    """
+    data = fetch(layer_url + "/query",
+                 {"where": "1=1", "returnCountOnly": "true"})
+    if not isinstance(data, dict):
+        return None
+    n = data.get("count")
+    return int(n) if isinstance(n, (int, float)) else None
+
+
+def size_adjustment(count: int | None) -> tuple[int, str]:
+    """(score delta, note) for a layer of this size."""
+    if count is None:
+        return 0, "; size unknown"
+    if count >= PLAUSIBLE_ROLL_MIN:
+        return SIZE_BONUS, f"; {count:,} records"
+    return (-SIZE_PENALTY,
+            f"; ONLY {count:,} records - too small to be a full parcel roll, "
+            f"probably a subset or study extract")
 
 
 def named_for_other_city(layer_name: str, layer_url: str, city: str) -> bool:
@@ -334,12 +371,20 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                 geo_note = "" if verdict else "; geo-verify inconclusive"
                 if "units" in mapped:
                     score += 3        # unit-bearing layers first, always
+                count = layer_record_count(layer_url, fetch)
+                delta, size_note = size_adjustment(count)
+                score += delta
+                if count is not None and count < PLAUSIBLE_ROLL_MIN:
+                    rejected.append(
+                        f"{name}: only {count:,} records - kept but demoted, "
+                        f"a citywide roll should have >= {PLAUSIBLE_ROLL_MIN:,}")
                 candidates.append((score, {
                     "market": city, "state": "VA", "county": city,
                     "kind": "assessor", "platform": "arcgis",
                     "url": layer_url, "status": "live",
+                    "record_count": count,
                     "note": f"auto-discovered: {name}; score {score}; "
-                            f"fields {sorted(mapped)}{geo_note}",
+                            f"fields {sorted(mapped)}{geo_note}{size_note}",
                 }))
         # Socrata portals (cities whose GIS is not ArcGIS at all)
         for res_url, name, cols, has_coords in search_socrata(city, soda):

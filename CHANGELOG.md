@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.8.1.0 — 2026-07-31  ·  discovery: a parcel roll has to be parcel-sized
+Hampton's accepted feed served **716 records** for a city of roughly 50,000
+parcels. Nothing about its fields was wrong — address, apn, assessed_value,
+use_code, year_built and coordinates all present, score 12 — so field scoring
+took it, and Phase 0 then reported Hampton as having no usable multifamily
+data. It is a coastal-zone study extract, not the assessor roll.
+
+Discovery now asks each candidate how many records it serves (one
+`returnCountOnly` query, a number rather than data) and folds that into the
+score. A layer at or above 5,000 records is promoted; below it is demoted and
+labelled "too small to be a full parcel roll, probably a subset or study
+extract", and listed in the rejected notes. Demoted, not rejected: if a city
+has no other candidate, a subset still beats nothing — it just must not
+outrank a real roll. The threshold sits below Suffolk's ~30K parcels, the
+smallest city in the market, so no legitimate roll trips it. A server that
+declines to answer leaves the score untouched rather than looking empty.
+
+This does not by itself find Hampton's real roll — that needs a discovery run
+with network access, which only the operator's machine has. It does mean the
+run will stop settling for the wrong layer.
+
+---
+
 ## V5.13.8.0.0 — 2026-07-31  ·  learn apartment use codes where the roll publishes numbers
 Three Hampton Roads cities report no multifamily. The Phase 0 diagnostic
 already said why, and it is three unrelated problems, not one:
