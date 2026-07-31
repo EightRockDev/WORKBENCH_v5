@@ -214,10 +214,21 @@ def pull_hud_fmr(db_path: Path | None = None) -> int:
     pull skips with instructions and any existing hud_fmr keeps serving."""
     import requests
     db = db_path or target_db()
-    if is_fresh(db, "hud_fmr", days=90):   # HUD updates ~annually
+    token = os.environ.get("HUD_API_TOKEN", "").strip()
+    # A newly added token forces the FIRST live pull even if copied data
+    # looks fresh - only our own in-workbench stamp counts as "pulled
+    # with the token" (owner adds token -> next cycle pulls live).
+    pulled_by_us = False
+    try:
+        with sqlite3.connect(db) as _c:
+            row = _c.execute("SELECT description FROM etl_metadata "
+                             "WHERE table_name = 'hud_fmr'").fetchone()
+            pulled_by_us = bool(row and "in-workbench" in str(row[0]))
+    except sqlite3.Error:
+        pass
+    if is_fresh(db, "hud_fmr", days=90) and (not token or pulled_by_us):
         print("  [hud_fmr] fresh - skipping")
         return 0
-    token = os.environ.get("HUD_API_TOKEN", "").strip()
     if not token:
         print("  [hud_fmr] HUD_API_TOKEN not set - skipping. Free token:")
         print("    https://www.huduser.gov/portal/dataset/fmr-api.html")

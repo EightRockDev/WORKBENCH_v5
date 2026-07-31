@@ -12,6 +12,11 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.0.1.0 — 2026-07-31  ·  New HUD token forces the first live pull
+The 90-day freshness gate would have ignored a newly added
+HUD_API_TOKEN until the copied data aged out. A token now forces the
+first in-workbench live pull; after that, normal freshness applies.
+
 ## V5.13.0.0.0 — 2026-07-31  ·  Section 9 step 2 begins: zero-downtime blue-green serving
 The owner's commitment (2026-07-29): before ~25 concurrent users, no
 one ever sees a restart. The serving stack now supports it:
