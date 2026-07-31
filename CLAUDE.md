@@ -373,6 +373,15 @@ sweep + alert->outreach routing (GRANITE Alerts "To Outreach" ->
 outreach_queue -> Outreach panel Sweep queue). Remaining polish lives
 in the UI queue, not Module C scope.
 
+### Rent-gate data path — LIVE as of V5.12.5.0.0
+etl_listings/ (ported scrapers) + core/listings_pull.py + autopilot
+step `listings`: favorites' asking rents -> rent_listings -> crosswalk
+ingest -> est_avg_rent (beats FMR). Needs favorites marked in the app
+(Properties/_favorites.json) + optionally manual URLs in
+_favorite_listings.json to skip bot-blocked search. Watch
+reports/listings-latest.txt for scrape statuses; blocked sources want
+manual URLs, not code fixes.
+
 ### Known open items that block 50-metro readiness
 - Hampton + Suffolk still have no unit-bearing parcel layer discovered
   (portals hide them); the discovery probe list needs state-portal fallbacks

@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.12.5.0.0 — 2026-07-30  ·  Listings scraper ported in-workbench (rent-gate data source)
+The proven hampton-roads-etl rent scrapers (apartments.com, Zillow,
+RentCafe, property sites) now live IN the workbench (`etl_listings/`)
+with a workbench-native runner (`core/listings_pull.py`) - the old
+runner was welded to a repo layout never deployed to the host, so the
+rent gate had no real-rent source. New autopilot step `listings` (after
+publicdata, before phase0): favorites-scoped (<20 properties, polite
+3s delays, robots-respecting), manual-URL-first, freshness-gated 7
+days. Scraped effective rents land in rent_listings and the SAME
+cycle's backbone build ingests them through the crosswalk, beating the
+FMR estimate - the 26.4% rent delta starts moving toward the 5% gate
+the moment favorites are marked. 2 new tests.
+
 ## V5.12.4.0.0 — 2026-07-30  ·  UI round 3: the stat bar grades itself
 The deal workspace's stat cards showed raw numbers with no signal. They
 now grade themselves against the ratified Eight Rock bars: going-in cap
