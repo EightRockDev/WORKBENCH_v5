@@ -93,3 +93,28 @@ psql "$DATABASE_URL" -c "select count(*) from role_presets;"   # -> 18
 systemctl status workbench caddy
 journalctl -u workbench -f
 ```
+
+## Running the Postgres test suites
+
+The org- and user-isolation guarantees are enforced by Postgres row-level
+security, not by WHERE clauses in the query layer. PostgreSQL exempts
+**superusers** from RLS even on tables declared `FORCE ROW LEVEL SECURITY`,
+so a `DATABASE_URL` pointing at `postgres` (or any superuser) makes every
+isolation test fail for a reason unrelated to the code. `tests/conftest.py`
+refuses to run in that configuration rather than let the false red stand.
+
+Production is already correct: `install.ps1` creates the `workbench` role
+without SUPERUSER and makes it the database owner, which is exactly the
+combination RLS needs. To mirror it locally:
+
+```sql
+CREATE ROLE wbapp LOGIN PASSWORD 'choose-one';
+CREATE DATABASE wb_test OWNER wbapp;
+```
+```bash
+psql -U wbapp -d wb_test -f db/pilot_schema.sql
+DATABASE_URL=postgresql://wbapp:choose-one@localhost/wb_test uv run pytest
+```
+
+Leave `DATABASE_URL` unset to skip the Postgres suites entirely; the
+deterministic core runs standalone (spec section 11).

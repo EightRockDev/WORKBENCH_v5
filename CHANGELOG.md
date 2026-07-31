@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.6.1.0 — 2026-07-31  ·  the whole suite is green; guard the RLS superuser trap
+Standing up a real Postgres to test the migration turned the 61 long-standing
+"errors" in the suite into actual results for the first time. They were
+connection failures, not failures — with a database present the full suite is
+**862 passed, 4 skipped, 0 failed**, including the four `test_migrate.py`
+tests that had been red in every run today.
+
+Four inbox tests did fail at first, and they read like a serious privacy hole:
+a colleague reading another user's mail, an admin reading a user's mail, a
+missing user context not failing closed. `list_messages` has no WHERE clause
+at all — isolation is entirely row-level security.
+
+It was the test environment, and the distinction is worth stating precisely
+because the alarming reading was wrong. PostgreSQL exempts **superusers** from
+RLS even on tables declared `FORCE ROW LEVEL SECURITY`, and the scratch
+database was connected as `postgres`. Re-run against a non-superuser role
+owning the database — which is exactly what `install.ps1` creates — all 32
+inbox tests pass. Production was never affected: the `workbench` role is
+created without SUPERUSER and owns the database, the one combination that
+makes FORCE RLS bite.
+
+`tests/conftest.py` now refuses to run at all against a superuser connection,
+with an explanation. The false red is the lesser risk; the real one is someone
+"fixing" working isolation code to satisfy a test that was never going to
+pass. `docs/SETUP.md` documents the local setup that mirrors production.
+
+---
+
 ## V5.13.6.0.0 — 2026-07-31  ·  P0.5 last item: SQLite -> Postgres migration + verifier
 The pilot's tenancy tables already live in Postgres; the property spine and
 calibration tables were still SQLite. `scripts/migrate_sqlite_to_pg.py`
