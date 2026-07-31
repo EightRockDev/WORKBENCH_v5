@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.12.0.0.0 — 2026-07-30  ·  The workbench feeds itself: in-app HMDA/HUD pullers
+New autopilot step `publicdata` (between pull and phase0): the
+workbench now pulls FFIEC HMDA multifamily originations + lender
+rollups, and HUD Fair Market Rents, straight into the ETL database it
+already reads (creating data/hampton_roads.db when absent). No more
+file copies from other machines - in Hampton Roads or any future
+metro. Chained-cycle safe: freshness-gated (HMDA 30d, FMR 90d - a
+fresh table makes the step a seconds-long no-op) and LEI->lender-name
+GLEIF lookups persist in a lei_names cache so each lender is resolved
+once, ever. HUD FMR needs the free HUD_API_TOKEN in .env (step prints
+the sign-up link; the copied hud_fmr table keeps serving until then).
+Failed pulls report and never fail the cycle. 4 new tests.
+
 ## V5.11.4.2.0 — 2026-07-30  ·  Overlap ceiling declared at ~67%; centroid restored
 The 2-cycle deal concluded: centroid 66.9%, largest-parcel 66.4%,
 address-parcel 66.4% - measured on live cycles hours apart. Centroid

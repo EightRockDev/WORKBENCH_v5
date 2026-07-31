@@ -361,6 +361,12 @@ Do NOT resume anchor tuning; revisit via replay-methodology review
 when cutover becomes the priority again. Rent gate path: listings
 scraper (26.4% FMR baseline measured).
 
+### Public-data self-feeding — SHIPPED V5.12.0.0.0
+`core/public_data.py` + autopilot step `publicdata`: HMDA + HUD FMR
+pull in-workbench, freshness-gated, LEI names cached in `lei_names`.
+HUD FMR live-pull awaits owner adding free HUD_API_TOKEN to .env.
+Listings scraper (rent-gate path) remains the next data build.
+
 ### Known open items that block 50-metro readiness
 - Hampton + Suffolk still have no unit-bearing parcel layer discovered
   (portals hide them); the discovery probe list needs state-portal fallbacks
