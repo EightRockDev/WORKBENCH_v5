@@ -92,7 +92,12 @@ def _stamp(conn: sqlite3.Connection, table: str, display: str, source: str,
     now = dt.datetime.now()
     conn.execute(
         """INSERT INTO etl_metadata VALUES (?,?,?,?,?,?,?,?)
-           ON CONFLICT(table_name) DO UPDATE SET row_count=excluded.row_count,
+           ON CONFLICT(table_name) DO UPDATE SET
+             display_name=excluded.display_name,
+             description=excluded.description,
+             source_url=excluded.source_url,
+             fetch_method=excluded.fetch_method,
+             row_count=excluded.row_count,
              last_pull_at=excluded.last_pull_at,
              last_pull_date=excluded.last_pull_date""",
         (table, display, f"Pulled in-workbench by core/public_data.py",
@@ -281,15 +286,29 @@ def pull_hud_fmr(db_path: Path | None = None) -> int:
     if not rows:
         print("  [hud_fmr] nothing pulled - existing table left untouched")
         return 0
+    # The seeded/copied hud_fmr table may carry extra columns beyond the
+    # seven we write (the owner's had 8), so the INSERT must name its
+    # columns - a bare VALUES list fails against any wider table.
+    fmr_cols = ("fips_county_5", "year", "fmr_efficiency",
+                "fmr_one_bedroom", "fmr_two_bedroom",
+                "fmr_three_bedroom", "fmr_four_bedroom")
+    col_types = {"fips_county_5": "TEXT", "year": "INTEGER"}
     with sqlite3.connect(db) as conn:
         conn.execute("""CREATE TABLE IF NOT EXISTS hud_fmr (
             fips_county_5 TEXT, year INTEGER, fmr_efficiency REAL,
             fmr_one_bedroom REAL, fmr_two_bedroom REAL,
             fmr_three_bedroom REAL, fmr_four_bedroom REAL)""")
+        have = {r[1] for r in conn.execute("PRAGMA table_info(hud_fmr)")}
+        for col in fmr_cols:
+            if col not in have:
+                conn.execute(f"ALTER TABLE hud_fmr ADD COLUMN "
+                             f"{col} {col_types.get(col, 'REAL')}")
         conn.executemany(
             "DELETE FROM hud_fmr WHERE fips_county_5 = ? AND year = ?",
             [(r[0], r[1]) for r in rows])
-        conn.executemany("INSERT INTO hud_fmr VALUES (?,?,?,?,?,?,?)", rows)
+        conn.executemany(
+            f"INSERT INTO hud_fmr ({', '.join(fmr_cols)}) "
+            "VALUES (?,?,?,?,?,?,?)", rows)
         _stamp(conn, "hud_fmr", "HUD Fair Market Rents", HUD_FMR_API,
                len(rows))
     print(f"  [hud_fmr] wrote {len(rows)} county rows")

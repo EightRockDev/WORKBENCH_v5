@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.1.4.0 — 2026-07-31  ·  first LIVE HUD pull survives the seeded table
+The .env fix worked - the 15:30 UTC cycle saw the token and reached the
+HUD API for the first time - and then crashed inserting: the copied
+hud_fmr table has 8 columns, the puller's bare `INSERT ... VALUES
+(7 slots)` assumed its own 7-column shape. The insert now names its
+columns (extra seeded columns stay NULL), and any needed column missing
+from a variant table is added via ALTER TABLE first. Also fixed the
+follow-on politeness bug the regression test exposed: _stamp's upsert
+never updated `description`, so the "copied" stamp would have survived
+the live pull and the token would have forced a fresh HUD API pull
+every ~35-min cycle; the upsert now refreshes provenance fields, so
+one live pull marks the table in-workbench and the 90-day gate holds.
+No data was lost in the crash - the pre-insert DELETE rolled back with
+the failed transaction.
+
 ## V5.13.1.3.0 — 2026-07-31  ·  autopilot can finally SEE the HUD token
 core/public_data.py read HUD_API_TOKEN from os.environ, but nothing in
 the autopilot path ever loaded .env - only the app side does. So a

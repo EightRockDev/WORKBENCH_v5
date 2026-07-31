@@ -77,3 +77,52 @@ def test_pull_hmda_fresh_skip_touches_nothing(tmp_path):
     with sqlite3.connect(db) as conn:
         pdta._stamp(conn, "hmda_originations", "t", "u", 500)
     assert pdta.pull_hmda(db) == 0   # skipped, no network attempted
+
+
+def test_pull_hud_fmr_survives_wider_seeded_table(tmp_path, monkeypatch):
+    """A seeded/copied hud_fmr can be WIDER than the seven columns we
+    write (the owner's had 8) - the 2026-07-31 first live pull crashed
+    on a bare-VALUES insert. The pull must name its columns, land the
+    live rows, and leave prior-year seeded rows in place."""
+    db = tmp_path / "etl.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE hud_fmr (
+            fips_county_5 TEXT, year INTEGER, fmr_efficiency REAL,
+            fmr_one_bedroom REAL, fmr_two_bedroom REAL,
+            fmr_three_bedroom REAL, fmr_four_bedroom REAL,
+            metro_name TEXT)""")
+        conn.execute("INSERT INTO hud_fmr VALUES "
+                     "('51710', 2024, 1000, 1100, 1300, 1700, 2100, 'HR')")
+        pdta._stamp(conn, "hud_fmr", "HUD Fair Market Rents", "u", 1)
+        # The copied db's stamp was not written by _stamp - it has no
+        # "in-workbench" marker, which is what forces the first live pull.
+        conn.execute("UPDATE etl_metadata SET description = "
+                     "'copied from v2.4.1 db' WHERE table_name = 'hud_fmr'")
+
+    class _R:
+        status_code = 200
+        def json(self):
+            return {"data": {"basicdata": {
+                "Efficiency": 1200, "One-Bedroom": 1300,
+                "Two-Bedroom": 1500, "Three-Bedroom": 1900,
+                "Four-Bedroom": 2300}}}
+
+    import requests
+    monkeypatch.setattr(requests, "get", lambda url, **kw: _R())
+    monkeypatch.setenv("HUD_API_TOKEN", "tok")
+    n = pdta.pull_hud_fmr(db)
+    assert n == len(pdta.HR_CITY_TO_COUNTY_FIPS_5)
+    year = dt.date.today().year
+    with sqlite3.connect(db) as conn:
+        live = conn.execute(
+            "SELECT fmr_two_bedroom, metro_name FROM hud_fmr "
+            "WHERE fips_county_5 = '51710' AND year = ?", (year,)).fetchone()
+        seeded = conn.execute(
+            "SELECT fmr_two_bedroom FROM hud_fmr "
+            "WHERE year = 2024").fetchone()
+        stamp = conn.execute(
+            "SELECT description FROM etl_metadata "
+            "WHERE table_name = 'hud_fmr'").fetchone()
+    assert live == (1500.0, None)     # extra column simply stays NULL
+    assert seeded == (1300.0,)        # prior-year seed untouched
+    assert "in-workbench" in stamp[0]  # next cycle skips as pulled-live
