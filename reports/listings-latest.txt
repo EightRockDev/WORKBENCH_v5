@@ -1,16 +1,20 @@
-autopilot listings @ 2026-07-31T18:36:49
+autopilot listings @ 2026-07-31T19:19:23
 
   [listings] rentcafe: Acclaim at East Beach -> not_found
   [listings] rentcafe: Crossroads Townhomes -> not_found
+  [listings] rentcafe: Grand Hampton at Langley -> not_found
   [listings] rentcafe: Miars Farm -> not_found
   [listings] zillow: Acclaim at East Beach -> not_found
   [listings] zillow: Crossroads Townhomes -> not_found
+  [listings] zillow: Grand Hampton at Langley -> success
   [listings] zillow: Miars Farm -> success
   [listings] apartments_com: Acclaim at East Beach -> not_found
   [listings] apartments_com: Crossroads Townhomes -> not_found
+  [listings] apartments_com: Grand Hampton at Langley -> not_found
   [listings] apartments_com: Miars Farm -> not_found
   [listings] property_site: Acclaim at East Beach -> not_found
   [listings] property_site: Crossroads Townhomes -> not_found
+  [listings] property_site: Grand Hampton at Langley -> not_found
   [listings] property_site: Miars Farm -> not_found
 Traceback (most recent call last):
   File "C:\WORKBENCH_V5\scripts\run_listings.py", line 20, in <module>
