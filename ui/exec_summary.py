@@ -426,8 +426,15 @@ def _render_artifact_engine_panel(
 
             st.warning(
                 "⚠️ **Anthropic API key needed to generate artifacts.** "
-                "Paste your key below and click Save — it stores in a "
-                "local gitignored `.env` file. You'll only do this once."
+                "Get one at "
+                "[console.anthropic.com/settings/keys]"
+                "(https://console.anthropic.com/settings/keys) → "
+                "**Create Key** → copy it (it is shown only once). Paste it "
+                "below and click Save — it stores in a local gitignored "
+                "`.env` file. You'll only do this once.\n\n"
+                "Note: API usage is billed separately from a Claude.ai or "
+                "Claude Code subscription, so the console account needs "
+                "credits on it."
             )
             with st.form("api_key_setup_form", clear_on_submit=False):
                 col_in, col_btn = st.columns([4, 1])
@@ -435,7 +442,7 @@ def _render_artifact_engine_panel(
                     new_key = st.text_input(
                         "Anthropic API key",
                         type="password",
-                        placeholder="sk-ant-...   (the same key you use with Claude Code)",
+                        placeholder="sk-ant-api...",
                         label_visibility="collapsed",
                         key="api_key_setup_input",
                     )
@@ -449,11 +456,21 @@ def _render_artifact_engine_panel(
                     cleaned = (new_key or "").strip()
                     if not cleaned:
                         st.error("Paste a key first.")
+                    elif cleaned.startswith("sk-ant-oat"):
+                        st.error(
+                            "That's a Claude Code **OAuth token**, not an API "
+                            "key — it won't work here. Create an API key at "
+                            "[console.anthropic.com/settings/keys]"
+                            "(https://console.anthropic.com/settings/keys); "
+                            "it looks like `sk-ant-api...`."
+                        )
                     elif not cleaned.startswith("sk-"):
                         st.error(
-                            "That doesn't look like an Anthropic key — "
-                            "Anthropic keys start with `sk-`. Double-check "
-                            "you pasted the right one."
+                            "That doesn't look like an Anthropic key — they "
+                            "start with `sk-ant-`. Get one at "
+                            "[console.anthropic.com/settings/keys]"
+                            "(https://console.anthropic.com/settings/keys) → "
+                            "Create Key."
                         )
                     else:
                         try:

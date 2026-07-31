@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.2.3.0 — 2026-07-31  ·  say where the API key comes from
+The artifact-engine key prompt said a key was needed and that it must start
+with `sk-`, but never said where to get one. It now links
+console.anthropic.com/settings/keys, notes the key is shown only once, and
+warns that API usage bills separately from a Claude.ai / Claude Code
+subscription — the console account needs its own credits.
+
+Also catches the commonest wrong paste: a Claude Code **OAuth token**
+(`sk-ant-oat...`) passes a naive `sk-` check and would save happily, then
+fail at generation time. It is now rejected at the input with an explanation
+of the difference. The old placeholder actively encouraged this by calling it
+"the same key you use with Claude Code".
+
+---
+
 ## V5.13.2.2.0 — 2026-07-31  ·  the update never actually stopped the app
 The owner updated, restarted and hard-refreshed, and the topbar pill still
 read a stale version while `config.py` on disk read the new one. The app is
