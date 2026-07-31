@@ -1338,51 +1338,65 @@ body.v2-on-diligence .v2-dd-inspector {{ display: block; }}
 
 /* Brian 5/29 v2.0.29 — V2 inventory landing page styling. */
 .v2-landing {{
-  margin: 8px 0 16px 0;
+  margin: 6px 0 12px 0;
+}}
+.v2-landing-row {{
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
 }}
 .v2-landing-title {{
-  font-size: 44px;
+  font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: {v['ink']};
   margin: 0;
-  line-height: 1.1;
+  line-height: 1.05;
 }}
 .v2-landing-tagline {{
-  font-size: 14px;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: {v['gold_deep']};
-  margin: 6px 0 2px 0;
+  margin: 3px 0 0 0;
 }}
-.v2-landing-subtitle {{
+.v2-landing-count {{ text-align: right; }}
+.v2-landing-count .num {{
+  font-family: 'JetBrains Mono', monospace;
   font-size: 30px;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  color: {v['ink']};
-  margin: 4px 0 18px 0;
-  line-height: 1.2;
+  color: {v['gold_deep']};
+  line-height: 1.05;
+}}
+.v2-landing-count .lbl {{
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: {v['ink_3']};
+  font-weight: 600;
 }}
 .v2-landing-quote {{
-  margin: 8px 0 24px 0;
-  padding: 14px 18px;
+  margin: 10px 0 4px 0;
+  padding: 7px 14px;
   border-left: 3px solid {v['gold']};
   background: {v['gold_soft']};
-  border-radius: 0 8px 8px 0;
-  max-width: 720px;
+  border-radius: 0 6px 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }}
 .v2-landing-quote-text {{
-  font-size: 15px;
+  font-size: 12.5px;
   font-style: italic;
   color: {v['ink']};
-  line-height: 1.55;
 }}
 .v2-landing-quote-author {{
-  font-size: 12px;
+  font-size: 11.5px;
   color: {v['gold_deep']};
   font-weight: 600;
-  margin-top: 6px;
   letter-spacing: 0.3px;
 }}
 .v2-landing-section-head {{
@@ -3542,21 +3556,21 @@ def render_v2_inventory_landing() -> None:
         n_total = len(list_properties(limit=100000) or [])
     except Exception:
         n_total = 0
-    count_word = {
-        1: "One property", 2: "Two properties", 3: "Three properties",
-        4: "Four properties", 5: "Five properties", 6: "Six properties",
-        7: "Seven properties", 8: "Eight properties", 9: "Nine properties",
-        10: "Ten properties",
-    }.get(n_total, f"{n_total:,} properties")
-
     st.markdown(
         f'<div class="v2-landing">'
+        f'<div class="v2-landing-row">'
+        f'<div>'
         f'<h1 class="v2-landing-title">Quarry.</h1>'
         f'<div class="v2-landing-tagline">Where Eight Rock breaks ground.</div>'
-        f'<h2 class="v2-landing-subtitle">{count_word} to dig into.</h2>'
+        f'</div>'
+        f'<div class="v2-landing-count">'
+        f'<div class="num">{n_total:,}</div>'
+        f'<div class="lbl">properties to dig into</div>'
+        f'</div>'
+        f'</div>'
         f'<div class="v2-landing-quote">'
-        f'<div class="v2-landing-quote-text">&ldquo;{quote_text}&rdquo;</div>'
-        f'<div class="v2-landing-quote-author">— {author}</div>'
+        f'<span class="v2-landing-quote-text">&ldquo;{quote_text}&rdquo;</span>'
+        f'<span class="v2-landing-quote-author">&nbsp;— {author}</span>'
         f'</div>'
         f'</div>',
         unsafe_allow_html=True,

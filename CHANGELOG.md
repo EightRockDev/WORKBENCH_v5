@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.12.3.0.0 — 2026-07-30  ·  UI round 2: landing hero compressed
+The stacked hero (44px title + 30px subtitle + full quote card) pushed
+every property card below the fold. Now one tight band: Quarry + tagline
+left, live inventory count right (gold, monospace), quote collapsed to
+a single ellipsized line. Cards are visible on load. Render-verified
+end-to-end.
+
 ## V5.12.2.0.0 — 2026-07-30  ·  Alert -> Outreach routing (Module C complete)
 Spec 6.1's "alert routing to the Outreach Engine" ships: every sweep
 alert on the GRANITE Alerts tab has a "📞 To Outreach" button that
