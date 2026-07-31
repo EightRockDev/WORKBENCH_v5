@@ -1,3 +1,23 @@
-autopilot listings @ 2026-07-31T12:40:09
+autopilot listings @ 2026-07-31T13:13:38
 
-  [listings] no favorites marked (Properties/_favorites.json) - star properties in the app to enable rent scraping
+  [listings] rentcafe: Acclaim at East Beach -> not_found
+  [listings] rentcafe: Crossroads Townhomes -> not_found
+  [listings] rentcafe: Miars Farm -> not_found
+  [listings] zillow: Acclaim at East Beach -> not_found
+  [listings] zillow: Crossroads Townhomes -> not_found
+  [listings] zillow: Miars Farm -> success
+  [listings] apartments_com: Acclaim at East Beach -> not_found
+  [listings] apartments_com: Crossroads Townhomes -> not_found
+  [listings] apartments_com: Miars Farm -> not_found
+  [listings] property_site: Acclaim at East Beach -> not_found
+  [listings] property_site: Crossroads Townhomes -> not_found
+  [listings] property_site: Miars Farm -> not_found
+Traceback (most recent call last):
+  File "C:\WORKBENCH_V5\scripts\run_listings.py", line 20, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\WORKBENCH_V5\scripts\run_listings.py", line 15, in main
+    listings_pull.pull_listings()
+  File "C:\WORKBENCH_V5\core\listings_pull.py", line 203, in pull_listings
+    conn.executemany(
+sqlite3.OperationalError: table rent_listings has no column named name
