@@ -109,10 +109,15 @@ def schedule_command(clean: bool, task_path: str) -> str:
     if clean:
         trig = "New-ScheduledTaskTrigger -Daily -At 3am"
     else:
-        # IMMEDIATE chaining (owner directive): the next cycle starts 2
-        # minutes after this one ends - back-to-back all day. The hourly
-        # repetition is only a safety net if a cycle dies mid-run.
-        trig = ("New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(2) "
+        # HOURLY dev cadence (owner directive 2026-07-31), anchored to the
+        # TOP OF THE HOUR rather than "now + N". reschedule() runs at the end
+        # of every cycle, so a relative anchor was recomputed each time and
+        # the schedule never survived: "+2 minutes" re-armed to +2 minutes
+        # again on every finish, which is why cycles ran back-to-back all day
+        # and the console window kept reappearing. A wall-clock anchor is
+        # idempotent - re-registering mid-cycle yields the same next run.
+        trig = ("New-ScheduledTaskTrigger -Once "
+                "-At (Get-Date).Date.AddHours((Get-Date).Hour + 1) "
                 "-RepetitionInterval (New-TimeSpan -Hours 1)")
     return (
         f"$a = New-ScheduledTaskAction -Execute '{task_path}'; "
@@ -138,7 +143,7 @@ def reschedule(clean: bool) -> None:
         proc = subprocess.run(schedule_args(clean, task_path),
                               capture_output=True, text=True)
     mode = "nightly 3:00 AM (stable)" if clean else \
-        "IMMEDIATE - next cycle in 2 minutes (dev cadence)"
+        "HOURLY - next cycle at the top of the hour (dev cadence)"
     print(f"[schedule] {mode} (wake+catchup, exit {proc.returncode})",
           flush=True)
 
@@ -172,10 +177,10 @@ def main() -> int:
     files = [f for f in outputs if f.exists()] + extras_now()
     ok = publish(files, f"{day} final")
     clean = ok and all(c == 0 for c in codes)
-    # DEV CADENCE (owner directive 2026-07-30): the system is under active
-    # build - cycles run HOURLY regardless of cleanliness so data and code
-    # flow all day. Flip DEV_MODE to False when the owner declares the
-    # build stable; nightly 3 AM resumes automatically.
+    # DEV CADENCE (owner directive 2026-07-31): the system is under active
+    # build - cycles run HOURLY, on the hour, regardless of cleanliness so
+    # data and code flow all day. Flip DEV_MODE to False when the owner
+    # declares the build stable; nightly 3 AM resumes automatically.
     DEV_MODE = True
     if DEV_MODE:
         clean_sched = False

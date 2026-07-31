@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.2.4.0 — 2026-07-31  ·  autopilot actually runs hourly now
+The dev cadence was documented as hourly but ran back-to-back all day, which
+is why a console window kept reappearing every couple of minutes. The
+PowerShell trigger anchored the next run to `(Get-Date).AddMinutes(2)` — a
+RELATIVE time — and `reschedule()` fires at the end of every cycle, so each
+finish re-armed "+2 minutes" again and the hourly `-RepetitionInterval` was
+overwritten before it could ever apply.
+
+The trigger now anchors to the top of the next hour, which is idempotent:
+re-registering mid-cycle recomputes the same next run, so cycles land on the
+hour regardless of how long one takes. `-MultipleInstances IgnoreNew` already
+skips a run that would overlap an overrunning cycle. The `schtasks` fallback
+was already `/SC HOURLY` and is unchanged — only the PowerShell path, the one
+that actually runs, was wrong.
+
+---
+
 ## V5.13.2.3.0 — 2026-07-31  ·  say where the API key comes from
 The artifact-engine key prompt said a key was needed and that it must start
 with `sk-`, but never said where to get one. It now links
