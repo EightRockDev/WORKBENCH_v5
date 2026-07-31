@@ -1,5 +1,5 @@
--- Market Calibration storage. Lives alongside the ALN `properties` table in
--- workbench.db. Survives ALN re-syncs because aln_loader.sync() only drops
+-- Market Calibration storage. Lives alongside the property record `properties` table in
+-- workbench.db. Survives record re-syncs because legacy_loader.sync() only drops
 -- `properties`, not these tables.
 --
 -- Two tables:

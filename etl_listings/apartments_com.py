@@ -43,7 +43,7 @@ class ApartmentsDotComScraper(BaseListingScraper):
           1. Direct: search by "<name> <city>" (most reliable for branded properties)
           2. Fallback: search by street address
           3. Take the first organic result; verify the result's listing
-             address contains the street number of the ALN address before
+             address contains the street number of the record address before
              accepting (guards against name collisions).
         """
         query = self._build_query(name, address, city)
@@ -72,16 +72,16 @@ class ApartmentsDotComScraper(BaseListingScraper):
 
     @staticmethod
     def _build_query(name: str, address: str, city: str) -> str:
-        # Strip "Apartments" suffix from the ALN name — it's noise
+        # Strip "Apartments" suffix from the record name — it's noise
         n = re.sub(r"\s+apartments?\b", "", name.strip(), flags=re.IGNORECASE)
         return f"{n} {city}".strip()
 
     def _verify_address_match(
         self,
         candidate_url: str,
-        aln_address: str,
+        prop_address: str,
     ) -> str | None:
-        """Sanity-check that the candidate listing's address matches the ALN
+        """Sanity-check that the candidate listing's address matches the property record
         street number, to avoid name-collision misses. Returns the URL if
         good, None if it's clearly a different property."""
         r = self.get(candidate_url)
@@ -99,14 +99,14 @@ class ApartmentsDotComScraper(BaseListingScraper):
             if addr_el:
                 listing_addr = addr_el.get_text(" ", strip=True)
                 # Match: shared street number?
-                aln_num = self._first_number(aln_address)
+                prop_num = self._first_number(prop_address)
                 listing_num = self._first_number(listing_addr)
-                if aln_num and listing_num and aln_num == listing_num:
+                if prop_num and listing_num and prop_num == listing_num:
                     return candidate_url
                 # Soft pass: street name overlap (handles cases where the
-                # complex's main address differs from ALN's leasing-office
+                # complex's main address differs from the property record's leasing-office
                 # address — common for multi-parcel complexes)
-                if self._street_name_overlap(aln_address, listing_addr):
+                if self._street_name_overlap(prop_address, listing_addr):
                     return candidate_url
                 return None
         # No address visible — accept tentatively, downstream scrape will

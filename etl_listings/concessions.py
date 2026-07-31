@@ -13,7 +13,7 @@ So $1,500 asking + 1 month free on 12-month lease →
   $1,500 × (12 − 1) / 12 = $1,375 effective.
 
 The convention amortizes the concession over the full lease — this is the
-right way to compute cap rate, NOI, and verdict. ALN's avg_rent is asking;
+right way to compute cap rate, NOI, and verdict. The record's avg_rent is asking;
 effective rent is what hits the underwriter's pro forma.
 """
 

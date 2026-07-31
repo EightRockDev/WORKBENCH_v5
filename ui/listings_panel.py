@@ -74,12 +74,12 @@ def render_listing_urls_panel(prop: dict[str, Any]) -> None:
         return
 
     property_id = str(prop["property_id"])
-    aln_id = str(prop.get("aln_id") or "")
+    legacy_id = str(prop.get("legacy_id") or "")
     config_dict = _load_config()
-    # Keys can be property_id OR aln_id (legacy favorites). Try both.
-    cur = config_dict.get(property_id) or config_dict.get(aln_id) or {}
+    # Keys can be property_id OR legacy_id (legacy favorites). Try both.
+    cur = config_dict.get(property_id) or config_dict.get(legacy_id) or {}
     effective_key = property_id if property_id in config_dict else (
-        aln_id if aln_id in config_dict else property_id
+        legacy_id if legacy_id in config_dict else property_id
     )
 
     c = config.COLORS
@@ -151,7 +151,7 @@ def render_listing_urls_panel(prop: dict[str, Any]) -> None:
                 disabled=not any_url,
             ):
                 with st.spinner("Scraping..."):
-                    n = _scrape_one_property(property_id, aln_id, prop)
+                    n = _scrape_one_property(property_id, legacy_id, prop)
                 if n > 0:
                     st.success(f"Scrape complete — {n} source(s) scraped.")
                     st.rerun()
@@ -159,7 +159,7 @@ def render_listing_urls_panel(prop: dict[str, Any]) -> None:
                     st.warning("No data returned. Check the URL is correct.")
 
         # ---- Latest scrape result for this property ----
-        _render_latest_scrape(property_id, aln_id)
+        _render_latest_scrape(property_id, legacy_id)
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +267,7 @@ def _render_url_row(prop_key: str, source: str, url: str, cur: dict) -> None:
             st.rerun()
 
 
-def _render_latest_scrape(property_id: str, aln_id: str) -> None:
+def _render_latest_scrape(property_id: str, legacy_id: str) -> None:
     """Show the most-recent rent_listings rows for this property."""
     c = config.COLORS
     if not _listings_db().is_file():
@@ -285,7 +285,7 @@ def _render_latest_scrape(property_id: str, aln_id: str) -> None:
                 "FROM rent_listings "
                 "WHERE property_id IN (?, ?) "
                 "ORDER BY scraped_at DESC LIMIT 4",
-                (property_id, aln_id or property_id),
+                (property_id, legacy_id or property_id),
             ).fetchall()
     except sqlite3.Error:
         return
@@ -351,7 +351,7 @@ def _render_latest_scrape(property_id: str, aln_id: str) -> None:
     st.markdown(squares_html, unsafe_allow_html=True)
 
 
-def _scrape_one_property(property_id: str, aln_id: str, prop: dict) -> int:
+def _scrape_one_property(property_id: str, legacy_id: str, prop: dict) -> int:
     """Run the scraper for a single property + all its configured sources.
 
     Returns count of rows actually written to rent_listings.
@@ -383,7 +383,7 @@ def _scrape_one_property(property_id: str, aln_id: str, prop: dict) -> int:
             pass
 
     manual_urls = load_favorite_listings()
-    keys_to_try = [property_id, aln_id or ""]
+    keys_to_try = [property_id, legacy_id or ""]
     urls_for_property = {}
     for k in keys_to_try:
         if k and k in manual_urls:
@@ -395,7 +395,7 @@ def _scrape_one_property(property_id: str, aln_id: str, prop: dict) -> int:
 
     import pandas as pd
     rows = []
-    aln_for_scraper = {
+    prop_for_scraper = {
         "property_id": property_id,
         "name": prop.get("name") or "",
         "address": prop.get("address") or "",
@@ -412,7 +412,7 @@ def _scrape_one_property(property_id: str, aln_id: str, prop: dict) -> int:
         if scraper_cls is None:
             continue
         scraper = scraper_cls()
-        row = scrape_one_runner(scraper, aln_for_scraper, cached_url=None, manual_url=url)
+        row = scrape_one_runner(scraper, prop_for_scraper, cached_url=None, manual_url=url)
         rows.append(row)
 
     if not rows:

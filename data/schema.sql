@@ -1,11 +1,11 @@
--- ALN multi-state Property Export -> SQLite schema.
--- One row per property (deduped by property_id = ALN API Id UUID).
+-- Multi-state licensed property export -> SQLite schema.
+-- One row per property (deduped by property_id = provider API Id UUID).
 -- Indexed on city, state, asset_class, units, lat/lng for comp lookups.
--- Column shape matches the loader at data/aln_loader.py (SCHEMA_COLUMNS).
+-- Column shape matches the loader at data/legacy_loader.py (SCHEMA_COLUMNS).
 
 CREATE TABLE IF NOT EXISTS properties (
-    property_id        TEXT PRIMARY KEY,    -- ALN "API Id" (UUID, stable)
-    aln_id             TEXT,                -- ALN numeric Id (legacy lookups)
+    property_id        TEXT PRIMARY KEY,    -- provider "API Id" (UUID, stable)
+    legacy_id          TEXT,                -- provider numeric Id (legacy lookups)
     name               TEXT NOT NULL,
     address            TEXT,
     city               TEXT,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS properties (
     avg_rent           REAL,                -- $/month
     rent_per_sqft      REAL,
     asset_class        TEXT,                -- 'A' | 'B' | 'C' | 'D'
-    property_type      TEXT,                -- ALN building style (Garden/Mid-Rise/...)
+    property_type      TEXT,                -- provider building style (Garden/Mid-Rise/...)
     asset_type         TEXT,                -- 'Multifamily' default; precise tag if not
     property_segment   TEXT,                -- Conventional/Affordable/Senior/Student/Military
     market             TEXT,
@@ -48,9 +48,9 @@ CREATE TABLE IF NOT EXISTS properties (
     last_sold_amount   REAL,
     last_sold_per_unit REAL,
     assessed_value_per_unit REAL,
-    source_file        TEXT,                -- which ALN export this row came from
-    aln_pull_date      TEXT,                -- ISO date when sync ran
-    raw_row            TEXT                 -- JSON dump of original ALN row
+    source_file        TEXT,                -- which licensed export this row came from
+    pull_date      TEXT,                -- ISO date when sync ran
+    raw_row            TEXT                 -- JSON dump of original property record
 );
 
 CREATE INDEX IF NOT EXISTS ix_properties_city        ON properties (city);

@@ -8,7 +8,7 @@ SCRATCH for the specific property, applying Brian's underwriting playbook
 Architecture
 ------------
 1. **`_build_briefing(prop, deal, folder)`** — pulls EVERYTHING the workbench
-   knows about the deal into a structured dict. ALN row + DealState dials +
+   knows about the deal into a structured dict. property record + DealState dials +
    sources.json (rent roll, T-12) + computed metrics (cap, DSCR, IRR, EM,
    cash-flow, sensitivity, refi/exit test, verdict) + market context (FMR,
    BAH, comps, lenders) + value-add levers selected. The LLM gets the WHOLE
@@ -371,10 +371,10 @@ def _build_briefing(
             "owner": prop.get("owner"),
             "manager": prop.get("manager"),
             "management_company": prop.get("management_company"),
-            "occupancy_pct_aln": prop.get("occupancy_pct"),
-            "avg_rent_aln": prop.get("avg_rent"),
-            "avg_sqft_aln": prop.get("avg_sqft"),
-            "rent_per_sqft_aln": prop.get("rent_per_sqft"),
+            "occupancy_pct_record": prop.get("occupancy_pct"),
+            "avg_rent_record": prop.get("avg_rent"),
+            "avg_sqft_record": prop.get("avg_sqft"),
+            "rent_per_sqft_record": prop.get("rent_per_sqft"),
             "latitude": prop.get("latitude"),
             "longitude": prop.get("longitude"),
         },

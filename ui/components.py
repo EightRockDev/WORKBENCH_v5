@@ -105,7 +105,7 @@ SECTION_HELP: dict[str, tuple[str, str]] = {
         "the previous owner didn't budget for."
     ),
     "Property Card": (
-        "Per-row source: rent roll → T-12 → OM → ALN → manual.",
+        "Per-row source: rent roll → T-12 → OM → 8R → manual.",
         "**Property Card** resolves each field from the BEST source available, "
         "with manual overrides winning when set:\n\n"
         "1. **Manual** (gold) — values you entered via the ✏️ Edit popover. "
@@ -113,7 +113,7 @@ SECTION_HELP: dict[str, tuple[str, str]] = {
         "2. **🟢 RR** — current rent roll's summary block.\n"
         "3. **🟠 T12** — trailing-12-month operating statement.\n"
         "4. **🟣 OM** — offering memorandum / marketing materials.\n"
-        "5. **⚪ ALN** — ALN multifamily survey row (default fallback).\n\n"
+        "5. **⚪ 8R** — 8R Backbone property record (default fallback).\n\n"
         "Click **✏️ Edit** to override any field. Leave a field blank to revert "
         "to the auto-pull. Use **Clear all** to reset every override."
     ),
@@ -139,7 +139,7 @@ SECTION_HELP: dict[str, tuple[str, str]] = {
     # --- Performance & Market ---
     "Comparables": (
         "Bucket 1 = ≤3 mi + same class. Bucket 2 = ≤5 mi + any class.",
-        "**Comparables** finds nearby ALN-surveyed properties.\n\n"
+        "**Comparables** finds nearby record-tracked properties.\n\n"
         "- **Bucket 1 (gold)** — within 3 miles AND same asset class (most "
         "directly comparable; what an appraiser would use).\n"
         "- **Bucket 2** — within 5 miles, any class. Use to triangulate when "
@@ -162,7 +162,7 @@ SECTION_HELP: dict[str, tuple[str, str]] = {
     "Data Sources & Last Refresh": (
         "Every ETL source with its last-pull timestamp.",
         "**Data Sources & Last Refresh** lists every external pull the "
-        "workbench depends on (FRED, BLS, ALN, HUD BAH, Census BPS, HMDA, "
+        "workbench depends on (FRED, BLS, property records, HUD BAH, Census BPS, HMDA, "
         "rent listings, etc.) with its last-pull timestamp and row count.\n\n"
         "- **Refresh All** — re-pulls every source.\n"
         "- **Per-source 🔄 Refresh** — re-pulls just that one (faster).\n\n"
@@ -178,7 +178,7 @@ SECTION_HELP: dict[str, tuple[str, str]] = {
         "tab keys off the values committed here.\n\n"
         "- **Purchase Price** — base for cap, PPU, leverage.\n"
         "- **NOI (T-12)** — pulled from the T-12 if uploaded; otherwise an "
-        "ALN-derived estimate.\n"
+        "record-derived estimate.\n"
         "- **Down %** — drives loan amount + LTV.\n"
         "- **Interest Rate / Amort / IO** — debt terms.\n"
         "- **Vacancy / Rent growth / Expense growth** — forecast assumptions.\n"
@@ -308,7 +308,7 @@ SECTION_HELP: dict[str, tuple[str, str]] = {
         "- **Floor** — `config.py` constants are the locked floor — Monday's "
         "cron job can only widen thresholds conservatively, never breach "
         "the floor.\n"
-        "- **Market pull** — FRED rates, assessor cap rates, ALN occupancy "
+        "- **Market pull** — FRED rates, assessor cap rates, record occupancy "
         "rolling into the displayed values.\n"
         "- **Override** — per-city manual overrides (Norfolk vs Newport News "
         "vs Hampton each have their own).\n\n"

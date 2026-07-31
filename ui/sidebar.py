@@ -95,14 +95,14 @@ def _ensure_db() -> None:
     """First-time DB sync. Idempotent; no-op after the first session run."""
     if st.session_state.get("_db_synced"):
         return
-    with st.spinner("Loading ALN data…"):
+    with st.spinner("Loading property record data…"):
         ensure_db_synced()
     st.session_state["_db_synced"] = True
 
 
 @st.dialog("Add custom property", width="large")
 def _show_add_property_dialog() -> None:
-    """Modal dialog for adding a property not in ALN (off-market deal,
+    """Modal dialog for adding a property not in the property records (off-market deal,
     new construction, etc.).
 
     Refactored 2026-05-08: was previously an expander INSIDE the sidebar,
@@ -503,7 +503,7 @@ def render_sidebar() -> tuple[str, str | None]:
             )
         with col_state:
             # Data-driven state list — target states first, then any others
-            # present in the loaded ALN data.
+            # present in the loaded property record data.
             state_codes = list_distinct_states(target_first=True)
             state_label = {code: name for code, name in TARGET_STATES}
             state_options = [STATE_PRESET_TARGET] + [
@@ -576,7 +576,7 @@ def render_sidebar() -> tuple[str, str | None]:
             help=(
                 "Filter properties by management company. "
                 "The number in parentheses is how many properties that "
-                "company manages in your loaded ALN dataset — sorted "
+                "company manages in your loaded property record dataset — sorted "
                 "by count descending."
             ),
         )
@@ -595,7 +595,7 @@ def render_sidebar() -> tuple[str, str | None]:
             "➕ Add custom property",
             key="add_custom_property_btn",
             use_container_width=True,
-            help="Create a property record that's not in ALN — opens an "
+            help="Create a property record that's not in the property records — opens an "
                  "input form in the main pane.",
         ):
             st.session_state["_show_add_property_dialog"] = True
@@ -638,7 +638,7 @@ def render_sidebar() -> tuple[str, str | None]:
             properties = [
                 p for p in properties
                 if str(p.get("property_id") or "") in favs
-                or str(p.get("aln_id") or "") in favs
+                or str(p.get("legacy_id") or "") in favs
             ]
 
         st.caption(f"**{len(properties)}** propert{'y' if len(properties) == 1 else 'ies'}")
@@ -713,9 +713,9 @@ section[data-testid="stSidebar"] [data-testid="stButton"] > button[kind="primary
         new_id = current_id
         for p in shown:
             pid = p["property_id"]
-            aln_id = str(p.get("aln_id") or "")
+            legacy_id = str(p.get("legacy_id") or "")
             is_sel = (pid == current_id)
-            is_fav = (str(pid) in favs) or (aln_id and aln_id in favs)
+            is_fav = (str(pid) in favs) or (legacy_id and legacy_id in favs)
             name = p.get("name") or "—"
             address = (p.get("address") or "").strip()
             city = p.get("city") or "?"

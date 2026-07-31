@@ -1,7 +1,7 @@
 """Weekly market-calibration entry point.
 
 Chained after the Monday ETL pull (`etl-weekly-monday`). Pulls the freshly-
-refreshed FRED / ALN / assessor data and rewrites every threshold's
+refreshed FRED / property records / assessor data and rewrites every threshold's
 `effective_value` in workbench.db.
 
 Run manually with::

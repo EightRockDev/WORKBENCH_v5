@@ -1,12 +1,12 @@
 """SQLite query helpers for the workbench.
 
-Reads the `properties` table populated by `data/aln_loader.py`. The DB lives
+Reads the `properties` table populated by `data/legacy_loader.py`. The DB lives
 at `python_workbench/data/workbench.db` (gitignored); the loader rebuilds it
-from the ALN xlsx whenever needed.
+from the the licensed xlsx whenever needed.
 
 `ensure_db_synced()` is the entry point — it lazily rebuilds the DB if it's
 missing OR older than the source xlsx. The Streamlit app calls it once on
-startup so the property list is always fresh after a new ALN export drops in.
+startup so the property list is always fresh after a new licensed export drops in.
 """
 
 from __future__ import annotations
@@ -16,14 +16,14 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Iterator
 
-from data.aln_loader import ALN_FILENAME, sync, multistate_paths, ALN_DATA_DIR
+from data.legacy_loader import LEGACY_FILENAME, sync, multistate_paths, LEGACY_DATA_DIR
 
 _DATA_DIR = Path(__file__).resolve().parent
 DB_PATH = _DATA_DIR / "workbench.db"
 SCHEMA_PATH = _DATA_DIR / "schema.sql"
 # Back-compat single-file path (workbench root). The multi-state library in
-# `ALN Data and Reports/` is the real source now; this is only a fallback.
-ALN_PATH = _DATA_DIR.parent.parent / ALN_FILENAME
+# `Property Data and Reports/` is the real source now; this is only a fallback.
+LEGACY_PATH = _DATA_DIR.parent.parent / LEGACY_FILENAME
 
 
 # ---------------------------------------------------------------------------
@@ -31,18 +31,58 @@ ALN_PATH = _DATA_DIR.parent.parent / ALN_FILENAME
 # ---------------------------------------------------------------------------
 
 def _newest_source_mtime() -> float | None:
-    """Most-recent mtime across the multi-state ALN library (or the single
+    """Most-recent mtime across the multi-state licensed export library (or the single
     fallback file). None if no source files exist."""
     paths = multistate_paths()
-    if not paths and ALN_PATH.is_file():
-        paths = [ALN_PATH]
+    if not paths and LEGACY_PATH.is_file():
+        paths = [LEGACY_PATH]
     if not paths:
         return None
     return max(p.stat().st_mtime for p in paths)
 
 
+# Columns renamed by the Phase-0 de-identification (spec §7.3). A workbench.db
+# built before that carries the old names; the loader would fix them on its
+# next full rebuild, but the rebuild only runs when a source export is newer
+# than the DB. Without this, an existing install pulls the new code and every
+# write against `properties` fails on a missing column.
+_RENAMED_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("aln_id", "legacy_id"),
+    ("aln_pull_date", "pull_date"),
+)
+
+
+def migrate_legacy_columns(db_path: Path = DB_PATH) -> list[str]:
+    """Rename any pre-Phase-0 columns still present. Returns what was renamed.
+
+    Idempotent and safe on a fresh DB: if the old name is absent, or the new
+    name already exists, the rename is skipped.
+    """
+    if not Path(db_path).is_file():
+        return []
+    done: list[str] = []
+    with get_connection(db_path) as conn:
+        tables = {
+            r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+        }
+        if "properties" not in tables:
+            return []
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(properties)")}
+        for old, new in _RENAMED_COLUMNS:
+            if old in cols and new not in cols:
+                conn.execute(
+                    f"ALTER TABLE properties RENAME COLUMN {old} TO {new}"
+                )
+                done.append(f"{old} -> {new}")
+        if done:
+            conn.commit()
+    return done
+
+
 def ensure_db_synced() -> bool:
-    """Build or refresh `workbench.db` from the ALN library if needed.
+    """Build or refresh `workbench.db` from the licensed export library if needed.
 
     Resyncs when:
       - DB doesn't exist yet
@@ -51,14 +91,18 @@ def ensure_db_synced() -> bool:
     Returns True if a sync happened, False if the DB was already current.
     Never raises on missing source: if the DB already exists we keep using
     it; only a missing DB *and* missing sources is an error.
+
+    Always runs the Phase-0 column migration first so an existing install
+    keeps working after pulling the de-identified schema.
     """
+    migrate_legacy_columns()
     newest = _newest_source_mtime()
 
     if not DB_PATH.is_file():
         if newest is None:
-            # No ALN source present. In v5.0 the ALN spine is being replaced by
+            # No licensed source present. In v5.0 the property spine is being replaced by
             # the self-sourced 8R property spine (Phase 0 / Module F), so a clean
-            # deployment legitimately has no ALN xlsx. Rather than crash, create
+            # deployment legitimately has no the licensed xlsx. Rather than crash, create
             # an empty schema-only DB so the app boots with an empty inventory;
             # properties arrive via the spine or manual entry.
             init_empty_db()
@@ -74,7 +118,7 @@ def ensure_db_synced() -> bool:
 
 
 def init_empty_db(db_path: Path = DB_PATH, schema_path: Path = SCHEMA_PATH) -> None:
-    """Create a schema-only (empty) SQLite DB. Used when no ALN source exists so
+    """Create a schema-only (empty) SQLite DB. Used when no licensed source exists so
     the app boots with an empty property inventory instead of raising."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
     schema_sql = Path(schema_path).read_text(encoding="utf-8")
@@ -84,7 +128,7 @@ def init_empty_db(db_path: Path = DB_PATH, schema_path: Path = SCHEMA_PATH) -> N
 
 
 def force_resync() -> int:
-    """Force a full rebuild of `workbench.db` from the full ALN library.
+    """Force a full rebuild of `workbench.db` from the full licensed export library.
     Returns row count written."""
     return sync(None, DB_PATH, SCHEMA_PATH)
 
@@ -130,7 +174,7 @@ def _r8_to_legacy_shape(row: dict[str, Any]) -> dict[str, Any]:
     avg_rent = row.get("est_avg_rent")
     return {
         "property_id": row["property_id"],
-        "aln_id": None,                     # 8R-native rows have no vendor id
+        "legacy_id": None,                     # 8R-native rows have no vendor id
         "name": row.get("address"),         # rolls carry no marketing name
         "address": row.get("address"),
         "city": row.get("city"),
@@ -341,20 +385,20 @@ def upsert_property(
     """Insert or replace a single row in the `properties` table.
 
     Used to surface a freshly-added custom property in the sidebar without
-    rebuilding the entire DB from the ALN xlsx. The on-disk source of truth
+    rebuilding the entire DB from the the licensed xlsx. The on-disk source of truth
     for custom properties is `Properties/_custom_props.json` — this function
     keeps the SQLite query layer in sync with that file's latest entry.
     """
-    from data.aln_loader import SCHEMA_COLUMNS
+    from data.legacy_loader import SCHEMA_COLUMNS
 
     if not prop.get("property_id") or not prop.get("name"):
         raise ValueError("upsert_property requires non-empty property_id + name")
 
     # Build a row matching SCHEMA_COLUMNS; missing keys → None
     row = {col: prop.get(col) for col in SCHEMA_COLUMNS}
-    if not row.get("aln_pull_date"):
+    if not row.get("pull_date"):
         import datetime as dt
-        row["aln_pull_date"] = dt.date.today().isoformat()
+        row["pull_date"] = dt.date.today().isoformat()
     if not row.get("raw_row"):
         import json
         row["raw_row"] = json.dumps(prop, default=str)
@@ -375,7 +419,7 @@ def get_property(
     property_id: str,
     db_path: Path = DB_PATH,
 ) -> dict[str, Any] | None:
-    """Look up a single property by its `property_id` (ALN API Id, or an
+    """Look up a single property by its `property_id` (provider API Id, or an
     8R backbone id / crosswalked legacy id when the cutover flag is on)."""
     if _read_source() == "8r":
         return _get_property_8r(property_id, db_path=db_path)
@@ -388,7 +432,7 @@ def get_property(
 
 
 def list_distinct_markets(db_path: Path = DB_PATH) -> list[str]:
-    """All distinct ALN market codes present in the DB, alphabetically."""
+    """All distinct legacy market codes present in the DB, alphabetically."""
     with get_connection(db_path) as conn:
         return [
             row[0] for row in conn.execute(

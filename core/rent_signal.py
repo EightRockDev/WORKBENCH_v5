@@ -10,7 +10,7 @@ Honesty note: HUD FMR is a 40th-percentile gross-rent standard, not a
 market average, so the first measured delta is expected to be LARGE.
 That is the real baseline the listings scraper must close - do NOT tune
 the blend to flatter the gate; deriving any market-adjustment factor
-from ALN data itself would defeat the ALN-free requirement (spec 7.3).
+from property record data itself would defeat the provider-free requirement (spec 7.3).
 
 Source hierarchy (rent_source column, best wins, never downgraded):
   listings  - scraped effective rents (pullers/listings via crosswalk)
@@ -91,7 +91,7 @@ def apply_listings_rents(spine_db: Path, etl_path: Path | None = None) -> int:
     rows. Returns rows updated.
 
     The listings puller (hampton-roads-etl/pullers/listings) keys its
-    rent_listings rows to LEGACY ALN ids; the persisted property_crosswalk
+    rent_listings rows to LEGACY legacy ids; the persisted property_crosswalk
     is the bridge until the puller is rekeyed. The crosswalk comes from
     the PREVIOUS parity run (parity runs after the build), which is safe:
     8R ids are deterministic, so the mapping is stable run to run - a

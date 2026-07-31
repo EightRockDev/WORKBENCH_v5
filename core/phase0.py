@@ -8,7 +8,7 @@ Turns the raw municipal pulls (heterogeneous per-city JSON in the
                   r8_submarket, assessed_value, owner_name, lat, lng,
                   provenance, built_at)
 
-Everything ALN-free by construction: IDs from `core.spine.property_id`
+Everything provider-free by construction: IDs from `core.spine.property_id`
 (FIPS + APN hash), form from assessor use codes, market taxonomy = the
 Eight Rock HR submarkets. Provenance is "8r".
 

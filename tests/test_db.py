@@ -33,11 +33,11 @@ def _build_fixture_db(tmp_path: Path) -> Path:
     try:
         conn.executescript(schema_sql)
         rows = [
-            # property_id, aln_id, name, address, city, state, zip, county, units, year_built,
+            # property_id, legacy_id, name, address, city, state, zip, county, units, year_built,
             # last_remodel, occupancy_pct, avg_sqft, avg_rent, rent_per_sqft, asset_class,
             # property_type, market, submarket, latitude, longitude, owner, owner_address,
             # owner_phone, manager, management_company, pm_software, asset_or_fee, lease_terms,
-            # tags, status, property_phone, website, email, aln_pull_date, raw_row
+            # tags, status, property_phone, website, email, pull_date, raw_row
             ("p1", "100", "Pinewood Gardens", "123 Pine St", "Norfolk", "VA", "23502", "Norfolk",
              761, 1970, None, 0.987, 850, 1436, 1.69, "C", "Garden", "NOR", "NOR-CENTRAL",
              36.9152, -76.2294, "Pinewood LLC", "PO Box 1", "555-0001", "Mgr Smith",
@@ -65,11 +65,11 @@ def _build_fixture_db(tmp_path: Path) -> Path:
              "", "", "2026-05-06", "{}"),
         ]
         cols = (
-            "property_id, aln_id, name, address, city, state, zip, county, units, year_built, "
+            "property_id, legacy_id, name, address, city, state, zip, county, units, year_built, "
             "last_remodel, occupancy_pct, avg_sqft, avg_rent, rent_per_sqft, asset_class, "
             "property_type, market, submarket, latitude, longitude, owner, owner_address, "
             "owner_phone, manager, management_company, pm_software, asset_or_fee, lease_terms, "
-            "tags, status, property_phone, website, email, aln_pull_date, raw_row"
+            "tags, status, property_phone, website, email, pull_date, raw_row"
         )
         placeholders = ", ".join("?" for _ in rows[0])
         conn.executemany(
@@ -203,7 +203,7 @@ def test_list_require_latlng_excludes_null(tmp_path):
     with get_connection(db) as conn:
         conn.execute(
             "INSERT INTO properties (property_id, name, asset_class, market, city, units, "
-            "latitude, longitude, aln_pull_date) "
+            "latitude, longitude, pull_date) "
             "VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, ?)",
             ("p_nogeo", "No Geo", "C", "NOR", "Norfolk", 100, "2026-05-06"),
         )
@@ -265,8 +265,8 @@ def test_list_distinct_cities(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def _real_aln_db_loaded() -> bool:
-    """True only when workbench.db holds the real ALN library - a stub or
+def _real_legacy_db_loaded() -> bool:
+    """True only when workbench.db holds the real licensed export library - a stub or
     muni-only db (autopilot checkouts) must SKIP the smoke, not fail it."""
     if not DB_PATH.is_file():
         return False
@@ -280,9 +280,9 @@ def _real_aln_db_loaded() -> bool:
 
 
 @pytest.mark.skipif(
-    not _real_aln_db_loaded(),
-    reason="real ALN-loaded workbench.db not present "
-           "(run aln_loader.sync first)",
+    not _real_legacy_db_loaded(),
+    reason="real licensed-source workbench.db not present "
+           "(run legacy_loader.sync first)",
 )
 def test_smoke_real_db_returns_hampton_roads_class_c():
     """Confirm the real DB query returns the ~164 Hampton Roads Class C
@@ -296,3 +296,69 @@ def test_smoke_real_db_returns_hampton_roads_class_c():
         total += count_properties(asset_class="C", city=city, units_min=20, units_max=400)
     # SUMMARY-FORMAT said 170; current export shows ~164. Allow a buffer.
     assert 100 < total < 200
+
+
+# ---------------------------------------------------------------------------
+# Phase-0 column migration (spec §7.3)
+# ---------------------------------------------------------------------------
+
+def test_migrate_renames_pre_phase0_columns(tmp_path):
+    """A workbench.db built before the de-identification keeps working.
+
+    The loader fixes column names on a full rebuild, but that only runs when a
+    source export is newer than the DB — so an existing install pulling the new
+    code would otherwise write against columns that no longer exist.
+    """
+    import sqlite3
+    from data.db import migrate_legacy_columns
+
+    db_path = tmp_path / "old.db"
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "CREATE TABLE properties ("
+            " property_id TEXT PRIMARY KEY, aln_id TEXT, name TEXT,"
+            " aln_pull_date TEXT)"
+        )
+        conn.execute(
+            "INSERT INTO properties VALUES ('p1', '134263', 'Foo', '2026-01-01')"
+        )
+
+    assert sorted(migrate_legacy_columns(db_path)) == [
+        "aln_id -> legacy_id", "aln_pull_date -> pull_date",
+    ]
+
+    with sqlite3.connect(db_path) as conn:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(properties)")}
+        assert "legacy_id" in cols and "pull_date" in cols
+        assert not [c for c in cols if "aln" in c.lower()]
+        # data survives the rename
+        row = conn.execute(
+            "SELECT legacy_id, pull_date FROM properties WHERE property_id='p1'"
+        ).fetchone()
+        assert row == ("134263", "2026-01-01")
+
+    # idempotent — a second run is a no-op
+    assert migrate_legacy_columns(db_path) == []
+
+
+def test_migrate_is_a_noop_on_a_current_db(tmp_path):
+    import sqlite3
+    from data.db import migrate_legacy_columns
+
+    db_path = tmp_path / "new.db"
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "CREATE TABLE properties ("
+            " property_id TEXT PRIMARY KEY, legacy_id TEXT, pull_date TEXT)"
+        )
+    assert migrate_legacy_columns(db_path) == []
+
+
+def test_migrate_tolerates_a_missing_db_or_table(tmp_path):
+    import sqlite3
+    from data.db import migrate_legacy_columns
+
+    assert migrate_legacy_columns(tmp_path / "nope.db") == []
+    empty = tmp_path / "empty.db"
+    sqlite3.connect(empty).close()
+    assert migrate_legacy_columns(empty) == []

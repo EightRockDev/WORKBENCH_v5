@@ -598,6 +598,13 @@ def main() -> None:
         layout="wide",
         initial_sidebar_state="expanded",
     )
+    # Per-user theme — merges the signed-in user's saved overrides into
+    # config.COLORS / config.DARK_COLORS BEFORE any CSS or component reads
+    # them. Idempotent (rebuilds from the shipped defaults each run), so it's
+    # safe on every rerun. Edited via the avatar → Appearance dialog.
+    from core import theme_prefs
+    theme_prefs.apply_to_config()
+
     _inject_branding()
 
     # ?prop=<id> query param → session state. Runs in BOTH V1 and V2 so the
@@ -614,6 +621,13 @@ def main() -> None:
         # Brian (5/29 evening): removed the gold "V2.0 ACTIVE" banner per the
         # screenshot — V2 chrome itself is now the visual contract.
         _v2_cmdk()
+
+    # User font overrides go in LAST so they beat the hard-coded families in
+    # the V1 branding CSS and the V2 overlay. Emits nothing when the user
+    # hasn't changed a font.
+    _font_css = theme_prefs.font_css()
+    if _font_css:
+        st.markdown(_font_css, unsafe_allow_html=True)
 
     # v5.0 pilot auth (Section 9.4): resolve the user and, when a real OIDC
     # provider is configured, gate access here. Returns None in legacy ungated
@@ -843,12 +857,15 @@ def main() -> None:
     # is how "a Maintenance preset cannot see the purchase price" is enforced
     # in the UI: the financial renderers are never invoked for that role.
     with tab_subject:
-        # Module C (§6.1): forced-seller distress score + evidence panel, above
-        # the property detail so the sourcing signal leads.
+        # Property detail leads: the header card (photo, name, address,
+        # Favorite, Open Folder) identifies the deal, so it holds the top.
+        render_property_detail(prop, folder)
+        # Module C (§6.1): forced-seller distress score + evidence panel.
+        # Brian 2026-07-31: moved BELOW the property detail — it used to run
+        # first, which pushed the header card off the top of the tab.
+        st.divider()
         from ui.radar_panel import render_radar
         render_radar(prop)
-        st.divider()
-        render_property_detail(prop, folder)
     with tab_perf:
         if _authz.guard_module("comps", "Performance & Market"):
             render_comps(prop, folder)

@@ -40,7 +40,7 @@ def main() -> int:
     # Strip _comment / _example keys
     urls_config = {k: v for k, v in urls_config.items() if not k.startswith("_")}
 
-    # Look up each favorite in the ALN properties table
+    # Look up each favorite in the property records table
     if not DB_PATH.is_file():
         print(f"workbench.db not found at {DB_PATH}")
         return 1
@@ -49,9 +49,9 @@ def main() -> int:
         conn.row_factory = sqlite3.Row
         placeholders = ",".join("?" * len(fav_ids))
         rows = conn.execute(
-            f"SELECT property_id, aln_id, name, address, city, units, year_built "
+            f"SELECT property_id, legacy_id, name, address, city, units, year_built "
             f"FROM properties "
-            f"WHERE property_id IN ({placeholders}) OR aln_id IN ({placeholders}) "
+            f"WHERE property_id IN ({placeholders}) OR legacy_id IN ({placeholders}) "
             f"ORDER BY name",
             tuple(str(x) for x in fav_ids) * 2,
         ).fetchall()
@@ -67,8 +67,8 @@ def main() -> int:
     print(f"{'-' * 3} {'-' * 14} {'-' * 35} {'-' * 16} {'-' * 6} {'-' * 6} {'-' * 30}")
 
     for i, r in enumerate(rows, start=1):
-        key = r["property_id"] or r["aln_id"]
-        configured = urls_config.get(str(key), {}) or urls_config.get(str(r["aln_id"] or ""), {})
+        key = r["property_id"] or r["legacy_id"]
+        configured = urls_config.get(str(key), {}) or urls_config.get(str(r["legacy_id"] or ""), {})
         sources_set = [s for s, u in configured.items() if u and not s.startswith("_")]
         sources_str = ", ".join(sources_set) if sources_set else "(none — needs setup)"
         print(
@@ -79,7 +79,7 @@ def main() -> int:
 
     print()
     print(f"Edit {URL_PATH}")
-    print("Add an entry per favorite using the property_id or aln_id from column 2.")
+    print("Add an entry per favorite using the property_id or legacy_id from column 2.")
     print("Example structure (one source minimum, multiple sources welcome):")
     print('  "133760": {"apartments_com": "https://...", "rentcafe": "https://..."}')
     print()

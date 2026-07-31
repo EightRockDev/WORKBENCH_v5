@@ -76,7 +76,7 @@ def favorite_universe() -> list[dict]:
             rows = conn.execute(
                 f"""SELECT property_id, name, address, city, state
                       FROM properties
-                     WHERE property_id IN ({marks}) OR aln_id IN ({marks})
+                     WHERE property_id IN ({marks}) OR legacy_id IN ({marks})
                      ORDER BY name""", tuple(favs) * 2).fetchall()
         return [dict(r) for r in rows]
     except sqlite3.Error:

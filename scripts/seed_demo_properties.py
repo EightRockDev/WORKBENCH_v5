@@ -6,8 +6,8 @@ This script loads a dozen realistic Hampton Roads properties so the whole engine
 (browse -> select -> Subject -> Underwriting -> Returns -> Comps -> Exec Summary)
 can be exercised end to end.
 
-These rows are DEMO DATA, not real and NOT ALN-sourced:
-  * property_id uses the 8R-DEMO- prefix; aln_id is NULL; source_file='DEMO-SEED'.
+These rows are DEMO DATA, not real and NOT provider-sourced:
+  * property_id uses the 8R-DEMO- prefix; legacy_id is NULL; source_file='DEMO-SEED'.
   * They are safe to delete wholesale and will be superseded by the real 8R
     spine in Phase 0.
 
@@ -108,7 +108,7 @@ def _rows() -> list[dict]:
         r.update(d)
         r["submarket"] = r["city"]
         r["rent_per_sqft"] = round(r["avg_rent"] / r["avg_sqft"], 2)
-        r["aln_pull_date"] = None
+        r["pull_date"] = None
         out.append(r)
     return out
 

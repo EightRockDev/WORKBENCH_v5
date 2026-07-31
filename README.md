@@ -65,7 +65,7 @@ python_workbench/
 ├── app.py                # Streamlit entrypoint (5 tabs)
 ├── config.py             # Eight Rock conventions — single source of truth
 ├── data/
-│   ├── aln_loader.py     # ALN xlsx → SQLite
+│   ├── legacy_loader.py     # the licensed xlsx → SQLite
 │   ├── property_io.py    # read deal.json / sources.json / sales.json
 │   └── schema.sql
 ├── core/

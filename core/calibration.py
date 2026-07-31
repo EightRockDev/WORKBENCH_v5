@@ -17,7 +17,7 @@ Architecture
         inventory        │   market_values per threshold
       • census_acs       │        │
     workbench.db        ─┤        │  apply_calibration()
-      • properties (ALN) │        ▼
+      • properties (record) │        ▼
                          │   calibration_current (effective values)
                          │   calibration_history (append-only snapshots)
                          │        │
@@ -70,7 +70,7 @@ from core import etl_db
 
 
 # ---------------------------------------------------------------------------
-# DB paths — calibration tables live in workbench.db alongside ALN properties.
+# DB paths — calibration tables live in workbench.db alongside property records.
 # ETL data is read from hampton-roads-etl/hampton_roads.db.
 # ---------------------------------------------------------------------------
 
@@ -170,7 +170,7 @@ def _build_specs() -> list[_Spec]:
             notes=(
                 "Lowest cap rate at which a deal still earns a GO verdict. "
                 "Market input: max(10Y Treasury + spread, "
-                "city-median going-in cap implied from ALN+assessor data)."
+                "city-median going-in cap implied from the property record+assessor data)."
             ),
         ),
         _Spec(
@@ -205,7 +205,7 @@ def _build_specs() -> list[_Spec]:
             units="pct", direction="conservative_up", category="operating",
             floor_value=config.VACANCY_DEFAULT,
             notes=(
-                "Market input: max of (1 - ALN city occupancy median) and "
+                "Market input: max of (1 - record city occupancy median) and "
                 "ACS rental vacancy rate by city."
             ),
         ),
@@ -358,17 +358,17 @@ def _amortized_debt_constant(annual_rate_pct: float, amort_months: int = 300) ->
 
 
 def _city_median_going_in_cap(city: str) -> float | None:
-    """Estimate median going-in cap rate for a city from ALN + assessor data.
+    """Estimate median going-in cap rate for a city from property records + assessor data.
 
     Method:
-      1. Pull ALN properties matching the city.
+      1. Pull property records matching the city.
       2. For each, estimate NOI: avg_rent × 12 × units × (1 - max(0.07, 1 - occ))
          × (1 - expense_ratio_by_class).
       3. Pull assessed_value from va_multifamily_inventory and adjust for
          the Virginia state-mandated 100% market-value assessment ratio
          (we apply a 0.85 reassessment haircut as a conservative proxy
          for the gap between assessor + actual market value).
-      4. Match ALN <-> assessor records by address (city + first 12 chars of
+      4. Match property <-> assessor records by address (city + first 12 chars of
          normalized street).
       5. Implied cap = NOI_est / market_value_est.
       6. Return median.
@@ -380,10 +380,10 @@ def _city_median_going_in_cap(city: str) -> float | None:
         return None
 
     try:
-        # ALN rows (in workbench.db)
+        # property records (in workbench.db)
         with sqlite3.connect(WORKBENCH_DB_PATH) as wb:
             wb.row_factory = sqlite3.Row
-            aln_rows = wb.execute(
+            prop_rows = wb.execute(
                 """
                 SELECT name, address, units, avg_rent, occupancy_pct, asset_class
                 FROM properties
@@ -397,7 +397,7 @@ def _city_median_going_in_cap(city: str) -> float | None:
     except sqlite3.Error:
         return None
 
-    if not aln_rows:
+    if not prop_rows:
         return None
 
     # Assessor rows (in hampton_roads.db)
@@ -428,7 +428,7 @@ def _city_median_going_in_cap(city: str) -> float | None:
     expense_ratios = config.EXPENSE_RATIOS
 
     implied_caps: list[float] = []
-    for row in aln_rows:
+    for row in prop_rows:
         norm = _norm_addr(row["address"])
         av = asr_by_norm.get(norm)
         if av is None:
@@ -474,8 +474,8 @@ def _norm_addr(addr: str | None) -> str:
 def _city_recent_sale_ppu(city: str, days: int = 90, min_sales: int = 5) -> float | None:
     """70th-percentile PPU from va_multifamily_inventory last-{days} sales.
 
-    Joins to ALN by address (best-effort) to get unit count. If a sale's
-    address doesn't match an ALN property with units, the sale is skipped.
+    Joins to property records by address (best-effort) to get unit count. If a sale's
+    address doesn't match an property record with units, the sale is skipped.
 
     Returns None if fewer than `min_sales` matched.
     """
@@ -505,11 +505,11 @@ def _city_recent_sale_ppu(city: str, days: int = 90, min_sales: int = 5) -> floa
     if not sales:
         return None
 
-    # Match sales to ALN unit counts
+    # Match sales to property record unit counts
     try:
         with sqlite3.connect(WORKBENCH_DB_PATH) as wb:
             wb.row_factory = sqlite3.Row
-            aln = wb.execute(
+            legacy = wb.execute(
                 """
                 SELECT address, units
                 FROM properties
@@ -520,16 +520,16 @@ def _city_recent_sale_ppu(city: str, days: int = 90, min_sales: int = 5) -> floa
     except sqlite3.Error:
         return None
 
-    aln_units: dict[str, int] = {}
-    for r in aln:
+    prop_units: dict[str, int] = {}
+    for r in legacy:
         key = _norm_addr(r["address"])
-        if key and key not in aln_units:
-            aln_units[key] = int(r["units"])
+        if key and key not in prop_units:
+            prop_units[key] = int(r["units"])
 
     ppus: list[float] = []
     for addr, sale_date, sale_price in sales:
         norm = _norm_addr(addr)
-        units = aln_units.get(norm)
+        units = prop_units.get(norm)
         if not units or units < 5:  # ignore non-multifamily / mismatch noise
             continue
         ppu = float(sale_price) / float(units)
@@ -584,8 +584,8 @@ def _city_acs_rental_vacancy(city: str) -> float | None:
         return None
 
 
-def _aln_city_vacancy(city: str) -> float | None:
-    """1 - median(occupancy) for Class C ALN properties in the city."""
+def _prop_city_vacancy(city: str) -> float | None:
+    """1 - median(occupancy) for Class C property records in the city."""
     if not WORKBENCH_DB_PATH.is_file():
         return None
     try:
@@ -715,8 +715,8 @@ def compute_calibration() -> list[ComputedThreshold]:
     city_vacs: list[tuple[str, float]] = []
     for city in config.CITY_PPU_CEILINGS:
         acs = _city_acs_rental_vacancy(city)
-        aln = _aln_city_vacancy(city)
-        candidates = [v for v in (acs, aln) if v is not None]
+        rec_vac = _prop_city_vacancy(city)
+        candidates = [v for v in (acs, rec_vac) if v is not None]
         if candidates:
             city_vacs.append((city, max(candidates)))
     if city_vacs:
@@ -729,14 +729,14 @@ def compute_calibration() -> list[ComputedThreshold]:
             market_value=worst_v,
             market_source=(
                 f"75th-pctile city vacancy across HR ({worst_city} drives it); "
-                "max(ACS, 1 - ALN occupancy median)"
+                "max(ACS, 1 - record occupancy median)"
             ),
             market_as_of=today,
         ))
     else:
         out.append(ComputedThreshold(
             name="VACANCY_DEFAULT", market_value=None,
-            market_source="No ACS/ALN vacancy data",
+            market_source="No ACS/Record vacancy data",
             market_as_of=None,
         ))
 
@@ -767,12 +767,12 @@ def compute_calibration() -> list[ComputedThreshold]:
         else:
             out.append(ComputedThreshold(
                 name=f"PPU_GO_{token}", market_value=None,
-                market_source=f"No recent {city} sales matched ALN units",
+                market_source=f"No recent {city} sales matched record units",
                 market_as_of=None,
             ))
             out.append(ComputedThreshold(
                 name=f"PPU_WATCH_{token}", market_value=None,
-                market_source=f"No recent {city} sales matched ALN units",
+                market_source=f"No recent {city} sales matched record units",
                 market_as_of=None,
             ))
 

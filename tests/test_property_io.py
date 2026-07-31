@@ -70,7 +70,7 @@ def test_legacy_file_supplies_defaults_for_new_fields():
     """Legacy files don't have `raise_amount` or `vacancy_source` — defaults apply."""
     deal = DealState.model_validate(_legacy_deal_dict())
     assert deal.raise_amount is None
-    assert deal.vacancy_source == "ALN"
+    assert deal.vacancy_source == "record"
 
 
 def test_loads_with_field_names_too():
@@ -308,7 +308,7 @@ def test_save_deal_atomic_no_partial_writes(tmp_path: Path):
 
 def test_load_sources_returns_dict(tmp_path: Path):
     folder = _make_folder(tmp_path, "P", {
-        "sources.json": json.dumps({"un": {"value": 100, "source": "ALN"}}),
+        "sources.json": json.dumps({"un": {"value": 100, "source": "record"}}),
     })
     src = load_sources(folder)
     assert src is not None
@@ -375,7 +375,7 @@ def test_toggle_favorite_round_trip(tmp_path: Path):
     """Toggling on/off changes state and persists to disk."""
     from data.property_io import is_favorite, toggle_favorite
 
-    prop = {"property_id": "custom-abc", "name": "Test", "aln_id": None}
+    prop = {"property_id": "custom-abc", "name": "Test", "legacy_id": None}
 
     # Initially not favorited
     assert is_favorite(prop, properties_root=tmp_path) is False
@@ -393,28 +393,56 @@ def test_toggle_favorite_round_trip(tmp_path: Path):
     assert is_favorite(prop, properties_root=tmp_path) is False
 
 
-def test_toggle_favorite_clears_legacy_aln_id_match(tmp_path: Path):
-    """If a property is favorited under its legacy aln_id, toggle off clears that too."""
+def test_toggle_favorite_clears_legacy_id_match(tmp_path: Path):
+    """If a property is favorited under its legacy legacy_id, toggle off clears that too."""
     from data.property_io import is_favorite, toggle_favorite
 
-    # Pre-seed with the legacy aln_id format
+    # Pre-seed with the legacy legacy_id format
     (tmp_path / "_favorites.json").write_text(json.dumps([134263]))
 
-    prop = {"property_id": "uuid-modern", "aln_id": "134263", "name": "Foo"}
-    # is_favorite matches via aln_id
+    prop = {"property_id": "uuid-modern", "legacy_id": "134263", "name": "Foo"}
+    # is_favorite matches via legacy_id
     assert is_favorite(prop, properties_root=tmp_path) is True
 
-    # Toggle off should remove the legacy aln_id entry
+    # Toggle off should remove the legacy legacy_id entry
     toggle_favorite(prop, properties_root=tmp_path)
     saved = load_favorites(tmp_path)
     assert "134263" not in saved
     assert "uuid-modern" not in saved
 
 
+def test_favorite_matches_id_from_older_synthesized_prefix(tmp_path: Path):
+    """A favorite saved under an older synthesized-id prefix still resolves.
+
+    Export rows with no provider `API Id` get a synthesized `property_id` of
+    `<slug>-<numeric id>`. The slug changed in the Phase-0 de-identification,
+    so `_favorites.json` can still hold entries written under the old one —
+    those must keep matching, and toggling off must clear them.
+    """
+    from data.property_io import is_favorite, toggle_favorite
+
+    (tmp_path / "_favorites.json").write_text(json.dumps(["aln-134263"]))
+    prop = {"property_id": "legacy-134263", "legacy_id": "134263", "name": "Foo"}
+
+    assert is_favorite(prop, properties_root=tmp_path) is True
+
+    toggle_favorite(prop, properties_root=tmp_path)
+    assert load_favorites(tmp_path) == set()
+
+
+def test_favorite_does_not_collapse_distinct_native_ids(tmp_path: Path):
+    """Normalization must not merge distinct 8R / UUID property_ids."""
+    from data.property_io import is_favorite
+
+    (tmp_path / "_favorites.json").write_text(json.dumps(["8R-51710-aaaaaaaaaaaa"]))
+    prop = {"property_id": "8R-51710-bbbbbbbbbbbb", "name": "Bar"}
+    assert is_favorite(prop, properties_root=tmp_path) is False
+
+
 def test_load_custom_props_converts_legacy_arrays_to_dicts(tmp_path: Path):
     """Legacy list-of-arrays format auto-converts to list-of-dicts on load.
 
-    Position 0 = ALN id (-1 = custom sentinel, cleared to None on load).
+    Position 0 = legacy id (-1 = custom sentinel, cleared to None on load).
     Position 1 = name, 2 = address, 6 = units, 8 = occupancy %, 12 = class.
     """
     data = [[-1, "Custom Prop", "Address", "Norfolk", "23502", "Norfolk Co",
@@ -425,7 +453,7 @@ def test_load_custom_props_converts_legacy_arrays_to_dicts(tmp_path: Path):
     assert result[0]["name"] == "Custom Prop"
     assert result[0]["units"] == 100
     assert result[0]["asset_class"] == "C"
-    assert result[0]["aln_id"] is None  # -1 sentinel cleared
+    assert result[0]["legacy_id"] is None  # -1 sentinel cleared
     assert result[0]["occupancy_pct"] == pytest.approx(0.93)  # 93 → 0.93
     assert result[0]["property_id"].startswith("custom-")
 

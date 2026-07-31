@@ -32,7 +32,7 @@ specification.
    stage: each is feature-flagged (`ai_enabled`), passes deterministic
    validators before any write (AC-11.3), and ships a manual/template fallback.
 
-5. **Data independence is a hard prerequisite (Section 7).** Nothing ALN-sourced
+5. **Data independence is a hard prerequisite (Section 7).** Nothing provider-sourced
    may remain discernible. Phase 0 runs first and everything after builds on the
    clean 8R spine.
 
@@ -88,7 +88,7 @@ against the schema above.
 
 > **Note on build order vs. the spec's own tension:** Section 13 lists P0 (data
 > independence) first, but the office-server pilot work (P0.5) is what's active
-> right now. Both are near the front and P0.5's infra doesn't depend on the ALN
+> right now. Both are near the front and P0.5's infra doesn't depend on the property record
 > purge, so building the pilot stack first is fine — just don't mark the app
 > "cut over" until Phase 0's clean spine lands underneath it.
 
@@ -102,5 +102,5 @@ against the schema above.
 > Definition of done: **[acceptance criteria IDs]** — write the tests and make
 > them pass against real Hampton Roads data before marking complete.
 > Constraints: keep the deterministic core LLM-free (§11); preserve template-true
-> Excel export and diff it; do not touch ALN data paths except per §7.
+> Excel export and diff it; do not touch property record data paths except per §7.
 > Do not start any later phase in this session.

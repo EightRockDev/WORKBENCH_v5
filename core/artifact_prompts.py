@@ -433,7 +433,7 @@ WHAT THIS DOCUMENT MUST COVER (every section is required when data permits):
   7. UNDERWRITING — Going-in vs stabilized. Walk every assumption:
      vacancy, bad debt, rent growth, expense growth, exit cap, AM fee,
      stabilization period, CapEx reserves. Cite where each number comes
-     from (T-12, ALN comps, market reports).
+     from (T-12, record comps, market reports).
 
   8. SELLER PRO FORMA vs EIGHT ROCK RECAST — Line-by-line reconciliation
      when data permits. Explicitly call out aggressive cuts (e.g.,

@@ -8,6 +8,7 @@ __pycache__/
 .coverage
 htmlcov/
 data/workbench.db
+workbench.db
 *.egg-info/
 dist/
 build/

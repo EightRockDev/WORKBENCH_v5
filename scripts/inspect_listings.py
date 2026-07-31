@@ -15,7 +15,7 @@ with sqlite3.connect(DB) as c:
 
     print("\nFirst 10 rows with ANY data (success/blocked/error):")
     rows = c.execute(
-        "SELECT aln_name, source, scrape_status, one_br_rent_low, "
+        "SELECT prop_name, source, scrape_status, one_br_rent_low, "
         "effective_one_br_rent, concession_text "
         "FROM rent_listings "
         "WHERE scrape_status != 'not_found' "

@@ -18,7 +18,7 @@ from __future__ import annotations
 # *** BUMP THIS ON EVERY CHANGE and add a CHANGELOG.md entry (owner directive). ***
 # ---------------------------------------------------------------------------
 
-WORKBENCH_VERSION = "V5.13.1.4.0"
+WORKBENCH_VERSION = "V5.13.2.0.0"
 
 
 # ---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ COLORS = {  # CONTENT-PANE LIGHT THEME (Yardi-style)
     "ac3":    "#7a5400",  # darkest gold (hover/active)
     "src_rr":   "#15803d",  # 🟢 Rent Roll
     "src_t12":  "#b45309",  # 🟠 T-12
-    "src_aln":  "#6b7588",  # ⚪ ALN
+    "src_8r":  "#6b7588",  # 🟦 8R Backbone
     "src_8r":   "#14b8a6",  # 🟦 8R self-sourced backbone (teal)
     "src_etl":  "#7c3aed",  # 🟣 Public ETL
     "src_user": "#a37102",  # 🥇 User input
@@ -288,6 +288,6 @@ PROPERTY_LIST_PAGE_SIZE = 60
 
 # Vacancy source badge colors (UI hints — keys consumed by Streamlit)
 VACANCY_SOURCE_COLORS = {
-    "ALN": "#FFC107",   # yellow chip — derived from ALN occupancy
+    "record": "#FFC107",  # yellow chip — derived from record occupancy
     "user": "#1976D2",  # blue chip — Brian has overridden
 }

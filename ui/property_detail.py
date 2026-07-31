@@ -1,4 +1,4 @@
-"""Property Detail tab — subject info, ALN data, notes, sale history, rent roll."""
+"""Property Detail tab — subject info, property record data, notes, sale history, rent roll."""
 
 from __future__ import annotations
 
@@ -336,15 +336,15 @@ def _render_header(prop: dict[str, Any], folder: PropertyFolder | None) -> None:
 # Property Card v2 (Brian 5/29 v2.0.19)
 #
 #   • Pulls each field from the best source available: rent roll → T-12 →
-#     OM → DB (ALN survey) → manual override. Manual overrides win when set.
+#     OM → DB (property record) → manual override. Manual overrides win when set.
 #   • Tags every row with a source color so the analyst can see at a glance
 #     which fields are auto-extracted vs entered by hand:
 #         🟢 src_rr   — rent roll (sources.json rentRoll.summary)
 #         🟠 src_t12  — T-12 (sources.json t12_* blocks)
 #         🟣 src_om   — OM / marketing materials (sources.json om / property_site)
-#         ⚪ src_aln  — ALN survey (DB row)
+#         ⚪ src_8r  — property record (DB row)
 #         🥇 src_user — manual entry / override
-#   • "Status" row removed entirely — it was an internal aln/custom flag.
+#   • "Status" row removed entirely — it was an internal record/custom flag.
 #   • Edit button opens a form to override any field. Overrides are saved
 #     to `property_card_overrides.json` in the property folder so they
 #     survive across V1↔V2 reruns and across sessions.
@@ -458,7 +458,7 @@ def _resolve_property_card_value(
     {"manual", "rent_roll", "t12", "om", "db", ""}. An empty source_tag
     means we couldn't find a value anywhere.
 
-    Priority: manual override → rent roll → T-12 → OM → DB (ALN).
+    Priority: manual override → rent roll → T-12 → OM → DB (record).
     """
     if key in overrides and overrides[key] not in (None, "", "—"):
         return overrides[key], "manual"
@@ -554,7 +554,7 @@ def _resolve_property_card_value(
                 except (TypeError, ValueError):
                     pass
 
-    # DB fallback (ALN survey)
+    # DB fallback (property record)
     db_v = prop.get(key)
     # Same fraction normalization for DB-sourced occupancy.
     if key == "occupancy_pct" and db_v not in (None, ""):
@@ -609,7 +609,7 @@ def _render_property_card(
         "rent_roll": c.get("src_rr",   "#15803d"),
         "t12":       c.get("src_t12",  "#b45309"),
         "om":        c.get("src_etl",  "#7c3aed"),
-        "db":        c.get("src_aln",  "#6b7588"),
+        "db":        c.get("src_8r",  "#6b7588"),
         "manual":    c.get("src_user", "#a37102"),
         "computed":  c.get("src_calc", "#1d4ed8"),
     }
@@ -617,7 +617,7 @@ def _render_property_card(
         "rent_roll": "RR",
         "t12":       "T12",
         "om":        "OM",
-        "db":        "ALN",
+        "db":        "8R",
         "manual":    "Manual",
         "computed":  "Calc",
     }
@@ -674,7 +674,7 @@ def _render_property_card(
         ("RR",     "Rent Roll",     src_colors["rent_roll"]),
         ("T12",    "T-12",          src_colors["t12"]),
         ("OM",     "OM / Marketing", src_colors["om"]),
-        ("ALN",    "ALN survey",    src_colors["db"]),
+        ("8R",     "8R Backbone",   src_colors["db"]),
         ("Calc",   "Computed",      src_colors["computed"]),
         ("Manual", "Manual entry",  src_colors["manual"]),
     ]
@@ -1372,7 +1372,7 @@ def render_property_detail(
       1. Header card (photo + address + Google Maps link + Open Folder)
       2. Sale History
       3. Property Card (renamed from "User Input Data") + Notes (side-by-side)
-         — non-custom properties keep the "ALN Data" label
+         — non-custom properties keep the "Property Data" label
       4. Documents (uploader; preamble copy removed)
       5. Document Auto-Ingestion (AI extraction → sources.json)
 

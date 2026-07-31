@@ -162,7 +162,7 @@ revenue assumptions.
   thresholds set when the template was built. They don't adapt.
 
 Our calibration **closes the loop**: it pulls fresh data from three
-sources (FRED, ALN, city assessor portals) every Monday, recomputes the
+sources (FRED, property records, city assessor portals) every Monday, recomputes the
 thresholds, and writes them back into your underwriting bars. As far as
 we know, no commercial product does this.
 
@@ -170,7 +170,7 @@ we know, no commercial product does this.
 
 1. **Pull fresh data.** Every Monday at 8 AM, a scheduled task pulls:
    - 10-year US Treasury yield (from FRED, the Federal Reserve's data API)
-   - Regional rent growth and vacancy by submarket (from ALN)
+   - Regional rent growth and vacancy by submarket (from the property record)
    - Per-city tax assessments (from city assessor portals — Norfolk,
      Virginia Beach, etc.)
 2. **Recompute thresholds.** A small ruleset turns the data into new

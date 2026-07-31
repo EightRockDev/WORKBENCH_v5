@@ -494,15 +494,15 @@ def analyze_seller_floor(
 # ---------------------------------------------------------------------------
 
 def lookup_property_purchase(
-    aln_address: str | None,
-    aln_city: str | None,
-    aln_name: str | None = None,
+    prop_address: str | None,
+    prop_city: str | None,
+    prop_name: str | None = None,
 ) -> tuple[float, int] | None:
     """Try to find the seller's purchase price + year from va_multifamily_inventory.
 
     Returns (purchase_price, purchase_year) or None if no match.
     """
-    if not aln_city or not aln_address:
+    if not prop_city or not prop_address:
         return None
     if not ETL_DB.is_file():
         return None
@@ -513,7 +513,7 @@ def lookup_property_purchase(
             "SELECT last_sale_price, last_sale_date FROM va_multifamily_inventory "
             "WHERE city = ? AND last_sale_price > 100000 AND last_sale_date IS NOT NULL "
             "AND last_sale_date != ''",
-            (aln_city,),
+            (prop_city,),
         ).fetchall()
 
     # Address normalization
@@ -524,7 +524,7 @@ def lookup_property_purchase(
         s = re.sub(r"[#.,]", "", a.upper())
         return " ".join(s.split())[:30]
 
-    aln_norm = norm(aln_address)
+    prop_norm = norm(prop_address)
     # ... best-effort match. For now, return None and let UI provide manual entry.
     # This is a placeholder; richer matching can be added later.
     return None

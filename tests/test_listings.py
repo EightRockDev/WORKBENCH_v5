@@ -270,14 +270,14 @@ class TestIntegrationMocked:
                     concession_text="1 month free",
                 )
 
-        aln = {
+        rec = {
             "property_id": "test-1",
             "name": "Fake Property",
             "address": "123 Test Lane",
             "city": "Norfolk",
             "units": 100,
         }
-        row = _scrape_one(FakeScraper(), aln, cached_url=None)
+        row = _scrape_one(FakeScraper(), rec, cached_url=None)
 
         assert row["scrape_status"] == "success"
         assert row["one_br_rent_low"] == 1300
@@ -297,11 +297,11 @@ class TestIntegrationMocked:
             def scrape_property(self, url):
                 raise AssertionError("should not be called")
 
-        aln = {
+        rec = {
             "property_id": "test-2", "name": "Missing", "address": "999 Nowhere",
             "city": "Norfolk", "units": 50,
         }
-        row = _scrape_one(FakeScraper(), aln, cached_url=None)
+        row = _scrape_one(FakeScraper(), rec, cached_url=None)
         assert row["scrape_status"] == "not_found"
         assert row["listing_url"] is None
 
@@ -315,11 +315,11 @@ class TestIntegrationMocked:
             def scrape_property(self, url):
                 return None  # simulating block
 
-        aln = {
+        rec = {
             "property_id": "test-3", "name": "Blocked", "address": "1 Test",
             "city": "Norfolk", "units": 50,
         }
-        row = _scrape_one(FakeScraper(), aln, cached_url=None)
+        row = _scrape_one(FakeScraper(), rec, cached_url=None)
         assert row["scrape_status"] == "blocked"
 
     def test_url_cache_skips_search(self):
@@ -342,12 +342,12 @@ class TestIntegrationMocked:
                     listing_address="",
                 )
 
-        aln = {
+        rec = {
             "property_id": "test-4", "name": "Cached", "address": "1 Test",
             "city": "Norfolk", "units": 50,
         }
         row = _scrape_one(
-            FakeScraper(), aln,
+            FakeScraper(), rec,
             cached_url="https://apartments.com/cached/",
         )
         assert not search_called, "search should not be called when URL cached"

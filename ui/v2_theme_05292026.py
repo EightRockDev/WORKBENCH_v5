@@ -249,7 +249,7 @@ def _et_clock_now() -> str:
 #                 (b) Property Card refactor on Subject tab. Each row
 #                     now resolves from the best source (rent roll →
 #                     T-12 → OM → DB → manual override) with a colored
-#                     provenance badge (RR / T12 / OM / ALN / Manual).
+#                     provenance badge (RR / T12 / OM / 8R / Manual).
 #                     New "✏️ Edit" popover next to the card heading
 #                     lets Brian override any field — saved values get
 #                     the Manual badge and win over auto-pulled values.
@@ -316,7 +316,7 @@ def _et_clock_now() -> str:
 #                     need to see.
 #
 #  v2.0.23  5/29  Four asks:
-#                 (a) Property Card: source badges (RR / ALN / T12 /
+#                 (a) Property Card: source badges (RR / 8R / T12 /
 #                     OM / Calc / Manual) moved to the LEFT of the
 #                     label text. Fixed 50px badge slot keeps labels
 #                     aligned even when a row has no badge.
@@ -393,7 +393,7 @@ def _et_clock_now() -> str:
 #                     column, then 🗑️ delete. Re-parse button moved to
 #                     the BOTTOM (was at the top).
 #                 (e) Property Card label clarified: "Manager" → "Manager
-#                     (person)" so it's obvious ALN/seller-supplied "Gates
+#                     (person)" so it's obvious record/seller-supplied "Gates
 #                     Hudson"-style values belong in Mgmt Company, not
 #                     Manager.
 #
@@ -660,13 +660,13 @@ def _et_clock_now() -> str:
 #                 Diligence, etc.) — they share the .v2-ins-row class.
 #
 #  v2.1.0   5/30  *** MAJOR: multi-state expansion + product rename. ***
-#                 (1) RENAME: the product is now "QUARRY" (was
+#                 (1) RENAME: the product is now "QUARRIE" (was
 #                     "Workbench"). Topbar wordmark + landing hero
 #                     updated. Tagline "Where Eight Rock breaks ground."
 #                     Backend module names left unchanged (no churn).
-#                 (2) DATA: ingested the full multi-state ALN library
+#                 (2) DATA: ingested the full multi-state licensed export library
 #                     (VA·NC·SC·GA·TN + national mgmt portfolios) —
-#                     2,530 → 13,657 properties, deduped by ALN API-Id
+#                     2,530 → 13,657 properties, deduped by provider API-Id
 #                     UUID. New columns: asset_type (Brian's tag rule),
 #                     property_segment (Conventional/Affordable/Senior/
 #                     Student/Military), market_description, owner_fax,
@@ -2249,7 +2249,7 @@ def render_v2_topbar(prop: dict | None = None) -> None:
             f'<div class="v2-nav-inline">'
             f'<a href="?home=1" target="_self" class="v2-nav-brand" '
             f'title="Home — browse all properties" style="text-decoration:none">'
-            f'<div class="v2-nav-brand-mark">8R</div><span>QUARRY</span></a>'
+            f'<div class="v2-nav-brand-mark">8R</div><span>QUARRIE</span></a>'
             f'<div class="v2-nav-crumbs"><span class="here">{crumb_here}</span></div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -2264,18 +2264,25 @@ def render_v2_topbar(prop: dict | None = None) -> None:
             key="v2_global_search",
         )
     with c_right:
-        st.markdown(
-            f'<div class="v2-nav-inline v2-nav-right">'
-            f'<span class="v2-nav-tag"><span class="d"></span>Live · {when}</span>'
-            f'<span class="v2-version-pill" title="{version}">{get_v2_version_short()}</span>'
-            f'<a class="v2-switch-pill" href="{switch_url}" target="_self" '
-            f'title="Open the same property in V1 (port 8501)" '
-            f'style="font-size:10px;padding:4px 10px;">'
-            f'<span class="arrow">↘</span><span>V1</span></a>'
-            f'<div class="v2-avatar">BM</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+        # The avatar is a real button (it opens the Appearance dialog), and
+        # Streamlit buttons are block elements — so the status pills and the
+        # avatar sit in their own columns to stay on one line.
+        r_pills, r_avatar = st.columns([9.0, 1.0], vertical_alignment="center")
+        with r_pills:
+            st.markdown(
+                f'<div class="v2-nav-inline v2-nav-right">'
+                f'<span class="v2-nav-tag"><span class="d"></span>Live · {when}</span>'
+                f'<span class="v2-version-pill" title="{version}">{get_v2_version_short()}</span>'
+                f'<a class="v2-switch-pill" href="{switch_url}" target="_self" '
+                f'title="Open the same property in V1 (port 8501)" '
+                f'style="font-size:10px;padding:4px 10px;">'
+                f'<span class="arrow">↘</span><span>V1</span></a>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        with r_avatar:
+            from ui.theme_panel import render_avatar_button
+            render_avatar_button()
 
     # In-place results dropdown — renders right under the bar when there's a
     # query. Clicking a result opens that property (?prop=<id>).
@@ -2669,7 +2676,7 @@ def _calibration_help_html() -> str:
          "annual debt service. The lender's primary credit test in year one."),
         ("DSCR stab", "The same coverage ratio in the stabilized (peak-NOI) "
          "year — confirms the loan stays safe after the value-add plan lands."),
-        ("Vacancy", "Your underwritten vacancy assumption vs the ALN market "
+        ("Vacancy", "Your underwritten vacancy assumption vs the legacy market "
          "actual. ✓ when you're conservative (assuming at least as much "
          "vacancy as the market)."),
         ("Exit cap", "Your assumed sale (exit) cap rate vs the comp-derived "
@@ -2710,7 +2717,7 @@ def render_v2_inspector(prop: dict, metrics: dict | None = None) -> None:
     #   $/unit vs sub  vs  PPU_GO_<CITY>
     #   DSCR Y1        vs  1.15
     #   DSCR stab      vs  1.30 (GO_DSCR)
-    #   Vacancy        vs  ALN VACANCY_DEFAULT
+    #   Vacancy        vs  record VACANCY_DEFAULT
     #   Exit cap       vs  EXIT_CAP_DEFAULT
     try:
         thresholds = calibration.get_all_thresholds()
@@ -2792,13 +2799,13 @@ def render_v2_inspector(prop: dict, metrics: dict | None = None) -> None:
         state = _state(dscr_st >= 1.30, warn=dscr_st >= 1.20)
         cal_rows.append(_row("DSCR stab", f"{dscr_st:.2f}×", "vs 1.30", state))
 
-    # Vacancy assumption (we use 8.0% headline, ALN city baseline as the threshold)
+    # Vacancy assumption (we use 8.0% headline, record city baseline as the threshold)
     vac_t = th_by_name.get("VACANCY_DEFAULT")
     if vac_t:
         you_vac = 0.08  # standard Eight Rock stabilized vacancy
-        aln_vac = vac_t.effective_value
-        state = "warn" if you_vac < aln_vac else "pos"
-        cal_rows.append(_row("Vacancy", _fmt_pct(you_vac), f"vs ALN {_fmt_pct(aln_vac)}", state))
+        prop_vac = vac_t.effective_value
+        state = "warn" if you_vac < prop_vac else "pos"
+        cal_rows.append(_row("Vacancy", _fmt_pct(you_vac), f"vs record {_fmt_pct(prop_vac)}", state))
 
     # Exit cap
     exit_t = th_by_name.get("EXIT_CAP_DEFAULT")
@@ -3127,8 +3134,8 @@ def render_v2_cmdk_palette() -> None:
     setTimeout(tagTabs, 400);
     setTimeout(tagTabs, 1200);
     setTimeout(tagTabs, 2500);
-    if (pdoc.__quarry_kbd) return;            // install listener once per page
-    pdoc.__quarry_kbd = true;
+    if (pdoc.__quarrie_kbd) return;            // install listener once per page
+    pdoc.__quarrie_kbd = true;
     pdoc.addEventListener('keydown', function(e){
       // Cmd/Ctrl+K -> focus the in-place search input
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
@@ -3598,7 +3605,7 @@ def render_v2_inventory_landing() -> None:
         f'<div class="v2-landing">'
         f'<div class="v2-landing-row">'
         f'<div>'
-        f'<h1 class="v2-landing-title">Quarry.</h1>'
+        f'<h1 class="v2-landing-title">Quarrie.</h1>'
         f'<div class="v2-landing-tagline">Where Eight Rock breaks ground.</div>'
         f'</div>'
         f'<div class="v2-landing-count">'

@@ -86,7 +86,7 @@ def render_market_calibration_panel(subject_city: str | None = None) -> None:
         help_summary=(
             "Your underwriting bars (GO/WATCH/NO-GO cap rates, debt yield, "
             "vacancy, per-unit ceilings) refresh every Monday from FRED + "
-            "ALN + assessor data. Floor-locked. Click for the full Help "
+            "property records + assessor data. Floor-locked. Click for the full Help "
             "section."
         ),
     ):

@@ -27,6 +27,7 @@ TEXT_SUFFIXES = {".py", ".md", ".sql", ".txt", ".json", ".toml", ".yaml",
                  ".yml", ".bat", ".ps1", ".html", ".css", ".csv"}
 # The Phase 0 implementation itself must name ALN to eradicate it.
 EXEMPT = {"core/spine.py", "core/phase0.py", "scripts/phase0_sweep.py",
+          "phase0-sweep.bat",   # launcher for the exempt sweep script itself
           "scripts/run_phase0.py", "docs/spec/workbench-v5.0-spec.md",
           "docs/spec/BUILD-ORDER.md", "CHANGELOG.md", "CLAUDE.md",
           "tests/test_spine.py", "tests/test_phase0.py"}

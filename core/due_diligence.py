@@ -279,7 +279,7 @@ DEFAULT_CHECKLIST: list[_DefaultItem] = [
                  "brian", 7, "market.population_growth"),
     _DefaultItem("mkt-2", "market", "Supply pipeline — new construction permits (BPS)",
                  "brian", 7, "market.new_supply_pipeline"),
-    _DefaultItem("mkt-3", "market", "Rent comp pull (HelloData / Apartments.com / ALN)",
+    _DefaultItem("mkt-3", "market", "Rent comp pull (HelloData / Apartments.com / market survey)",
                  "brian", 7, "market.rent_growth_trend"),
     _DefaultItem("mkt-4", "market", "Recent sale comps (last 12 months)",
                  "brian", 7, "market.comparable_sales_volume"),

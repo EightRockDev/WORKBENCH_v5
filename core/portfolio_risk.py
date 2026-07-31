@@ -12,7 +12,7 @@ and aggregates portfolio-wide views:
 Built on top of:
   - core/lp_gp_ledger.py (LP ledger per property)
   - data/property_io.py (deal.json reader)
-  - data/db.py (ALN property lookup)
+  - data/db.py (property record lookup)
 """
 from __future__ import annotations
 
@@ -119,7 +119,7 @@ def build_rollup() -> PortfolioRollup:
         if folder.path is None:
             continue
 
-        # Pull ALN/DB property metadata
+        # Pull record/DB property metadata
         # The folder_name doesn't directly tell us property_id, so we use
         # the deal.json's identity. Best-effort: deal.json's property_id
         # if it has one (it doesn't by default — deal.json is slider state).

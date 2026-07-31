@@ -1,8 +1,8 @@
 """Pull tax + sales records for all Chesapeake Class C 20-400-unit properties
-in Eight Rock's ALN universe. Outputs:
+in Eight Rock's property universe. Outputs:
 
   1. ``chesapeake-watchlist-MMDDYYYY.csv`` and ``.xlsx`` at workbench root —
-     one row per property with ALN identity + matched assessor record.
+     one row per property with property identity + matched assessor record.
   2. ``chesapeake-watchlist-MMDDYYYY.md`` — Brian-readable markdown report
      with per-property cards + flagged signals (recent sales, institutional
      owners, assessment-to-sale gap).
@@ -11,7 +11,7 @@ in Eight Rock's ALN universe. Outputs:
      conditionally only when a folder exists).
 
 Address matching strategy:
-    ALN and assessor use different address conventions (ALN: full street
+    The property record and assessor use different address conventions (record: full street
     suffix "Circle"; assessor: abbreviated "CIR"). Match on shared street-
     name tokens (excluding numbers + suffix variants) plus the largest-
     assessed parcel as the "main" record for multi-parcel complexes.
@@ -96,7 +96,7 @@ def _normalize_address(addr: str | None) -> tuple[str, list[str]]:
 # Data fetchers
 # ---------------------------------------------------------------------------
 
-def fetch_aln_chesapeake() -> list[dict]:
+def fetch_prop_chesapeake() -> list[dict]:
     """Chesapeake properties Brian is tracking.
 
     Universe = (a) Class C 20-400 units (Eight Rock target band, per
@@ -126,7 +126,7 @@ def fetch_aln_chesapeake() -> list[dict]:
         for folder in PROPERTIES_DIR.iterdir():
             if not folder.is_dir() or not folder.name.lower().endswith("-chesapeake"):
                 continue
-            # Try to find ALN row for this folder by name match
+            # Try to find property record for this folder by name match
             kebab = folder.name.lower()
             # Folder convention: <name-kebab>-<units>-<city>
             # We just match by name prefix being in lower(p.name)
@@ -176,7 +176,7 @@ def fetch_assessment_history(parcel_id: str) -> list[tuple[int, float]]:
 
 
 # ---------------------------------------------------------------------------
-# Matching ALN → assessor parcel(s)
+# Matching property records → assessor parcel(s)
 # ---------------------------------------------------------------------------
 
 _NUM_PREFIX_RE = re.compile(r"^(\d+)")
@@ -204,7 +204,7 @@ def _is_multifamily_class(class_desc: str | None) -> bool:
 
 
 def _name_tokens(name: str) -> set[str]:
-    """Strip common multifamily filler words from an ALN property name and
+    """Strip common multifamily filler words from an property record name and
     return the meaningful tokens. Used for owner-name match pass."""
     filler = {"AT", "OF", "ON", "THE", "AND", "OAKS", "PARK", "MANOR",
               "WOODS", "VILLAGE", "PLACE", "TRAIL", "TRAILS", "HOUSE",
@@ -215,48 +215,48 @@ def _name_tokens(name: str) -> set[str]:
 
 
 def match_assessor_parcels(
-    aln_addr: str,
+    prop_addr: str,
     assessor: list[dict],
-    aln_name: str = "",
+    prop_name: str = "",
 ) -> tuple[list[dict], str]:
     """Returns (matches, match_pass) where match_pass is "address" or "owner-name"."""
-    """Find assessor parcels that match the ALN property.
+    """Find assessor parcels that match the property record.
 
     Two-pass matching strategy:
 
       Pass 1 (strict address):
         - Multifamily class code
         - Shared street-name tokens (≥1 single-word, ≥2 multi-word)
-        - Street number within ±3000 of ALN address (covers complexes
+        - Street number within ±3000 of record address (covers complexes
           where leasing office number is far from parcel number)
 
       Pass 2 (owner-name fallback, only if pass 1 empty):
         - Multifamily class code
-        - ANY token from the ALN property name appears in the assessor
+        - ANY token from the property record name appears in the assessor
           owner field (e.g., "Wellington at Western Branch" → assessor
           owner "WELLINGTON WESTERN BRANCH LLC" matches via "WELLINGTON").
 
     Returns parcels sorted by overlap desc, then assessed_value desc.
     """
-    aln_norm, aln_tokens = _normalize_address(aln_addr)
-    aln_set = set(aln_tokens)
-    min_overlap = 2 if len(aln_tokens) >= 2 else 1
-    aln_num = _street_number(aln_addr)
+    prop_norm, prop_tokens = _normalize_address(prop_addr)
+    prop_set = set(prop_tokens)
+    min_overlap = 2 if len(prop_tokens) >= 2 else 1
+    prop_num = _street_number(prop_addr)
 
     # ---- Pass 1: address-based ----
     pass1: list[tuple[int, dict]] = []
     for ar in assessor:
         if not _is_multifamily_class(ar.get("class_description")):
             continue
-        if not aln_tokens:
+        if not prop_tokens:
             continue
         ar_norm, ar_tokens = _normalize_address(ar["address"])
-        overlap = len(aln_set & set(ar_tokens))
+        overlap = len(prop_set & set(ar_tokens))
         if overlap < min_overlap:
             continue
         ar_num = _street_number(ar["address"])
-        if aln_num is not None and ar_num is not None:
-            if abs(ar_num - aln_num) > 3000:
+        if prop_num is not None and ar_num is not None:
+            if abs(ar_num - prop_num) > 3000:
                 continue
         pass1.append((overlap, ar))
 
@@ -265,9 +265,9 @@ def match_assessor_parcels(
         return [c[1] for c in pass1], "address"
 
     # ---- Pass 2: owner-name based (fallback) ----
-    if not aln_name:
+    if not prop_name:
         return [], "none"
-    name_set = _name_tokens(aln_name)
+    name_set = _name_tokens(prop_name)
     if not name_set:
         return [], "none"
     pass2: list[tuple[int, dict]] = []
@@ -316,7 +316,7 @@ def years_ago(unix_ms: float | None) -> float | None:
 
 
 def find_folder(name: str) -> Path | None:
-    """Locate the Properties/<folder> matching this ALN property name.
+    """Locate the Properties/<folder> matching this property record name.
     Heuristic: kebab-case the name (dashes, no spaces) and look for any
     folder whose name starts with it."""
     if not PROPERTIES_DIR.is_dir():
@@ -327,7 +327,7 @@ def find_folder(name: str) -> Path | None:
         if not child.is_dir():
             continue
         cname = child.name.lower()
-        # Match if the folder name starts with the kebabbed ALN name
+        # Match if the folder name starts with the kebabbed record name
         if cname.startswith(needle):
             return child
     return None
@@ -338,7 +338,7 @@ def find_folder(name: str) -> Path | None:
 # ---------------------------------------------------------------------------
 
 def build_property_record(
-    aln: dict,
+    rec: dict,
     matches: list[dict],
     match_pass: str = "address",
 ) -> dict:
@@ -375,14 +375,14 @@ def build_property_record(
         signals.append("MATCH-VIA-OWNER-NAME-(VERIFY)")
 
     return {
-        "aln_name": aln["name"],
-        "aln_address": aln["address"],
-        "units": aln["units"],
-        "year_built": aln["year_built"],
-        "occupancy": aln["occupancy_pct"],
-        "avg_rent": aln["avg_rent"],
-        "aln_owner": aln.get("owner"),
-        "manager": aln.get("manager"),
+        "prop_name": rec["name"],
+        "prop_address": rec["address"],
+        "units": rec["units"],
+        "year_built": rec["year_built"],
+        "occupancy": rec["occupancy_pct"],
+        "avg_rent": rec["avg_rent"],
+        "prop_owner": rec.get("owner"),
+        "manager": rec.get("manager"),
         "n_assessor_parcels": len(matches),
         "primary_parcel_id": primary["parcel_id"] if primary else "",
         "primary_gpin": primary.get("gpin") if primary else "",
@@ -402,7 +402,7 @@ def build_property_record(
         ),
         "assessment_history": history,    # list of (fy, value) tuples
         "signals": ",".join(signals),
-        "_aln_property_id": aln["property_id"],
+        "_prop_property_id": rec["property_id"],
         "_matches": matches,
     }
 
@@ -414,8 +414,8 @@ def build_property_record(
 def write_csv(records: list[dict], path: Path) -> None:
     import csv
     cols = [
-        "aln_name", "aln_address", "units", "year_built", "occupancy",
-        "avg_rent", "aln_owner", "manager", "n_assessor_parcels",
+        "prop_name", "prop_address", "units", "year_built", "occupancy",
+        "avg_rent", "prop_owner", "manager", "n_assessor_parcels",
         "primary_parcel_id", "primary_gpin", "primary_address_assessor",
         "assessor_owner", "total_assessed_value", "land_value",
         "improvement_value", "acreage", "latest_fy",
@@ -440,8 +440,8 @@ def write_xlsx(records: list[dict], path: Path) -> None:
     ws.title = "Chesapeake Watchlist"
 
     cols = [
-        ("Property", "aln_name", 30),
-        ("Address (ALN)", "aln_address", 28),
+        ("Property", "prop_name", 30),
+        ("Address (record)", "prop_address", 28),
         ("Units", "units", 7),
         ("Built", "year_built", 7),
         ("Occ%", "occupancy", 6),
@@ -506,7 +506,7 @@ def write_xlsx(records: list[dict], path: Path) -> None:
     for rec in records:
         for fy, val in rec.get("assessment_history") or []:
             ws2.append([
-                rec["aln_name"], rec["primary_parcel_id"], fy, val,
+                rec["prop_name"], rec["primary_parcel_id"], fy, val,
             ])
     for col_idx, w in enumerate([30, 18, 8, 16], start=1):
         ws2.column_dimensions[get_column_letter(col_idx)].width = w
@@ -519,11 +519,11 @@ def write_markdown(records: list[dict], path: Path) -> None:
     lines: list[str] = []
     lines.append("# Chesapeake Watchlist — Tax & Sales Records")
     lines.append("")
-    lines.append(f"Generated {TODAY.isoformat()} from ALN + Chesapeake city assessor open data.")
+    lines.append(f"Generated {TODAY.isoformat()} from property records + Chesapeake city assessor open data.")
     lines.append("")
     lines.append(
         f"**{len(records)} Class C properties** in Eight Rock's Chesapeake universe (20-400 units). "
-        "Match heuristic: shared street-name tokens between ALN address and assessor parcel; "
+        "Match heuristic: shared street-name tokens between record address and assessor parcel; "
         "for multi-parcel complexes, the largest-assessed-value parcel is shown as primary."
     )
     lines.append("")
@@ -552,12 +552,12 @@ def write_markdown(records: list[dict], path: Path) -> None:
         for r in sorted(recent_sales, key=lambda r: r["years_since_last_sale"] or 99):
             ppu = (r["last_sale_price"] or 0) / r["units"] if r["units"] else 0
             lines.append(
-                f"- **{r['aln_name']}** ({r['units']}u, {r['year_built'] or '?'}) — "
+                f"- **{r['prop_name']}** ({r['units']}u, {r['year_built'] or '?'}) — "
                 f"sold {r['last_sale_date']} for **{fmt_dollars(r['last_sale_price'])}** "
                 f"(${ppu:,.0f}/unit) to {r['assessor_owner'] or '?'}. "
                 f"Sale/Assess: {r['sale_to_assessment_ratio']:.2f}x"
                 if r['sale_to_assessment_ratio'] else
-                f"- **{r['aln_name']}** — sold {r['last_sale_date']} for **{fmt_dollars(r['last_sale_price'])}**"
+                f"- **{r['prop_name']}** — sold {r['last_sale_date']} for **{fmt_dollars(r['last_sale_price'])}**"
             )
         lines.append("")
 
@@ -565,11 +565,11 @@ def write_markdown(records: list[dict], path: Path) -> None:
     lines.append("## Per-Property Detail")
     lines.append("")
     for r in records:
-        lines.append(f"### {r['aln_name']}")
+        lines.append(f"### {r['prop_name']}")
         lines.append("")
-        lines.append(f"- **ALN address:** {r['aln_address']}")
+        lines.append(f"- **record address:** {r['prop_address']}")
         lines.append(f"- **Units:** {r['units']} | **Built:** {r['year_built'] or '?'} | **Occ:** {(r['occupancy'] or 0)*100:.1f}% | **Avg rent:** {fmt_dollars(r['avg_rent'])}")
-        lines.append(f"- **ALN owner:** {r['aln_owner'] or '?'} | **Manager:** {r['manager'] or '?'}")
+        lines.append(f"- **Record owner:** {r['prop_owner'] or '?'} | **Manager:** {r['manager'] or '?'}")
         if r["primary_parcel_id"]:
             lines.append(f"- **Assessor parcel:** {r['primary_parcel_id']} at {r['primary_address_assessor']}")
             lines.append(f"- **Assessor owner:** {r['assessor_owner'] or '?'}")
@@ -657,9 +657,9 @@ def write_sales_json_for_property_folder(record: dict, folder: Path) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> int:
-    print("Fetching ALN Chesapeake Class C 20-400 unit properties...")
-    aln_rows = fetch_aln_chesapeake()
-    print(f"  found {len(aln_rows)} ALN properties")
+    print("Fetching Chesapeake Class C 20-400 unit properties...")
+    prop_rows = fetch_prop_chesapeake()
+    print(f"  found {len(prop_rows)} property records")
 
     print("Fetching Chesapeake assessor inventory...")
     assessor = fetch_chesapeake_assessor()
@@ -668,13 +668,13 @@ def main() -> int:
 
     records: list[dict] = []
     folders_updated = 0
-    for aln in aln_rows:
-        matches, match_pass = match_assessor_parcels(aln["address"], assessor, aln_name=aln["name"])
-        rec = build_property_record(aln, matches, match_pass=match_pass)
+    for src in prop_rows:
+        matches, match_pass = match_assessor_parcels(src["address"], assessor, prop_name=src["name"])
+        rec = build_property_record(src, matches, match_pass=match_pass)
         records.append(rec)
         match_str = f"{rec['n_assessor_parcels']} match" if rec['n_assessor_parcels'] != 1 else "1 match"
         print(
-            f"  {aln['name'][:36]:<36} u={aln['units']:>3}  "
+            f"  {src['name'][:36]:<36} u={src['units']:>3}  "
             f"{match_str:<10}  "
             f"assessed={fmt_dollars(rec['total_assessed_value']):>14}  "
             f"sale={fmt_dollars(rec['last_sale_price']):>14}  "
@@ -682,7 +682,7 @@ def main() -> int:
         )
 
         # Write sales.json into property folder if one exists
-        folder = find_folder(aln["name"])
+        folder = find_folder(src["name"])
         if folder is not None:
             write_sales_json_for_property_folder(rec, folder)
             folders_updated += 1

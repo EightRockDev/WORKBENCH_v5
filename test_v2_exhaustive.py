@@ -290,7 +290,7 @@ def d1_topbar():
     captured.clear()
     render_v2_topbar(GOOD_PROP)
     out = ''.join(captured)  # v2.1.2 — topbar is now a columns row (multi-markdown)
-    assert 'QUARRY' in out  # renamed from WORKBENCH in v2.1.0
+    assert 'QUARRIE' in out  # renamed from WORKBENCH in v2.1.0
     from config import WORKBENCH_VERSION
     assert WORKBENCH_VERSION in out  # pill shows the REAL workbench version
     assert 'Crossroads Townhomes' in out
@@ -478,7 +478,7 @@ def e13_topbar_none_prop():
     captured.clear()
     render_v2_topbar(None)
     out = ''.join(captured)
-    assert 'QUARRY' in out  # renamed from WORKBENCH in v2.1.0
+    assert 'QUARRIE' in out  # renamed from WORKBENCH in v2.1.0
     assert 'Pick a property' in out
 t("E13: Topbar with None prop", e13_topbar_none_prop)
 
@@ -808,7 +808,7 @@ t("K10: Search is a native input; results link to properties",
 
 def k11_bridge_install_once_guard():
     body = _cmdk_src()
-    assert '__quarry_kbd' in body, "Bridge must guard against double-install"
+    assert '__quarrie_kbd' in body, "Bridge must guard against double-install"
 t("K11: ⌘K bridge guards against double-install", k11_bridge_install_once_guard)
 
 def k12_palette_props_still_searchable():
@@ -1026,7 +1026,7 @@ def l10_sync_favorites_share():
     """Favorites are stored in a JSON file. Modifying via V1 toggles is
     immediately visible in V2 on next rerun."""
     from data.property_io import toggle_favorite, load_favorites
-    fake_prop = {'property_id': 'p_qa_sync_test_dummy', 'name': 'qa-test', 'aln_id': ''}
+    fake_prop = {'property_id': 'p_qa_sync_test_dummy', 'name': 'qa-test', 'legacy_id': ''}
     pid = fake_prop['property_id']
     before = pid in load_favorites()
     # Simulate V1 toggling
@@ -2127,13 +2127,13 @@ def w4_property_card_no_status_row():
     fn_start = src.find('def render_property_detail(')
     assert fn_start > 0
     body = src[fn_start:]
-    # The active call should be _render_property_card, not _render_aln_grid
+    # The active call should be _render_property_card, not _render_prop_grid
     active_calls = [
         line for line in body.splitlines()
-        if '_render_aln_grid(' in line and not line.lstrip().startswith('#')
+        if '_render_prop_grid(' in line and not line.lstrip().startswith('#')
     ]
     assert not active_calls, \
-        f"Subject tab still calls _render_aln_grid: {active_calls}"
+        f"Subject tab still calls _render_prop_grid: {active_calls}"
     assert '_render_property_card(' in body, \
         "Subject tab must call _render_property_card now"
 t("W4: Property Card removes 'Status' row + uses new renderer", w4_property_card_no_status_row)
@@ -3037,15 +3037,15 @@ def dd6_breadcrumb_links_to_home():
     single 'Search' link that opens the ⌘K palette. The ?home=1 reset
     path is still honored when the URL has it (kept for back-compat)."""
     src = open('ui/v2_theme_05292026.py', encoding='utf-8').read()
-    # v2.1.2 — the QUARRY brand mark is the Home link (?home=1); the
+    # v2.1.2 — the QUARRIE brand mark is the Home link (?home=1); the
     # ?home=1 reset path stays wired in the query-param handler.
     assert '?home=1' in src or 'qp.get("home")' in src, \
         "Home reset path must still be wired"
     pos_topbar = src.find('def render_v2_topbar(')
     tbar = src[pos_topbar:src.find('\ndef ', pos_topbar + 1)]
-    assert 'href="?home=1"' in tbar and 'QUARRY' in tbar, \
-        "QUARRY brand must link to home (?home=1)"
-t("DD6: QUARRY brand links home (?home=1); reset still wired",
+    assert 'href="?home=1"' in tbar and 'QUARRIE' in tbar, \
+        "QUARRIE brand must link to home (?home=1)"
+t("DD6: QUARRIE brand links home (?home=1); reset still wired",
   dd6_breadcrumb_links_to_home)
 
 
@@ -3522,12 +3522,12 @@ t("II4: V2_VERSION ≥ v2.0.31", ii4_v2_version_bumped_to_31)
 # ============================================================================
 
 def jj1_breadcrumb_search_format():
-    """v2.1.2 — topbar shows the QUARRY brand (home link) + the current
+    """v2.1.2 — topbar shows the QUARRIE brand (home link) + the current
     property in the crumb. The search is the input field, not a crumb."""
     src = open('ui/v2_theme_05292026.py', encoding='utf-8').read()
     pos_fn = src.find('def render_v2_topbar(')
     body = src[pos_fn:src.find('\ndef ', pos_fn + 1)]
-    assert 'QUARRY' in body and 'v2-nav-crumbs' in body and 'crumb_here' in body
+    assert 'QUARRIE' in body and 'v2-nav-crumbs' in body and 'crumb_here' in body
     # Old "Pipeline" / "Active Deals" links removed
     for needle in ('>Pipeline</a>', '>Active Deals</a>'):
         for line in body.splitlines():
@@ -4229,7 +4229,7 @@ t("M4: Stat bar pending-state fallback when no deal.json", m4_stat_bar_pending_f
 #   QQ4: list_properties state filter + cities IN-list work
 #   QQ5: asset_type tagged (Multifamily default), no nulls in target states
 #   QQ6: live deals (Crossroads) survive the multi-state rebuild
-#   QQ7: V2_VERSION ≥ v2.1.0; product renamed to QUARRY
+#   QQ7: V2_VERSION ≥ v2.1.0; product renamed to QUARRIE
 #   QQ8: ⌘K palette includes Crossroads WITH address tokens (regression)
 # ============================================================================
 
@@ -4301,8 +4301,8 @@ def qq7_version_and_rename():
         f"Expected >= v2.1.0, got {V2_VERSION}"
     captured.clear()
     render_v2_topbar(None)
-    assert "QUARRY" in ''.join(captured), "Product not renamed to QUARRY in topbar"
-t("QQ7: V2_VERSION ≥ v2.1.0 + renamed to QUARRY", qq7_version_and_rename)
+    assert "QUARRIE" in ''.join(captured), "Product not renamed to QUARRIE in topbar"
+t("QQ7: V2_VERSION ≥ v2.1.0 + renamed to QUARRIE", qq7_version_and_rename)
 
 
 def qq8_palette_includes_crossroads_with_address():

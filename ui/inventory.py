@@ -43,9 +43,9 @@ from ui.etl_notice import render_etl_missing_notice
 
 
 # ---------------------------------------------------------------------------
-# Address normalization for ALN ↔ Assessor cross-reference
+# Address normalization for Property ↔ Assessor cross-reference
 # ---------------------------------------------------------------------------
-# Assessor data ("3000 S CAPE HENRY AVE") and ALN data ("3000 S. Cape Henry
+# Assessor data ("3000 S CAPE HENRY AVE") and property record data ("3000 S. Cape Henry
 # Avenue") describe the same parcel with different formatting. Normalize
 # both sides to a canonical form so address-keyed joins actually match.
 
@@ -91,62 +91,62 @@ def _normalize_address(addr: str | None) -> str:
     return " ".join(tokens)
 
 
-# Pertinent ALN fields surfaced in the cross-referenced inventory tables.
-# Keys mirror the ALN row's column names; values are display labels. Order
+# Pertinent property record fields surfaced in the cross-referenced inventory tables.
+# Keys mirror the property record's column names; values are display labels. Order
 # here = display order in the dataframe.
-_ALN_DISPLAY_FIELDS: tuple[tuple[str, str], ...] = (
-    ("name",                "ALN Property"),
-    ("asset_class",         "ALN Class"),
-    ("units",               "ALN Units"),
-    ("year_built",          "ALN Built"),
-    ("management_company",  "ALN Mgmt Co"),
-    ("owner",               "ALN Owner"),
-    ("manager",             "ALN On-site Mgr"),
-    ("occupancy_pct",       "ALN Occ"),
-    ("avg_rent",            "ALN Avg Rent"),
-    ("submarket",           "ALN Submarket"),
+_PROP_DISPLAY_FIELDS: tuple[tuple[str, str], ...] = (
+    ("name",                "Prop Name"),
+    ("asset_class",         "Prop Class"),
+    ("units",               "Prop Units"),
+    ("year_built",          "Prop Built"),
+    ("management_company",  "Prop Mgmt Co"),
+    ("owner",               "Prop Owner"),
+    ("manager",             "Prop On-site Mgr"),
+    ("occupancy_pct",       "Prop Occ"),
+    ("avg_rent",            "Prop Avg Rent"),
+    ("submarket",           "Prop Submarket"),
 )
 
 
 @st.cache_data(ttl=600, show_spinner=False)
-def _build_aln_address_index() -> dict[tuple[str, str], dict[str, str | float | int | None]]:
-    """Build a lookup of (city_lower, normalized_address) → full ALN row.
+def _build_prop_address_index() -> dict[tuple[str, str], dict[str, str | float | int | None]]:
+    """Build a lookup of (city_lower, normalized_address) → full property record.
 
-    The value is a dict containing every field listed in `_ALN_DISPLAY_FIELDS`
+    The value is a dict containing every field listed in `_PROP_DISPLAY_FIELDS`
     plus the property_id (for potential drill-through), so each cross-ref'd
     inventory row can surface the property name, A/B/C class, mgmt co,
     owner, on-site manager, occupancy, avg rent, and submarket without
     re-querying SQLite.
 
-    Cached for 10 minutes. The ALN property list is ~2,500 rows so this
+    Cached for 10 minutes. The property record list is ~2,500 rows so this
     builds in well under 100ms; the cache just avoids redoing the work
     every time the user tweaks a filter.
     """
     index: dict[tuple[str, str], dict[str, str | float | int | None]] = {}
-    aln_props = list_properties(limit=10_000)
-    for p in aln_props:
+    prop_rows = list_properties(limit=10_000)
+    for p in prop_rows:
         addr_norm = _normalize_address(p.get("address"))
         city = (p.get("city") or "").strip().lower()
         name = p.get("name") or ""
         if not addr_norm or not name:
             continue
-        record = {col: p.get(col) for col, _label in _ALN_DISPLAY_FIELDS}
+        record = {col: p.get(col) for col, _label in _PROP_DISPLAY_FIELDS}
         record["property_id"] = p.get("property_id")
         # Don't overwrite — first one wins on (rare) duplicate normalized addresses
         index.setdefault((city, addr_norm), record)
         # Also write a no-city fallback key so we can match across slight
-        # city-name discrepancies (e.g., assessor lists "Va Beach", ALN
+        # city-name discrepancies (e.g., assessor lists "Va Beach", the record
         # lists "Virginia Beach").
         index.setdefault(("", addr_norm), record)
     return index
 
 
-def _lookup_aln_record(
+def _lookup_prop_record(
     address: str | None,
     city: str | None,
     index: dict[tuple[str, str], dict[str, str | float | int | None]],
 ) -> dict[str, str | float | int | None]:
-    """Return the full ALN record for an assessor (address, city). Empty dict
+    """Return the full property record for an assessor (address, city). Empty dict
     when no match — caller renders '—' for each missing field."""
     addr_norm = _normalize_address(address)
     if not addr_norm:
@@ -160,8 +160,8 @@ def _lookup_aln_record(
     return index.get(("", addr_norm), {}) or {}
 
 
-def _format_aln_field(col: str, value: str | float | int | None) -> str:
-    """Render an ALN field for display. Type-aware so dollars/percents/ints
+def _format_prop_field(col: str, value: str | float | int | None) -> str:
+    """Render an property record field for display. Type-aware so dollars/percents/ints
     all read correctly in the dataframe."""
     if value is None or value == "":
         return "—"
@@ -186,43 +186,43 @@ def _format_aln_field(col: str, value: str | float | int | None) -> str:
     return str(value)
 
 
-def _resolve_aln_records(df: pd.DataFrame) -> list[dict[str, str | float | int | None]]:
-    """For each row in `df`, look up the ALN record by (address, city). Returns
+def _resolve_prop_records(df: pd.DataFrame) -> list[dict[str, str | float | int | None]]:
+    """For each row in `df`, look up the property record by (address, city). Returns
     a parallel list — empty dict for rows without a match. Use this when you
-    need to FILTER on raw ALN values (numeric occupancy, units, etc.)
+    need to FILTER on raw property record values (numeric occupancy, units, etc.)
     BEFORE the dataframe is formatted for display.
     """
-    aln_index = _build_aln_address_index()
+    prop_index = _build_prop_address_index()
     addresses = df["address"].fillna("") if "address" in df.columns else [""] * len(df)
     cities = df["city"].fillna("") if "city" in df.columns else [""] * len(df)
     return [
-        _lookup_aln_record(addr, city, aln_index)
+        _lookup_prop_record(addr, city, prop_index)
         for addr, city in zip(addresses, cities)
     ]
 
 
-def _add_aln_columns(
+def _add_prop_columns(
     display: pd.DataFrame,
     df: pd.DataFrame,
-    aln_records: list[dict[str, str | float | int | None]] | None = None,
+    prop_records: list[dict[str, str | float | int | None]] | None = None,
 ) -> tuple[pd.DataFrame, list[bool]]:
-    """Insert the ALN cross-reference columns into a display dataframe.
+    """Insert the Property cross-reference columns into a display dataframe.
 
-    Pass `aln_records` if you've already resolved them (e.g. via
-    `_resolve_aln_records`) so we don't re-query. Returns the new
+    Pass `prop_records` if you've already resolved them (e.g. via
+    `_resolve_prop_records`) so we don't re-query. Returns the new
     dataframe AND a parallel list of bool match flags so callers can
     compute match-rate summaries.
     """
-    if aln_records is None:
-        aln_records = _resolve_aln_records(df)
+    if prop_records is None:
+        prop_records = _resolve_prop_records(df)
 
-    matched: list[bool] = [bool(r) for r in aln_records]
-    columns: dict[str, list[str]] = {label: [] for _col, label in _ALN_DISPLAY_FIELDS}
-    for rec in aln_records:
-        for col, label in _ALN_DISPLAY_FIELDS:
-            columns[label].append(_format_aln_field(col, rec.get(col)) if rec else "—")
+    matched: list[bool] = [bool(r) for r in prop_records]
+    columns: dict[str, list[str]] = {label: [] for _col, label in _PROP_DISPLAY_FIELDS}
+    for rec in prop_records:
+        for col, label in _PROP_DISPLAY_FIELDS:
+            columns[label].append(_format_prop_field(col, rec.get(col)) if rec else "—")
 
-    # Insert ALN columns immediately after "Address" so the cross-reference
+    # Insert property record columns immediately after "Address" so the cross-reference
     # reads naturally left-to-right.
     out = display.copy()
     insert_at = (
@@ -230,7 +230,7 @@ def _add_aln_columns(
         if "Address" in out.columns
         else len(out.columns)
     )
-    for i, (_col, label) in enumerate(_ALN_DISPLAY_FIELDS):
+    for i, (_col, label) in enumerate(_PROP_DISPLAY_FIELDS):
         out.insert(insert_at + i, label, columns[label])
     return out, matched
 
@@ -313,8 +313,8 @@ def _render_alerts_section() -> None:
             return
 
         # Format display columns. Assessor `owner`/`year_built`/`class` are
-        # prefixed "Asr " so they don't collide with the ALN-side columns
-        # injected by `_add_aln_columns` below.
+        # prefixed "Asr " so they don't collide with the record-side columns
+        # injected by `_add_prop_columns` below.
         display = pd.DataFrame({
             "City": df["city"],
             "Address": df["address"].fillna(""),
@@ -332,13 +332,13 @@ def _render_alerts_section() -> None:
             "GPIN": df["gpin"].fillna(""),
         })
 
-        # Enrich with ALN cross-reference (property name, A/B/C class, mgmt
+        # Enrich with Property cross-reference (property name, A/B/C class, mgmt
         # co, owner, on-site manager, occupancy, avg rent, submarket).
-        # Reassessment jumps are most-actionable when paired with the ALN
+        # Reassessment jumps are most-actionable when paired with the property record
         # marketing context — a 30% jump on a managed Class C property
         # owned by a known operator is a different signal than the same
         # jump on an unmanaged parcel.
-        display, matched = _add_aln_columns(display, df)
+        display, matched = _add_prop_columns(display, df)
         n_total = len(display)
         n_matched = sum(1 for m in matched if m)
         match_pct = (n_matched / n_total * 100) if n_total else 0
@@ -347,8 +347,8 @@ def _render_alerts_section() -> None:
             f'<div style="color:{c["tx2"]};font-size:13px;margin-bottom:6px">'
             f'<b>{n_total} properties</b> with ≥ {threshold_pct}% '
             f'reassessment jump · sorted largest jump first · '
-            f'<span style="color:{c["src_aln"]}">'
-            f'{n_matched:,} matched to ALN ({match_pct:.0f}%)</span>'
+            f'<span style="color:{c["src_8r"]}">'
+            f'{n_matched:,} matched to property records ({match_pct:.0f}%)</span>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -379,19 +379,19 @@ _BROWSE_FILTER_KEYS: tuple[str, ...] = (
     "inv_browse_sale_min",
     "inv_browse_sale_max",
     "inv_browse_sale_since",
-    # ALN cross-reference
-    "inv_browse_aln_match",
-    "inv_browse_aln_property",
-    "inv_browse_aln_class",
-    "inv_browse_aln_units_min",
-    "inv_browse_aln_units_max",
-    "inv_browse_aln_mgmt",
-    "inv_browse_aln_owner",
-    "inv_browse_aln_onsite",
-    "inv_browse_aln_occ_min",
-    "inv_browse_aln_rent_min",
-    "inv_browse_aln_rent_max",
-    "inv_browse_aln_yr_min",
+    # Property cross-reference
+    "inv_browse_prop_match",
+    "inv_browse_prop_property",
+    "inv_browse_prop_class",
+    "inv_browse_prop_units_min",
+    "inv_browse_prop_units_max",
+    "inv_browse_prop_mgmt",
+    "inv_browse_prop_owner",
+    "inv_browse_prop_onsite",
+    "inv_browse_prop_occ_min",
+    "inv_browse_prop_rent_min",
+    "inv_browse_prop_rent_max",
+    "inv_browse_prop_yr_min",
 )
 
 _BROWSE_SECTION_ID = "inventory_browse"
@@ -507,7 +507,7 @@ def _render_browse_section() -> None:
       1. Saved-search bar (load / save / delete named filter presets)
       2. Filter panel (expander) — every column in the table is filterable
       3. Reset button
-      4. Result count + ALN match-rate
+      4. Result count + match rate
       5. Dataframe
     """
     c = config.COLORS
@@ -515,7 +515,7 @@ def _render_browse_section() -> None:
         "Browse Multifamily Inventory",
         icon="🔍",
         subtitle=(
-            "Every multifamily property in the ALN library across the target "
+            "Every multifamily property in the licensed export library across the target "
             "states (VA·NC·SC·GA·TN). Assessor enrichment shows where city "
             "open-data feeds are wired in. Filter below; save useful combos "
             "as a named search for one-click recall."
@@ -535,7 +535,7 @@ def _render_browse_section() -> None:
             )
             l1, l2, l3 = st.columns(3)
             with l1:
-                # Data-driven city list across the full multi-state ALN
+                # Data-driven city list across the full multi-state record set
                 # library (Brian 5/30 expansion). "All cities" = no filter.
                 city_options = ["All cities"] + list_distinct_cities()
                 st.selectbox(
@@ -550,7 +550,7 @@ def _render_browse_section() -> None:
                 )
             with l3:
                 st.text_input(
-                    "ALN Submarket contains",
+                    "Prop submarket contains",
                     key="inv_browse_submarket",
                     placeholder="Norfolk Central, Hampton North...",
                 )
@@ -657,86 +657,86 @@ def _render_browse_section() -> None:
                     step=100_000, key="inv_browse_sale_max",
                 )
 
-            # ---- ALN cross-reference ----
+            # ---- Property cross-reference ----
             st.markdown(
                 f'<div style="color:{c["tx2"]};font-size:11px;'
                 f'text-transform:uppercase;letter-spacing:0.7px;font-weight:700;'
                 f'margin-top:14px;margin-bottom:4px">'
-                f'🥇 ALN cross-reference</div>',
+                f'🥇 Property cross-reference</div>',
                 unsafe_allow_html=True,
             )
             n1, n2, n3 = st.columns(3)
             with n1:
                 st.radio(
-                    "ALN match status",
+                    "Prop match status",
                     options=["All", "Matched only", "Unmatched only"],
-                    horizontal=True, key="inv_browse_aln_match",
+                    horizontal=True, key="inv_browse_prop_match",
                 )
             with n2:
                 st.multiselect(
-                    "ALN Class (A/B/C/D)",
+                    "Prop class (A/B/C/D)",
                     options=["A", "B", "C", "D"],
-                    key="inv_browse_aln_class",
+                    key="inv_browse_prop_class",
                 )
             with n3:
                 st.text_input(
-                    "ALN Property name contains",
-                    key="inv_browse_aln_property",
+                    "Prop name contains",
+                    key="inv_browse_prop_property",
                     placeholder="Crossroads, Andover...",
                 )
 
             n4, n5, n6 = st.columns(3)
             with n4:
                 st.text_input(
-                    "ALN Mgmt Co contains",
-                    key="inv_browse_aln_mgmt",
+                    "Prop mgmt co contains",
+                    key="inv_browse_prop_mgmt",
                     placeholder="Drucker, Lawson...",
                 )
             with n5:
                 st.text_input(
-                    "ALN Owner contains",
-                    key="inv_browse_aln_owner",
+                    "Prop owner contains",
+                    key="inv_browse_prop_owner",
                     placeholder="Operating-entity name...",
                 )
             with n6:
                 st.text_input(
-                    "ALN On-site Mgr contains",
-                    key="inv_browse_aln_onsite",
+                    "Prop on-site mgr contains",
+                    key="inv_browse_prop_onsite",
                     placeholder="Person on-site / phone log...",
                 )
 
             n7, n8, n9 = st.columns(3)
             with n7:
                 st.slider(
-                    "ALN Units (range)",
+                    "Prop units (range)",
                     min_value=0, max_value=600, value=(0, 600),
-                    step=5, key="inv_browse_aln_units_min",
+                    step=5, key="inv_browse_prop_units_min",
                 )
             with n8:
                 st.slider(
-                    "ALN Year built (min)",
+                    "Prop year built (min)",
                     min_value=1900, max_value=2026, value=1900,
-                    step=1, key="inv_browse_aln_yr_min",
+                    step=1, key="inv_browse_prop_yr_min",
                 )
             with n9:
                 st.slider(
-                    "ALN Occupancy (min %)",
+                    "Prop occupancy (min %)",
                     min_value=0, max_value=100, value=0,
-                    step=1, key="inv_browse_aln_occ_min",
+                    step=1, key="inv_browse_prop_occ_min",
                 )
 
             n10, n11, _n12 = st.columns(3)
             with n10:
                 st.number_input(
-                    "ALN Avg Rent $ min",
+                    "Prop avg rent $ min",
                     min_value=0, max_value=10_000, value=0, step=25,
-                    key="inv_browse_aln_rent_min",
+                    key="inv_browse_prop_rent_min",
                 )
             with n11:
                 st.number_input(
-                    "ALN Avg Rent $ max",
+                    "Prop avg rent $ max",
                     min_value=0, max_value=10_000, value=10_000, step=25,
-                    key="inv_browse_aln_rent_max",
+                    key="inv_browse_prop_rent_max",
                 )
 
             # ---- Reset ----
@@ -779,11 +779,11 @@ def _render_browse_section() -> None:
         # ---- Apply assessor-side filters ----
         df = _apply_assessor_filters(df)
 
-        # ---- Resolve ALN records (raw, before formatting) ----
-        aln_records = _resolve_aln_records(df)
+        # ---- Resolve property records (raw, before formatting) ----
+        prop_records = _resolve_prop_records(df)
 
-        # ---- Apply ALN-side filters (operates on raw records + df) ----
-        df, aln_records = _apply_aln_filters(df, aln_records)
+        # ---- Apply record-side filters (operates on raw records + df) ----
+        df, prop_records = _apply_prop_filters(df, prop_records)
 
         if df.empty:
             st.info("No properties match these filters. Try broadening or resetting.")
@@ -811,7 +811,7 @@ def _render_browse_section() -> None:
             "Parcel": df["parcel_id"].fillna("").values,
             "GPIN": df["gpin"].fillna("").values,
         })
-        display, matched = _add_aln_columns(display, df, aln_records=aln_records)
+        display, matched = _add_prop_columns(display, df, prop_records=prop_records)
 
         n = len(display)
         total_value = df["assessed_value"].fillna(0).astype(float).sum()
@@ -821,8 +821,8 @@ def _render_browse_section() -> None:
             f'<div style="color:{c["tx2"]};font-size:13px;margin-bottom:6px">'
             f'<b>{n:,} properties</b> shown · combined assessed value '
             f'<b>${total_value:,.0f}</b> · '
-            f'<span style="color:{c["src_aln"]}">'
-            f'{n_matched:,} matched to ALN ({match_pct:.0f}%)</span>'
+            f'<span style="color:{c["src_8r"]}">'
+            f'{n_matched:,} matched to property records ({match_pct:.0f}%)</span>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -887,24 +887,24 @@ def _apply_assessor_filters(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _apply_aln_filters(
+def _apply_prop_filters(
     df: pd.DataFrame,
-    aln_records: list[dict],
+    prop_records: list[dict],
 ) -> tuple[pd.DataFrame, list[dict]]:
-    """Apply ALN-side filters using the raw resolved records. Returns the
-    filtered df and the parallel-trimmed aln_records list."""
-    match_choice = st.session_state.get("inv_browse_aln_match", "All")
+    """Apply record-side filters using the raw resolved records. Returns the
+    filtered df and the parallel-trimmed prop_records list."""
+    match_choice = st.session_state.get("inv_browse_prop_match", "All")
     if match_choice == "Matched only":
-        keep = [bool(r) for r in aln_records]
+        keep = [bool(r) for r in prop_records]
     elif match_choice == "Unmatched only":
-        keep = [not bool(r) for r in aln_records]
+        keep = [not bool(r) for r in prop_records]
     else:
-        keep = [True] * len(aln_records)
+        keep = [True] * len(prop_records)
 
     # Property contains
-    prop_q = (st.session_state.get("inv_browse_aln_property") or "").strip().lower()
+    prop_q = (st.session_state.get("inv_browse_prop_property") or "").strip().lower()
     if prop_q:
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r:
                 keep[i] = False
                 continue
@@ -912,38 +912,38 @@ def _apply_aln_filters(
                 keep[i] = False
 
     # Class multiselect
-    class_sel = st.session_state.get("inv_browse_aln_class") or []
+    class_sel = st.session_state.get("inv_browse_prop_class") or []
     if class_sel:
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r or str(r.get("asset_class") or "") not in class_sel:
                 keep[i] = False
 
     # Mgmt Co
-    mgmt_q = (st.session_state.get("inv_browse_aln_mgmt") or "").strip().lower()
+    mgmt_q = (st.session_state.get("inv_browse_prop_mgmt") or "").strip().lower()
     if mgmt_q:
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r or mgmt_q not in str(r.get("management_company") or "").lower():
                 keep[i] = False
 
-    # ALN Owner
-    owner_q = (st.session_state.get("inv_browse_aln_owner") or "").strip().lower()
+    # Prop Owner
+    owner_q = (st.session_state.get("inv_browse_prop_owner") or "").strip().lower()
     if owner_q:
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r or owner_q not in str(r.get("owner") or "").lower():
                 keep[i] = False
 
     # On-site Mgr
-    onsite_q = (st.session_state.get("inv_browse_aln_onsite") or "").strip().lower()
+    onsite_q = (st.session_state.get("inv_browse_prop_onsite") or "").strip().lower()
     if onsite_q:
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r or onsite_q not in str(r.get("manager") or "").lower():
                 keep[i] = False
 
     # Units range
-    units_range = st.session_state.get("inv_browse_aln_units_min")
+    units_range = st.session_state.get("inv_browse_prop_units_min")
     if isinstance(units_range, tuple) and units_range != (0, 600):
         umin, umax = units_range
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r:
                 keep[i] = False
                 continue
@@ -954,10 +954,10 @@ def _apply_aln_filters(
             if not (umin <= u <= umax):
                 keep[i] = False
 
-    # ALN Year built min
-    aln_yr_min = int(st.session_state.get("inv_browse_aln_yr_min") or 1900)
-    if aln_yr_min > 1900:
-        for i, r in enumerate(aln_records):
+    # Prop year built min
+    prop_yr_min = int(st.session_state.get("inv_browse_prop_yr_min") or 1900)
+    if prop_yr_min > 1900:
+        for i, r in enumerate(prop_records):
             if not r:
                 keep[i] = False
                 continue
@@ -965,13 +965,13 @@ def _apply_aln_filters(
                 yr = int(r.get("year_built") or 0)
             except (TypeError, ValueError):
                 yr = 0
-            if yr < aln_yr_min:
+            if yr < prop_yr_min:
                 keep[i] = False
 
     # Occupancy min
-    occ_min = int(st.session_state.get("inv_browse_aln_occ_min") or 0)
+    occ_min = int(st.session_state.get("inv_browse_prop_occ_min") or 0)
     if occ_min > 0:
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r:
                 keep[i] = False
                 continue
@@ -985,10 +985,10 @@ def _apply_aln_filters(
                 keep[i] = False
 
     # Rent range
-    rent_min = int(st.session_state.get("inv_browse_aln_rent_min") or 0)
-    rent_max = int(st.session_state.get("inv_browse_aln_rent_max") or 10_000)
+    rent_min = int(st.session_state.get("inv_browse_prop_rent_min") or 0)
+    rent_max = int(st.session_state.get("inv_browse_prop_rent_max") or 10_000)
     if rent_min > 0 or rent_max < 10_000:
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r:
                 keep[i] = False
                 continue
@@ -1002,16 +1002,16 @@ def _apply_aln_filters(
     # Submarket contains
     sub_q = (st.session_state.get("inv_browse_submarket") or "").strip().lower()
     if sub_q:
-        for i, r in enumerate(aln_records):
+        for i, r in enumerate(prop_records):
             if not r or sub_q not in str(r.get("submarket") or "").lower():
                 keep[i] = False
 
     if all(keep):
-        return df, aln_records
+        return df, prop_records
 
     keep_arr = pd.Series(keep, index=df.index)
     new_df = df[keep_arr].reset_index(drop=True)
-    new_records = [r for r, k in zip(aln_records, keep) if k]
+    new_records = [r for r, k in zip(prop_records, keep) if k]
     return new_df, new_records
 
 

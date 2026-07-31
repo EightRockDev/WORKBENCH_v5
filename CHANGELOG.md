@@ -12,6 +12,58 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.2.0.0 — 2026-07-31  ·  AC-P0-1 de-identification + Appearance panel
+The owner opened the app and still saw ALN badges on every Property Card row,
+"vs ALN 7.24%" in Calibration, the product still reading QUARRY, a dead avatar,
+and the Forced-Seller Radar sitting above the header card. Four fixes:
+
+**De-identification (spec §7, AC-P0-1).** 782 vendor references across 71 files
+are down to 25, none of them user-visible. The retired provenance key `"aln"`
+now maps to `"8r"` per §7.3, so the Property Card badge reads **8R** and the
+legend says "8R Backbone"; `provenance.canonical()` keeps records and deal.json
+files written under the old key resolving instead of raising. `data/aln_loader.py`
+became `data/legacy_loader.py`; columns `aln_id`/`aln_pull_date` became
+`legacy_id`/`pull_date`; the inventory cross-reference columns and filters now
+read "Prop …", pairing with the existing "Asr …" prefix.
+
+The 25 remaining hits are back-compat and ingestion machinery, not product
+copy: the provider's literal export filenames/sheet/headers (quarantined in one
+marked block at the top of `legacy_loader.py`, retiring with that module at
+P0-4), the column-migration code that has to name the old columns to rename
+them, and the retired-key alias. `ER_LEGACY_DATA_DIR` now overrides the export
+folder.
+
+**Schema migration.** `workbench.db` only rebuilds when a source export is
+newer than it, so an existing install would have pulled the renamed columns and
+failed every write against `properties`. `data/db.py:migrate_legacy_columns()`
+renames in place, runs from `ensure_db_synced()`, and is idempotent.
+
+**Favorites.** Synthesized property_ids changed prefix, so `_favorites.json` can
+hold entries written under the old one. Matching now normalizes
+`<slug>-<digits>` ids to their numeric tail; 8R, UUID and custom- ids still
+compare byte-for-byte.
+
+**Subject tab.** The Forced-Seller Radar moved below the property detail — it
+rendered first in `app.py` and pushed the header card (photo, name, address,
+Favorite) off the top of the tab.
+
+**Appearance panel.** The topbar avatar was a static div wired to nothing. It is
+now a button opening a dialog over all 45 theme tokens plus font stacks and a
+type scale, saved per signed-in user via `core.storage`, applied in `main()`
+before any component reads `config.COLORS`. It also takes a URL: `core/
+palette_extract.py` reads a site's stylesheets, infers roles from how each
+colour is *used* (a colour in `background` is a surface candidate, one in
+`color` is text), derives the rest, and forces text to clear WCAG AA so a
+low-contrast site can't produce an unreadable workbench. A contrast warning
+guards hand edits.
+
+Verified in a headless browser against the seeded demo inventory: no ALN string
+anywhere on screen, badges read 8R, topbar reads QUARRIE on one line, header
+card leads the Subject tab with the radar last, and the dialog opens and saves.
+Tests 730 passed (38 new), zero new failures.
+
+---
+
 ## V5.13.1.4.0 — 2026-07-31  ·  first LIVE HUD pull survives the seeded table
 The .env fix worked - the 15:30 UTC cycle saw the token and reached the
 HUD API for the first time - and then crashed inserting: the copied
@@ -46,7 +98,7 @@ empty -> v2; only ER_THEME=v1 restores legacy), pointed the duplicate
 at identical logic, and replaced the topbar pill's stale hard-coded
 "v2.1.4" with the real WORKBENCH_VERSION. THIS time the fix was
 verified by launching the app headless and screenshotting the V2
-landing (Quarry hero, class-chip cards, occupancy colors) before push.
+landing (Quarrie hero, class-chip cards, occupancy colors) before push.
 
 ## V5.13.1.1.0 — 2026-07-31  ·  updater no longer collides with a running cycle
 `update-workbench.bat` did a full `git reset --hard`, which tries to
@@ -104,7 +156,7 @@ you open a single tab. Render-verified with all three tones firing.
 
 ## V5.12.3.0.0 — 2026-07-30  ·  UI round 2: landing hero compressed
 The stacked hero (44px title + 30px subtitle + full quote card) pushed
-every property card below the fold. Now one tight band: Quarry + tagline
+every property card below the fold. Now one tight band: Quarrie + tagline
 left, live inventory count right (gold, monospace), quote collapsed to
 a single ellipsized line. Cards are visible on load. Render-verified
 end-to-end.

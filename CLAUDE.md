@@ -114,8 +114,8 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 - **App boots + is login-gated.** `core/session.py` resolves the user (legacy
   ungated / OIDC gate / `ER_DEV_LOGIN` dev bypass); `app.py` renders the account
   chip and routes admins to the admin panel. `data/db.py` boots with an empty
-  inventory when no ALN data is present. Verified via Streamlit AppTest in all
-  three modes; 397 tests pass (2 pre-existing legacy aln_loader failures;
+  inventory when no property record data is present. Verified via Streamlit AppTest in all
+  three modes; 397 tests pass (2 pre-existing legacy legacy_loader failures;
   test_listings.py needs an absent `pullers` module — both predate this work).
 
 - **V5-Walk multi-tenancy & roles (§10) — core done (V5.1.x).** Permission model
@@ -148,7 +148,7 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 3. Phase 0 execution (§7.3): **P0-1 spine builder SHIPPED (V5.8.0.0.0)** —
    `core/phase0.py` + `run-phase0.bat` (needs the v2.4.1 workbench.db with the
    3.9M muni_records rows copied to `data\` on the host, or `ER_WORKBENCH_DB`).
-   `phase0-sweep.bat` = AC-P0-1 ALN sweep (569 refs in 40 files today).
+   `phase0-sweep.bat` = AC-P0-1 vendor-reference sweep.
    P0-2 shadow parity SHIPPED + 6 tuning rounds from real host runs (V5.8.1-V5.8.7).
    Round 6 fixed the two structural bugs: substring MF-code matching (VB zoning
    R-40 contains "r-4" -> 116K SFH parcels misclassified) and returnGeometry=false
@@ -162,7 +162,7 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    P0-3 round 2 SHIPPED (V5.10.1.0.0): listings->backbone rent ingest via
    crosswalk (`apply_listings_rents`), `core/cutover.py` deal-reference
    migration (never guesses, idempotent, dry-run), "8r" provenance key +
-   comp-badge fix (missing aln_id no longer means "User input").
+   comp-badge fix (missing legacy_id no longer means "User input").
    Remaining before the flip (then P0-4 purge):
    - comp overlap to >= 90% (nightly tuning loop drives this)
    - rent delta to <= 5%: needs the listings scraper RUN on the host
@@ -170,8 +170,8 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
      FMR alone will not hit 5%
    - flip day: run `core.cutover.migrate_deal_references` against the
      pilot Postgres, set SPINE_READ_SOURCE="8r", full regression suite
-   - cosmetic: inventory "matched to ALN" counters + property_detail
-     "db"->src_aln color read wrong after flip (dual-run only today)
+   - cosmetic: inventory "matched to property records" counters + property_detail
+     "db"->src_8r color read wrong after flip (dual-run only today)
 
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
@@ -443,8 +443,8 @@ NSSM services (WorkbenchBlue/WorkbenchGreen via install-lan-service.ps1)
   stress overlays `core/stress_overlays.py`, DD->verdict
   `core/verdict_tightening.py` — all deterministic; wired into Exec
   Summary, rent-roll views, doc ingest). Full suite 608 passed with 4
-  pre-existing data-dependent failures (aln_loader x2, test_db +
-  test_property_io smoke tests that need the real ALN data/deal folders).
+  pre-existing data-dependent failures (legacy_loader x2, test_db +
+  test_property_io smoke tests that need the real property record data/deal folders).
 
 ## Module D privacy invariant (do not regress)
 Raw mail is **per-user private**: `inbox_messages` / `mailbox_connections` carry
@@ -475,6 +475,27 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
+
+## Lesson — verify WHICH repo the owner is actually running (2026-07-31)
+
+A full ALN sweep, product rename and theme panel were built and pushed to
+`eightrockdev/granite` before a screenshot showed the owner's app still
+unchanged: they run `C:\WORKBENCH_V5` = `eightrockdev/workbench_v5`. The two
+repos share file names (`ui/property_detail.py`, `data/db.py`, config.COLORS),
+so nothing about the work *looked* wrong — it was just landing somewhere the
+owner never opens. The tell was in the screenshot all along: the topbar version
+pill read `V5.13.1.4.0`, which only exists in workbench_v5.
+
+Before touching UI the owner has described, confirm the repo by matching
+something they can see — the version pill, a section heading, a label — against
+the code. "The Forced-Seller Radar isn't on the Subject tab" should have been
+read as "I am looking at the wrong tree", not "the owner misremembered": in
+workbench_v5 `app.py` rendered it there, first, exactly as described.
+
+Corollary: this repo already had a specified vocabulary for the ALN work
+(spec §7.3 — `8r_class`, `8r_form`, provenance `"aln"` -> `"8r"`). Read the spec
+before inventing replacement names; the GRANITE pass had invented "survey",
+which would have been wrong here.
 
 ## Versioning (owner directive — do this on EVERY change)
 

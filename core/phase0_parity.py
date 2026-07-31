@@ -62,7 +62,7 @@ def normalize_address(address: str | None) -> str:
     (apt/suite/unit/#) and everything after it is dropped: the PARCEL is the
     join key, not the individual unit."""
     text = (address or "").lower()
-    # ALN-style street-number RANGES ("700-780 Granby") key on the first
+    # Provider-style street-number RANGES ("700-780 Granby") key on the first
     # number - the assessor's parcels start there.
     text = re.sub(r"^\s*(\d+)\s*-\s*\d+", r"\1", text)
     tokens = re.sub(r"[^a-z0-9# ]", " ", text).split()
@@ -432,7 +432,7 @@ def persist_crosswalk(spine_db: Path, records: list) -> int:
 
 
 def _score_fields(legacy: dict, r8: dict, report: ParityReport) -> None:
-    # Rent gate input: ALN surveyed avg rent vs the backbone's estimate.
+    # Rent gate input: property recorded avg rent vs the backbone's estimate.
     # Only pairs where BOTH sides have a value count - no value, no vote.
     lr, rr = legacy.get("avg_rent"), r8.get("est_avg_rent")
     if lr and rr:
@@ -545,15 +545,15 @@ def replay_comps(legacy: list[dict], all_entities: list[dict],
         report.comp_overlaps.append(overlap)
 
 
-def run_parity(aln_db: Path, spine_db: Path,
+def run_parity(legacy_db: Path, spine_db: Path,
                cities: tuple[str, ...] | None = None,
                max_subjects: int = 200) -> ParityReport:
-    """P0-2 end to end. `aln_db` holds `properties`; `spine_db` holds
+    """P0-2 end to end. `legacy_db` holds `properties`; `spine_db` holds
     `properties_8r` (they may be the same file)."""
     from core.market_data import HR_CITY_TO_COUNTY_FIPS_5
     cities = cities or tuple(HR_CITY_TO_COUNTY_FIPS_5)
     report = ParityReport()
-    with sqlite3.connect(aln_db) as conn:
+    with sqlite3.connect(legacy_db) as conn:
         legacy = _load_legacy(conn, cities)
     with sqlite3.connect(spine_db) as conn:
         spine_8r = _load_8r(conn, cities)

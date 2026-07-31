@@ -295,7 +295,7 @@ def _estimate_units(class_description: str | None, assessed_value: float) -> int
     """Heuristic unit count from assessor class code. Chesapeake/Newport News
     use 4-digit class codes (3352, 3346); Norfolk uses 405/406/407.
 
-    Rough fallback when ALN doesn't have the match.
+    Rough fallback when the property record doesn't have the match.
     """
     if not class_description:
         return None

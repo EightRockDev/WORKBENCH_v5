@@ -34,7 +34,7 @@ def _seed_world(conn, n=30, jitter=0.0, addr_style="long", drop_8r: set | None =
         lng = -76.28 - (i // 6) * 0.01
         conn.execute(
             "INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (f"ALN-{i}", f"Legacy {i}", f"{100 + i} Granby St", "Norfolk",
+            (f"LEG-{i}", f"Legacy {i}", f"{100 + i} Granby St", "Norfolk",
              20 + i, 1960 + i, 1000.0 + 5 * i, "C", lat, lng))
         if i in drop_8r:
             continue
@@ -152,7 +152,7 @@ def test_condo_fragmented_complex_aggregates_to_one_entity(tmp_path):
     db = tmp_path / "wb.db"
     conn = _mk_db(db)
     conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
-                 ("ALN-C", "Acqua", "700 Acqua Dr", "Norfolk",
+                 ("LEG-C", "Acqua", "700 Acqua Dr", "Norfolk",
                   40, 1990, 1200.0, "B", 36.90, -76.30))
     for i in range(40):
         conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
@@ -191,7 +191,7 @@ def test_subject_matched_to_non_mf_entity_is_skipped_not_keyerror(tmp_path):
     _seed_world(conn, n=15)
     # A legacy property whose only 8R counterpart carries no units/use.
     conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
-                 ("ALN-CH", "Chesapeake Mystery", "9 Battlefield Blvd",
+                 ("LEG-CH", "Chesapeake Mystery", "9 Battlefield Blvd",
                   "Norfolk", 60, 1980, 1100.0, "C", 36.99, -76.20))
     conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
                  ("8R-51550-deadbeef0001", "9 Battlefield Boulevard",
@@ -209,7 +209,7 @@ def test_multi_parcel_complex_units_recovered_by_footprint(tmp_path):
     db = tmp_path / "wb.db"
     conn = _mk_db(db)
     conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
-                 ("ALN-W", "Acqua at Windy Knolls", "700 Acqua Dr", "Norfolk",
+                 ("LEG-W", "Acqua at Windy Knolls", "700 Acqua Dr", "Norfolk",
                   258, 1988, 1300.0, "B", 36.91, -76.31))
     for i in range(6):    # six buildings, 43 units each, distinct numbers
         conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?)",
@@ -230,7 +230,7 @@ def test_per_city_breakdown_names_cities_without_mf_data(tmp_path):
     _seed_world(conn, n=10)
     # A Virginia Beach legacy row with NO 8R counterpart at all.
     conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
-                 ("ALN-VB", "VB Mystery", "1 Atlantic Ave", "Virginia Beach",
+                 ("LEG-VB", "VB Mystery", "1 Atlantic Ave", "Virginia Beach",
                   100, 1985, 1400.0, "B", 36.85, -75.98))
     conn.commit(); conn.close()
     report = pp.run_parity(db, db)
@@ -247,7 +247,7 @@ def test_covered_match_rate_separates_parsing_from_missing_feeds(tmp_path):
     _seed_world(conn, n=10)
     for i in range(5):
         conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
-                     (f"ALN-VB{i}", f"VB {i}", f"{i} Atlantic Ave",
+                     (f"LEG-VB{i}", f"VB {i}", f"{i} Atlantic Ave",
                       "Virginia Beach", 50, 1985, 1400.0, "B", 36.85, -75.98))
     conn.commit(); conn.close()
     report = pp.run_parity(db, db)
@@ -256,7 +256,7 @@ def test_covered_match_rate_separates_parsing_from_missing_feeds(tmp_path):
     assert "covered cities only" in report.summary()
 
 
-def test_aln_street_number_ranges_match_the_first_parcel():
+def test_street_number_ranges_match_the_first_parcel():
     """Legacy '700-780 Granby St' must key like the assessor's '700 Granby'."""
     assert pp.normalize_address("700-780 Granby St") == \
            pp.normalize_address("700 Granby Street")
@@ -268,7 +268,7 @@ def test_proximity_fallback_matches_distant_geocodes(tmp_path):
     db = tmp_path / "wb.db"
     conn = _mk_db(db)
     conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
-                 ("ALN-FAR", "Faraway Pines", "1 Marketing Way", "Norfolk",
+                 ("LEG-FAR", "Faraway Pines", "1 Marketing Way", "Norfolk",
                   100, 1985, 1200.0, "B", 36.9000, -76.3000))
     # A single-family house NEARER than the complex (but outside the strict
     # 120 m radius) - the proximity pass must ignore it.

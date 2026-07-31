@@ -7,7 +7,7 @@ Top of tab: subject-property metrics compared directly to:
   - Local unemployment + macro context (10Y / 30Y mortgage)
   - Active multifamily lenders in the subject's county
 
-Below: traditional ALN-property comps (Bucket 1 / Bucket 2) + clickable map.
+Below: traditional property-record comps (Bucket 1 / Bucket 2) + clickable map.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ from ui.etl_notice import render_etl_missing_notice
 
 
 # ---------------------------------------------------------------------------
-# Subject metrics — preferring rent-roll over ALN when available
+# Subject metrics — preferring rent-roll over the property record when available
 # ---------------------------------------------------------------------------
 
 def _resolve_subject_metrics(
@@ -55,21 +55,21 @@ def _resolve_subject_metrics(
       1. Curated shortcuts in `sources.json` (rt/sf/oc/rf) — these are the
          authoritative values Brian validated when the rent roll was loaded.
       2. Computed from `sources.json -> rentRoll.summary` if shortcuts missing.
-      3. Fall back to the ALN row's `prop` dict.
+      3. Fall back to the property record's `prop` dict.
       4. None (rendered as '—').
 
     Returns dict:
       {
         avg_rent / avg_sqft / rent_psf / occupancy: float | None,
         units / year_built / asset_class: forwarded from prop,
-        source_label: 'Rent Roll' | 'ALN' | 'User input' | 'Mixed',
+        source_label: 'Rent Roll' | '8R' | 'User input' | 'Mixed',
         source_date: ISO date string or None,
         source_file: str or None,
       }
 
     The card uses `source_label`/`source_date` for a provenance badge so
     it's obvious whether the numbers came from the latest rent roll vs
-    the (often-stale) ALN survey row.
+    the (often-stale) backbone record.
     """
     out: dict[str, Any] = {
         "avg_rent": prop.get("avg_rent"),
@@ -83,14 +83,14 @@ def _resolve_subject_metrics(
         "source_date": None,
         "source_file": None,
     }
-    # Source of the base record. 8R-backbone rows also have no aln_id, so
-    # check the id prefix BEFORE the no-aln_id-means-custom heuristic —
+    # Source of the base record. 8R-backbone rows also have no legacy_id, so
+    # check the id prefix BEFORE the no-legacy_id-means-custom heuristic —
     # otherwise every self-sourced property mislabels as "User input".
     if str(prop.get("property_id") or "").startswith("8R-"):
         out["source_label"] = "8R Backbone"
     else:
-        is_user_input = (prop.get("status") == "Custom") or (prop.get("aln_id") in (None, ""))
-        out["source_label"] = "User input" if is_user_input else "ALN"
+        is_user_input = (prop.get("status") == "Custom") or (prop.get("legacy_id") in (None, ""))
+        out["source_label"] = "User input" if is_user_input else "8R"
 
     if folder is None:
         return out
@@ -199,7 +199,7 @@ def _render_data_source_key() -> None:
             "Every value in the workbench has a colored left-border "
             "indicating where it came from. Source can vary per metric — "
             "e.g., your subject's avg rent might come from a Rent Roll "
-            "(green) while a comp's avg rent comes from ALN (yellow)."
+            "(green) while a comp's avg rent comes from the property record (yellow)."
         )
         for key in all_keys():
             color = color_for(key)
@@ -257,7 +257,7 @@ def _money_per_mo(v: float | None) -> str:
 
 def _subject_card(prop: dict[str, Any], folder: PropertyFolder | None) -> dict[str, Any]:
     """Left card: subject property metrics — the values everything is
-    benchmarked against. Pulls from rent roll first, ALN second, user
+    benchmarked against. Pulls from rent roll first, the record second, user
     input third. Returns the resolved metrics dict so the BAH/FMR
     comparison cards can use the same `avg_rent` value.
     """
@@ -292,17 +292,17 @@ def _subject_card(prop: dict[str, Any], folder: PropertyFolder | None) -> dict[s
     )
 
     # Source provenance badge — show where each metric came from. Color by
-    # source: rent roll = green (live), ALN = grey (survey), User input = gold.
-    source_label = m.get("source_label") or "ALN"
+    # source: rent roll = green (live), 8R = grey (record), User input = gold.
+    source_label = m.get("source_label") or "8R"
     source_date = m.get("source_date")
     if "Rent Roll" in source_label or "T-12" in source_label:
         badge_color = c["src_rr"]
     elif "User" in source_label:
         badge_color = c["ac2"]
     elif "8R" in source_label:
-        badge_color = c.get("src_8r", c["src_aln"])
+        badge_color = c.get("src_8r", c["src_8r"])
     else:
-        badge_color = c["src_aln"]
+        badge_color = c["src_8r"]
     date_str = f" · {source_date}" if source_date else ""
     badge_html = (
         f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid {c["bdr"]}">'
@@ -845,7 +845,7 @@ def _render_data_sources_v2() -> None:
             _run_etl_refresh()
     with col_caption:
         st.caption(
-            "Pulls all 10 ETL sources from FRED, BLS, ALN, HUD, HMDA, "
+            "Pulls all 10 ETL sources from FRED, BLS, property records, HUD, HMDA, "
             "and the listings scraper. Takes 30–90 seconds typically."
         )
 
@@ -1127,7 +1127,7 @@ def _render_subject_vs_market(
     HUD FMR, BAH floor, supply pipeline, unemployment, macro, and lenders.
 
     Uses rent-roll-derived subject metrics when available so the FMR/BAH
-    delta badges reflect today's in-place rent (not stale ALN survey values).
+    delta badges reflect today's in-place rent (not stale property record values).
     """
     c = config.COLORS  # palette tokens used in inline HTML below
     if not is_etl_available():
@@ -1136,7 +1136,7 @@ def _render_subject_vs_market(
 
     st.caption(
         "Subject metrics pulled from the latest rent roll when available, "
-        "else the ALN survey row. Green badges = upside vs the floor; red = "
+        "else the backbone record. Green badges = upside vs the floor; red = "
         "above market. Each card shows its data source at the bottom in "
         "the matching color."
     )
@@ -1177,7 +1177,7 @@ def _render_subject_vs_market(
 def _comp_to_row(c: Comp) -> dict[str, Any]:
     # Mystery-shop data — if we have scraped a rent_listings row for this
     # comp's property_id, surface the effective rent + concession alongside
-    # the ALN asking rent. Tells Brian whether the comp's "advertised" rent
+    # the record asking rent. Tells Brian whether the comp's "advertised" rent
     # is real or includes concession discount we should price against.
     eff_rent, concession_chip = _lookup_mystery_shop(c)
     return {

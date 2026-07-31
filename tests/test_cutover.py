@@ -119,7 +119,7 @@ def _mk_parity_db(path, n=12, rent_factor=1.0):
     for i in range(n):
         lat, lng = 36.85 + (i % 6) * 0.01, -76.28 - (i // 6) * 0.01
         conn.execute("INSERT INTO properties VALUES (?,?,?,?,?,?,?,?,?,?)",
-                     (f"ALN-{i}", f"Legacy {i}", f"{100 + i} Granby St",
+                     (f"LEG-{i}", f"Legacy {i}", f"{100 + i} Granby St",
                       "Norfolk", 20 + i, 1960 + i, 1400.0, "C", lat, lng))
         conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?,?,?)",
                      (f"8R-51710-{i:012x}", f"{100 + i} Granby St", "Norfolk",
@@ -140,7 +140,7 @@ def test_run_parity_persists_the_crosswalk(tmp_path):
                  FROM property_crosswalk ORDER BY legacy_property_id"""
         ).fetchall()
     assert len(rows) == 12
-    assert rows[0][0].startswith("ALN-")
+    assert rows[0][0].startswith("LEG-")
     assert rows[0][1].startswith("8R-51710-")
     assert all(m == "address" for _, _, m in rows)
 
@@ -172,7 +172,7 @@ def test_read_seam_serves_the_backbone_in_legacy_shape(tmp_path):
          "lat": 36.85, "lng": -76.28, "est_avg_rent": 1400.0,
          "rent_source": "hud_fmr"},
     ])
-    pp.persist_crosswalk(spine, [("ALN-OLD-1", "8R-51710-aaa", "address", 1)])
+    pp.persist_crosswalk(spine, [("LEG-OLD-1", "8R-51710-aaa", "address", 1)])
     old = config.SPINE_READ_SOURCE
     config.SPINE_READ_SOURCE = "8r"
     try:
@@ -187,7 +187,7 @@ def test_read_seam_serves_the_backbone_in_legacy_shape(tmp_path):
         assert row["occupancy_pct"] is None    # never fabricated
         # Direct 8R id and crosswalked LEGACY id both resolve.
         assert dbmod.get_property("8R-51710-aaa", db_path=spine)
-        via_legacy = dbmod.get_property("ALN-OLD-1", db_path=spine)
+        via_legacy = dbmod.get_property("LEG-OLD-1", db_path=spine)
         assert via_legacy and via_legacy["property_id"] == "8R-51710-aaa"
         # Filters the backbone can't answer yet return empty, not wrong.
         assert dbmod.list_properties(management_company="Drucker",
@@ -214,21 +214,21 @@ def _add_rent_listings(etl_path, rows):
 
 
 def test_listings_rents_flow_through_the_crosswalk(tmp_path):
-    """rent_listings keys rows to LEGACY ALN ids; the persisted crosswalk
+    """rent_listings keys rows to LEGACY legacy ids; the persisted crosswalk
     bridges them onto the backbone, beating the FMR estimate."""
     etl = _mk_etl_db(tmp_path / "etl.db",
                      [("51710", 2026, 1000, 1100, 1300, 1600, 1800)])
     _add_rent_listings(etl, [
-        ("ALN-1", "zillow", "success", 1500.0, 1800.0, "t1"),
-        ("ALN-1", "rentcafe", "success", 1520.0, 1820.0, "t2"),
-        ("ALN-1", "zillow", "blocked", 99.0, 99.0, "t3"),   # ignored
-        ("ALN-NOMAP", "zillow", "success", 1400.0, None, "t4"),
+        ("LEG-1", "zillow", "success", 1500.0, 1800.0, "t1"),
+        ("LEG-1", "rentcafe", "success", 1520.0, 1820.0, "t2"),
+        ("LEG-1", "zillow", "blocked", 99.0, 99.0, "t3"),   # ignored
+        ("LEG-NOMAP", "zillow", "success", 1400.0, None, "t4"),
     ])
     spine = _mk_spine_db(tmp_path / "wb.db", [
         {"property_id": "8R-51710-aaa", "city": "Norfolk", "units": 48},
         {"property_id": "8R-51710-bbb", "city": "Norfolk", "units": 30},
     ])
-    pp.persist_crosswalk(spine, [("ALN-1", "8R-51710-aaa", "address", 1)])
+    pp.persist_crosswalk(spine, [("LEG-1", "8R-51710-aaa", "address", 1)])
     assert rent_signal.apply_listings_rents(spine, etl) == 1
     rent_signal.apply_rent_signal(spine, etl)   # FMR must NOT overwrite
     with sqlite3.connect(spine) as conn:
@@ -246,7 +246,7 @@ def test_listings_rents_flow_through_the_crosswalk(tmp_path):
 
 def test_listings_ingest_without_crosswalk_is_a_noop(tmp_path):
     etl = _mk_etl_db(tmp_path / "etl.db", [])
-    _add_rent_listings(etl, [("ALN-1", "zillow", "success", 1500.0, None, "t")])
+    _add_rent_listings(etl, [("LEG-1", "zillow", "success", 1500.0, None, "t")])
     spine = _mk_spine_db(tmp_path / "wb.db", [
         {"property_id": "8R-51710-aaa", "city": "Norfolk", "units": 48}])
     assert rent_signal.apply_listings_rents(spine, etl) == 0
@@ -262,21 +262,21 @@ def test_migrate_deal_references_is_safe_and_idempotent(tmp_path):
         conn.execute("CREATE TABLE outreach_touches "
                      "(id INTEGER, property_id TEXT)")
         conn.executemany("INSERT INTO deals VALUES (?,?)", [
-            (1, "ALN-1"), (2, "ALN-1"),          # two deals, same property
+            (1, "LEG-1"), (2, "LEG-1"),          # two deals, same property
             (3, "8R-51710-bbb"),                 # already migrated
-            (4, "ALN-GHOST"),                    # no crosswalk entry
+            (4, "LEG-GHOST"),                    # no crosswalk entry
             (5, None),                           # no property attached
         ])
-        conn.execute("INSERT INTO outreach_touches VALUES (1, 'ALN-1')")
-        xwalk = {"ALN-1": "8R-51710-aaa"}
+        conn.execute("INSERT INTO outreach_touches VALUES (1, 'LEG-1')")
+        xwalk = {"LEG-1": "8R-51710-aaa"}
         result = migrate_deal_references(conn, xwalk)
         assert result.updated == {"deals": 1, "outreach_touches": 1}
         assert result.already_8r["deals"] == 1
-        assert result.unmapped["deals"] == ["ALN-GHOST"]
+        assert result.unmapped["deals"] == ["LEG-GHOST"]
         ids = [r[0] for r in conn.execute(
             "SELECT property_id FROM deals ORDER BY id")]
         assert ids == ["8R-51710-aaa", "8R-51710-aaa", "8R-51710-bbb",
-                       "ALN-GHOST", None]
+                       "LEG-GHOST", None]
         # Second run: nothing left to migrate, nothing breaks.
         again = migrate_deal_references(conn, xwalk)
         assert again.updated == {"deals": 0, "outreach_touches": 0}
@@ -288,12 +288,12 @@ def test_migrate_dry_run_changes_nothing(tmp_path):
     db = tmp_path / "pilot.db"
     with sqlite3.connect(db) as conn:
         conn.execute("CREATE TABLE deals (id INTEGER, property_id TEXT)")
-        conn.execute("INSERT INTO deals VALUES (1, 'ALN-1')")
-        result = migrate_deal_references(conn, {"ALN-1": "8R-x"},
+        conn.execute("INSERT INTO deals VALUES (1, 'LEG-1')")
+        result = migrate_deal_references(conn, {"LEG-1": "8R-x"},
                                          dry_run=True)
         assert result.updated["deals"] == 1   # counted...
         assert conn.execute("SELECT property_id FROM deals").fetchone()[0] \
-            == "ALN-1"                        # ...but untouched
+            == "LEG-1"                        # ...but untouched
 
 
 # ----------------------------------------------------------- provenance
@@ -315,7 +315,7 @@ def test_preflight_runs_and_reports_not_ready(tmp_path, monkeypatch):
     import sys as _sys
     spine = _mk_spine_db(tmp_path / "wb.db", [
         {"property_id": "8R-51710-aaa", "city": "Norfolk", "units": 48}])
-    pp.persist_crosswalk(spine, [("ALN-1", "8R-51710-aaa", "address", 1)])
+    pp.persist_crosswalk(spine, [("LEG-1", "8R-51710-aaa", "address", 1)])
     proc = subprocess.run(
         [_sys.executable, "scripts/preflight_cutover.py"],
         env={"ER_WORKBENCH_DB": str(spine), "PATH": "/usr/bin:/bin"},

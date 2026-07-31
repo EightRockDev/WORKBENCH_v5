@@ -8,7 +8,7 @@ math.
 
 Two new fields per Brian's 2026-05-06 conventions:
   - `raise_amount` (LP equity raise, dollars; defaults to pp × dp/100 if absent)
-  - `vacancy_source` ('ALN' if seeded from ALN occupancy, 'user' if overridden)
+  - `vacancy_source` ('record' if seeded from record occupancy, 'user' if overridden)
 
 Older property folders predate these fields — Pydantic defaults kick in on load.
 
@@ -122,8 +122,13 @@ class DealState(BaseModel):
         ),
     )
     vacancy_source: str = Field(
-        "ALN",
-        description="'ALN' if vacancy seeded from ALN, 'user' if Brian overrode.",
+        "record",
+        description=(
+            "'record' if vacancy was seeded from the property record's occupancy, "
+            "'user' if Brian overrode it. Files written before the Phase-0 "
+            "de-identification carry a vendor label here; anything that is not "
+            "'user' is treated as record-seeded."
+        ),
     )
     # --- post-sale expense adjustments (added 2026-05-07; per Beardsley) ---
     tax_reassessment_on: bool = Field(
@@ -610,7 +615,7 @@ def save_property_photo(
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# Custom properties — user-added properties not in ALN
+# Custom properties — user-added properties not in the property records
 # ---------------------------------------------------------------------------
 
 # Legacy F-dictionary positions used by the HTML workbench's _custom_props.json.
@@ -618,7 +623,7 @@ def save_property_photo(
 # (id, nm, ad, ct, zp, co, un, yr, oc, sf, rt, rf, cl, mg, tp, mk, la, ln,
 #  ow, oa, op, af, ps, ph, ws, em, cm, lt, rm, sm, tg, ix, st)
 _LEGACY_POSITIONS = {
-    0: "aln_id",
+    0: "legacy_id",
     1: "name",
     2: "address",
     3: "city",
@@ -668,11 +673,11 @@ def _legacy_array_to_dict(arr: list) -> dict[str, Any]:
                 out["occupancy_pct"] = f / 100.0 if f > 1.0 else f
             except (TypeError, ValueError):
                 out["occupancy_pct"] = None
-    # Custom props use -1 as the aln_id sentinel — clear it
-    if str(out.get("aln_id", "")) == "-1":
-        out["aln_id"] = None
-    # Synthesize a property_id if the entry is custom (no aln_id)
-    if not out.get("aln_id"):
+    # Custom props use -1 as the legacy_id sentinel — clear it
+    if str(out.get("legacy_id", "")) == "-1":
+        out["legacy_id"] = None
+    # Synthesize a property_id if the entry is custom (no legacy_id)
+    if not out.get("legacy_id"):
         out["property_id"] = f"custom-{uuid.uuid5(uuid.NAMESPACE_OID, json.dumps(arr, default=str))}"
     return out
 
@@ -680,7 +685,7 @@ def _legacy_array_to_dict(arr: list) -> dict[str, Any]:
 def load_custom_props(
     properties_root: Path = PROPERTIES_ROOT,
 ) -> list[dict[str, Any]]:
-    """Load `Properties/_custom_props.json` — user-added properties not in ALN.
+    """Load `Properties/_custom_props.json` — user-added properties not in the property records.
 
     Returns a list of dicts. Handles both the legacy list-of-arrays format
     (HTML workbench) and the new list-of-dicts format on a per-entry basis,
@@ -718,9 +723,9 @@ def add_custom_property(
 
     if not prop.get("property_id"):
         prop["property_id"] = f"custom-{uuid.uuid4()}"
-    if "aln_pull_date" not in prop:
+    if "pull_date" not in prop:
         import datetime as dt
-        prop["aln_pull_date"] = dt.date.today().isoformat()
+        prop["pull_date"] = dt.date.today().isoformat()
 
     existing = load_custom_props(properties_root)
     existing.append(prop)
@@ -736,7 +741,7 @@ def load_favorites(
 ) -> set[str]:
     """Load `Properties/_favorites.json` as a set of string IDs.
 
-    Legacy HTML workbench stored ALN numeric IDs as ints (e.g. 134263).
+    Legacy HTML workbench stored legacy numeric IDs as ints (e.g. 134263).
     Modern entries use property_id (UUIDs). We normalize all to strings on
     load so the matching logic works for both.
     """
@@ -853,6 +858,29 @@ def delete_saved_search(
     return True
 
 
+# Synthesized property_ids look like "<source-slug>-<numeric id>". The slug
+# changed in the Phase-0 de-identification, so `_favorites.json` can still
+# hold entries written under the old one. Comparing on the numeric tail keeps
+# those favorites matching. UUID, "8R-..." and "custom-<uuid>" ids never match
+# this shape, so they compare byte-for-byte exactly as before.
+_SYNTHETIC_ID_RE = re.compile(r"^[a-z]+-(\d+)$")
+
+
+def _fav_key(value: str) -> str:
+    """Normalize one favorite/property id for comparison."""
+    m = _SYNTHETIC_ID_RE.match(value)
+    return m.group(1) if m else value
+
+
+def _fav_keys(prop: dict[str, Any]) -> set[str]:
+    """Every normalized id under which `prop` might be stored as a favorite."""
+    return {
+        _fav_key(str(prop.get(k) or ""))
+        for k in ("property_id", "legacy_id")
+        if prop.get(k)
+    }
+
+
 def is_favorite(
     prop: dict[str, Any],
     favs: set[str] | None = None,
@@ -861,14 +889,15 @@ def is_favorite(
     """Check whether a property is favorited.
 
     Pass `favs` to avoid hitting disk repeatedly when filtering a list.
-    Matches on either `property_id` (modern) or `aln_id` (legacy numeric).
+    Matches on either `property_id` (modern) or `legacy_id` (legacy numeric),
+    normalizing synthesized ids so entries written by older builds still hit.
     """
     if favs is None:
         favs = load_favorites(properties_root)
-    pid = str(prop.get("property_id") or "")
-    aln = str(prop.get("aln_id") or "")
-    # bool() coerces — without it, short-circuit can return the empty string.
-    return bool((pid and pid in favs) or (aln and aln in favs))
+    keys = _fav_keys(prop)
+    if not keys:
+        return False
+    return bool(keys & {_fav_key(f) for f in favs})
 
 
 def toggle_favorite(
@@ -878,20 +907,20 @@ def toggle_favorite(
     """Toggle favorite state for `prop`. Returns the new state (True=favorited).
 
     Adds using `property_id` (preferred). If the property was favorited under
-    a legacy numeric `aln_id`, removes that entry too — so toggling off via
-    the new UI clears any legacy match.
+    a legacy numeric `legacy_id` — or under an older synthesized id prefix —
+    removes that entry too, so toggling off clears every match.
     """
     favs = load_favorites(properties_root)
     pid = str(prop.get("property_id") or "")
-    aln = str(prop.get("aln_id") or "")
+    lid = str(prop.get("legacy_id") or "")
+    keys = _fav_keys(prop)
 
-    was_fav = (pid and pid in favs) or (aln and aln in favs)
+    was_fav = bool(keys) and bool(keys & {_fav_key(f) for f in favs})
     if was_fav:
-        favs.discard(pid)
-        favs.discard(aln)
+        favs = {f for f in favs if _fav_key(f) not in keys}
         new_state = False
     else:
-        favs.add(pid or aln)  # prefer property_id
+        favs.add(pid or lid)  # prefer property_id
         new_state = True
 
     save_favorites(favs, properties_root)
@@ -899,10 +928,10 @@ def toggle_favorite(
 
 
 # ---------------------------------------------------------------------------
-# Folder matching — link an ALN property row to its on-disk folder
+# Folder matching — link an property record to its on-disk folder
 # ---------------------------------------------------------------------------
 
-# Suffixes ALN attaches to property names that property folder names usually
+# Suffixes the data provider attaches to property names that folder names usually
 # omit. Stripped before matching so "Dove Landing Apartments" → folder
 # "Dove-Landing-316-Virginia-Beach" connects properly.
 # Strip ONLY truly noise suffixes that don't distinguish a property from
@@ -990,7 +1019,7 @@ def find_folder_for_property(
     prop: dict[str, Any],
     folders: Iterable[PropertyFolder] | None = None,
 ) -> PropertyFolder | None:
-    """Heuristic match an ALN property row to its on-disk Properties/ folder.
+    """Heuristic match an property record to its on-disk Properties/ folder.
 
     Strategy: tokenize the property name (after stripping pure-noise
     suffixes like 'Apartments') AND the unit count (when known), then find

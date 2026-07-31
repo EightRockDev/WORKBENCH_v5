@@ -891,7 +891,7 @@ def _render_metrics(
                 "Purchase price ÷ unit count. WHY: quick comp benchmark. "
                 "Hampton Roads Class C value-add typically lands $80K–"
                 "$150K/unit depending on vintage and condition. Compare "
-                "to ALN comps in your Performance & Market tab."
+                "to record comps in your Performance & Market tab."
             ),
         ), unsafe_allow_html=True)
     with r3c2:
@@ -1592,15 +1592,15 @@ def render_underwriting(
     units = prop.get("units")
     city = prop.get("city") or ""
 
-    # Load existing deal.json or build a sensible default from the ALN row
+    # Load existing deal.json or build a sensible default from the property record
     deal = None
     if folder is not None:
         deal = load_deal(folder.path)
     if deal is None:
-        # Build a default DealState from ALN data
+        # Build a default DealState from property record data
         ppu_default = 130_000  # mid-range Class C HR
         default_pp = (units or 100) * ppu_default
-        # NOI: use class-based expense ratio + ALN avg rent
+        # NOI: use class-based expense ratio + record avg rent
         avg_rent = prop.get("avg_rent") or 1500
         gpr_est = (units or 100) * avg_rent * 12
         er = config.EXPENSE_RATIOS.get(prop.get("asset_class") or "C", 0.45)
@@ -1618,7 +1618,7 @@ def render_underwriting(
             "s-am": config.AMORT_YEARS, "s-io": 0,
             "s-amf": int(config.AM_FEE_PCT * 100),
         })
-        st.warning("No saved dial yet — defaults derived from ALN row. Adjust sliders to save.")
+        st.warning("No saved dial yet — defaults derived from property record. Adjust sliders to save.")
 
     # Load sources for T-12 inputs (if available)
     from data.property_io import load_sources
