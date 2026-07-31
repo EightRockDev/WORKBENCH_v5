@@ -68,18 +68,88 @@ if ($AppDir -match "OneDrive|Dropbox|Google Drive") {
 }
 
 # --- 1. NSSM --------------------------------------------------------------
+# NSSM is what runs Streamlit as a Windows service. winget is tried first but
+# is not depended on: it fails on machines whose package sources are stale,
+# behind a proxy, or managed by policy, and it failed on the owner's box. The
+# direct download from nssm.cc is the reliable path - a single 300KB zip with
+# no installer - so a winget failure is a fallback, not a dead end.
 Step "Checking NSSM (service manager)"
-$nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
+
+function Find-Nssm {
+    $c = (Get-Command nssm -ErrorAction SilentlyContinue).Source
+    if ($c) { return $c }
+    $spots = @(
+        (Join-Path $AppDir "tools\nssm.exe"),
+        "$env:ProgramFiles\nssm\nssm.exe",
+        "$env:ProgramFiles\NSSM\win64\nssm.exe"
+    )
+    foreach ($s in $spots) { if (Test-Path $s) { return $s } }
+    $g = Get-ChildItem "$env:ProgramFiles\nssm*", `
+                       "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\NSSM*" `
+                       -Recurse -Filter nssm.exe -ErrorAction SilentlyContinue |
+         Select-Object -First 1
+    if ($g) { return $g.FullName }
+    return $null
+}
+
+$nssm = Find-Nssm
+
 if (-not $nssm) {
-    winget install --id NSSM.NSSM -e --accept-source-agreements --accept-package-agreements | Out-Null
-    $nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
-    if (-not $nssm) {
-        # winget installs may need a fresh PATH; look in the usual spots.
-        $guess = Get-ChildItem "$env:ProgramFiles\nssm*","$env:LOCALAPPDATA\Microsoft\WinGet\Packages\NSSM*" -Recurse -Filter nssm.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($guess) { $nssm = $guess.FullName }
+    Write-Host "   Not found. Trying winget (its own progress prints below)..."
+    Write-Host ""
+    try {
+        winget install --id NSSM.NSSM -e --accept-source-agreements `
+            --accept-package-agreements --disable-interactivity
+    } catch {
+        Write-Host "   winget failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+    Write-Host ""
+    # winget writes the machine PATH; this session still holds the old copy.
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
+                [System.Environment]::GetEnvironmentVariable("Path","User")
+    $nssm = Find-Nssm
+}
+
+if (-not $nssm) {
+    Step "Downloading NSSM directly from nssm.cc"
+    $tools = Join-Path $AppDir "tools"
+    New-Item -ItemType Directory -Force -Path $tools | Out-Null
+    $zip = Join-Path $env:TEMP "nssm-2.24.zip"
+    $ext = Join-Path $env:TEMP "nssm-extract"
+    try {
+        # Windows PowerShell 5.1 still defaults to TLS 1.0 on some builds.
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Write-Host "   Fetching https://nssm.cc/release/nssm-2.24.zip ..."
+        Invoke-WebRequest -Uri "https://nssm.cc/release/nssm-2.24.zip" `
+            -OutFile $zip -UseBasicParsing -TimeoutSec 120
+        if (Test-Path $ext) { Remove-Item $ext -Recurse -Force }
+        Expand-Archive -Path $zip -DestinationPath $ext -Force
+        $arch = if ([Environment]::Is64BitOperatingSystem) { "win64" } else { "win32" }
+        $found = Get-ChildItem $ext -Recurse -Filter nssm.exe |
+                 Where-Object { $_.DirectoryName -like "*$arch*" } |
+                 Select-Object -First 1
+        if (-not $found) {
+            $found = Get-ChildItem $ext -Recurse -Filter nssm.exe | Select-Object -First 1
+        }
+        if ($found) {
+            Copy-Item $found.FullName (Join-Path $tools "nssm.exe") -Force
+            $nssm = Join-Path $tools "nssm.exe"
+            Write-Host "   Installed to $nssm" -ForegroundColor Green
+        }
+    } catch {
+        Write-Host "   Download failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    } finally {
+        Remove-Item $zip -ErrorAction SilentlyContinue
+        Remove-Item $ext -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
-if (-not $nssm) { throw "Could not install NSSM. Install it from nssm.cc and re-run." }
+
+if (-not $nssm) {
+    throw ("Could not obtain NSSM automatically (winget and the direct " +
+           "download both failed - check the proxy/firewall). Manual fix: " +
+           "download https://nssm.cc/release/nssm-2.24.zip, extract " +
+           "win64\nssm.exe into " + (Join-Path $AppDir "tools") + ", re-run.")
+}
 Write-Host "   NSSM: $nssm"
 
 # --- 2. Passcode ----------------------------------------------------------

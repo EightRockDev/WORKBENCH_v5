@@ -27,3 +27,6 @@ desktop.ini
 # Live autopilot log: held OPEN by the running .bat (Windows locks it),
 # so git must never track it - publish() pushes a COPY (autopilot-run.log).
 reports/autopilot.log
+
+# NSSM downloaded by install-lan-service.ps1
+tools/

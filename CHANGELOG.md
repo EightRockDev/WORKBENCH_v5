@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.7.1.0 — 2026-07-31  ·  stop depending on winget for NSSM
+`install-service.bat` sat at ">> Checking NSSM" with no output, then failed
+with "Could not install NSSM". Two faults: winget's output was piped to
+`Out-Null`, so a slow install was indistinguishable from a hang, and winget
+was the *only* way the script could obtain NSSM — when it fails (stale
+package sources, a proxy, or machine policy) the install simply stopped.
+
+winget now runs with its output visible and is tried first, but a failure
+falls through to downloading `nssm-2.24.zip` from nssm.cc directly and
+extracting the right architecture's `nssm.exe` into `tools\` (gitignored).
+That is a 300KB zip with no installer, so it works anywhere outbound HTTPS
+does. TLS 1.2 is forced explicitly — Windows PowerShell 5.1 still negotiates
+TLS 1.0 by default on some builds and would otherwise fail the fetch. If both
+routes fail, the error now gives the exact URL, the exact destination folder,
+and says to check the proxy, rather than "install it from nssm.cc".
+
+---
+
 ## V5.13.7.0.0 — 2026-07-31  ·  make the go-live steps double-clickable
 Two instructions failed the moment the owner tried them, both because they
 assumed knowledge the scripts should carry themselves.
