@@ -895,3 +895,5 @@ Checked 107 packages in 16ms
 [discover] exit 0 -> discover-latest.txt
 [publish] pushed to GitHub
 [pull] exit 0 -> pull-latest.txt
+[publish] pushed to GitHub
+[publicdata] exit 0 -> public-data-latest.txt
