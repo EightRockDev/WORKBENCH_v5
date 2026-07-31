@@ -25,7 +25,13 @@ from ui.components import section_card
 
 _WB_ROOT = Path(__file__).resolve().parent.parent.parent
 _LISTINGS_PATH = _WB_ROOT / "Properties" / "_favorite_listings.json"
-_LISTINGS_DB = _WB_ROOT / "hampton-roads-etl" / "hampton_roads.db"
+
+def _listings_db() -> Path:
+    """The ETL db via the ONE resolver - the old hard-coded sibling path
+    (hampton-roads-etl/) left this panel empty on the pilot host even
+    with the db present at data/hampton_roads.db."""
+    from core.etl_db import preferred_location, resolve_etl_db
+    return resolve_etl_db() or preferred_location()
 
 # Sources the scraper SUPPORTS (actual scrapers in hampton-roads-etl/pullers/listings/runner.py)
 _SCRAPER_SOURCES = ("rentcafe", "zillow", "apartments_com", "property_site")
@@ -264,10 +270,10 @@ def _render_url_row(prop_key: str, source: str, url: str, cur: dict) -> None:
 def _render_latest_scrape(property_id: str, aln_id: str) -> None:
     """Show the most-recent rent_listings rows for this property."""
     c = config.COLORS
-    if not _LISTINGS_DB.is_file():
+    if not _listings_db().is_file():
         return
     try:
-        with sqlite3.connect(_LISTINGS_DB) as conn:
+        with sqlite3.connect(_listings_db()) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT source, scrape_status, listing_url, listing_name, "
@@ -414,6 +420,6 @@ def _scrape_one_property(property_id: str, aln_id: str, prop: dict) -> int:
 
     df = pd.DataFrame(rows)
     # Append rather than replace — preserve other properties' rows
-    with sqlite3.connect(_LISTINGS_DB) as conn:
+    with sqlite3.connect(_listings_db()) as conn:
         df.to_sql("rent_listings", conn, if_exists="append", index=False)
     return len(rows)

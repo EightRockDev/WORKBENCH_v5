@@ -409,15 +409,15 @@ def _render_loan_maturity_alert() -> None:
             "your HR inventory's last-sale dates against that maturity wave."
         ),
     ):
-        if not is_etl_available():
-            st.warning("ETL DB needed for HMDA + inventory. Run the asr puller first.")
-            return
-
-        db_path = (
-            Path(__file__).resolve().parent.parent.parent
-            / "hampton-roads-etl" / "hampton_roads.db"
-        )
-        if not db_path.is_file():
+        # Resolve the ETL db through the ONE resolver (core/etl_db.py) -
+        # this panel used to hard-code the legacy v2.4.1 sibling path and
+        # stayed empty on the pilot host even with the db present at
+        # data/hampton_roads.db.
+        from core.etl_db import resolve_etl_db
+        db_path = resolve_etl_db()
+        if db_path is None:
+            st.warning("ETL database not found - the nightly publicdata "
+                       "step creates data/hampton_roads.db automatically.")
             return
 
         db = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)

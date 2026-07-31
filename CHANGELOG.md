@@ -12,6 +12,14 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.12.1.1.0 — 2026-07-30  ·  Two more panels find their data
+The loan-maturity alert panel and the rent-listings panel both
+hard-coded the legacy v2.4.1 sibling path (hampton-roads-etl/) instead
+of using core/etl_db.py - so they stayed empty on the pilot host even
+AFTER the database landed at data/hampton_roads.db. Both now resolve
+through the one resolver. With the copied db in place, the Alerts tab's
+maturity panel and the listings panel light up on next refresh.
+
 ## V5.12.1.0.0 — 2026-07-30  ·  UI overhaul round 1: the property cards
 The landing-page cards the owner flagged ("the layout sucks") were the
 old link-styled design: name, address, AND every stat value underlined
