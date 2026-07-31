@@ -1622,6 +1622,15 @@ body.v2-on-diligence .v2-dd-inspector {{ display: block; }}
   font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
   color: {v['ink']}; line-height: 1;
 }}
+
+/* Verdict-graded stat cards (2026-07-30): value + left rail colored by
+   the ratified GO/WATCH/NO-GO bars - the stat strip reads as a verdict. */
+.v2-stat-go    {{ border-left: 3px solid #15803d; }}
+.v2-stat-watch {{ border-left: 3px solid #b45309; }}
+.v2-stat-nogo  {{ border-left: 3px solid #b91c1c; }}
+.v2-stat-go    .v2-stat-value {{ color: #15803d; }}
+.v2-stat-watch .v2-stat-value {{ color: #b45309; }}
+.v2-stat-nogo  .v2-stat-value {{ color: #b91c1c; }}
 .v2-stat-unit {{ font-size: 14px; font-weight: 500; color: {v['ink_4']}; margin-left: 4px; }}
 .v2-stat-foot {{ font-size: 12px; color: {v['ink_2']}; margin-top: 8px; font-family: 'JetBrains Mono', monospace; }}
 .v2-stat-foot.pos {{ color: {v['pos']}; }}
@@ -2459,14 +2468,26 @@ def render_v2_property_header(prop: dict) -> None:
     st.markdown(html, unsafe_allow_html=True)
 
 
-def _stat_card_html(label: str, value: str, unit: str | None, foot: str, foot_class: str = "") -> str:
+def _stat_card_html(label: str, value: str, unit: str | None, foot: str,
+                    foot_class: str = "", tone: str = "") -> str:
+    """tone: '' neutral, 'go'/'watch'/'nogo' - grades the value against the
+    ratified Eight Rock bars (config GO_*/WATCH_*) with a colored value +
+    left rail, so the stat bar reads as an instant verdict strip."""
     unit_html = f'<span class="v2-stat-unit">{unit}</span>' if unit else ""
+    tone_cls = f" v2-stat-{tone}" if tone else ""
     return f"""
-<div class="v2-stat">
+<div class="v2-stat{tone_cls}">
   <div class="v2-stat-label">{label}</div>
   <div class="v2-stat-value">{value}{unit_html}</div>
   <div class="v2-stat-foot {foot_class}">{foot}</div>
 </div>"""
+
+
+def _tone(value: float | None, go: float, watch: float) -> str:
+    """Grade a higher-is-better metric against its GO/WATCH bars."""
+    if value is None:
+        return ""
+    return "go" if value >= go else "watch" if value >= watch else "nogo"
 
 
 def render_v2_stats_bar(prop: dict, metrics: dict | None = None) -> None:
@@ -2504,11 +2525,13 @@ def render_v2_stats_bar(prop: dict, metrics: dict | None = None) -> None:
     else:
         ask_card = _stat_card_html("Purchase Price", "—", None, "Set in Underwriting tab")
 
-    # Cap card
+    # Cap card - graded against GO_CAP/WATCH_CAP (7.5%/7.0%)
     if cap:
         cap_pct = cap * 100 if cap < 1 else cap
         ask_foot = "Computed from underwriting"
-        cap_card = _stat_card_html("Going-in cap", f"{cap_pct:.2f}", "%", ask_foot)
+        cap_card = _stat_card_html(
+            "Going-in cap", f"{cap_pct:.2f}", "%", ask_foot,
+            tone=_tone(cap_pct / 100, config.GO_CAP, config.WATCH_CAP))
     else:
         cap_card = _stat_card_html("Going-in cap", "—", None, "Set in Underwriting tab")
 
@@ -2516,13 +2539,19 @@ def render_v2_stats_bar(prop: dict, metrics: dict | None = None) -> None:
     if irr:
         irr_pct = irr * 100 if irr < 1 else irr
         em_str = f"{em:.1f}× equity multiple" if em else "5-yr levered model"
-        irr_card = _stat_card_html("5-yr IRR", f"{irr_pct:.1f}", "%", em_str)
+        # Graded against the 15% LP IRR target (watch band: within 2 pts).
+        irr_card = _stat_card_html(
+            "5-yr IRR", f"{irr_pct:.1f}", "%", em_str,
+            tone=_tone(irr_pct / 100, config.LP_IRR_TARGET,
+                       config.LP_IRR_TARGET - 0.02))
     else:
         irr_card = _stat_card_html("5-yr IRR", "—", None, "Set in Underwriting tab")
 
-    # DSCR card
+    # DSCR card - graded against GO_DSCR/WATCH_DSCR (1.30/1.10)
     if dscr_stab:
-        dscr_card = _stat_card_html("DSCR Stabilized", f"{dscr_stab:.2f}", "×", "Stabilized year")
+        dscr_card = _stat_card_html(
+            "DSCR Stabilized", f"{dscr_stab:.2f}", "×", "Stabilized year",
+            tone=_tone(dscr_stab, config.GO_DSCR, config.WATCH_DSCR))
     else:
         dscr_card = _stat_card_html("DSCR Stabilized", "—", None, "Set in Underwriting tab")
 

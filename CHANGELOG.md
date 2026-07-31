@@ -12,6 +12,14 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.12.4.0.0 — 2026-07-30  ·  UI round 3: the stat bar grades itself
+The deal workspace's stat cards showed raw numbers with no signal. They
+now grade themselves against the ratified Eight Rock bars: going-in cap
+vs GO 7.5%/WATCH 7.0%, 5-yr IRR vs the 15% LP target (watch band within
+2 pts), stabilized DSCR vs 1.30/1.10. GO = green value + rail, WATCH =
+amber, NO-GO = red - the stat strip reads as an instant verdict before
+you open a single tab. Render-verified with all three tones firing.
+
 ## V5.12.3.0.0 — 2026-07-30  ·  UI round 2: landing hero compressed
 The stacked hero (44px title + 30px subtitle + full quote card) pushed
 every property card below the fold. Now one tight band: Quarry + tagline
