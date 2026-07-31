@@ -12,6 +12,40 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.6.0.0 — 2026-07-31  ·  P0.5 last item: SQLite -> Postgres migration + verifier
+The pilot's tenancy tables already live in Postgres; the property spine and
+calibration tables were still SQLite. `scripts/migrate_sqlite_to_pg.py`
+creates the Postgres tables, copies every row, and proves the copy.
+
+Deliberately the BUILD-AND-PROVE half, not the cutover: it never touches the
+SQLite side and does not change where the app reads from. Same order Phase 0
+uses for the spine — build, prove parity, then flip when the owner chooses.
+
+Verification is three checks, because each alone is defeatable. Row counts
+would pass a migration that copied the right NUMBER of wrong rows. Key sets
+would pass one that copied the right rows with corrupted values. So it
+compares counts, primary-key sets, and a column-by-column sample, with
+numeric comparison for floats so SQLite REAL -> DOUBLE PRECISION does not
+read as a mismatch. Copies upsert, so a re-run after a partial failure
+neither duplicates nor errors.
+
+Two real defects surfaced from testing against a live Postgres rather than
+compiling and assuming:
+- the primary key was hard-coded per table and `calibration_current` was
+  wrong ("metric"; it is "name"). It is now read from the SQLite schema, and
+  a composite key raises instead of copying with no conflict target — which
+  would have let a re-run duplicate every row.
+- copy/verify assumed the SQLite and Postgres table names were identical.
+  True in the migration, but it made both untestable in isolation.
+
+Measured: 15,000 rows x 47 columns copied and verified in 1.4s. Ten tests
+covering the round trip, re-run idempotency, float precision, nulls, and —
+the ones that matter — that the verifier actually FAILS on a missing row, an
+extra row, and a changed value. A verifier that only ever reports OK is worse
+than none: it turns "we did not check" into "we checked and it was fine".
+
+---
+
 ## V5.13.5.2.0 — 2026-07-31  ·  SQLite in WAL mode before the pilot goes multi-user
 The pilot runs a blue-green service PAIR against a single `workbench.db`,
 with the hourly autopilot writing to the same file. Connections were opened
