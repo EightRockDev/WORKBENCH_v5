@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.3.1.0 — 2026-07-31  ·  fix: wrapped sources.json value crashed Underwriting
+The Underwriting tab died with `TypeError: '>' not supported between
+instances of 'dict' and 'int'` on a real deal. `sources.json` stores values
+either bare (`60000`) or provenance-wrapped
+(`{"value": 60000, "source": "T12"}`). `totalRevenue` and `totalOpex` were
+unwrapped before use, but `t12_fixedCharges.realEstateTaxes` was passed
+straight through as `pre_sale_tax` and hit `pre_sale_tax > 0`.
+
+Every sources.json read now goes through one `_scalar()` unwrapper that
+handles both shapes and returns None for anything non-numeric, and
+`_apply_expense_adjustments` normalizes its own argument rather than trusting
+callers — this runs against hand-edited JSON, so a bad file should degrade to
+the fallback estimate, not take down the tab. Three regression tests: the
+wrapped-taxes crash, bare-vs-wrapped producing identical results, and junk
+values falling back cleanly.
+
+Pre-existing, unrelated to the V5.13.3.0.0 concurrency work; it surfaced on a
+property whose T-12 had been ingested with provenance stamps.
+
+---
+
 ## V5.13.3.0.0 — 2026-07-31  ·  P0.5: concurrent editing is safe (FR-9.3, AC-9.3)
 `data/concurrency.py` implemented optimistic concurrency and soft locks in
 full — and nothing in the app called any of it. Two analysts on the same deal

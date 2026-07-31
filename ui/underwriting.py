@@ -58,13 +58,32 @@ from ui.value_add import (
 # Year-1 GPR + expenses derivation (T-12 if available, else defaults)
 # ---------------------------------------------------------------------------
 
+def _scalar(v: Any) -> float | None:
+    """Unwrap a sources.json value to a float, or None if there isn't one.
+
+    Entries are stored either bare (`1234`) or provenance-wrapped
+    (`{"value": 1234, "source": "T12"}`), and nested groups like
+    `t12_fixedCharges.realEstateTaxes` use the wrapped form too. Reading one
+    without unwrapping put a dict into an arithmetic comparison and crashed
+    the whole Underwriting tab, so every read goes through here.
+    """
+    if isinstance(v, dict):
+        v = v.get("value")
+    if isinstance(v, bool) or v is None:
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def _derive_year1_inputs(
     deal: DealState,
     sources: dict[str, Any] | None,
     units: int | None,
     *,
     city: str | None = None,
-    pre_sale_tax: float | None = None,
+    pre_sale_tax: float | dict | None = None,
 ) -> tuple[float, float]:
     """Return (year1_gpr, year1_expenses) for the cash flow projection.
 
@@ -83,19 +102,14 @@ def _derive_year1_inputs(
         if pre_sale_tax is None:
             t12 = sources.get("t12_fixedCharges")
             if isinstance(t12, dict):
-                pre_sale_tax = t12.get("realEstateTaxes")
-        if rev and opex:
-            try:
-                rev_v = rev.get("value") if isinstance(rev, dict) else rev
-                opex_v = opex.get("value") if isinstance(opex, dict) else opex
-                if rev_v and opex_v:
-                    return float(rev_v), _apply_expense_adjustments(
-                        float(opex_v), units, deal,
-                        city=city, purchase_price=deal.pp,
-                        pre_sale_tax=pre_sale_tax,
-                    )
-            except (AttributeError, TypeError, ValueError):
-                pass
+                pre_sale_tax = _scalar(t12.get("realEstateTaxes"))
+        rev_v, opex_v = _scalar(rev), _scalar(opex)
+        if rev_v and opex_v:
+            return rev_v, _apply_expense_adjustments(
+                opex_v, units, deal,
+                city=city, purchase_price=deal.pp,
+                pre_sale_tax=pre_sale_tax,
+            )
 
     # Derive from NOI + expense ratio: NOI = (1 - vac) * GPR - expenses;
     # expenses = expense_ratio * GPR. Solve for GPR and expenses.
@@ -124,7 +138,7 @@ def _apply_expense_adjustments(
     *,
     city: str | None = None,
     purchase_price: float | None = None,
-    pre_sale_tax: float | None = None,
+    pre_sale_tax: float | dict | None = None,
 ) -> float:
     """Apply post-sale tax reassessment + agency-debt insurance premium.
 
@@ -134,6 +148,10 @@ def _apply_expense_adjustments(
     to the conservative +6% opex proxy when inputs are missing.
     """
     adjusted = base_expenses
+    # Callers should pass a number, but this runs against user-edited JSON —
+    # normalize rather than trust, so a bad file degrades to the fallback
+    # estimate instead of taking down the tab.
+    pre_sale_tax = _scalar(pre_sale_tax)
     if deal.tax_reassessment_on:
         if city and purchase_price and purchase_price > 0:
             new_tax = estimated_post_sale_tax(purchase_price, city, DEFAULT_REASSESSMENT_RATIO)
