@@ -583,6 +583,24 @@ They now gate on `pg.is_reachable()`, which connects once and caches. A run
 with no database is `820 passed, 88 skipped` — zero red — so anything red is
 real. Gate on the resource being USABLE, not merely named.
 
+## Lesson — a column nobody reads is not a feature (2026-08-01)
+
+`organizations.ai_enabled` had been in `db/pilot_schema.sql` since the pilot
+schema was written, commented "Section 11 per-org LLM flag". No code read it.
+An org could set it and every generative surface would carry on calling the
+model — AC-11.2 was not merely untested, it was unimplemented, and the schema
+made it look done.
+
+Grepping the SPEC against the TESTS found this in one pass: 18 acceptance
+criteria, 4 with no test reference, and of those the one whose supporting
+column already existed was the most misleading. Worth repeating periodically
+rather than trusting a status doc, which is how AC-10.1 was also recorded as
+verified with no suite behind it.
+
+The gate is placed on the line that CONSTRUCTS the client, not at the top of
+each function. A surface that forgets a check at the top still gets a client;
+a surface that forgets the check that *is* the client cannot.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

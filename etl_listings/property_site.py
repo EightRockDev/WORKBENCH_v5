@@ -140,6 +140,14 @@ class PropertySiteScraper(BaseListingScraper):
             LOG.warning("anthropic package not available — property_site scraper inactive")
             return None
 
+        # AC-11.2: an org with ai_enabled off must reach no model at all.
+        # Placed on the line that BUILDS the client, so a new surface
+        # cannot forget the check and still get one.
+        from core import ai_gate
+        ai_gate.require_ai(
+            'Listing page parsing',
+            'Other listing sources still run; only this LLM-assisted one is skipped.',
+            ai_gate.current_org_id())
         client = anthropic.Anthropic(api_key=api_key)
         try:
             msg = client.messages.create(

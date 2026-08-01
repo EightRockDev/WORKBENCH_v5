@@ -521,6 +521,14 @@ def _check_voice_with_claude(
     )
 
     try:
+        # AC-11.2: an org with ai_enabled off must reach no model at all.
+        # Placed on the line that BUILDS the client, so a new surface
+        # cannot forget the check and still get one.
+        from core import ai_gate
+        ai_gate.require_ai(
+            'IC memo validation',
+            'The deterministic threshold and DD-readiness checks still run.',
+            ai_gate.current_org_id())
         client = anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model=model,

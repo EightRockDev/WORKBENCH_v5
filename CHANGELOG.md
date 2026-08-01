@@ -12,6 +12,42 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.2.0.0 — 2026-08-01  ·  Section 11: the AI layer is optional, and now provably so
+An audit of the spec's 18 acceptance criteria against the test suite found
+four with no test. Three are Section 11, the "deterministic core first, AI
+last" commitment the whole product architecture rests on.
+
+**AC-11.1** — the deterministic core runs with the AI layer removed — turned
+out to hold already: with `import anthropic` blocked outright the suite is
+820 passed, 88 skipped. Holding today and being unable to quietly stop
+holding are different properties though, so five tests now exercise
+underwriting math, distress scoring, the property spine, deal persistence and
+T-12 preprocessing with the SDK blocked.
+
+**AC-11.2** was not merely untested — it was **unimplemented**. The
+`organizations.ai_enabled` column had existed since the pilot schema was
+written, labelled "Section 11 per-org LLM flag", and no code read it. An org
+could switch it off and every generative surface would carry on calling the
+model. `core/ai_gate.py` is now that switch, wired into all five call sites.
+
+Two deliberate choices. The gate sits on the line that **constructs the
+client**, not at the top of each function: a surface that forgets a check at
+the top still gets a client, whereas one that forgets the check that *is* the
+client cannot. And `AIDisabled` carries the fallback text, because AC-11.2
+asks for a manual/template path to be offered, not merely for the call to be
+skipped. A settings-store outage means "no opinion" and keeps the default —
+an outage must not silently disable a paid feature, nor silently enable one.
+
+**AC-11.3** now tests the real validator: `validate_polish` rejects AI prose
+that introduces, drops or moves a number. A changed price in an outreach
+letter is a misrepresentation to a seller, not a formatting slip, so a moved
+decimal has its own case.
+
+25 tests. Mutation-checked: removing the gate from one surface is caught by
+two of them.
+
+---
+
 ## V5.14.1.1.0 — 2026-08-01  ·  a run with no database is now green, not red
 Ten Postgres suites skipped on `pg.is_configured()`, which only checks that a
 URL exists. Pointed at a stopped server, that produced **76 errors and 4

@@ -557,6 +557,14 @@ def _call_claude(
         "cache_control": {"type": "ephemeral"},
     }]
 
+    # AC-11.2: an org with ai_enabled off must reach no model at all.
+    # Placed on the line that BUILDS the client, so a new surface
+    # cannot forget the check and still get one.
+    from core import ai_gate
+    ai_gate.require_ai(
+        'Artifact generation',
+        'Use the deterministic Preview block, or write the document manually.',
+        ai_gate.current_org_id())
     client = Anthropic(api_key=api_key)
     try:
         with client.messages.stream(

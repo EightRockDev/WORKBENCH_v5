@@ -493,6 +493,14 @@ def ingest_document(
 
     try:
         import anthropic
+        # AC-11.2: an org with ai_enabled off must reach no model at all.
+        # Placed on the line that BUILDS the client, so a new surface
+        # cannot forget the check and still get one.
+        from core import ai_gate
+        ai_gate.require_ai(
+            'Document extraction',
+            'Enter the T-12 / rent-roll figures by hand on the Property Card.',
+            ai_gate.current_org_id())
         client = anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model="claude-sonnet-4-5",

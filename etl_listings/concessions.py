@@ -205,6 +205,14 @@ def _ai_parse(text: str) -> ParsedConcession | None:
     except ImportError:
         return None
 
+    # AC-11.2: an org with ai_enabled off must reach no model at all.
+    # Placed on the line that BUILDS the client, so a new surface
+    # cannot forget the check and still get one.
+    from core import ai_gate
+    ai_gate.require_ai(
+        'Concession parsing',
+        'The regex concession parser still runs; only the LLM fallback is skipped.',
+        ai_gate.current_org_id())
     client = anthropic.Anthropic(api_key=api_key)
     prompt = (
         "You are parsing rental concession copy from an apartment listing. "
