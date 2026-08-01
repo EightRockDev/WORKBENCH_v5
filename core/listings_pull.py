@@ -35,6 +35,40 @@ _ROW_COLS = (
     "error_message", "scraped_at")
 
 
+_TEXT_COLS = frozenset({
+    "property_id", "name", "address", "city", "source", "listing_url",
+    "listing_name", "concession_text", "scrape_status", "error_message",
+    "scraped_at"})
+
+
+def _add_missing_columns(conn, table: str) -> list[str]:
+    """Bring an EXISTING rent_listings up to the current column set.
+
+    `CREATE TABLE IF NOT EXISTS` does nothing to a table that already exists,
+    so every column added to `_ROW_COLS` since a machine first ran the scraper
+    is simply absent there, and the INSERT dies with "table rent_listings has
+    no column named <x>". That is what killed the 2026-08-01 listings step —
+    losing two successful Zillow scrapes, the one data source that moves the
+    rent-delta gate.
+
+    ALTER TABLE ADD COLUMN is cheap and idempotent, so reconcile on every run
+    rather than relying on anyone to notice a schema bump.
+    """
+    have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+    if not have:
+        return []
+    added = []
+    for col in _ROW_COLS:
+        if col not in have:
+            kind = "TEXT" if col in _TEXT_COLS else "REAL"
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {kind}")
+            added.append(col)
+    if added:
+        print(f"  [listings] schema: added missing column(s) "
+              f"{', '.join(added)} to {table}")
+    return added
+
+
 def _properties_root() -> Path:
     from data.property_io import PROPERTIES_ROOT
     return Path(PROPERTIES_ROOT)
@@ -196,10 +230,9 @@ def pull_listings(db_path: Path | None = None,
         return 0
     with sqlite3.connect(db) as conn:
         conn.execute(f"""CREATE TABLE IF NOT EXISTS rent_listings
-            ({', '.join(c + ' TEXT' if c in ('property_id', 'name',
-                'address', 'city', 'source', 'listing_url', 'listing_name',
-                'concession_text', 'scrape_status', 'error_message',
-                'scraped_at') else c + ' REAL' for c in _ROW_COLS)})""")
+            ({', '.join(c + ' TEXT' if c in _TEXT_COLS else c + ' REAL'
+                        for c in _ROW_COLS)})""")
+        _add_missing_columns(conn, "rent_listings")
         conn.executemany(
             f"INSERT INTO rent_listings ({', '.join(_ROW_COLS)}) "
             f"VALUES ({', '.join('?' for _ in _ROW_COLS)})", rows)

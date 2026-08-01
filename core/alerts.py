@@ -128,6 +128,25 @@ def run_sweep(db_path: Path) -> dict[str, int]:
     return counts
 
 
+def count_open_alerts(db_path: Path) -> dict[str, int]:
+    """{kind: n} plus 'total', across ALL open alerts.
+
+    `open_alerts` truncates, so a caller that prints its result cannot say how
+    many it left out. Reporting "25 shown" beside a real total is the
+    difference between a summary and a silent cap.
+    """
+    try:
+        with sqlite3.connect(db_path) as conn:
+            rows = conn.execute(
+                "SELECT kind, count(*) FROM alerts WHERE status='open' "
+                "GROUP BY kind").fetchall()
+    except sqlite3.Error:
+        return {"total": 0}
+    out = {str(k): int(n) for k, n in rows}
+    out["total"] = sum(out.values())
+    return out
+
+
 def open_alerts(db_path: Path, limit: int = 200) -> list[dict]:
     try:
         with sqlite3.connect(db_path) as conn:

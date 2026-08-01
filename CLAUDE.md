@@ -497,6 +497,38 @@ Corollary: this repo already had a specified vocabulary for the ALN work
 before inventing replacement names; the GRANITE pass had invented "survey",
 which would have been wrong here.
 
+## Lesson — `CREATE TABLE IF NOT EXISTS` is not a migration (2026-08-01)
+
+The overnight listings step died with `table rent_listings has no column named
+name`, losing the only two successful scrapes of the cycle — and listings are
+the one source that moves the rent-delta gate. The table had been created by an
+older build; every column added to `_ROW_COLS` since then was simply absent,
+and `CREATE TABLE IF NOT EXISTS` does nothing to a table that already exists.
+
+This is the second instance in two days. The first was `properties`, whose
+`aln_id`/`aln_pull_date` columns only got renamed on a full loader rebuild that
+usually does not run. Any table written by long-lived installs needs a
+reconcile-on-every-run step, not a create-if-absent. `ALTER TABLE ADD COLUMN`
+is cheap and idempotent; call it unconditionally.
+
+Related: the fix's tests first went into `tests/test_listings.py`, which skips
+wholesale when `hampton-roads-etl` is not checked out beside the workbench —
+so they never ran. **A test filed next to a heavy dependency inherits its skip.**
+Schema tests need nothing but the module under test; they live in
+`tests/test_listings_schema.py` and run everywhere.
+
+## Lesson — a report must never contradict itself (2026-08-01)
+
+The alert sweep printed "0 new multifamily" and then listed 25 `[new_mf]`
+entries. Both numbers were correct: the counter tallies rows INSERTED this
+cycle (`INSERT OR IGNORE` returns rowcount 0 for ones already there), while the
+list shows every OPEN alert. Nothing in the report said they measured different
+things, so it read as a bug and cost time to re-derive.
+
+The list was also capped at 25 with no total, so a backlog of 200 looked
+identical to a backlog of 25. Any capped list needs its true total beside it —
+"showing the 25 most recent of 41" — or the cap silently becomes the finding.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

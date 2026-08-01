@@ -12,6 +12,37 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.8.2.0 — 2026-08-01  ·  overnight: listings step fixed, alert report made honest
+**listings crashed** with `table rent_listings has no column named name`,
+taking two successful Zillow scrapes with it — the only source that moves the
+rent-delta gate. The table was created by an older build and
+`CREATE TABLE IF NOT EXISTS` does nothing to a table that already exists, so
+every column added to `_ROW_COLS` since was missing. It now reconciles the
+column set on every run via `ALTER TABLE ADD COLUMN` (cheap, idempotent) and
+prints what it added. Second schema-drift bug in two days after `properties`;
+the pattern is recorded in CLAUDE.md.
+
+The fix's tests initially went into `tests/test_listings.py`, which skips
+wholesale without `hampton-roads-etl` beside the checkout — so they never ran.
+Moved to `tests/test_listings_schema.py`, which depends only on the module
+under test.
+
+**alert sweep contradicted itself**: "0 new multifamily" printed directly above
+25 `[new_mf]` lines. Both were right — the counter tallies rows inserted this
+cycle, the list shows all open alerts — and nothing said so. The report now
+separates "NEW this cycle" from "OPEN (carried forward)", and states the true
+total beside the capped list ("showing the 25 most recent of 41") so a backlog
+of 200 cannot look like a backlog of 25. `count_open_alerts()` added.
+
+Gates unchanged overnight and none of this moves them: coverage 100% (PASS),
+comp overlap 66.8% (backlogged at its ceiling — anchor tuning stays parked),
+rent delta 26.9% against the 5% gate on 265 pairs. Crosswalk 471 -> 475, rents
+stamped 18,764 -> 18,928, still 100% FMR-derived with exactly 1 row from a live
+listing. The rent gate cannot close on FMR alone, which is precisely what the
+listings crash was blocking.
+
+---
+
 ## V5.13.8.1.0 — 2026-07-31  ·  discovery: a parcel roll has to be parcel-sized
 Hampton's accepted feed served **716 records** for a city of roughly 50,000
 parcels. Nothing about its fields was wrong — address, apn, assessed_value,

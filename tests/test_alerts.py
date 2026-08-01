@@ -90,3 +90,44 @@ def test_alert_routes_to_outreach_queue(tmp_path):
     assert len(q) == 1 and q[0]["property_id"] == "8R-b"
     alerts.mark_worked(db, a["id"])
     assert alerts.outreach_queue(db) == []
+
+
+# ---------------------------------------------------------------------------
+# The sweep report must not contradict itself (2026-08-01)
+# ---------------------------------------------------------------------------
+
+def test_open_count_is_the_full_total_not_the_page(tmp_path):
+    """`open_alerts` truncates at its limit; the report needs the real total
+    so it can say what it is leaving out."""
+    import sqlite3
+    from core import alerts
+
+    db = tmp_path / "wb.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE alerts (
+            id INTEGER PRIMARY KEY, kind TEXT, property_id TEXT, city TEXT,
+            headline TEXT, detail TEXT, created_at TEXT,
+            status TEXT DEFAULT 'open')""")
+        conn.executemany(
+            "INSERT INTO alerts (kind, property_id, city, headline, detail,"
+            " created_at, status) VALUES (?,?,?,?,?,?,?)",
+            [("new_mf", f"p{i}", "Virginia Beach", f"h{i}", "d", "t", "open")
+             for i in range(40)]
+            + [("units_jump", "px", "Norfolk", "h", "d", "t", "open")]
+            + [("new_mf", "pz", "Norfolk", "h", "d", "t", "dismissed")])
+
+    counts = alerts.count_open_alerts(db)
+    assert counts["total"] == 41           # the dismissed one is excluded
+    assert counts["new_mf"] == 40
+    assert counts["units_jump"] == 1
+    # the paged view is capped, which is exactly why the total is needed
+    assert len(alerts.open_alerts(db, limit=25)) == 25
+
+
+def test_open_count_on_a_database_with_no_alerts_table(tmp_path):
+    import sqlite3
+    from core import alerts
+
+    db = tmp_path / "empty.db"
+    sqlite3.connect(db).close()
+    assert alerts.count_open_alerts(db) == {"total": 0}
