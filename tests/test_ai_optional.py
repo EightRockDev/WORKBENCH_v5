@@ -147,7 +147,12 @@ def test_no_client_is_constructed_when_ai_is_off(monkeypatch):
     monkeypatch.setenv("ER_AI_ENABLED", "off")
     constructed = []
 
-    import anthropic
+    # This test needs the SDK present in order to trip on it. In a build
+    # where the AI layer has been REMOVED (AC-11.1) there is nothing to
+    # construct and the other tests in this file cover that case, so skip
+    # rather than fail - an AC-11.2 test must not require the AI layer.
+    anthropic = pytest.importorskip(
+        "anthropic", reason="AI layer removed from this build (AC-11.1)")
 
     class Tripwire:
         def __init__(self, *a, **kw):

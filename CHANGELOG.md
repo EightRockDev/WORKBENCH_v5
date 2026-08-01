@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.3.1.0 — 2026-08-01  ·  the AC-11.2 test no longer needs the AI layer
+Running the suite in the AC-11.1 configuration — SDK removed from the build —
+left exactly one failure, and it was the new AC-11.2 test: it imports
+`anthropic` to install a tripwire on the client constructor, which cannot
+work when there is no SDK to trip. An AC-11.2 test requiring the AI layer is
+the wrong shape; it now skips there, where AC-11.1's own tests already prove
+nothing is constructed.
+
+Verified green in all four configurations the product supports:
+
+| Configuration | Result |
+|---|---|
+| Postgres available | 935 passed, 4 skipped |
+| No database | 851 passed, 88 skipped |
+| AI layer removed (AC-11.1) | 850 passed, 89 skipped |
+| AI disabled (AC-11.2) | 851 passed, 88 skipped |
+
+---
+
 ## V5.14.3.0.0 — 2026-08-01  ·  AC-A2 latency guard; every spec AC now has a test
 **18 of 18** acceptance criteria in the spec are now referenced by the test
 suite. The audit that started this found four with none: AC-11.1/11.2/11.3
