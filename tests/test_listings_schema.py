@@ -64,3 +64,70 @@ def test_absent_table_is_left_to_create_table(tmp_path):
     db = tmp_path / "etl.db"
     with sqlite3.connect(db) as conn:
         assert _add_missing_columns(conn, "rent_listings") == []
+
+
+# ---------------------------------------------------------------------------
+# Favorites must resolve the same way the UI resolves them (2026-08-01)
+# ---------------------------------------------------------------------------
+
+def _fav_db(tmp_path, monkeypatch, favorites, rows):
+    """A properties table plus a _favorites.json, wired to temp paths."""
+    import json
+    import sqlite3
+
+    import data.db as dbmod
+    import core.listings_pull as lp
+
+    db = tmp_path / "workbench.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE properties (
+            property_id TEXT PRIMARY KEY, legacy_id TEXT, name TEXT,
+            address TEXT, city TEXT, state TEXT)""")
+        conn.executemany("INSERT INTO properties VALUES (?,?,?,?,?,?)", rows)
+
+    props = tmp_path / "Properties"
+    props.mkdir()
+    (props / "_favorites.json").write_text(json.dumps(favorites))
+
+    monkeypatch.setattr(dbmod, "DB_PATH", db)
+    monkeypatch.setattr(lp, "_properties_root", lambda: props)
+    return lp
+
+
+def test_favorite_saved_under_the_old_id_prefix_still_scrapes(
+        tmp_path, monkeypatch):
+    """The regression this guards: the de-identification changed synthesized
+    ids from `aln-<n>` to `legacy-<n>`. property_io normalizes, so the UI kept
+    showing these starred — while the scraper matched exactly and skipped
+    them. A star that yields no scrape looks like the source was tried."""
+    lp = _fav_db(
+        tmp_path, monkeypatch,
+        favorites=["aln-134263"],
+        rows=[("legacy-134263", "134263", "Miars Farm", "1 Main St",
+               "Norfolk", "VA")])
+    universe = lp.favorite_universe()
+    assert [p["name"] for p in universe] == ["Miars Farm"]
+
+
+def test_modern_uuid_favorites_still_resolve(tmp_path, monkeypatch):
+    lp = _fav_db(
+        tmp_path, monkeypatch,
+        favorites=["8R-51710-aaaaaaaaaaaa"],
+        rows=[("8R-51710-aaaaaaaaaaaa", None, "Acclaim", "2 Bay Ave",
+               "Norfolk", "VA")])
+    assert len(lp.favorite_universe()) == 1
+
+
+def test_distinct_native_ids_are_not_merged(tmp_path, monkeypatch):
+    """Normalization must not make two different 8R ids collide."""
+    lp = _fav_db(
+        tmp_path, monkeypatch,
+        favorites=["8R-51710-aaaaaaaaaaaa"],
+        rows=[("8R-51710-aaaaaaaaaaaa", None, "Wanted", "1 A St", "Norfolk", "VA"),
+              ("8R-51710-bbbbbbbbbbbb", None, "Other", "2 B St", "Norfolk", "VA")])
+    assert [p["name"] for p in lp.favorite_universe()] == ["Wanted"]
+
+
+def test_no_favorites_is_not_an_error(tmp_path, monkeypatch):
+    lp = _fav_db(tmp_path, monkeypatch, favorites=[], rows=[])
+    assert lp.favorite_universe() == []

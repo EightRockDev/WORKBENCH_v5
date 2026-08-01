@@ -529,6 +529,23 @@ The list was also capped at 25 with no total, so a backlog of 200 looked
 identical to a backlog of 25. Any capped list needs its true total beside it —
 "showing the 25 most recent of 41" — or the cap silently becomes the finding.
 
+## Lesson — normalize an identifier in ONE place, or not at all (2026-08-01)
+
+The Phase-0 rename changed synthesized property ids from `aln-<n>` to
+`legacy-<n>`. `property_io.is_favorite` was taught to normalize the prefix so
+old `_favorites.json` entries kept working — and the UI duly kept showing
+those properties starred. `listings_pull.favorite_universe()` was not, so the
+rent scraper silently skipped every favorite saved by an older build.
+
+The failure mode is the dangerous kind: **the star still rendered.** The owner
+had every reason to believe those properties were being scraped, and the
+listings report showed "not_found" — indistinguishable from a property the
+scraper genuinely could not locate. A partial normalization is worse than none,
+because it removes the symptom that would have led to the cause.
+
+When an id format changes, grep for every consumer of that id in the same
+commit. `_fav_key` is now shared by both call sites.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

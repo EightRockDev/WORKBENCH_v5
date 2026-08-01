@@ -95,26 +95,45 @@ def load_manual_urls() -> dict:
 
 
 def favorite_universe() -> list[dict]:
-    """Favorites resolved against the legacy properties table (name +
-    address drive the search step)."""
+    """Favorites resolved against the property table (name + address drive
+    the search step).
+
+    Matching is NORMALIZED, not exact. Synthesized ids look like
+    `<slug>-<numeric id>` and the slug changed in the Phase-0
+    de-identification, so `_favorites.json` can hold `aln-134263` for a row
+    now keyed `legacy-134263`. `property_io` already normalizes that, which is
+    why the UI still shows those properties starred - but this query did not,
+    so the scraper silently skipped every favorite saved by an older build.
+    A star that does not produce a rent scrape is worse than no star: it looks
+    like the source was tried and found nothing.
+    """
     favs = load_favorites()
     if not favs:
         return []
     from data.db import DB_PATH
+    from data.property_io import _fav_key
     if not Path(DB_PATH).is_file():
         return []
-    marks = ",".join("?" for _ in favs)
+    wanted = {_fav_key(str(f)) for f in favs if str(f).strip()}
+    if not wanted:
+        return []
     try:
         with sqlite3.connect(DB_PATH) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
-                f"""SELECT property_id, name, address, city, state
-                      FROM properties
-                     WHERE property_id IN ({marks}) OR legacy_id IN ({marks})
-                     ORDER BY name""", tuple(favs) * 2).fetchall()
-        return [dict(r) for r in rows]
+                """SELECT property_id, legacy_id, name, address, city, state
+                     FROM properties ORDER BY name""").fetchall()
     except sqlite3.Error:
         return []
+    out = []
+    for r in rows:
+        keys = {_fav_key(str(r[k] or "")) for k in ("property_id", "legacy_id")
+                if r[k]}
+        if keys & wanted:
+            d = dict(r)
+            d.pop("legacy_id", None)
+            out.append(d)
+    return out
 
 
 def _rent_bands(listing) -> dict:

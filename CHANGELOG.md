@@ -12,6 +12,28 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.13.8.3.0 — 2026-08-01  ·  starred properties the scraper was skipping
+The owner added favorites to feed the rent gate, which surfaced a bug that
+would have blunted exactly that. `listings_pull.favorite_universe()` resolved
+favorites by EXACT `property_id` / `legacy_id`, but the Phase-0 rename changed
+synthesized ids from `aln-<n>` to `legacy-<n>`. `property_io` normalizes that,
+so the UI kept showing older favorites starred — while the scraper matched
+exactly and skipped them.
+
+The failure mode is the bad kind: the star still rendered, and the listings
+report said `not_found`, which is indistinguishable from a property the
+scraper genuinely could not locate. Both call sites now share `_fav_key`.
+
+Confirmed by mutation: the new test passes against the fix and fails against
+the original exact-match implementation. Four tests cover the old prefix,
+modern 8R ids, two distinct 8R ids not colliding under normalization, and the
+empty case.
+
+Given only 4 targets and 2 successes in the last cycle, any favorite the
+scraper could not see was a material share of the rent-gate sample.
+
+---
+
 ## V5.13.8.2.0 — 2026-08-01  ·  overnight: listings step fixed, alert report made honest
 **listings crashed** with `table rent_listings has no column named name`,
 taking two successful Zillow scrapes with it — the only source that moves the
