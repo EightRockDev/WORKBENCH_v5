@@ -546,6 +546,30 @@ because it removes the symptom that would have led to the cause.
 When an id format changes, grep for every consumer of that id in the same
 commit. `_fav_key` is now shared by both call sites.
 
+## Lesson — "verified" in a doc is not a test (2026-08-01)
+
+BUILD-ORDER recorded AC-10.1 — cross-org RLS isolation — as verified. Nothing
+tested it. The spec asks for the suite by name ("verified by an automated
+cross-org RLS test suite"), and every tenant guarantee in the pilot rests on
+those policies rather than WHERE clauses: `list_messages` has no filter at all.
+
+Writing it surfaced three things a hand-written test would have missed, all
+found by making the sweep GENERIC over `pg_class.relrowsecurity` and asserting
+that every protected table was actually exercised:
+
+- `outreach_touches` is append-only by trigger (AC-B2) — an exact-row-count
+  assertion was wrong, not the schema. The property that matters is "every
+  row I can see is mine", not "I see exactly one".
+- `inbox_messages` / `mailbox_connections` isolate per USER as well as per
+  org, so an org-only connection correctly sees nothing there.
+- `revocations` has a table-level `e164 OR email IS NOT NULL` check that no
+  column-level metadata reveals.
+
+The completeness test is the important one: a table that cannot be seeded is
+invisible to the sweep, so it asserts coverage explicitly rather than quietly
+reporting green over eight of fifteen tables. Mutation-checked — an
+over-permissive `USING (true)` policy fails six of the seven tests.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

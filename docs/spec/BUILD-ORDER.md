@@ -73,7 +73,10 @@ in this repo — the infrastructure half of orders 2–3:
 - `db/pilot_schema.sql` — Postgres schema with: `row_version` +
   `bump_row_version()` and `edit_locks` (§9.3); `users`/`organizations`/
   `memberships`/`role_presets` (§9.4, §10.2); **18-preset role library seeded**
-  (§10.3); **row-level-security org isolation** (§10.1, AC-10.1 verified);
+  (§10.3); **row-level-security org isolation** (§10.1) - AC-10.1 is now
+  genuinely verified by `tests/test_cross_org_rls.py`, a generic sweep over
+  every RLS-protected table (the earlier "verified" note had no suite behind
+  it);
   `poc_records` (§4.5); `skiptrace_spend` telemetry; append-only `audit_log`
   (§8.1). Applies clean on PostgreSQL 16.
 - `data/pg.py` — connection helper that sets the per-request `app.current_org_id`

@@ -12,6 +12,43 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.0.0.0 — 2026-08-01  ·  AC-10.1 actually verified (cross-org RLS suite)
+BUILD-ORDER recorded AC-10.1 as verified. No test existed. The spec asks for
+it by name — "a user in Org A cannot read, list, or reference any Org B deal,
+document, or LP record, verified by an automated cross-org RLS test suite" —
+and this is not a soft requirement: tenant isolation here is enforced entirely
+by Postgres policies, not by query filters. `list_messages` runs
+`SELECT * FROM inbox_messages` with no WHERE clause at all.
+
+`tests/test_cross_org_rls.py` seeds two tenants and, for **all 15**
+RLS-protected tables, proves Org A cannot read, list, update, delete, or
+insert-into Org B, and that a connection with no tenant context sees nothing
+rather than everything.
+
+Generic by design: the table list comes from `pg_class.relrowsecurity` at
+runtime, so a table added later without a policy fails automatically. A
+companion test asserts every protected table was actually exercised — without
+it the suite would have reported green over the eight tables it could seed,
+which is precisely the silent-partial-coverage failure this codebase keeps
+producing.
+
+Building it surfaced three real invariants that a hand-written test would have
+encoded wrongly:
+- `outreach_touches` is append-only by trigger (AC-B2). An exact-row-count
+  assertion was the test's error, not the schema's; the property that matters
+  is "every row I can see is mine".
+- `inbox_messages` / `mailbox_connections` isolate per USER as well as per org,
+  so an org-only context correctly sees nothing there.
+- `revocations` carries a table-level `e164 OR email IS NOT NULL` check that
+  no column metadata exposes.
+
+Mutation-checked twice: dropping the `deals` policy fails the coverage test,
+and replacing it with `USING (true)` fails six of the seven.
+
+Suite: **898 passed, 4 skipped, 0 failed** against Postgres.
+
+---
+
 ## V5.13.8.3.0 — 2026-08-01  ·  starred properties the scraper was skipping
 The owner added favorites to feed the rent gate, which surfaced a bug that
 would have blunted exactly that. `listings_pull.favorite_universe()` resolved
