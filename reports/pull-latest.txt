@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-01T04:05:34
+autopilot pull @ 2026-08-01T05:05:30
 
 QUARRIE muni-data ETL — 2026-08-01
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -17,7 +17,7 @@ QUARRIE muni-data ETL — 2026-08-01
   [OK] Virginia Beach/assessor+sales                0 records
   [OK] Virginia Beach/permits                  103116 records
   [OK] Newport News/assessor+sales              54437 records
-  [OK] Chesapeake/assessor                      92582 records
+  [OK] Chesapeake/assessor                      92588 records
   [OK] Virginia Beach/assessor                 177893 records
   [OK] Virginia Beach/assessor                 177259 records
   [OK] Chesapeake/assessor                     110129 records
