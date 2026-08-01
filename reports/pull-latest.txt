@@ -1,4 +1,4 @@
-autopilot pull @ 2026-07-31T20:05:36
+autopilot pull @ 2026-07-31T21:05:27
 
 QUARRIE muni-data ETL — 2026-07-31
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -12,8 +12,6 @@ QUARRIE muni-data ETL — 2026-07-31
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
     + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
-  [swept] Virginia Beach: 374 stale rows from retired feed https://services3.arcgis.com/16nyMR1mdhEaLG41/arcgis/rest/services/PrivateParcels_Ranked_081920/FeatureServer/0
-  stale rows removed: 374
   [OK] Norfolk/assessor+sales                   74253 records
   [OK] Norfolk/permits                         124862 records
   [OK] Virginia Beach/assessor+sales                0 records
