@@ -1,9 +1,9 @@
-autopilot pull @ 2026-07-31T19:06:12
+autopilot pull @ 2026-07-31T20:05:36
 
 QUARRIE muni-data ETL — 2026-07-31
   discovered feeds loaded from data/feeds_extra.json: 10
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Residential_Address_Points_w_Housing_Structure/FeatureServer/0
-    + Virginia Beach: https://services3.arcgis.com/16nyMR1mdhEaLG41/arcgis/rest/services/PrivateParcels_Ranked_081920/FeatureServer/0
+    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/SolarVector_PubLayers/FeatureServer/2
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
     + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
@@ -12,6 +12,8 @@ QUARRIE muni-data ETL — 2026-07-31
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
     + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
+  [swept] Virginia Beach: 374 stale rows from retired feed https://services3.arcgis.com/16nyMR1mdhEaLG41/arcgis/rest/services/PrivateParcels_Ranked_081920/FeatureServer/0
+  stale rows removed: 374
   [OK] Norfolk/assessor+sales                   74253 records
   [OK] Norfolk/permits                         124862 records
   [OK] Virginia Beach/assessor+sales                0 records
@@ -19,7 +21,7 @@ QUARRIE muni-data ETL — 2026-07-31
   [OK] Newport News/assessor+sales              54437 records
   [OK] Chesapeake/assessor                      92582 records
   [OK] Virginia Beach/assessor                 177893 records
-  [OK] Virginia Beach/assessor                    374 records
+  [OK] Virginia Beach/assessor                 177259 records
   [OK] Chesapeake/assessor                     110129 records
   [OK] Chesapeake/assessor                     116302 records
   [OK] Hampton/assessor                           703 records
