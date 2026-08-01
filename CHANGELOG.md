@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.1.0.0 — 2026-08-01  ·  SR-2.2 zero-data-training, enforced in CI
+The spec commits to this architecturally, not as a setting: "all LLM calls
+route through no-training API endpoints ... no customer-data fine-tuning
+pipeline exists". A commitment enforced by architecture has to be checked
+against the architecture, so `tests/test_zero_training.py` asserts the shape
+of the code rather than the behaviour of any one call.
+
+Six checks: model calls occur only at the five reviewed sites; no second
+model vendor is referenced anywhere; no fine-tuning or training surface
+exists; every call site imports the Anthropic SDK rather than hand-rolling
+HTTP; no `requests`/`httpx` POST targets a model-shaped endpoint; and the
+allow-list itself cannot go stale (an entry for a file that no longer calls a
+model would hide a later reintroduction at that path).
+
+This is the failure mode worth guarding: a second vendor added under time
+pressure, or a call that bypasses the shared client, breaks the commitment
+**silently** — nothing errors, no output changes, and the only evidence is in
+a diff nobody re-reads. Deal data, T-12s, rent rolls and POC records are the
+most sensitive material the product touches.
+
+Mutation-checked: a probe file was planted for each violation in turn and
+each was caught by its own guard.
+
+Also corrects BUILD-ORDER's note that AC-10.1 was verified — it now points at
+the suite that verifies it.
+
+---
+
 ## V5.14.0.0.0 — 2026-08-01  ·  AC-10.1 actually verified (cross-org RLS suite)
 BUILD-ORDER recorded AC-10.1 as verified. No test existed. The spec asks for
 it by name — "a user in Org A cannot read, list, or reference any Org B deal,
