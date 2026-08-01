@@ -45,7 +45,7 @@ except ImportError:  # python-dotenv always present in this project, but be safe
 def pytest_collection_modifyitems(config, items):
     from data import pg
 
-    if not pg.is_configured():
+    if not pg.is_reachable():
         return
     try:
         with pg.connection() as conn, conn.cursor() as cur:

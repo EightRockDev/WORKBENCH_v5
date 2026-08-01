@@ -18,7 +18,7 @@ from core.compliance import ledger, rules
 from core.outreach import engine
 from data import pg
 
-pytestmark = pytest.mark.skipif(not pg.is_configured(), reason="Postgres not configured")
+pytestmark = pytest.mark.skipif(not pg.is_reachable(), reason="Postgres not configured")
 
 CLEAN_PHONE = {
     "e164": "+17575550100", "line_type": "mobile", "grade": "A", "litigator": False,

@@ -10,7 +10,7 @@ import pytest
 
 from data import migrate, pg
 
-pytestmark = pytest.mark.skipif(not pg.is_configured(), reason="Postgres not configured")
+pytestmark = pytest.mark.skipif(not pg.is_reachable(), reason="Postgres not configured")
 
 
 def test_schema_reports_current_on_a_migrated_db():

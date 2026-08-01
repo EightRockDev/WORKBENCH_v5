@@ -125,7 +125,7 @@ def test_extractor_rejects_implausible_values():
 # Confidence-gated ingest (Postgres)
 # ---------------------------------------------------------------------------
 
-pg_only = pytest.mark.skipif(not pg.is_configured(), reason="Postgres not configured")
+pg_only = pytest.mark.skipif(not pg.is_reachable(), reason="Postgres not configured")
 
 
 @pytest.fixture()

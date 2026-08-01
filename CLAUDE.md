@@ -570,6 +570,19 @@ invisible to the sweep, so it asserts coverage explicitly rather than quietly
 reporting green over eight of fifteen tables. Mutation-checked — an
 over-permissive `USING (true)` policy fails six of the seven tests.
 
+## Lesson — a skip condition must match what the test needs (2026-08-01)
+
+Ten Postgres suites gated on `pg.is_configured()`, which only checks that a
+URL exists. On any machine with a URL pointing at a stopped server that meant
+**76 ERRORS**, not 76 skips. Four of them sat red across an entire session and
+were repeatedly explained away as "environmental" — which was true, and
+exactly why it was dangerous: a genuine regression appearing in that block
+would have been read the same way and ignored.
+
+They now gate on `pg.is_reachable()`, which connects once and caches. A run
+with no database is `820 passed, 88 skipped` — zero red — so anything red is
+real. Gate on the resource being USABLE, not merely named.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

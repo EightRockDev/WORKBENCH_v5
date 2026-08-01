@@ -126,7 +126,7 @@ def test_due_steps_filters_to_today():
 # B4 — automatic pause (DB-backed)
 # ---------------------------------------------------------------------------
 
-pg_only = pytest.mark.skipif(not pg.is_configured(), reason="Postgres not configured")
+pg_only = pytest.mark.skipif(not pg.is_reachable(), reason="Postgres not configured")
 
 
 @pytest.fixture()

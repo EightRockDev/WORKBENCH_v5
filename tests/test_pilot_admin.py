@@ -15,8 +15,8 @@ import pytest
 
 from data import pg
 
-pytestmark = pytest.mark.skipif(not pg.is_configured(),
-                                reason="Postgres not configured (DATABASE_URL unset)")
+pytestmark = pytest.mark.skipif(not pg.is_reachable(),
+                                reason="Postgres not reachable (DATABASE_URL unset or server down)")
 
 
 @pytest.fixture()

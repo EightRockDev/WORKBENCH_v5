@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.1.1.0 — 2026-08-01  ·  a run with no database is now green, not red
+Ten Postgres suites skipped on `pg.is_configured()`, which only checks that a
+URL exists. Pointed at a stopped server, that produced **76 errors and 4
+failures** instead of skips. Those four sat red for a whole session and were
+each time explained away as environmental — correct, and precisely the hazard:
+a real regression surfacing in that block would have been dismissed the same
+way.
+
+`pg.is_reachable()` connects once, caches the answer, and gates the suites on
+the database being usable rather than merely named. A run without a database
+is now **820 passed, 88 skipped, nothing red**; with one, **904 passed**. Red
+means red again.
+
+---
+
 ## V5.14.1.0.0 — 2026-08-01  ·  SR-2.2 zero-data-training, enforced in CI
 The spec commits to this architecturally, not as a setting: "all LLM calls
 route through no-training API endpoints ... no customer-data fine-tuning

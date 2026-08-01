@@ -25,8 +25,8 @@ import pytest
 
 from data import pg
 
-pytestmark = pytest.mark.skipif(not pg.is_configured(),
-                                reason="Postgres not configured (DATABASE_URL unset)")
+pytestmark = pytest.mark.skipif(not pg.is_reachable(),
+                                reason="Postgres not reachable (DATABASE_URL unset or server down)")
 
 ORG_A = "11111111-1111-1111-1111-111111111111"
 ORG_B = "22222222-2222-2222-2222-222222222222"

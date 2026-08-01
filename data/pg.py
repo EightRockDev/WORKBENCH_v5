@@ -48,6 +48,35 @@ def is_configured() -> bool:
     return psycopg is not None and bool(database_url())
 
 
+_REACHABLE: bool | None = None
+
+
+def is_reachable(timeout: float = 2.0) -> bool:
+    """True when a Postgres URL is configured AND actually answers.
+
+    `is_configured()` only says a URL exists. The pilot suites gate on that,
+    so a machine with a URL pointing at a server that is down reported 76
+    ERRORS rather than 76 skips - noise that buries a genuine failure and
+    reads as "the tests are broken" rather than "the database is off".
+
+    Cached: the answer cannot change usefully within one process, and probing
+    per test would add a connection attempt to every one of them.
+    """
+    global _REACHABLE
+    if _REACHABLE is not None:
+        return _REACHABLE
+    if not is_configured():
+        _REACHABLE = False
+        return _REACHABLE
+    try:
+        conn = psycopg.connect(database_url(), connect_timeout=int(timeout))
+        conn.close()
+        _REACHABLE = True
+    except Exception:
+        _REACHABLE = False
+    return _REACHABLE
+
+
 @contextlib.contextmanager
 def connection() -> Iterator["psycopg.Connection[Any]"]:
     """A plain connection with dict rows. Caller manages the transaction."""

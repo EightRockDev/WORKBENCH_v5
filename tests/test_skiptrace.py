@@ -133,7 +133,7 @@ def test_no_owner_returns_empty():
 # Persistence + budget (Postgres-backed)
 # ---------------------------------------------------------------------------
 
-pg_only = pytest.mark.skipif(not pg.is_configured(), reason="Postgres not configured")
+pg_only = pytest.mark.skipif(not pg.is_reachable(), reason="Postgres not configured")
 
 
 @pytest.fixture()
