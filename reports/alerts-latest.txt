@@ -1,4 +1,4 @@
-autopilot alerts @ 2026-07-31T22:35:26
+autopilot alerts @ 2026-07-31T23:35:43
 
 alert sweep: 0 new multifamily, 0 unit-count moves, 0 ownership changes
   [new_mf] New multifamily on the backbone: 8R-51810-738ba032e97a  (38 units · Virginia Beach)
