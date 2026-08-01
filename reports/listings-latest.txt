@@ -1,20 +1,3 @@
-autopilot listings @ 2026-08-01T04:23:54
+autopilot listings @ 2026-08-01T05:22:39
 
-  [listings] rentcafe: Acclaim at East Beach -> not_found
-  [listings] rentcafe: Crossroads Townhomes -> not_found
-  [listings] rentcafe: Grand Hampton at Langley -> not_found
-  [listings] rentcafe: Miars Farm -> not_found
-  [listings] zillow: Acclaim at East Beach -> not_found
-  [listings] zillow: Crossroads Townhomes -> not_found
-  [listings] zillow: Grand Hampton at Langley -> success
-  [listings] zillow: Miars Farm -> success
-  [listings] apartments_com: Acclaim at East Beach -> not_found
-  [listings] apartments_com: Crossroads Townhomes -> not_found
-  [listings] apartments_com: Grand Hampton at Langley -> not_found
-  [listings] apartments_com: Miars Farm -> not_found
-  [listings] property_site: Acclaim at East Beach -> not_found
-  [listings] property_site: Crossroads Townhomes -> not_found
-  [listings] property_site: Grand Hampton at Langley -> not_found
-  [listings] property_site: Miars Farm -> not_found
-  [listings] schema: added missing column(s) name, address, city to rent_listings
-  [listings] wrote 16 rows (2 successful scrapes)
+  [listings] fresh (pulled within 7 days) - skipping
