@@ -1,4 +1,4 @@
-autopilot listings @ 2026-08-01T03:22:31
+autopilot listings @ 2026-08-01T04:23:54
 
   [listings] rentcafe: Acclaim at East Beach -> not_found
   [listings] rentcafe: Crossroads Townhomes -> not_found
@@ -16,12 +16,5 @@ autopilot listings @ 2026-08-01T03:22:31
   [listings] property_site: Crossroads Townhomes -> not_found
   [listings] property_site: Grand Hampton at Langley -> not_found
   [listings] property_site: Miars Farm -> not_found
-Traceback (most recent call last):
-  File "C:\WORKBENCH_V5\scripts\run_listings.py", line 20, in <module>
-    raise SystemExit(main())
-                     ^^^^^^
-  File "C:\WORKBENCH_V5\scripts\run_listings.py", line 15, in main
-    listings_pull.pull_listings()
-  File "C:\WORKBENCH_V5\core\listings_pull.py", line 203, in pull_listings
-    conn.executemany(
-sqlite3.OperationalError: table rent_listings has no column named name
+  [listings] schema: added missing column(s) name, address, city to rent_listings
+  [listings] wrote 16 rows (2 successful scrapes)
