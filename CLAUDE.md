@@ -601,6 +601,23 @@ The gate is placed on the line that CONSTRUCTS the client, not at the top of
 each function. A surface that forgets a check at the top still gets a client;
 a surface that forgets the check that *is* the client cannot.
 
+## Lesson — calibrate a threshold against the measurement, not the goal (2026-08-01)
+
+The AC-A2 latency guard was first written with a 50 ms per-property budget,
+reasoned from the spec's 60-second SLA. Measured cost is 0.36 ms, so the
+threshold permitted a **139x regression** before firing. It read as a strict
+test and could not fail — the same as not existing.
+
+Only a mutation check found it: injecting a slowdown produced MISSED. Then a
+second lesson immediately on top — the first injection was 2 ms against a 5 ms
+threshold, so the MISS was the test being *correct*, not loose. Both the
+threshold and the mutation have to be sized against the real number.
+
+Rule for any performance guard: measure first, set the bound at a small
+multiple of what was measured, then prove it fires by breaking the thing on
+purpose. A bound derived from the requirement rather than the measurement is
+decoration.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

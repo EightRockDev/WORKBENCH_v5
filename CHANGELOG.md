@@ -12,6 +12,32 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.3.0.0 — 2026-08-01  ·  AC-A2 latency guard; every spec AC now has a test
+**18 of 18** acceptance criteria in the spec are now referenced by the test
+suite. The audit that started this found four with none: AC-11.1/11.2/11.3
+(shipped in V5.14.2.x) and AC-A2, the resolution-latency SLA.
+
+AC-A2 is stated honestly rather than faked. The SLA is end to end and most of
+its budget is spent inside vendor APIs this environment cannot reach and whose
+speed is not ours to control; asserting a wall-clock number against stubbed
+vendors would measure the stubs. What IS ours is the pipeline's own cost, and
+two regressions there would blow the SLA however fast the vendors are:
+per-property overhead creeping up until it eats the 60s budget alone, and
+batch cost growing faster than linearly — an O(n^2) sibling scan turns 1,000
+properties into hours. Both are now guarded, the second as a RATIO between
+batch sizes so the test describes the algorithm rather than the machine.
+
+The threshold took two attempts and the second is the point. It was first set
+at 50 ms per property, reasoned down from the 60-second SLA — against a
+measured cost of 0.36 ms, which permitted a **139x regression** before firing.
+It looked strict and could not fail. Now calibrated at 5 ms, ~14x measured.
+Mutation-checked both ways: a +15 ms regression trips the overhead test, and a
+genuinely quadratic batch path trips the linearity test.
+
+851 passed, 88 skipped.
+
+---
+
 ## V5.14.2.1.0 — 2026-08-01  ·  the AI-off path shows a fallback, not a traceback
 V5.14.2.0.0 introduced `AIDisabled` and nothing caught it. An org with
 `ai_enabled` off would have hit a raw traceback on the two surfaces that call
