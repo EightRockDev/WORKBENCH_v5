@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.2.1.0 — 2026-08-01  ·  the AI-off path shows a fallback, not a traceback
+V5.14.2.0.0 introduced `AIDisabled` and nothing caught it. An org with
+`ai_enabled` off would have hit a raw traceback on the two surfaces that call
+a model from the UI — strictly worse than before the flag existed, and the
+opposite of what AC-11.2 asks for ("every generative surface offers its
+manual/template fallback instead").
+
+Both surfaces now catch it and render the fallback the exception carries:
+Document Auto-Ingestion points at hand-entry on the Property Card, the
+Artifact Engine at the deterministic Preview block. Two tests assert the
+handling exists AND that the fallback text is actually displayed rather than
+the error being swallowed.
+
+Verified in a browser with `ER_AI_ENABLED=off`: the app boots and Subject,
+Underwriting and Summary all render clean.
+
+---
+
 ## V5.14.2.0.0 — 2026-08-01  ·  Section 11: the AI layer is optional, and now provably so
 An audit of the spec's 18 acceptance criteria against the test suite found
 four with no test. Three are Section 11, the "deterministic core first, AI

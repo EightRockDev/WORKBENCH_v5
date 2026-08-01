@@ -108,8 +108,16 @@ def render_document_ingest_panel(prop: dict[str, Any], folder) -> None:
 def _run_extraction(target: Path, doc_type, overwrite: bool, fp: Path, c: dict) -> None:
     """Ingest one on-disk file and render the outcome. Shared by the
     browser-upload path and the from-disk picker."""
-    with st.spinner(f"Extracting fields from {target.name}..."):
-        result = di.ingest_document(target, document_type=doc_type)
+    from core.ai_gate import AIDisabled
+    try:
+        with st.spinner(f"Extracting fields from {target.name}..."):
+            result = di.ingest_document(target, document_type=doc_type)
+    except AIDisabled as e:
+        # AC-11.2: an AI-off org gets the manual path, not a traceback.
+        st.info(
+            f"**{e.surface} is turned off for this organization.** {e.fallback}",
+            icon="🛈")
+        return
 
     if result.error and result.error.startswith("NEEDS_API_KEY"):
         _render_needs_api_key(result.error.split(": ", 1)[-1], fp)

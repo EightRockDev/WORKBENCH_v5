@@ -242,3 +242,36 @@ def test_the_validator_ignores_pure_rewording():
     ok, _ = validate_polish("26 units at $2,850,000.",
                             "A 26-unit asset priced at $2,850,000.")
     assert ok
+
+
+# ---------------------------------------------------------------------------
+# AC-11.2 in the UI — the fallback has to be OFFERED, not just raised
+# ---------------------------------------------------------------------------
+
+def test_ui_surfaces_catch_aidisabled_and_show_the_fallback():
+    """Introducing an exception type without handling it would make an AI-off
+    org strictly worse off than before: a traceback where the spec asks for a
+    manual/template path."""
+    import inspect
+
+    from ui import document_ingest_panel, exec_summary
+
+    for mod in (document_ingest_panel, exec_summary):
+        src = inspect.getsource(mod)
+        assert "AIDisabled" in src, (
+            f"{mod.__name__} calls a gated surface without handling AIDisabled")
+        # and it must render the fallback text, not just swallow the error
+        assert "e.fallback" in src, (
+            f"{mod.__name__} catches AIDisabled without showing the fallback")
+
+
+def test_the_fallback_message_names_the_surface_and_the_alternative():
+    """What the user reads has to tell them what to do instead."""
+    from core.ai_gate import AIDisabled
+
+    e = AIDisabled("Document extraction",
+                   "Enter the T-12 figures by hand on the Property Card.")
+    text = str(e)
+    assert "Document extraction" in text
+    assert "by hand" in text
+    assert "did not call a model" in text

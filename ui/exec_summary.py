@@ -381,6 +381,7 @@ def _render_artifact_engine_panel(
     per Brian's instruction (no `Generated/` subfolder).
     """
     c = config.COLORS
+    from core.ai_gate import AIDisabled
     from core.artifact_engine import (
         ARTIFACT_CATALOG,
         ArtifactGenerationError,
@@ -558,6 +559,11 @@ def _render_artifact_engine_panel(
                                 f"`{folder.folder_name}/`"
                             )
                             st.rerun()
+                        except AIDisabled as e:
+                            # AC-11.2: offer the fallback rather than failing.
+                            st.info(
+                                f"**{e.surface} is turned off for this "
+                                f"organization.** {e.fallback}", icon="🛈")
                         except ArtifactGenerationError as e:
                             st.error(f"Generation failed: {e}")
                         except Exception as e:  # noqa: BLE001
