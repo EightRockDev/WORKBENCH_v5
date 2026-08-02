@@ -664,6 +664,29 @@ but the exception escaped before the return, so it failed the cycle anyway.
 A comment describing intent is not a mechanism. It now catches, prints, and
 invalidates.
 
+## Lesson — a proxied DNS record silently blocks ACME (2026-08-02)
+
+Both of the owner's domains sit behind Cloudflare with the root and www A
+records **Proxied** (orange cloud). Caddy proves domain control with an
+HTTP-01 challenge on port 80; a proxied record means Cloudflare answers that
+request instead of the host, so the challenge never arrives and no
+certificate is ever issued. There is no error — just retries in
+`caddy-err.log` and a site that never comes up on HTTPS.
+
+`install-caddy.ps1` now resolves the domain before registering anything and
+names the problem outright if the address is in Cloudflare's published
+ranges, with the fix ("switch Proxy status to DNS only"). The `workbench`
+record must be grey-cloud. (DNS-01 would work behind the proxy but needs the
+caddy-dns/cloudflare plugin, which the stock binary does not carry.)
+
+Second lesson, from the same screenshot: the owner holds BOTH eight-rock.com
+and eightrockcapital.com. Seeing the latter, I rewrote every script's default
+domain — then the next screenshot showed eight-rock.com is the live one (real
+host, SPF/DKIM/DMARC, M365 mail) and eightrockcapital.com still points at the
+RFC 5737 placeholder 192.0.2.1. Reverted. **One screenshot is a fact about
+one page, not about the whole configuration** — the same mistake shape as the
+wrong-repo day, and the fix is the same: confirm before rewriting.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

@@ -57,7 +57,49 @@ New-Item -ItemType Directory -Force -Path (Join-Path $AppDir "logs") | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "Caddyfile.active failed validation - not registering the service." }
 Write-Host "   Config valid."
 
-# --- 3. Are the app services actually up? --------------------------------
+# --- 3. DNS sanity: resolvable, and NOT behind a CDN proxy ---------------
+# Caddy proves domain control with an HTTP-01 challenge on port 80. If the
+# record is PROXIED (Cloudflare's orange cloud), Cloudflare answers that
+# request instead of this machine, so the challenge never reaches Caddy and
+# no certificate is ever issued - with no obvious error, just retries.
+# The record must be "DNS only" (grey cloud) for automatic HTTPS.
+Step "Checking DNS for $Domain"
+$cfRanges = @("104.16.", "104.17.", "104.18.", "104.19.", "104.20.", "104.21.",
+              "104.22.", "104.23.", "104.24.", "104.25.", "104.26.", "104.27.",
+              "104.28.", "172.64.", "172.65.", "172.66.", "172.67.", "162.159.",
+              "198.41.", "173.245.", "141.101.", "108.162.", "190.93.",
+              "188.114.", "197.234.", "199.27.")
+try {
+    $ips = @([System.Net.Dns]::GetHostAddresses($Domain) |
+             Where-Object { $_.AddressFamily -eq "InterNetwork" } |
+             ForEach-Object { $_.IPAddressToString })
+} catch {
+    $ips = @()
+}
+if (-not $ips) {
+    Write-Host "   $Domain does not resolve yet." -ForegroundColor Yellow
+    Write-Host "   Add an A record pointing at this network's public IP, then" -ForegroundColor Yellow
+    Write-Host "   re-run. Caddy will keep retrying until it does." -ForegroundColor Yellow
+} else {
+    Write-Host ("   resolves to: " + ($ips -join ", "))
+    $proxied = $ips | Where-Object { $ip = $_; $cfRanges | Where-Object { $ip.StartsWith($_) } }
+    if ($proxied) {
+        Write-Host ""
+        Write-Host "   STOP: that is a Cloudflare PROXY address." -ForegroundColor Red
+        Write-Host "   A proxied (orange-cloud) record means Cloudflare answers" -ForegroundColor Red
+        Write-Host "   the certificate challenge instead of this machine, so no" -ForegroundColor Red
+        Write-Host "   certificate will ever be issued." -ForegroundColor Red
+        Write-Host "   Fix: in Cloudflare, edit the record and switch Proxy" -ForegroundColor Red
+        Write-Host "   status to 'DNS only' (grey cloud). Then re-run this." -ForegroundColor Red
+        Write-Host ""
+    }
+    if ($ips -contains "192.0.2.1") {
+        Write-Host "   NOTE: 192.0.2.1 is a documentation placeholder (RFC 5737)," -ForegroundColor Yellow
+        Write-Host "   not a real host - that record still needs the real IP." -ForegroundColor Yellow
+    }
+}
+
+# --- 4. Are the app services actually up? --------------------------------
 Step "Checking the upstreams Caddy will route to"
 foreach ($p in 8501, 8502) {
     $ok = $false
@@ -71,7 +113,7 @@ foreach ($p in 8501, 8502) {
     }
 }
 
-# --- 4. Service ----------------------------------------------------------
+# --- 5. Service ----------------------------------------------------------
 Step "Registering the Caddy service"
 $nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
 if (-not $nssm) { throw "NSSM not found - run install-service.bat first (it installs NSSM)." }
@@ -123,7 +165,7 @@ Invoke-Nssm @("set", "Caddy", "AppStdout", (Join-Path $AppDir "logs\caddy-out.lo
 Invoke-Nssm @("set", "Caddy", "AppStderr", (Join-Path $AppDir "logs\caddy-err.log")) | Out-Null
 Invoke-Nssm @("start", "Caddy") | Out-Null
 
-# --- 5. Firewall ---------------------------------------------------------
+# --- 6. Firewall ---------------------------------------------------------
 Step "Opening firewall TCP 80/443"
 foreach ($pair in @(@("Workbench HTTP", 80), @("Workbench HTTPS", 443))) {
     Remove-NetFirewallRule -DisplayName $pair[0] -ErrorAction SilentlyContinue

@@ -137,7 +137,7 @@ if ($LASTEXITCODE -ne 0) { throw "Failed to install WorkbenchGreen" }
 Step "Configuring Caddy for $Domain"
 $caddyfileSrc = Join-Path $AppDir "deploy\windows\Caddyfile"
 $caddyfile    = Join-Path $AppDir "deploy\windows\Caddyfile.active"
-(Get-Content $caddyfileSrc) -replace "workbench.eight-rock.com", $Domain `
+(Get-Content $caddyfileSrc) -replace "workbench\.eight-rock\.com", $Domain `
     -replace "C:\\WORKBENCH_V5", ($AppDir -replace '\\','\\') | Set-Content $caddyfile
 # Caddy can install itself as a Windows service (v2.6+). If unavailable, use NSSM.
 $prevEAP = $ErrorActionPreference

@@ -187,3 +187,29 @@ def test_a_failed_nssm_install_stops_the_script():
             f"{script}: install's exit code is not captured")
         assert "throw" in after, (
             f"{script}: a failed nssm install does not stop the script")
+
+
+def test_caddy_checks_dns_before_claiming_success():
+    """A proxied (orange-cloud) record means the CDN answers the ACME
+    challenge instead of this machine, so no certificate is ever issued —
+    and the failure mode is silence plus retries, not an error."""
+    src = _src("install-caddy.ps1")
+    assert "GetHostAddresses" in src, "no DNS resolution check"
+    assert "DNS only" in src, "does not tell the operator how to fix a proxied record"
+    # a representative slice of Cloudflare's published ranges
+    for prefix in ('"104.16.', '"172.67.', '"162.159.'):
+        assert prefix in src, f"proxy detection missing range {prefix}"
+
+
+def test_the_domain_is_consistent_across_every_script():
+    """The domain is a -Domain parameter, but the DEFAULT has to be one real
+    domain in one form. The owner holds both eight-rock.com (live: real host,
+    SPF/DKIM/DMARC, M365 mail) and eightrockcapital.com (A records still on
+    the RFC 5737 placeholder 192.0.2.1). eight-rock.com is the live one.
+    """
+    expected = "workbench.eight-rock.com"
+    for name in ("Caddyfile", "install-caddy.ps1", "install.ps1"):
+        src = _src(name)
+        assert expected in src, f"{name} does not default to {expected}"
+        assert "eightrockcapital" not in src, (
+            f"{name} mixes in the secondary domain")

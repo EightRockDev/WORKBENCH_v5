@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.4.1.0 — 2026-08-02  ·  catch a proxied DNS record before it eats the certificate
+Both of the owner's domains sit behind Cloudflare with their A records
+**Proxied**. Caddy proves domain control with an HTTP-01 challenge on port 80,
+and a proxied record means Cloudflare answers that challenge instead of the
+host — so no certificate is ever issued, with no error to show for it, just
+retries in `caddy-err.log`.
+
+`install-caddy.ps1` now resolves the domain before registering the service and
+says so plainly if the answer falls in Cloudflare's published ranges,
+including the fix: switch Proxy status to **DNS only** (grey cloud) for the
+`workbench` record. It also flags `192.0.2.1`, the RFC 5737 documentation
+placeholder, as not a real host. Neither aborts the install — Caddy retries
+indefinitely and will pick the certificate up once DNS is right — but the
+operator finds out at install time rather than from silence.
+
+Also reverted a mistake made an hour earlier in the same session: on seeing a
+screenshot of `eightrockcapital.com`, every script's default domain was
+rewritten to it. The next screenshot showed `eight-rock.com` is the live
+domain — real host, SPF/DKIM/DMARC, Microsoft 365 mail — while
+eightrockcapital.com still resolves to the placeholder. The original default
+was right. One screenshot describes one page, not the whole configuration.
+
+---
+
 ## V5.14.4.0.0 — 2026-08-02  ·  the listings step was skipping itself into a corner
 Overnight the step reported `fresh (pulled within 7 days) - skipping` — on the
 day after it had crashed. `is_fresh` reads the stamp from the last SUCCESSFUL
