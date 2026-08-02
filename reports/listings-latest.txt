@@ -1,3 +1,45 @@
-autopilot listings @ 2026-08-02T08:24:15
+autopilot listings @ 2026-08-02T09:24:39
 
-  [listings] fresh (pulled within 7 days, same favourites) - skipping
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] schema: added missing column(s) pull_generation to rent_listings
+  [listings] rentcafe: .408 Jackson -> not_found
+  [listings] rentcafe: 1 Park Central -> not_found
+  [listings] rentcafe: Acclaim at East Beach -> not_found
+  [listings] rentcafe: Crossroads Townhomes -> not_found
+  [listings] rentcafe: East Beach Landing -> success
+  [listings] rentcafe: East Beach Marina -> not_found
+  [listings] rentcafe: Grand Hampton at Langley -> not_found
+  [listings] rentcafe: Miars Farm -> not_found
+  [listings] rentcafe: Port at East Beach -> not_found
+  [listings] rentcafe: Village Square at East Beach -> not_found
+  [listings] zillow: .408 Jackson -> not_found
+  [listings] zillow: 1 Park Central -> not_found
+  [listings] zillow: Acclaim at East Beach -> not_found
+  [listings] zillow: Crossroads Townhomes -> not_found
+  [listings] zillow: East Beach Landing -> success
+  [listings] zillow: East Beach Marina -> not_found
+  [listings] zillow: Grand Hampton at Langley -> success
+  [listings] zillow: Miars Farm -> success
+  [listings] zillow: Port at East Beach -> not_found
+  [listings] zillow: Village Square at East Beach -> not_found
+  [listings] apartments_com: .408 Jackson -> not_found
+  [listings] apartments_com: 1 Park Central -> not_found
+  [listings] apartments_com: Acclaim at East Beach -> not_found
+  [listings] apartments_com: Crossroads Townhomes -> not_found
+  [listings] apartments_com: East Beach Landing -> not_found
+  [listings] apartments_com: East Beach Marina -> not_found
+  [listings] apartments_com: Grand Hampton at Langley -> not_found
+  [listings] apartments_com: Miars Farm -> not_found
+  [listings] apartments_com: Port at East Beach -> not_found
+  [listings] apartments_com: Village Square at East Beach -> not_found
+  [listings] property_site: .408 Jackson -> not_found
+  [listings] property_site: 1 Park Central -> not_found
+  [listings] property_site: Acclaim at East Beach -> not_found
+  [listings] property_site: Crossroads Townhomes -> not_found
+  [listings] property_site: East Beach Landing -> not_found
+  [listings] property_site: East Beach Marina -> not_found
+  [listings] property_site: Grand Hampton at Langley -> not_found
+  [listings] property_site: Miars Farm -> not_found
+  [listings] property_site: Port at East Beach -> not_found
+  [listings] property_site: Village Square at East Beach -> not_found
+  [listings] wrote 40 rows (4 successful scrapes)
