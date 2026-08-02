@@ -703,7 +703,27 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
-## Versioning (owner directive — do this on EVERY change)
+## Lesson — a cache key must name the code, not just the inputs (2026-08-02)
+
+The rent gate sat at 1 of 18,928 for a month. The favourites-key fix shipped
+on 2026-08-01, the next hourly pull stamped itself fresh, and every cycle
+since printed `[listings] fresh ... skipping`. The stamp meant "something was
+pulled recently over this same favourite set" — never "pulled by this code."
+The fix was live in the tree and could not run.
+
+**Any freshness/skip key must include a generation token that the author bumps
+when the step's output changes.** `PULL_GENERATION` in `core/listings_pull.py`
+is that token; fold the same idea into any new caching step. Same family as
+"create-if-absent is not a migration": shipping the code is not the same as
+the code taking effect, and only the second one moves a gate.
+
+Second half of the same failure: the skip line said "fresh," which reads as
+health regardless of whether the table holds 18,000 rows or one. **A line that
+justifies skipping work must state what it is protecting** — the count is now
+in the message, so a stuck pull is visible in the daily report instead of
+needing a query to find.
+
+## Lesson — the installer knows the answer the operator is guessing (2026-08-02)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).
   Source of truth: `WORKBENCH_VERSION` in `config.py`; shown in the app's

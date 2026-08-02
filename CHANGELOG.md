@@ -12,6 +12,32 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.5.0.0 — 2026-08-02  ·  a scraper fix now invalidates the freshness stamp
+Every hourly cycle since 2026-08-01 has reported `[listings] fresh (pulled
+within 7 days, same favourites) - skipping`, and the P0-2 rent delta has sat
+at 26.9% against a 5% gate with `rents_from_listings` at 1 of 18,928.
+
+The favourites-key fix shipped, then the next pull stamped itself fresh — and
+the stamp only ever meant "something was pulled recently, over this same
+favourite set." It never meant "pulled by this code." So the fix ran once,
+against whatever state existed at that moment, and every cycle afterwards
+skipped. **A fix that cannot run is indistinguishable from no fix**, and the
+report said "fresh" throughout.
+
+`PULL_GENERATION` (now 2) is folded into the fingerprint, so bumping it on any
+change to what a pull yields invalidates the stamp exactly the way starring a
+property does. Both say the same thing: the last pull is not a repeat of the
+one now due. The fingerprint still tracks the favourite set and is still
+order-independent, so a reshuffled `_favorites.json` does not trigger a
+spurious 18,000-property scrape.
+
+The skip line now also prints the `rent_listings` row count. "fresh -
+skipping" read as health for a month while the table held a single row; the
+count belongs in the line that justifies the skip.
+
+Guard proven by mutation: dropping the generation from the fingerprint fails
+`test_a_scraper_change_invalidates_the_freshness_stamp`.
+
 ## V5.14.4.2.0 — 2026-08-02  ·  the installer names its own port-forward target
 The router asks which LAN device to forward 80/443 to, and the answer is a
 number nobody has written down. Reading it off a router's DHCP table means

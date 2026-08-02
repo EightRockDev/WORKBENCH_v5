@@ -27,6 +27,17 @@ from core.public_data import _stamp, is_fresh, target_db
 SOURCES_DEFAULT = ("rentcafe", "zillow", "apartments_com", "property_site")
 REFRESH_DAYS = 7
 
+# Bump whenever a change alters what a pull YIELDS - a scraper fix, a new
+# source, a change to how ids are normalized.
+#
+# The freshness stamp answers "was something pulled recently, over this same
+# favourite set". It did not answer "was it pulled by THIS code", and that gap
+# is why the 2026-08-01 favourites-key fix sat unused: the pull that ran right
+# after it stamped itself fresh, and every cycle since has skipped, so the
+# rent gate stayed at 1 of 18,928 with nothing in the report to say why. A
+# code fix that cannot run is indistinguishable from no fix.
+PULL_GENERATION = 2
+
 _ROW_COLS = (
     "property_id", "name", "address", "city", "source", "listing_url",
     "listing_name", "one_br_rent_low", "one_br_rent_high",
@@ -181,10 +192,27 @@ def _cached_url(conn: sqlite3.Connection, pid: str, source: str) -> str | None:
 
 
 def _favorites_fingerprint(universe: list[dict]) -> str:
-    """A stable hash of which properties are due to be scraped."""
+    """A stable hash of which properties are due to be scraped, BY WHICH CODE.
+
+    Folding `PULL_GENERATION` in makes a scraper change invalidate the stamp
+    the same way starring a property does. Both are the same statement: the
+    last pull is not a repeat of the one now due.
+    """
     import hashlib
     ids = sorted(str(p.get("property_id") or "") for p in universe)
-    return hashlib.sha256("|".join(ids).encode()).hexdigest()[:16]
+    payload = f"gen={PULL_GENERATION}|" + "|".join(ids)
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
+def _listing_rows(db) -> int:
+    """How many rent rows the skip is claiming are good enough."""
+    import sqlite3
+    try:
+        with sqlite3.connect(db) as conn:
+            return int(conn.execute(
+                "SELECT COUNT(*) FROM rent_listings").fetchone()[0])
+    except sqlite3.Error:
+        return 0
 
 
 def _fingerprint_unchanged(db, fingerprint: str) -> bool:
@@ -252,12 +280,16 @@ def pull_listings(db_path: Path | None = None,
     fingerprint = _favorites_fingerprint(universe)
     if (is_fresh(db, "rent_listings", days=REFRESH_DAYS)
             and _fingerprint_unchanged(db, fingerprint)):
-        print("  [listings] fresh (pulled within "
-              f"{REFRESH_DAYS} days, same favourites) - skipping")
+        # Say what the skip is protecting. "fresh - skipping" reads as health
+        # whether the last pull produced 18,000 rows or one, and for a month
+        # it was one.
+        print(f"  [listings] fresh (pulled within {REFRESH_DAYS} days, "
+              f"{len(universe)} favourites, generation {PULL_GENERATION}) "
+              f"- skipping; {_listing_rows(db):,} rent_listings rows on hand")
         return 0
     if is_fresh(db, "rent_listings", days=REFRESH_DAYS):
-        print("  [listings] favourites changed since the last pull - "
-              "re-scraping despite freshness")
+        print("  [listings] favourites or scraper generation changed since "
+              "the last pull - re-scraping despite freshness")
     if not universe:
         print("  [listings] no favorites marked (Properties/_favorites"
               ".json) - star properties in the app to enable rent scraping")

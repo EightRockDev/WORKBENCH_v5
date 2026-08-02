@@ -30,6 +30,53 @@ def test_rent_bands_midpoints_and_concessions():
     assert 1740 < bands["effective_two_br_rent"] < 1760
 
 
+def test_a_scraper_change_invalidates_the_freshness_stamp(monkeypatch):
+    """The gap that kept the rent gate at 1 of 18,928.
+
+    The stamp said "pulled recently over these favourites" and nothing more,
+    so the pull that ran immediately after a scraper fix stamped itself fresh
+    and every cycle since skipped. A fix that cannot run is not a fix.
+    """
+    universe = [{"property_id": "8R-51710-000000000001"},
+                {"property_id": "8R-51710-000000000002"}]
+    before = lp._favorites_fingerprint(universe)
+    monkeypatch.setattr(lp, "PULL_GENERATION", lp.PULL_GENERATION + 1)
+    assert lp._favorites_fingerprint(universe) != before, (
+        "bumping PULL_GENERATION must force a re-pull")
+
+
+def test_the_fingerprint_still_tracks_the_favourite_set(monkeypatch):
+    """Folding the generation in must not stop starring from mattering."""
+    one = [{"property_id": "8R-51710-000000000001"}]
+    two = one + [{"property_id": "8R-51710-000000000002"}]
+    assert lp._favorites_fingerprint(one) != lp._favorites_fingerprint(two)
+    # and it is order-independent, so a reshuffled favourites file is not a
+    # spurious re-scrape of 18,000 properties
+    assert (lp._favorites_fingerprint(two)
+            == lp._favorites_fingerprint(list(reversed(two))))
+
+
+def test_the_skip_line_reports_how_many_rows_it_is_protecting(tmp_path, capsys,
+                                                              monkeypatch):
+    """"fresh - skipping" read as health for a month while the table held one
+    row. The count belongs in the line that justifies the skip."""
+    db = tmp_path / "etl.db"
+    universe = [{"property_id": "8R-51710-000000000001"}]
+    with sqlite3.connect(db) as conn:
+        _stamp(conn, "rent_listings", "t", "u", 12)
+        conn.execute("CREATE TABLE rent_listings (property_id TEXT)")
+        conn.executemany("INSERT INTO rent_listings VALUES (?)",
+                         [("a",), ("b",), ("c",)])
+        conn.execute("UPDATE etl_metadata SET description = ? "
+                     "WHERE table_name = 'rent_listings'",
+                     (f"favset={lp._favorites_fingerprint(universe)}",))
+    monkeypatch.setattr(lp, "favorite_universe", lambda: universe)
+    assert lp.pull_listings(db) == 0
+    out = capsys.readouterr().out
+    assert "skipping" in out
+    assert "3 rent_listings rows" in out
+
+
 def test_freshness_gate_and_no_favorites(tmp_path, monkeypatch):
     db = tmp_path / "etl.db"
     with sqlite3.connect(db) as conn:
