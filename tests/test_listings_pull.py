@@ -77,6 +77,71 @@ def test_the_skip_line_reports_how_many_rows_it_is_protecting(tmp_path, capsys,
     assert "3 rent_listings rows" in out
 
 
+class _InstantScraper:
+    """Answers immediately; every property resolves to an attempted row."""
+
+    def search_by_address(self, name, address, city):
+        return "http://example.test/listing"
+
+    def scrape_property(self, url):
+        return None                     # not_found - still a recorded attempt
+
+
+def _pull(db, monkeypatch, universe, budget=3600):
+    monkeypatch.setattr(lp, "favorite_universe", lambda: universe)
+    monkeypatch.setattr(lp, "_scraper_registry",
+                        lambda: {"zillow": _InstantScraper})
+    monkeypatch.setattr(lp, "load_manual_urls", lambda: {})
+    monkeypatch.setattr(lp, "TIME_BUDGET_S", budget)
+    return lp.pull_listings(db, sources=("zillow",))
+
+
+def _rows(db):
+    with sqlite3.connect(db) as conn:
+        return conn.execute("SELECT COUNT(*) FROM rent_listings").fetchone()[0]
+
+
+def test_an_exhausted_budget_defers_work_and_withholds_the_stamp(tmp_path,
+                                                                 monkeypatch,
+                                                                 capsys):
+    """A truncated pull must not call itself fresh — the stamp is what stops
+    the next cycle from finishing the job."""
+    db = tmp_path / "etl.db"
+    universe = [{"property_id": f"8R-51710-{i:012d}"} for i in range(3)]
+    assert _pull(db, monkeypatch, universe, budget=-1) == 0
+    assert "deferred" in capsys.readouterr().out
+    assert _rows(db) == 0
+    # No stamp -> the next cycle is NOT fresh and picks the work up.
+    assert _pull(db, monkeypatch, universe) == 3
+    assert _rows(db) == 3
+    # Completed pull stamps: the cycle after that skips.
+    assert _pull(db, monkeypatch, universe) == 0
+    assert _rows(db) == 3
+
+
+def test_a_resumed_pull_skips_pairs_already_paid_for(tmp_path, monkeypatch):
+    """Adding a star re-scrapes the NEW property only; scraper politeness
+    throttles make re-paying for the old ones hours of waste."""
+    db = tmp_path / "etl.db"
+    p1 = {"property_id": "8R-51710-000000000001"}
+    p2 = {"property_id": "8R-51710-000000000002"}
+    assert _pull(db, monkeypatch, [p1]) == 1
+    assert _pull(db, monkeypatch, [p1, p2]) == 1     # only p2 is new work
+    assert _rows(db) == 2
+
+
+def test_a_generation_bump_rescrapes_despite_recent_rows(tmp_path, monkeypatch):
+    """Rows written by the previous code are recent on the clock but are not
+    attempts of THIS pull — the whole point of the generation token."""
+    db = tmp_path / "etl.db"
+    universe = [{"property_id": "8R-51710-000000000001"},
+                {"property_id": "8R-51710-000000000002"}]
+    assert _pull(db, monkeypatch, universe) == 2
+    monkeypatch.setattr(lp, "PULL_GENERATION", lp.PULL_GENERATION + 1)
+    assert _pull(db, monkeypatch, universe) == 2     # both re-attempted
+    assert _rows(db) == 4
+
+
 def test_freshness_gate_and_no_favorites(tmp_path, monkeypatch):
     db = tmp_path / "etl.db"
     with sqlite3.connect(db) as conn:

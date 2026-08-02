@@ -703,6 +703,19 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — a forced re-run needs a budget and a resume point (2026-08-02)
+
+The generation-token fix (below) forces a full re-scrape — which at 4 sources
+× every favourite × ~3s politeness throttle is HOURS, inside an hourly
+autopilot cycle that has phase0/alerts/preflight queued behind it. Fixing
+"the work never runs" by scheduling unbounded work just moves the failure.
+**Whenever a fix triggers a large catch-up job, ship the pacing with the
+fix**: a wall-clock budget, per-item commits so a kill keeps what was paid
+for, a per-item done-marker (tagged with the generation) so the next cycle
+resumes instead of restarting, and the freshness stamp withheld until the
+whole set is covered. `core/listings_pull.py` is the pattern:
+`TIME_BUDGET_S` / `_recently_attempted` / stamp-on-completion-only.
+
 ## Lesson — a cache key must name the code, not just the inputs (2026-08-02)
 
 The rent gate sat at 1 of 18,928 for a month. The favourites-key fix shipped

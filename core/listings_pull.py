@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import datetime as dt
 import sqlite3
+import time
 from pathlib import Path
 
 from core.public_data import _stamp, is_fresh, target_db
@@ -38,12 +39,22 @@ REFRESH_DAYS = 7
 # code fix that cannot run is indistinguishable from no fix.
 PULL_GENERATION = 2
 
+# Wall-clock budget for one pull. The scrapers throttle themselves ~3s+ per
+# request out of politeness, so a full favourites re-scrape (4 sources x every
+# favourite) is hours of work — and the autopilot runs this step INSIDE the
+# hourly cycle, in front of phase0/alerts/preflight. Without a cap, the first
+# generation-bump re-scrape would blockade the very cycle that was supposed to
+# apply it. A truncated pull withholds the freshness stamp and the next cycle
+# resumes where it stopped, so the work spreads across cycles instead of
+# damming one.
+TIME_BUDGET_S = 20 * 60
+
 _ROW_COLS = (
     "property_id", "name", "address", "city", "source", "listing_url",
     "listing_name", "one_br_rent_low", "one_br_rent_high",
     "two_br_rent_low", "two_br_rent_high", "concession_text",
     "effective_one_br_rent", "effective_two_br_rent", "scrape_status",
-    "error_message", "scraped_at")
+    "error_message", "scraped_at", "pull_generation")
 
 
 _TEXT_COLS = frozenset({
@@ -265,6 +276,39 @@ def _record_fingerprint(conn, fingerprint: str) -> None:
         pass
 
 
+def _recently_attempted(conn, days: int) -> set[tuple[str, str]]:
+    """(property_id, source) pairs already tried THIS generation, this window.
+
+    Resume support for a budget-truncated pull: the truncated run leaves the
+    freshness stamp unset, and the next cycle skips these pairs instead of
+    re-scraping from the top — so a big favourite set converges across cycles.
+
+    Filtering on `pull_generation` is what makes a generation bump actually
+    re-scrape: rows written by the previous code are recent on the clock but
+    do not count as attempts of THIS pull.
+    """
+    cutoff = (dt.datetime.now()
+              - dt.timedelta(days=days)).isoformat(timespec="seconds")
+    try:
+        return {(r[0], r[1]) for r in conn.execute(
+            "SELECT property_id, source FROM rent_listings "
+            " WHERE scraped_at >= ? AND pull_generation = ?",
+            (cutoff, PULL_GENERATION))}
+    except sqlite3.Error:
+        return set()
+
+
+def _scraper_registry() -> dict:
+    """Import seam — tests substitute instant fakes here."""
+    from etl_listings.apartments_com import ApartmentsDotComScraper
+    from etl_listings.property_site import PropertySiteScraper
+    from etl_listings.rentcafe import RentCafeScraper
+    from etl_listings.zillow import ZillowScraper
+    return {"rentcafe": RentCafeScraper, "zillow": ZillowScraper,
+            "apartments_com": ApartmentsDotComScraper,
+            "property_site": PropertySiteScraper}
+
+
 def pull_listings(db_path: Path | None = None,
                   sources: tuple = SOURCES_DEFAULT) -> int:
     """Scrape favorites' rents into rent_listings. Returns rows written
@@ -294,17 +338,22 @@ def pull_listings(db_path: Path | None = None,
         print("  [listings] no favorites marked (Properties/_favorites"
               ".json) - star properties in the app to enable rent scraping")
         return 0
-    from etl_listings.apartments_com import ApartmentsDotComScraper
-    from etl_listings.property_site import PropertySiteScraper
-    from etl_listings.rentcafe import RentCafeScraper
-    from etl_listings.zillow import ZillowScraper
-    registry = {"rentcafe": RentCafeScraper, "zillow": ZillowScraper,
-                "apartments_com": ApartmentsDotComScraper,
-                "property_site": PropertySiteScraper}
+    registry = _scraper_registry()
     manual = load_manual_urls()
-    rows: list[tuple] = []
-    now = dt.datetime.now().isoformat(timespec="seconds")
+    t0 = time.monotonic()
+    written = n_ok = deferred = 0
+    insert_sql = (f"INSERT INTO rent_listings ({', '.join(_ROW_COLS)}) "
+                  f"VALUES ({', '.join('?' for _ in _ROW_COLS)})")
     with sqlite3.connect(db) as conn:
+        # Table and schema-heal FIRST: each row is committed as it lands, so
+        # a crash (or a kill at the end of the autopilot window) keeps every
+        # scrape already paid for instead of losing the whole batch.
+        conn.execute(f"""CREATE TABLE IF NOT EXISTS rent_listings
+            ({', '.join(c + ' TEXT' if c in _TEXT_COLS else c + ' REAL'
+                        for c in _ROW_COLS)})""")
+        _add_missing_columns(conn, "rent_listings")
+        conn.commit()
+        done = _recently_attempted(conn, days=REFRESH_DAYS)
         for source_id in sources:
             cls = registry.get(source_id)
             if cls is None:
@@ -312,6 +361,11 @@ def pull_listings(db_path: Path | None = None,
             scraper = cls()
             for prop in universe:
                 pid = prop["property_id"]
+                if (pid, source_id) in done:
+                    continue        # resumed pull - this pair is already paid for
+                if time.monotonic() - t0 > TIME_BUDGET_S:
+                    deferred += 1   # count what is left so the report says so
+                    continue
                 base = {"property_id": pid, "name": prop.get("name"),
                         "address": prop.get("address"),
                         "city": prop.get("city"), "source": source_id,
@@ -322,7 +376,10 @@ def pull_listings(db_path: Path | None = None,
                         "effective_one_br_rent": None,
                         "effective_two_br_rent": None,
                         "scrape_status": "not_found",
-                        "error_message": None, "scraped_at": now}
+                        "error_message": None,
+                        "scraped_at": dt.datetime.now().isoformat(
+                            timespec="seconds"),
+                        "pull_generation": PULL_GENERATION}
                 try:
                     url = (manual.get(pid, {}).get(source_id)
                            or _cached_url(conn, pid, source_id)
@@ -341,26 +398,25 @@ def pull_listings(db_path: Path | None = None,
                 except Exception as e:      # noqa: BLE001 - one bad site never kills the run
                     base["scrape_status"] = "error"
                     base["error_message"] = f"{type(e).__name__}: {e}"
-                rows.append(tuple(base[c] for c in _ROW_COLS))
+                conn.execute(insert_sql, tuple(base[c] for c in _ROW_COLS))
+                conn.commit()
+                written += 1
+                n_ok += base["scrape_status"] == "success"
                 print(f"  [listings] {source_id}: "
                       f"{(prop.get('name') or pid)[:34]} -> "
                       f"{base['scrape_status']}")
-    if not rows:
-        return 0
-    with sqlite3.connect(db) as conn:
-        conn.execute(f"""CREATE TABLE IF NOT EXISTS rent_listings
-            ({', '.join(c + ' TEXT' if c in _TEXT_COLS else c + ' REAL'
-                        for c in _ROW_COLS)})""")
-        _add_missing_columns(conn, "rent_listings")
-        conn.executemany(
-            f"INSERT INTO rent_listings ({', '.join(_ROW_COLS)}) "
-            f"VALUES ({', '.join('?' for _ in _ROW_COLS)})", rows)
-        n_ok = sum(1 for r in rows
-                   if r[_ROW_COLS.index('scrape_status')] == 'success')
-        _stamp(conn, "rent_listings", "Scraped rent listings",
-               "etl_listings (in-workbench)", len(rows))
-        # Tie the stamp to the favourite set it covered, so adding a star
-        # invalidates it rather than waiting out the 7 days.
-        _record_fingerprint(conn, fingerprint)
-    print(f"  [listings] wrote {len(rows)} rows ({n_ok} successful scrapes)")
-    return len(rows)
+        if deferred:
+            # Withhold the stamp: an unfinished pull is not "fresh", and the
+            # next cycle resumes at the first pair without a row.
+            print(f"  [listings] time budget ({TIME_BUDGET_S // 60} min) "
+                  f"spent after {written} scrapes - {deferred} pairs deferred "
+                  f"to the next cycle (stamp withheld so it resumes)")
+        else:
+            _stamp(conn, "rent_listings", "Scraped rent listings",
+                   "etl_listings (in-workbench)", written)
+            # Tie the stamp to the favourite set AND generation it covered,
+            # so adding a star or shipping a scraper fix invalidates it
+            # rather than waiting out the 7 days.
+            _record_fingerprint(conn, fingerprint)
+    print(f"  [listings] wrote {written} rows ({n_ok} successful scrapes)")
+    return written

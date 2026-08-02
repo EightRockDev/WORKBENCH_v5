@@ -12,6 +12,31 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.5.1.0 — 2026-08-02  ·  the re-scrape gets a time budget and a resume point
+V5.14.5.0.0 correctly forces a full re-scrape — and that exposed the next
+problem before it happened: a full favourites pull is 4 sources × every
+favourite at a ~3s politeness throttle, which is hours, and the autopilot
+runs the listings step inside the hourly cycle in front of phase0, alerts
+and preflight. The first generation-bump pull would have blockaded the very
+cycle meant to apply it. Worse, rows were held in memory and inserted only at
+the end, so a kill anywhere along the way lost every scrape already paid for.
+
+Three changes, one behavior:
+
+- **20-minute wall-clock budget** (`TIME_BUDGET_S`). When it runs out the
+  pull stops, reports how many pairs it deferred, and **withholds the
+  freshness stamp** — an unfinished pull is not "fresh."
+- **Resume instead of restart.** Each attempt now records its
+  `pull_generation`, and the next cycle skips (property, source) pairs
+  already attempted this generation within the window. A big favourite set
+  converges across cycles; adding a star scrapes only the new property.
+- **Each row commits as it lands.** A crash or an end-of-window kill keeps
+  everything already scraped.
+
+All three guards proven by mutation: disabling the budget check, dropping the
+generation filter from the resume query, and stamping despite deferred work
+each fail a named test.
+
 ## V5.14.5.0.0 — 2026-08-02  ·  a scraper fix now invalidates the freshness stamp
 Every hourly cycle since 2026-08-01 has reported `[listings] fresh (pulled
 within 7 days, same favourites) - skipping`, and the P0-2 rent delta has sat
