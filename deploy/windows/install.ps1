@@ -117,8 +117,14 @@ Pop-Location
 Step "Registering WorkbenchBlue (8501) + WorkbenchGreen (8502) on localhost"
 $lan = Join-Path $AppDir "deploy\windows\install-lan-service.ps1"
 # Retire the pre-blue-green service if this box was installed before the split.
-cmd /c "nssm stop Workbench" 2>$null
-cmd /c "nssm remove Workbench confirm" 2>$null
+# Same NativeCommandError hazard as the other installers: a stop/remove for a
+# service that is not there writes to stderr, which $ErrorActionPreference=Stop
+# would turn into a fatal error on a clean machine.
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+cmd /c "nssm stop Workbench"          2>&1 | Out-Null
+cmd /c "nssm remove Workbench confirm" 2>&1 | Out-Null
+$ErrorActionPreference = $prevEAP
 # Blue prompts for the passcode; green reuses it, so the pair asks once.
 & powershell -NoProfile -ExecutionPolicy Bypass -File $lan `
     -AppDir $AppDir -Name "WorkbenchBlue" -Port 8501 -BindAddress "127.0.0.1"
@@ -134,7 +140,11 @@ $caddyfile    = Join-Path $AppDir "deploy\windows\Caddyfile.active"
 (Get-Content $caddyfileSrc) -replace "workbench.eight-rock.com", $Domain `
     -replace "C:\\WORKBENCH_V5", ($AppDir -replace '\\','\\') | Set-Content $caddyfile
 # Caddy can install itself as a Windows service (v2.6+). If unavailable, use NSSM.
-cmd /c "nssm stop Caddy" 2>$null; cmd /c "nssm remove Caddy confirm" 2>$null
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+cmd /c "nssm stop Caddy"           2>&1 | Out-Null
+cmd /c "nssm remove Caddy confirm" 2>&1 | Out-Null
+$ErrorActionPreference = $prevEAP
 $caddyPath = (Get-Command caddy).Source
 nssm install Caddy $caddyPath "run --config `"$caddyfile`" --adapter caddyfile"
 nssm set Caddy AppDirectory $AppDir

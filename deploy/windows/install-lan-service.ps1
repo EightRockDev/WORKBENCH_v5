@@ -152,6 +152,43 @@ if (-not $nssm) {
 }
 Write-Host "   NSSM: $nssm"
 
+# ---------------------------------------------------------------------------
+# Safe NSSM invocation
+# ---------------------------------------------------------------------------
+# `nssm stop <name>` on a service that does not exist yet writes "Can't open
+# service!" to STDERR. Under Windows PowerShell 5.1, redirecting a native
+# command's stderr (`2>$null`) turns that output into a NativeCommandError
+# record, and with $ErrorActionPreference = "Stop" that becomes TERMINATING.
+# The result: the install died on its own idempotent cleanup step, before it
+# had installed anything, on every machine where the service did not already
+# exist - which is every first install.
+#
+# So native calls run with the preference relaxed and their exit code checked
+# explicitly. `-Quiet` is for the stop/remove pair, whose failure is expected
+# and meaningless on a clean box.
+function Invoke-Nssm {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string[]]$NssmArgs,
+        [switch]$Quiet
+    )
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $out = & $nssm @NssmArgs 2>&1
+        $code = $LASTEXITCODE
+        if ($code -ne 0 -and -not $Quiet) {
+            Write-Host ("   nssm " + ($NssmArgs -join " ") + " -> exit " + $code) -ForegroundColor Yellow
+            $out | ForEach-Object { Write-Host ("   " + $_) -ForegroundColor Yellow }
+        }
+        return $code
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
+
+
 # --- 2. Passcode ----------------------------------------------------------
 Step "Workbench passcode (required - the app will be reachable on your network)"
 $envPath = Join-Path $AppDir ".env"
@@ -206,25 +243,26 @@ if (-not $uv) { throw "uv.exe not found anywhere. Run start-workbench.bat once (
 $logDir = Join-Path $AppDir "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
-& $nssm stop $svc 2>$null | Out-Null
-& $nssm remove $svc confirm 2>$null | Out-Null
-& $nssm install $svc $uv run python -m streamlit run app.py --server.address $BindAddress --server.port $Port --server.headless true
-& $nssm set $svc AppDirectory $AppDir
-& $nssm set $svc DisplayName ("Eight Rock Workbench (" + $Name + ")")
-& $nssm set $svc Description ("Eight Rock Workbench v5 (Streamlit) on port " + $Port + " - auto-starts with Windows")
-& $nssm set $svc Start SERVICE_AUTO_START
-& $nssm set $svc AppExit Default Restart
-& $nssm set $svc AppRestartDelay 5000
-& $nssm set $svc AppStdout (Join-Path $logDir ("service-" + $Name + "-out.log"))
-& $nssm set $svc AppStderr (Join-Path $logDir ("service-" + $Name + "-err.log"))
-& $nssm set $svc AppRotateFiles 1
-& $nssm set $svc AppRotateBytes 10485760
+Invoke-Nssm -Quiet @("stop", $svc) | Out-Null
+Invoke-Nssm -Quiet @("remove", $svc, "confirm") | Out-Null
+$rc = Invoke-Nssm @("install", $svc, $uv, "run", "python", "-m", "streamlit", "run", "app.py", "--server.address", $BindAddress, "--server.port", $Port, "--server.headless", "true")
+if ($rc -ne 0) { throw ("nssm install failed (exit " + $rc + ") - see the message above.") }
+Invoke-Nssm @("set", $svc, "AppDirectory", $AppDir) | Out-Null
+Invoke-Nssm @("set", $svc, "DisplayName", ("Eight Rock Workbench (" + $Name + ")")) | Out-Null
+Invoke-Nssm @("set", $svc, "Description", ("Eight Rock Workbench v5 (Streamlit) on port " + $Port + " - auto-starts with Windows")) | Out-Null
+Invoke-Nssm @("set", $svc, "Start", "SERVICE_AUTO_START") | Out-Null
+Invoke-Nssm @("set", $svc, "AppExit", "Default", "Restart") | Out-Null
+Invoke-Nssm @("set", $svc, "AppRestartDelay", "5000") | Out-Null
+Invoke-Nssm @("set", $svc, "AppStdout", (Join-Path $logDir ("service-" + $Name + "-out.log"))) | Out-Null
+Invoke-Nssm @("set", $svc, "AppStderr", (Join-Path $logDir ("service-" + $Name + "-err.log"))) | Out-Null
+Invoke-Nssm @("set", $svc, "AppRotateFiles", "1") | Out-Null
+Invoke-Nssm @("set", $svc, "AppRotateBytes", "10485760") | Out-Null
 # The service runs as SYSTEM - give it its own environment dir outside the
 # app folder, so it never fights user accounts over .venv ownership. Each
 # colour gets a SEPARATE dir: sharing one means both services can `uv run`
 # into the same tree at once during a swap and corrupt it mid-sync.
-& $nssm set $svc AppEnvironmentExtra ("UV_PROJECT_ENVIRONMENT=C:\ProgramData\EightRockWorkbench\venv-" + $Name)
-& $nssm start $svc | Out-Null
+Invoke-Nssm @("set", $svc, "AppEnvironmentExtra", ("UV_PROJECT_ENVIRONMENT=C:\ProgramData\EightRockWorkbench\venv-" + $Name)) | Out-Null
+Invoke-Nssm @("start", $svc) | Out-Null
 Write-Host "   Service installed and started."
 
 # --- 4. Firewall (LAN only) ----------------------------------------------

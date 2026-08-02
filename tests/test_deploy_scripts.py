@@ -103,3 +103,87 @@ def test_launcher_and_updater_stop_the_process_they_actually_start():
     for bat, name in ((upd, "update-workbench.bat"),
                       (start, "start-workbench.bat")):
         assert "8501 8502" in bat, f"{name} does not stop by listening port"
+
+
+# ---------------------------------------------------------------------------
+# NativeCommandError under $ErrorActionPreference = "Stop" (2026-08-02)
+# ---------------------------------------------------------------------------
+
+def _code_lines(script: str) -> list[str]:
+    """Script lines with comments and here-doc blocks removed."""
+    src = re.sub(r"<#.*?#>", "", _src(script), flags=re.S)
+    return [l for l in src.split("\n") if not l.lstrip().startswith("#")]
+
+
+@pytest.mark.parametrize("script", sorted(p.name for p in DEPLOY.glob("*.ps1")))
+def test_no_native_command_redirects_stderr_to_null(script):
+    """`nssm stop <name>` on a service that does not exist writes to stderr.
+
+    Under Windows PowerShell 5.1, `2>$null` on a NATIVE command turns that
+    into a NativeCommandError record, and with $ErrorActionPreference = "Stop"
+    it becomes terminating. Both installers died on their own idempotent
+    cleanup step, before installing anything, on every machine where the
+    service did not already exist — which is every first install.
+
+    `2>&1` is fine; it is the discard-to-null form that manufactures the
+    error record.
+    """
+    offenders = [l.strip() for l in _code_lines(script) if "2>$null" in l]
+    assert not offenders, (
+        f"{script}: native stderr redirected to $null — under EAP=Stop this "
+        f"is fatal on a clean machine:\n  " + "\n  ".join(offenders))
+
+
+def test_the_nssm_helper_relaxes_the_error_preference():
+    """The helper only works if it actually restores/relaxes the preference."""
+    for script in ("install-lan-service.ps1", "install-caddy.ps1"):
+        src = _src(script)
+        assert "function Invoke-Nssm" in src, f"{script} has no safe wrapper"
+        body = src[src.index("function Invoke-Nssm"):]
+        assert 'ErrorActionPreference = "Continue"' in body, (
+            f"{script}: wrapper does not relax the preference")
+        assert "finally" in body, (
+            f"{script}: wrapper does not restore the preference")
+
+
+def test_the_helper_is_defined_before_it_is_used():
+    """PowerShell parses top-to-bottom; a call above the definition fails."""
+    for script in ("install-lan-service.ps1", "install-caddy.ps1"):
+        src = _src(script)
+        define = src.index("function Invoke-Nssm")
+        first_use = min(
+            (src.index(u) for u in ("Invoke-Nssm -Quiet", "Invoke-Nssm install",
+                                    "Invoke-Nssm set", "Invoke-Nssm start")
+             if u in src), default=None)
+        assert first_use is not None, f"{script}: helper defined but never used"
+        assert define < first_use, (
+            f"{script}: Invoke-Nssm is called before it is defined")
+
+
+def test_nssm_calls_pass_an_explicit_array():
+    """A PowerShell FUNCTION binds tokens starting with "-" as its own
+    parameters — unlike `& $exe`, which passes them through. Wrapping nssm in
+    a function therefore risks "-m" and "--server.port" being eaten. Passing
+    one explicit array removes the ambiguity entirely.
+    """
+    for script in ("install-lan-service.ps1", "install-caddy.ps1"):
+        for line in _code_lines(script):
+            s = line.strip()
+            if not s.startswith(("Invoke-Nssm", "$rc = Invoke-Nssm")):
+                continue
+            assert "@(" in s, (
+                f"{script}: nssm call does not pass an explicit array, so a "
+                f"'-' argument could bind as a function parameter:\n  {s}")
+
+
+def test_a_failed_nssm_install_stops_the_script():
+    """Every later `set` is futile once install has failed, and continuing
+    would end with a 'done' message over a service that does not exist."""
+    for script in ("install-lan-service.ps1", "install-caddy.ps1"):
+        src = _src(script)
+        i = src.index('Invoke-Nssm @("install"')
+        after = src[i:i + 400]
+        assert "$rc" in src[max(0, i - 10):i + 40], (
+            f"{script}: install's exit code is not captured")
+        assert "throw" in after, (
+            f"{script}: a failed nssm install does not stop the script")

@@ -12,6 +12,41 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.3.2.0 — 2026-08-02  ·  fix: both installers died on their own cleanup step
+`install-service.bat` and `install-caddy.bat` both failed at the same line
+with `nssm.exe : Can't open service!`, having installed nothing.
+
+`nssm stop <name>` on a service that does not exist writes to stderr. Under
+Windows PowerShell 5.1, redirecting a NATIVE command's stderr with `2>$null`
+wraps that output in a `NativeCommandError`, and `$ErrorActionPreference =
+"Stop"` makes it terminating. The stop/remove pair exists to make a re-run
+idempotent — and it is exactly what broke the FIRST run, on every machine
+where the service was not already present. Which is every machine an
+installer is for.
+
+Both scripts now route nssm through an `Invoke-Nssm` helper that relaxes the
+preference around the native call, restores it in a `finally`, and reports a
+non-zero exit rather than dying on stderr. `-Quiet` covers the stop/remove
+pair, whose failure on a clean box is expected and meaningless. A failed
+`install` now throws, instead of the script continuing through a dozen `set`
+calls and finishing with a success message over a service that does not
+exist. The same hazard in `install.ps1`'s `cmd /c` variants is fixed too.
+
+Wrapping the call in a PowerShell function introduced a second hazard worth
+recording: a function binds tokens starting with `-` as its own parameters,
+where `& $exe` passes them through. `-m`, `--server.address` and
+`--server.port` were one binding rule from disappearing. Every call site now
+passes a single explicit `@(...)` array.
+
+Four new checks in `tests/test_deploy_scripts.py`: no native `2>$null`
+anywhere, the helper both relaxes and restores the preference, it is defined
+before it is used, every call passes an explicit array, and a failed install
+stops the script. Neither bug is visible by reading the script — only by
+running it on a clean machine, which is the one thing the owner should not be
+doing to find bugs.
+
+---
+
 ## V5.14.3.1.0 — 2026-08-01  ·  the AC-11.2 test no longer needs the AI layer
 Running the suite in the AC-11.1 configuration — SDK removed from the build —
 left exactly one failure, and it was the new AC-11.2 test: it imports

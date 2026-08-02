@@ -618,6 +618,31 @@ multiple of what was measured, then prove it fires by breaking the thing on
 purpose. A bound derived from the requirement rather than the measurement is
 decoration.
 
+## Lesson — `2>$null` on a native command is fatal under EAP=Stop (2026-08-02)
+
+Both installers died on their own idempotent cleanup step:
+
+    & $nssm stop $svc 2>$null | Out-Null     # "Can't open service!"
+
+`nssm stop` on a service that does not exist writes to stderr. In Windows
+PowerShell 5.1, redirecting a NATIVE command's stderr wraps that output in a
+`NativeCommandError` record, and `$ErrorActionPreference = "Stop"` makes it
+terminating. So the cleanup that exists to make a re-run safe is precisely
+what broke the FIRST run, on every machine where the service was not already
+there — the only machines that matter for an installer.
+
+`2>&1` is fine. It is the discard-to-`$null` form that manufactures the error.
+
+Second-order lesson from the fix: wrapping the call in a PowerShell FUNCTION
+introduced a new hazard, because a function binds tokens beginning with `-` as
+its own parameters, where `& $exe` passes them straight through. `-m` and
+`--server.port` were one binding rule away from vanishing. Every call now
+passes a single explicit `@(...)` array.
+
+Both are guarded in `tests/test_deploy_scripts.py`. Neither is detectable by
+reading the script — only by running it on a clean machine, which is the one
+thing the owner should not be doing to find bugs.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

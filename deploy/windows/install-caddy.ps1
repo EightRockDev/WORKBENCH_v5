@@ -75,15 +75,53 @@ foreach ($p in 8501, 8502) {
 Step "Registering the Caddy service"
 $nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
 if (-not $nssm) { throw "NSSM not found - run install-service.bat first (it installs NSSM)." }
-& $nssm stop Caddy 2>$null | Out-Null
-& $nssm remove Caddy confirm 2>$null | Out-Null
-& $nssm install Caddy $caddy run --config $act --adapter caddyfile
-& $nssm set Caddy AppDirectory $AppDir
-& $nssm set Caddy DisplayName "Caddy (Eight Rock Workbench HTTPS)"
-& $nssm set Caddy Start SERVICE_AUTO_START
-& $nssm set Caddy AppStdout (Join-Path $AppDir "logs\caddy-out.log")
-& $nssm set Caddy AppStderr (Join-Path $AppDir "logs\caddy-err.log")
-& $nssm start Caddy | Out-Null
+
+# ---------------------------------------------------------------------------
+# Safe NSSM invocation
+# ---------------------------------------------------------------------------
+# `nssm stop <name>` on a service that does not exist yet writes "Can't open
+# service!" to STDERR. Under Windows PowerShell 5.1, redirecting a native
+# command's stderr (`2>$null`) turns that output into a NativeCommandError
+# record, and with $ErrorActionPreference = "Stop" that becomes TERMINATING.
+# The result: the install died on its own idempotent cleanup step, before it
+# had installed anything, on every machine where the service did not already
+# exist - which is every first install.
+#
+# So native calls run with the preference relaxed and their exit code checked
+# explicitly. `-Quiet` is for the stop/remove pair, whose failure is expected
+# and meaningless on a clean box.
+function Invoke-Nssm {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string[]]$NssmArgs,
+        [switch]$Quiet
+    )
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $out = & $nssm @NssmArgs 2>&1
+        $code = $LASTEXITCODE
+        if ($code -ne 0 -and -not $Quiet) {
+            Write-Host ("   nssm " + ($NssmArgs -join " ") + " -> exit " + $code) -ForegroundColor Yellow
+            $out | ForEach-Object { Write-Host ("   " + $_) -ForegroundColor Yellow }
+        }
+        return $code
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
+
+Invoke-Nssm -Quiet @("stop", "Caddy") | Out-Null
+Invoke-Nssm -Quiet @("remove", "Caddy", "confirm") | Out-Null
+$rc = Invoke-Nssm @("install", "Caddy", $caddy, "run", "--config", $act, "--adapter", "caddyfile")
+if ($rc -ne 0) { throw ("nssm install failed (exit " + $rc + ") - see the message above.") }
+Invoke-Nssm @("set", "Caddy", "AppDirectory", $AppDir) | Out-Null
+Invoke-Nssm @("set", "Caddy", "DisplayName", "Caddy (Eight Rock Workbench HTTPS)") | Out-Null
+Invoke-Nssm @("set", "Caddy", "Start", "SERVICE_AUTO_START") | Out-Null
+Invoke-Nssm @("set", "Caddy", "AppStdout", (Join-Path $AppDir "logs\caddy-out.log")) | Out-Null
+Invoke-Nssm @("set", "Caddy", "AppStderr", (Join-Path $AppDir "logs\caddy-err.log")) | Out-Null
+Invoke-Nssm @("start", "Caddy") | Out-Null
 
 # --- 5. Firewall ---------------------------------------------------------
 Step "Opening firewall TCP 80/443"
