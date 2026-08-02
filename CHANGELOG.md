@@ -12,6 +12,32 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.6.0.0 — 2026-08-02  ·  flip-day UI reads fixed while it is still dual-run
+The last non-gate item on the P0-3 "remaining before the flip" list. Three
+finds, one root cause worth pinning:
+
+- **A duplicate dict key had erased a provenance color.** The
+  de-identification sweep renamed `src_aln` → `src_8r` in `COLORS` — a dict
+  that already had a teal `src_8r` for the self-sourced backbone. Python
+  keeps the last duplicate silently, so the reference-survey grey vanished
+  and every "property record" badge rendered in backbone teal — the one
+  distinction the badge exists to draw. The grey is back as `src_ref`, and
+  an AST test now fails on ANY duplicate literal key in config.py.
+- **The record badge follows the read seam.** Property Card "db" rows and
+  both inventory "matched to property records" counters now color through
+  `config.spine_provenance_color()`: grey while `SPINE_READ_SOURCE`
+  is "legacy", teal the moment it flips to "8r". Flip day changes one
+  config value and the UI tells the truth without an edit.
+- **The cross-ref index limit now clears the backbone.** The inventory
+  address index capped `list_properties` at 10,000 — sized to the ~2,500-row
+  legacy table, silently dropping half the ~19,000-row backbone post-flip,
+  with every dropped row counting as "unmatched." Raised to 50,000.
+
+Theme plumbing kept honest: `src_ref` added to the palette extractor and the
+Appearance panel's token list, so custom themes cover it.
+
+Mutation-proven: reintroducing the duplicate key fails three named tests.
+
 ## V5.14.5.1.0 — 2026-08-02  ·  the re-scrape gets a time budget and a resume point
 V5.14.5.0.0 correctly forces a full re-scrape — and that exposed the next
 problem before it happened: a full favourites pull is 4 sources × every

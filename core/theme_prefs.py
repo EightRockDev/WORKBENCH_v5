@@ -106,6 +106,7 @@ TOKEN_GROUPS: list[tuple[str, str, list[tuple[str, str, str]]]] = [
         [
             ("content", "src_rr",      "Rent Roll"),
             ("content", "src_t12",     "T-12"),
+            ("content", "src_ref",     "Reference record"),
             ("content", "src_8r",      "8R Backbone"),
             ("content", "src_etl",     "Public ETL"),
             ("content", "src_user",    "User input"),

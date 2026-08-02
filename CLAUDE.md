@@ -703,6 +703,21 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — a rename into a dict literal can silently delete a key (2026-08-02)
+
+The de-id sweep renamed `src_aln` → `src_8r` inside `config.COLORS` — which
+already had an `src_8r`. Duplicate keys in a dict literal are legal Python;
+the first value vanishes with no warning, no linter complaint, and the UI
+happily rendered the wrong provenance color for weeks. **When a sweep renames
+an identifier INTO an existing namespace (a dict literal, a table, an enum),
+grep for the target name first — a rename can be a collision.** Permanent
+guard: `test_no_dict_literal_in_config_has_a_duplicate_key` walks config.py's
+AST and fails on any duplicate literal key. Same-day sibling fix: the record
+badge color now resolves through `config.spine_provenance_color()` (grey
+pre-flip, teal post-flip), and the inventory cross-ref index limit was raised
+to clear the 19K-row backbone (a limit sized to the old table undercounts
+"matched" silently after the flip).
+
 ## Lesson — a forced re-run needs a budget and a resume point (2026-08-02)
 
 The generation-token fix (below) forces a full re-scrape — which at 4 sources

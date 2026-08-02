@@ -118,12 +118,15 @@ def _build_prop_address_index() -> dict[tuple[str, str], dict[str, str | float |
     owner, on-site manager, occupancy, avg rent, and submarket without
     re-querying SQLite.
 
-    Cached for 10 minutes. The property record list is ~2,500 rows so this
-    builds in well under 100ms; the cache just avoids redoing the work
-    every time the user tweaks a filter.
+    Cached for 10 minutes. The legacy record list is ~2,500 rows; the 8R
+    backbone behind the same seam is ~19,000. The limit must clear BOTH —
+    a limit sized to the legacy table silently drops half the backbone
+    post-flip, and every dropped row reads as "unmatched" in the counters
+    above the tables. Truncation here lies in a way nothing downstream can
+    detect.
     """
     index: dict[tuple[str, str], dict[str, str | float | int | None]] = {}
-    prop_rows = list_properties(limit=10_000)
+    prop_rows = list_properties(limit=50_000)
     for p in prop_rows:
         addr_norm = _normalize_address(p.get("address"))
         city = (p.get("city") or "").strip().lower()
@@ -347,7 +350,7 @@ def _render_alerts_section() -> None:
             f'<div style="color:{c["tx2"]};font-size:13px;margin-bottom:6px">'
             f'<b>{n_total} properties</b> with ≥ {threshold_pct}% '
             f'reassessment jump · sorted largest jump first · '
-            f'<span style="color:{c["src_8r"]}">'
+            f'<span style="color:{config.spine_provenance_color()}">'
             f'{n_matched:,} matched to property records ({match_pct:.0f}%)</span>'
             f'</div>',
             unsafe_allow_html=True,
@@ -821,7 +824,7 @@ def _render_browse_section() -> None:
             f'<div style="color:{c["tx2"]};font-size:13px;margin-bottom:6px">'
             f'<b>{n:,} properties</b> shown · combined assessed value '
             f'<b>${total_value:,.0f}</b> · '
-            f'<span style="color:{c["src_8r"]}">'
+            f'<span style="color:{config.spine_provenance_color()}">'
             f'{n_matched:,} matched to property records ({match_pct:.0f}%)</span>'
             f'</div>',
             unsafe_allow_html=True,

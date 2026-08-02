@@ -394,7 +394,8 @@ def build_palette(stats: ColorStats, fonts: dict[str, float],
         "bl": bl, "blbg": mix(bl, bg, tint),
         "src_rr": gn,
         "src_t12": yw,
-        "src_8r": mix(tx, bg, 0.42),
+        "src_ref": mix(tx, bg, 0.42),   # reference survey row - muted grey
+        "src_8r": hue_pick(0.47, "#14b8a6"),  # 8R backbone - teal family
         "src_etl": hue_pick(0.75, "#7c3aed"),
         "src_user": ac2,
         "src_calc": bl,

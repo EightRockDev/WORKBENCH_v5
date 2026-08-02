@@ -18,7 +18,7 @@ from __future__ import annotations
 # *** BUMP THIS ON EVERY CHANGE and add a CHANGELOG.md entry (owner directive). ***
 # ---------------------------------------------------------------------------
 
-WORKBENCH_VERSION = "V5.14.5.1.0"
+WORKBENCH_VERSION = "V5.14.6.0.0"
 
 
 # ---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ COLORS = {  # CONTENT-PANE LIGHT THEME (Yardi-style)
     "ac3":    "#7a5400",  # darkest gold (hover/active)
     "src_rr":   "#15803d",  # 🟢 Rent Roll
     "src_t12":  "#b45309",  # 🟠 T-12
-    "src_8r":  "#6b7588",  # 🟦 8R Backbone
+    "src_ref":  "#6b7588",  # ⚪ reference record (legacy survey row, pre-flip)
     "src_8r":   "#14b8a6",  # 🟦 8R self-sourced backbone (teal)
     "src_etl":  "#7c3aed",  # 🟣 Public ETL
     "src_user": "#a37102",  # 🥇 User input
@@ -249,6 +249,21 @@ COMPS_TOTAL_MAX = COMPS_BUCKET1_MAX + COMPS_BUCKET2_MAX  # 12
 # rent delta <= 5%). Env override ER_SPINE_READ_SOURCE wins for testing.
 import os as _os
 SPINE_READ_SOURCE = _os.environ.get("ER_SPINE_READ_SOURCE", "legacy")
+
+
+def spine_provenance_color() -> str:
+    """Badge color for a value sourced from the property-records table.
+
+    What that table IS depends on the read seam: pre-flip it is the licensed
+    reference survey (grey `src_ref`); post-flip it is the self-sourced 8R
+    backbone (teal `src_8r`). One duplicate-key slip in COLORS once made the
+    reference row render in backbone teal — the two provenances must never
+    share a color, because the whole point of the badge is telling them
+    apart. Reads SPINE_READ_SOURCE at call time so a flip (or a test
+    monkeypatch) takes effect without a restart.
+    """
+    key = "src_8r" if SPINE_READ_SOURCE == "8r" else "src_ref"
+    return COLORS[key]
 
 
 # ---------------------------------------------------------------------------

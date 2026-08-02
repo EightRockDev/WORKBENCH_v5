@@ -342,7 +342,8 @@ def _render_header(prop: dict[str, Any], folder: PropertyFolder | None) -> None:
 #         🟢 src_rr   — rent roll (sources.json rentRoll.summary)
 #         🟠 src_t12  — T-12 (sources.json t12_* blocks)
 #         🟣 src_om   — OM / marketing materials (sources.json om / property_site)
-#         ⚪ src_8r  — property record (DB row)
+#         ⚪/🟦 db    — property record (grey src_ref pre-flip, teal src_8r
+#                       once SPINE_READ_SOURCE = "8r")
 #         🥇 src_user — manual entry / override
 #   • "Status" row removed entirely — it was an internal record/custom flag.
 #   • Edit button opens a form to override any field. Overrides are saved
@@ -609,7 +610,9 @@ def _render_property_card(
         "rent_roll": c.get("src_rr",   "#15803d"),
         "t12":       c.get("src_t12",  "#b45309"),
         "om":        c.get("src_etl",  "#7c3aed"),
-        "db":        c.get("src_8r",  "#6b7588"),
+        # Grey pre-flip (reference survey row), teal post-flip (8R backbone)
+        # - resolved at render time from the SPINE_READ_SOURCE seam.
+        "db":        config.spine_provenance_color(),
         "manual":    c.get("src_user", "#a37102"),
         "computed":  c.get("src_calc", "#1d4ed8"),
     }
