@@ -131,3 +131,92 @@ def test_distinct_native_ids_are_not_merged(tmp_path, monkeypatch):
 def test_no_favorites_is_not_an_error(tmp_path, monkeypatch):
     lp = _fav_db(tmp_path, monkeypatch, favorites=[], rows=[])
     assert lp.favorite_universe() == []
+
+
+# ---------------------------------------------------------------------------
+# Freshness must not outlive its reasons (2026-08-02)
+# ---------------------------------------------------------------------------
+
+def _etl_db(tmp_path, *, pulled_at, description="Scraped rent listings",
+            rows=5):
+    import sqlite3
+
+    db = tmp_path / "etl.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE etl_metadata (
+            table_name TEXT PRIMARY KEY, display_name TEXT, description TEXT,
+            source_url TEXT, fetch_method TEXT, row_count INTEGER,
+            last_pull_at TEXT, last_pull_date TEXT)""")
+        conn.execute("INSERT INTO etl_metadata VALUES (?,?,?,?,?,?,?,?)",
+                     ("rent_listings", "Scraped rent listings", description,
+                      "etl_listings", "api", rows, pulled_at, pulled_at[:10]))
+    return db
+
+
+def test_a_changed_favourite_set_defeats_the_freshness_skip(tmp_path):
+    """Starring a property is an instruction to scrape it. Waiting out a
+    7-day window to honour that makes the feature look broken, and the rent
+    gate cannot move without new rows."""
+    import datetime as dt
+
+    from core.listings_pull import _favorites_fingerprint, _fingerprint_unchanged
+
+    yesterday = (dt.datetime.now() - dt.timedelta(days=1)).isoformat(timespec="seconds")
+    old = _favorites_fingerprint([{"property_id": "a"}])
+    db = _etl_db(tmp_path, pulled_at=yesterday,
+                 description=f"Scraped rent listings; favset={old}")
+
+    assert _fingerprint_unchanged(db, old)          # same set -> may skip
+    new = _favorites_fingerprint([{"property_id": "a"}, {"property_id": "b"}])
+    assert not _fingerprint_unchanged(db, new)      # a new star -> must run
+
+
+def test_the_fingerprint_ignores_ordering(tmp_path):
+    """Favourite order is not meaningful; re-scraping on it would be churn."""
+    from core.listings_pull import _favorites_fingerprint
+
+    a = _favorites_fingerprint([{"property_id": "x"}, {"property_id": "y"}])
+    b = _favorites_fingerprint([{"property_id": "y"}, {"property_id": "x"}])
+    assert a == b
+
+
+def test_a_failed_attempt_clears_its_own_freshness(tmp_path):
+    """The 2026-08-01 crash was STICKY: the stamp from the previous success
+    kept the step skipping, so the failure stayed invisible and the fix
+    shipped for it could not run."""
+    import datetime as dt
+
+    from core.listings_pull import (_favorites_fingerprint,
+                                    _fingerprint_unchanged,
+                                    invalidate_freshness)
+
+    fp = _favorites_fingerprint([{"property_id": "a"}])
+    today = dt.datetime.now().isoformat(timespec="seconds")
+    db = _etl_db(tmp_path, pulled_at=today,
+                 description=f"Scraped rent listings; favset={fp}")
+
+    assert _fingerprint_unchanged(db, fp)     # would skip
+    invalidate_freshness(db)
+    assert not _fingerprint_unchanged(db, fp)  # now retries
+
+
+def test_invalidate_is_safe_on_a_database_with_no_metadata(tmp_path):
+    import sqlite3
+
+    from core.listings_pull import invalidate_freshness
+
+    db = tmp_path / "empty.db"
+    sqlite3.connect(db).close()
+    invalidate_freshness(db)          # must not raise
+
+
+def test_the_runner_catches_and_invalidates():
+    """An uncaught exception both failed the cycle - contradicting the
+    runner's own docstring - and left the stale stamp in place."""
+    import inspect
+
+    from scripts import run_listings
+
+    src = inspect.getsource(run_listings.main)
+    assert "except Exception" in src
+    assert "invalidate_freshness" in src

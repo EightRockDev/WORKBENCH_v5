@@ -643,6 +643,27 @@ Both are guarded in `tests/test_deploy_scripts.py`. Neither is detectable by
 reading the script — only by running it on a clean machine, which is the one
 thing the owner should not be doing to find bugs.
 
+## Lesson — a freshness gate must expire for the right reasons (2026-08-02)
+
+The listings step reported `fresh (pulled within 7 days) - skipping` on a day
+when its previous run had **crashed**. `is_fresh` reads the stamp written by
+the last SUCCESSFUL pull, and a crash writes no stamp — so the step coasted on
+an older success and skipped itself. Three things followed from one gate:
+
+1. the failure was invisible for a week;
+2. the schema fix shipped for that failure could not run;
+3. the owner starred new favourites and nothing scraped them.
+
+A cache key has to include everything that would change the answer. Time was
+the only input, so neither "the code changed" nor "the inputs changed" nor
+"last time this blew up" could invalidate it. Freshness is now keyed to the
+favourite set as well as the clock, and a failed attempt clears its own claim.
+
+Adjacent: `run_listings.main` said "never fails the cycle" and returned 0 —
+but the exception escaped before the return, so it failed the cycle anyway.
+A comment describing intent is not a mechanism. It now catches, prints, and
+invalidates.
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

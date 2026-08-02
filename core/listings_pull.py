@@ -180,16 +180,84 @@ def _cached_url(conn: sqlite3.Connection, pid: str, source: str) -> str | None:
         return None
 
 
+def _favorites_fingerprint(universe: list[dict]) -> str:
+    """A stable hash of which properties are due to be scraped."""
+    import hashlib
+    ids = sorted(str(p.get("property_id") or "") for p in universe)
+    return hashlib.sha256("|".join(ids).encode()).hexdigest()[:16]
+
+
+def _fingerprint_unchanged(db, fingerprint: str) -> bool:
+    """True when the last successful pull covered this same favourite set.
+
+    Stored in `etl_metadata.description` rather than a new column so this
+    needs no migration on the machines already running: the column is free
+    text and nothing parses it.
+    """
+    import sqlite3
+    try:
+        with sqlite3.connect(db) as conn:
+            row = conn.execute(
+                "SELECT description FROM etl_metadata WHERE table_name = ?",
+                ("rent_listings",)).fetchone()
+    except sqlite3.Error:
+        return False
+    return bool(row and row[0] and f"favset={fingerprint}" in str(row[0]))
+
+
+def invalidate_freshness(db_path=None) -> None:
+    """Drop the "already pulled" claim after a failed attempt.
+
+    Without this a crash is STICKY: the stamp from the last successful pull
+    keeps the step skipping for the rest of the freshness window, so the
+    failure is invisible and any fix shipped in the meantime cannot run. That
+    is exactly what happened after the 2026-08-01 schema crash — the fix
+    landed and then sat unused while every cycle reported "fresh - skipping".
+    """
+    import sqlite3
+    db = db_path or target_db()
+    try:
+        with sqlite3.connect(db) as conn:
+            conn.execute(
+                "UPDATE etl_metadata SET description = ? "
+                " WHERE table_name = ?",
+                ("Scraped rent listings; last attempt FAILED - retry due",
+                 "rent_listings"))
+            conn.commit()
+    except Exception:
+        pass
+
+
+def _record_fingerprint(conn, fingerprint: str) -> None:
+    try:
+        conn.execute(
+            "UPDATE etl_metadata SET description = ? WHERE table_name = ?",
+            (f"Scraped rent listings; favset={fingerprint}", "rent_listings"))
+    except Exception:
+        pass
+
+
 def pull_listings(db_path: Path | None = None,
                   sources: tuple = SOURCES_DEFAULT) -> int:
     """Scrape favorites' rents into rent_listings. Returns rows written
     (0 = fresh-skip / no favorites / nothing scraped - printout says)."""
     db = db_path or target_db()
-    if is_fresh(db, "rent_listings", days=REFRESH_DAYS):
-        print("  [listings] fresh (pulled within "
-              f"{REFRESH_DAYS} days) - skipping")
-        return 0
     universe = favorite_universe()
+
+    # Freshness is gated on the INPUT SET as well as the clock. Starring a
+    # property is an instruction to scrape it; waiting up to 7 days to honour
+    # that makes the feature look broken, and the rent gate cannot move
+    # without new rows. If the favourites have changed since the last
+    # successful pull, this is not a repeat of that pull.
+    fingerprint = _favorites_fingerprint(universe)
+    if (is_fresh(db, "rent_listings", days=REFRESH_DAYS)
+            and _fingerprint_unchanged(db, fingerprint)):
+        print("  [listings] fresh (pulled within "
+              f"{REFRESH_DAYS} days, same favourites) - skipping")
+        return 0
+    if is_fresh(db, "rent_listings", days=REFRESH_DAYS):
+        print("  [listings] favourites changed since the last pull - "
+              "re-scraping despite freshness")
     if not universe:
         print("  [listings] no favorites marked (Properties/_favorites"
               ".json) - star properties in the app to enable rent scraping")
@@ -259,5 +327,8 @@ def pull_listings(db_path: Path | None = None,
                    if r[_ROW_COLS.index('scrape_status')] == 'success')
         _stamp(conn, "rent_listings", "Scraped rent listings",
                "etl_listings (in-workbench)", len(rows))
+        # Tie the stamp to the favourite set it covered, so adding a star
+        # invalidates it rather than waiting out the 7 days.
+        _record_fingerprint(conn, fingerprint)
     print(f"  [listings] wrote {len(rows)} rows ({n_ok} successful scrapes)")
     return len(rows)

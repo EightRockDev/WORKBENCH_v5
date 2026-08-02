@@ -12,6 +12,42 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.4.0.0 — 2026-08-02  ·  the listings step was skipping itself into a corner
+Overnight the step reported `fresh (pulled within 7 days) - skipping` — on the
+day after it had crashed. `is_fresh` reads the stamp from the last SUCCESSFUL
+pull; a crash writes no stamp, so it coasted on an older success. One gate
+produced three failures at once: the crash stayed invisible, the schema fix
+shipped for it could not run, and the favourites the owner starred were never
+scraped.
+
+Freshness is now keyed to the **favourite set** as well as the clock. Starring
+a property is an instruction to scrape it, and waiting out a week to honour
+that makes the feature look broken while the rent gate cannot move. A
+fingerprint of the favourite ids rides along with the success stamp; a
+different set re-scrapes immediately, the same set in a different order does
+not.
+
+A failed attempt now clears its own freshness claim, so the next cycle
+retries rather than reporting "fresh" over a step that never ran.
+`run_listings.main` also said "never fails the cycle" and returned 0 — but the
+exception escaped before the return, so it failed the cycle regardless. A
+comment describing intent is not a mechanism; it now catches, prints the
+traceback, and invalidates.
+
+Six tests, both guards mutation-checked: reverting to clock-only freshness and
+removing the failure-invalidation are each caught.
+
+**Gates unchanged and unchangeable until this reaches the host** — comp
+overlap 66.8% (parked), rent delta 26.9%, `rents_from_listings` still 1 of
+18,928. That number cannot move while the step that feeds it is skipping.
+
+The alert-report fix from yesterday is confirmed working, and it immediately
+earned its keep: the sweep now reads "NEW this cycle: 0 ... OPEN (carried
+forward): **176**". Yesterday's format showed 25 and implied that was all of
+them.
+
+---
+
 ## V5.14.3.2.0 — 2026-08-02  ·  fix: both installers died on their own cleanup step
 `install-service.bat` and `install-caddy.bat` both failed at the same line
 with `nssm.exe : Can't open service!`, having installed nothing.
