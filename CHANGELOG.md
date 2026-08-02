@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.7.2.0 — 2026-08-02  ·  the listings ingest reports its funnel
+The generation-2 re-scrape worked on the first post-fix cycle: 10 favourites
+× 4 sources, 40 rows, 4 successful scrapes, well inside the time budget. And
+`rents from scraped listings` still read **1** — with nothing in the report
+to say where the other successes died.
+
+`apply_listings_rents` now prints the funnel stage by stage — success rows →
+distinct properties → usable 1BR/2BR rents → crosswalk hits → stamped — and
+names the legacy ids that scraped successfully but have no crosswalk row.
+That last case is the important one: a Hampton or Portsmouth favourite can
+scrape perfectly forever and never stamp, because its city has no backbone
+rows for the crosswalk to land on. The report now says so instead of
+presenting a 1 that looks like a scraper failure.
+
 ## V5.14.7.1.0 — 2026-08-02  ·  go-live runbook gets the real router and DNS steps
 `deploy/windows/README.md` "Manual steps only you can do" now carries the
 production specifics instead of generic advice: the Cloudflare grey-cloud

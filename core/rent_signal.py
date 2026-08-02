@@ -136,6 +136,9 @@ def apply_listings_rents(spine_db: Path, etl_path: Path | None = None) -> int:
             per_legacy[legacy_id] = (sum(v * w for v, w in parts)
                                      / sum(w for _, w in parts))
     if not per_legacy:
+        if rows:
+            print(f"  [rent-signal] listings ingest: {len(rows)} success "
+                  f"rows but none carried a usable 1BR/2BR rent - 0 stamped")
         return 0
     updated = 0
     with sqlite3.connect(spine_db, timeout=60) as conn:
@@ -154,6 +157,20 @@ def apply_listings_rents(spine_db: Path, etl_path: Path | None = None) -> int:
                       SET est_avg_rent = ?, rent_source = 'listings'
                     WHERE property_id = ?""", (rent, r8_id))
             updated += cur.rowcount
+    # The funnel, stage by stage, in the report. "rents from scraped
+    # listings: 1" against 4 successful scrapes is a question the report
+    # could not answer: no usable rents, or no crosswalk row? (A Hampton
+    # favourite can scrape perfectly and still never stamp - its city has
+    # no backbone rows for the crosswalk to land on.)
+    print(f"  [rent-signal] listings ingest: {len(rows)} success rows -> "
+          f"{len(sums)} properties, {len(per_legacy)} with usable rents, "
+          f"{len(pairs)} in crosswalk -> {updated} stamped")
+    dropped = sorted(leg for leg in per_legacy if leg not in xwalk)
+    if dropped:
+        print(f"  [rent-signal] scraped but NOT in crosswalk (city has no "
+              f"backbone yet, or parity has not matched it): "
+              f"{', '.join(dropped[:8])}"
+              + (f" (+{len(dropped) - 8} more)" if len(dropped) > 8 else ""))
     return updated
 
 

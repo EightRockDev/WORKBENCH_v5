@@ -244,6 +244,28 @@ def test_listings_rents_flow_through_the_crosswalk(tmp_path):
     assert rows["8R-51710-bbb"][1] == "hud_fmr"
 
 
+def test_listings_ingest_prints_its_funnel(tmp_path, capsys):
+    """"rents from scraped listings: 1" against 4 successful scrapes was a
+    question the report could not answer. Each stage's count - and the ids
+    that scraped but have no crosswalk row - must reach the report."""
+    etl = _mk_etl_db(tmp_path / "etl.db",
+                     [("51710", 2026, 1000, 1100, 1300, 1600, 1800)])
+    _add_rent_listings(etl, [
+        ("LEG-1", "zillow", "success", 1500.0, 1800.0, "t1"),
+        ("LEG-HAMPTON", "zillow", "success", 1400.0, None, "t2"),
+    ])
+    spine = _mk_spine_db(tmp_path / "wb.db", [
+        {"property_id": "8R-51710-aaa", "city": "Norfolk", "units": 48}])
+    pp.persist_crosswalk(spine, [("LEG-1", "8R-51710-aaa", "address", 1)])
+    assert rent_signal.apply_listings_rents(spine, etl) == 1
+    out = capsys.readouterr().out
+    assert "2 success rows" in out
+    assert "2 with usable rents" in out
+    assert "1 in crosswalk" in out
+    assert "1 stamped" in out
+    assert "NOT in crosswalk" in out and "LEG-HAMPTON" in out
+
+
 def test_listings_ingest_without_crosswalk_is_a_noop(tmp_path):
     etl = _mk_etl_db(tmp_path / "etl.db", [])
     _add_rent_listings(etl, [("LEG-1", "zillow", "success", 1500.0, None, "t")])
