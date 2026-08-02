@@ -17,6 +17,21 @@ REM git's "dubious ownership" safety check and blocks the sync).
 set "REPO_FWD=%CD:\=/%"
 git config --global --add safe.directory "%REPO_FWD%" >nul 2>&1
 
+REM Blue/green service mode? When the NSSM services exist, do NOT kill the
+REM ports: NSSM restarts a killed service INSTANTLY, so it would come back
+REM mid-sync still running the OLD code - and nothing would restart it
+REM afterwards. The stale-version pill, back through a different door.
+REM In service mode the services keep serving while the code syncs, and
+REM deploy-swap.ps1 restarts them one at a time at the END: zero downtime,
+REM both colours on the new code.
+set "SVCMODE="
+sc query WorkbenchBlue  >nul 2>&1 && set "SVCMODE=1"
+sc query WorkbenchGreen >nul 2>&1 && set "SVCMODE=1"
+if defined SVCMODE (
+  echo === Blue/green services detected - they keep serving during the sync ===
+  goto :synccode
+)
+
 echo === Stopping any running app so files are not locked ===
 REM The app runs as python.exe ("uv run python -m streamlit run app.py"), so
 REM `taskkill /IM streamlit.exe` never matched it and the error was swallowed
@@ -42,6 +57,8 @@ if defined STILLUP (
 ) else (
   echo Old app stopped.
 )
+
+:synccode
 echo.
 echo === Syncing code to the latest pushed version ===
 git remote set-url origin https://github.com/EightRockDev/WORKBENCH_v5.git >nul 2>&1
@@ -73,6 +90,18 @@ echo.
 echo === Installing any new dependencies ===
 call "%~dp0_find-uv.bat" || (pause & exit /b 1)
 "%UV%" sync
+if errorlevel 1 if defined SVCMODE (
+  REM Windows blocks replacing a .pyd/.exe that a running service has
+  REM loaded. Rare (only when a dependency actually changed), so pay the
+  REM brief stop only when it happens - the swap at the end starts both
+  REM colours again on the new code.
+  echo [warn] dependency sync hit files locked by the running services.
+  echo        Stopping both colours briefly and retrying...
+  sc stop WorkbenchBlue  >nul 2>&1
+  sc stop WorkbenchGreen >nul 2>&1
+  timeout /t 5 /nobreak >nul
+  "%UV%" sync
+)
 
 echo.
 echo === Applying database migration (idempotent) ===
@@ -96,5 +125,16 @@ if errorlevel 1 (
 )
 
 echo.
-echo Update complete. Double-click start-workbench.bat to launch.
+if defined SVCMODE (
+  echo === Zero-downtime swap: restarting blue/green one at a time ===
+  powershell -ExecutionPolicy Bypass -File "%~dp0deploy\windows\deploy-swap.ps1"
+  if errorlevel 1 (
+    echo [warn] the swap stopped early - the other colour is still serving
+    echo        the OLD code. Read the swap output above before rerunning.
+  ) else (
+    echo Update complete - both colours are serving the new code. No relaunch needed.
+  )
+) else (
+  echo Update complete. Double-click start-workbench.bat to launch.
+)
 pause

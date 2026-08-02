@@ -703,6 +703,19 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — killing a supervised process is not stopping it (2026-08-02)
+
+The updater killed the PIDs on 8501/8502 before syncing. Under NSSM that
+does the opposite of stopping: the supervisor restarts the service within
+seconds, so it came back MID-SYNC still running the old code, and nothing
+restarted it after — the stale-version failure the kill was added to fix,
+recreated by the supervisor the next milestone introduced. **When a process
+manager owns the process, go through the manager** (`sc stop` /
+`Restart-Service`), and re-audit every raw `taskkill`/`kill` whenever
+supervision is added around something that used to run bare. The updater now
+detects service mode and ends with `deploy-swap.ps1` instead of starting
+with a kill.
+
 ## Lesson — a rename into a dict literal can silently delete a key (2026-08-02)
 
 The de-id sweep renamed `src_aln` → `src_8r` inside `config.COLORS` — which

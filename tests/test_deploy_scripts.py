@@ -215,6 +215,37 @@ def test_the_domain_is_consistent_across_every_script():
             f"{name} mixes in the secondary domain")
 
 
+def test_updater_swaps_instead_of_killing_in_service_mode():
+    """NSSM auto-restarts a killed service instantly, so the old
+    kill-the-ports flow left an instance running OLD code mid-sync with
+    nothing restarting it afterwards - the stale-version pill back through
+    a different door. In service mode the updater must skip the kill and
+    finish with the one-at-a-time blue-green swap."""
+    upd = (ROOT / "update-workbench.bat").read_text(encoding="utf-8")
+    # detects both colours...
+    assert "sc query WorkbenchBlue" in upd
+    assert "sc query WorkbenchGreen" in upd
+    # ...BEFORE the kill, and jumps past it when they exist
+    assert "goto :synccode" in upd and "\n:synccode" in upd
+    assert upd.index("sc query WorkbenchBlue") < upd.index("taskkill"), (
+        "service detection must run before the port-kill")
+    # ends with the swap, and a failed swap must not read as success
+    assert "deploy-swap.ps1" in upd
+    assert "swap stopped early" in upd
+
+
+def test_updater_retries_dependency_sync_when_services_hold_locks():
+    """Windows refuses to replace a .pyd a running service has loaded; the
+    retry stops both colours first, and the final swap starts them again."""
+    upd = (ROOT / "update-workbench.bat").read_text(encoding="utf-8")
+    assert "sc stop WorkbenchBlue" in upd
+    assert "sc stop WorkbenchGreen" in upd
+    # rindex: the swap INVOCATION (a comment near the top also names the
+    # script) must come after the locked-file retry, so it restarts
+    # whatever the retry stopped.
+    assert upd.index("sc stop WorkbenchBlue") < upd.rindex("deploy-swap.ps1")
+
+
 def test_caddy_reports_the_port_forward_target():
     """The router forwards to a LAN address. Picking the wrong device from a
     list of DHCP leases presents as 'the site never comes up', so the machine

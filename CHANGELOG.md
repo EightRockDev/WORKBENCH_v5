@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.7.0.0 — 2026-08-02  ·  the updater becomes blue-green aware
+`update-workbench.bat` killed whatever listened on 8501/8502 before syncing.
+Against the NSSM services that was worse than useless: NSSM restarts a killed
+service instantly, so an instance came back **mid-sync still running the old
+code**, and nothing restarted it afterwards — the stale-version pill, back
+through a different door, the moment the owner installs the blue/green pair.
+
+Service mode is now detected up front (`sc query` for either colour):
+
+- The port-kill is skipped entirely; both colours keep serving users while
+  the code syncs underneath them (Windows lets git replace `.py` files a
+  running Python has already imported).
+- If `uv sync` hits a locked `.pyd` (only when a dependency actually
+  changed), both colours stop briefly and the sync retries.
+- The update ends by running `deploy-swap.ps1` — one colour restarted at a
+  time, health-checked before the next, so users never see the restart and
+  both come up on the new code. A failed swap says so instead of printing
+  "Update complete."
+
+Without the services installed, the old kill-sync-relaunch flow is unchanged.
+
 ## V5.14.6.0.0 — 2026-08-02  ·  flip-day UI reads fixed while it is still dual-run
 The last non-gate item on the P0-3 "remaining before the flip" list. Three
 finds, one root cause worth pinning:
