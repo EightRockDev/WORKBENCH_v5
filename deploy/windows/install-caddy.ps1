@@ -173,6 +173,36 @@ foreach ($pair in @(@("Workbench HTTP", 80), @("Workbench HTTPS", 443))) {
         -Protocol TCP -LocalPort $pair[1] | Out-Null
 }
 
+# --- 7. Tell the operator exactly what to forward ------------------------
+# The router forwards to a LAN ADDRESS, and picking the wrong device from a
+# list of DHCP leases is an easy mistake that presents as "the site never
+# comes up". This machine knows its own address; print it rather than let
+# anyone guess.
+Step "Port-forwarding target"
+$lan = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" } |
+    Sort-Object -Property SkipAsSource, InterfaceMetric |
+    Select-Object -First 1
+if ($lan) {
+    Write-Host ("   Forward TCP 80 and 443 to THIS machine: " + $lan.IPAddress) -ForegroundColor Green
+    Write-Host "   Also reserve that address in the router's DHCP settings -" -ForegroundColor Cyan
+    Write-Host "   if it changes on a lease renewal, the forward silently breaks." -ForegroundColor Cyan
+}
+try {
+    $pub = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 6 `
+              -Uri "https://api.ipify.org").Content.Trim()
+    if ($pub) {
+        Write-Host ("   This network's public IP: " + $pub) -ForegroundColor Green
+        Write-Host ("   The A record for " + $Domain + " must point here.") -ForegroundColor Cyan
+        if ($ips -and ($ips -notcontains $pub)) {
+            Write-Host "   MISMATCH: the domain currently resolves elsewhere" -ForegroundColor Yellow
+            Write-Host ("   (" + ($ips -join ", ") + ") - update the A record.") -ForegroundColor Yellow
+        }
+    }
+} catch {
+    Write-Host "   (could not determine the public IP - check whatismyip.com)" -ForegroundColor Yellow
+}
+
 Step "Done."
 Write-Host "   https://$Domain" -ForegroundColor Green
 Write-Host ""

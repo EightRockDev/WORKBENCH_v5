@@ -213,3 +213,14 @@ def test_the_domain_is_consistent_across_every_script():
         assert expected in src, f"{name} does not default to {expected}"
         assert "eightrockcapital" not in src, (
             f"{name} mixes in the secondary domain")
+
+
+def test_caddy_reports_the_port_forward_target():
+    """The router forwards to a LAN address. Picking the wrong device from a
+    list of DHCP leases presents as 'the site never comes up', so the machine
+    that knows its own address should say it."""
+    src = _src("install-caddy.ps1")
+    assert "Get-NetIPAddress" in src, "does not report this machine's LAN IP"
+    assert "DHCP" in src, "does not warn that an unreserved lease can move"
+    assert "ipify" in src or "public IP" in src, "does not report the public IP"
+    assert "MISMATCH" in src, "does not compare DNS against the real public IP"

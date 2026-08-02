@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.4.2.0 — 2026-08-02  ·  the installer names its own port-forward target
+The router asks which LAN device to forward 80/443 to, and the answer is a
+number nobody has written down. Reading it off a router's DHCP table means
+picking the workbench out of a list of unlabelled hostnames.
+
+`install-caddy.ps1` now reports it. After registering the service it prints
+the machine's own LAN address — the correct answer by construction, since it
+is the machine Caddy is being installed on — plus the reminder to reserve
+that address in DHCP, because a lease renewal that moves it breaks the
+forward silently. It then fetches the public IP from ipify and compares it
+against what the domain resolves to, printing a MISMATCH line when the two
+disagree.
+
+That last check catches what the Cloudflare-proxy detection cannot: a
+grey-cloud record pointing at a stale address. Both are silent failures whose
+only symptom is a site that never comes up.
+
+Covered by `test_caddy_reports_the_port_forward_target`.
+
 ## V5.14.4.1.0 — 2026-08-02  ·  catch a proxied DNS record before it eats the certificate
 Both of the owner's domains sit behind Cloudflare with their A records
 **Proxied**. Caddy proves domain control with an HTTP-01 challenge on port 80,

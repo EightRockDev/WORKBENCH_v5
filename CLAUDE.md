@@ -687,6 +687,22 @@ RFC 5737 placeholder 192.0.2.1. Reverted. **One screenshot is a fact about
 one page, not about the whole configuration** — the same mistake shape as the
 wrong-repo day, and the fix is the same: confirm before rewriting.
 
+## Lesson — the installer knows the answer the operator is guessing (2026-08-02)
+
+Step 4 of go-live is "forward TCP 80/443 to the workbench." The router shows a
+DHCP table of unlabelled hostnames, and I was about to work out which entry was
+the workbench from a router screenshot. But the machine running
+`install-caddy.ps1` **is** the forward target — the answer is available on the
+box, exactly, at the moment the question gets asked.
+
+Generalized: when a setup step asks the owner for a fact the installer can
+read off the machine, the installer should print it rather than the assistant
+inferring it from a photo. The same step now also compares the public IP
+(ipify) against what the domain resolves to, and warns about the DHCP lease
+that will move the LAN address and break the forward silently. Confirmed by
+the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
+IP `98.190.60.27` (Cox Business).
+
 ## Versioning (owner directive — do this on EVERY change)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).
