@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-02T09:24:56
+autopilot phase0 @ 2026-08-02T10:25:33
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,696,367
@@ -19,6 +19,8 @@ Assessor feeds present (Hampton Roads):
   Virginia Beach    177,259  .../SolarVector_PubLayers/FeatureServer/2
 
 Building the Eight Rock property backbone (properties_8r)...
+  [rent-signal] listings ingest: 15 success rows -> 4 properties, 2 with usable rents, 1 in crosswalk -> 1 stamped
+  [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
 
 muni records scanned:      961,917
 parcels normalized:        961,917
