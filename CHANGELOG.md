@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.14.7.1.0 — 2026-08-02  ·  go-live runbook gets the real router and DNS steps
+`deploy/windows/README.md` "Manual steps only you can do" now carries the
+production specifics instead of generic advice: the Cloudflare grey-cloud
+requirement (and why orange kills the certificate), the Cox CGA4131TCH
+click-path for the port-forward — including that forwarding is admin-only
+and the "Administration / User" header means the wrong account — the
+reserve-the-DHCP-lease-first rule, and using `install-caddy.ps1`'s MISMATCH
+output as the verification for the whole chain. Also states the key-hygiene
+rule: keys go in the Artifact Engine panel only, and a key that has ever
+been pasted anywhere is rotated, not reused.
+
 ## V5.14.7.0.0 — 2026-08-02  ·  the updater becomes blue-green aware
 `update-workbench.bat` killed whatever listened on 8501/8502 before syncing.
 Against the NSSM services that was worse than useless: NSSM restarts a killed

@@ -63,12 +63,32 @@ nssm stop    WorkbenchGreen
 
 ## Manual steps only you can do
 
-1. **DNS** — point the A-record for your domain at the reserved public IP
-   (Let's Encrypt will not certify a bare IP).
-2. **Router** — port-forward public 80 + 443 to this box; keep 8501 local.
+Concrete values below are the Eight Rock production setup as configured
+2026-08-02 (Cloudflare DNS, Cox Business, Technicolor CGA4131TCH gateway).
+
+1. **DNS (done 2026-08-02)** — Cloudflare → eight-rock.com → A record
+   `workbench` → the public IP, **Proxy status: DNS only (grey cloud)**.
+   An orange-cloud (Proxied) record makes Cloudflare answer Caddy's
+   Let's Encrypt HTTP-01 challenge, so no certificate is ever issued and
+   there is no error — `install-caddy.ps1` detects and names this.
+2. **Router port-forward (Cox CGA4131TCH, `http://192.168.0.1`)** —
+   - Log in as **`admin`** (the "Administration / User" header means you are
+     in the read-mostly user account; forwarding is admin-only). Try
+     `admin`/`password`, then the password on the router label; Cox Business
+     support (866-272-5777) can reset it remotely.
+   - **Reserve the IP first**: menu → Connection → Local Network → DHCP
+     Reservations → reserve this machine's address. An unreserved lease can
+     move on renewal and silently break the forward.
+   - Menu → Advanced → Port Forwarding → Enable → **+ADD SERVICE** twice:
+     TCP 80→80 and TCP 443→443, both to this machine's LAN IP.
+   - `install-caddy.ps1` prints the LAN IP to forward to and compares the
+     public IP against DNS (MISMATCH line) — rerun it to verify this step.
 3. **Auth** — copy `.streamlit\secrets.toml.example` → `.streamlit\secrets.toml`
    and fill the `[auth]` OIDC block (Auth0 recommended, Entra alternative — §9.4).
 4. **Backups** — schedule `deploy\windows\backup.ps1` via Task Scheduler (§9.1).
+5. **API keys** — enter keys only in the app's Artifact Engine panel (writes
+   the gitignored `.env`). A key that has ever been pasted into chat, email,
+   or a screenshot is burned: rotate it at the provider console first.
 
 ## Verify
 
