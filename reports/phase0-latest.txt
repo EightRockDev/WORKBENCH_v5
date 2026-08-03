@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-02T22:23:53
+autopilot phase0 @ 2026-08-02T23:23:37
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,696,367
@@ -98,4 +98,24 @@ Largest unit-count disagreements (check these matches):
   Cottages at Great Bridge: legacy 128 vs 8R 50
 
 Learning apartment use codes from matched properties:
-  (no property_crosswalk yet - nothing to learn from)
+  Chesapeake: 19 known-MF parcels matched
+      [reject] code '1010': on 5 MF parcels, 50,451/94,295 citywide (53.5%) - 54% of the whole roll carries it - too common to mean apartments
+      [reject] code '4000': on 2 MF parcels, 924/94,295 citywide (1.0%) - only 2 supporting parcel(s), need 3
+      [reject] code '7430': on 2 MF parcels, 20/94,295 citywide (0.0%) - only 2 supporting parcel(s), need 3
+      [reject] code '4341': on 1 MF parcels, 65/94,295 citywide (0.1%) - only 1 supporting parcel(s), need 3
+      [reject] code '4344': on 1 MF parcels, 180/94,295 citywide (0.2%) - only 1 supporting parcel(s), need 3
+      [reject] code '1060': on 1 MF parcels, 7,134/94,295 citywide (7.6%) - only 1 supporting parcel(s), need 3
+      [reject] code '1050': on 1 MF parcels, 5,882/94,295 citywide (6.2%) - only 1 supporting parcel(s), need 3
+      [reject] code '7410': on 1 MF parcels, 765/94,295 citywide (0.8%) - only 1 supporting parcel(s), need 3
+      [reject] code '4406': on 1 MF parcels, 325/94,295 citywide (0.3%) - only 1 supporting parcel(s), need 3
+      [reject] code '2010': on 1 MF parcels, 7,117/94,295 citywide (7.5%) - only 1 supporting parcel(s), need 3
+      [reject] code '7440': on 1 MF parcels, 10/94,295 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '4407': on 1 MF parcels, 14/94,295 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '2000': on 1 MF parcels, 3,417/94,295 citywide (3.6%) - only 1 supporting parcel(s), need 3
+  Portsmouth: 7 known-MF parcels matched
+      [reject] code '7': on 2 MF parcels, 139/959 citywide (14.5%) - only 2 supporting parcel(s), need 3
+      [reject] code '5': on 2 MF parcels, 80/959 citywide (8.3%) - only 2 supporting parcel(s), need 3
+      [reject] code '20': on 1 MF parcels, 2/959 citywide (0.2%) - only 1 supporting parcel(s), need 3
+      [reject] code '56': on 1 MF parcels, 10/959 citywide (1.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '61': on 1 MF parcels, 9/959 citywide (0.9%) - only 1 supporting parcel(s), need 3
+  no new codes met the evidence bar this run
