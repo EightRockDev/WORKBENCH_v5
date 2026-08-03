@@ -703,6 +703,22 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — prune the known, never the unknown (2026-08-03)
+
+Owner directive: only 10+ unit properties matter. The safe implementation
+deletes rows whose unit count is KNOWN to be under 10 — and nothing else. A
+units-NULL row is not "probably a house": Portsmouth's whole roll is
+units-NULL and those rows are the learner's anchors and next cycle's
+classification targets; pruning the unknown freezes every blind city at
+zero forever. Second half: before pruning, snapshot the full roll into a
+compact `parcel_index`, because two consumers need every parcel — the
+verified badge's power to REFUTE (the roll row that says 4 units when a
+user claims 48 is exactly the row the prune removes) and the learner's
+citywide denominators. Filtering a dataset that downstream guards use as a
+DENOMINATOR silently weakens those guards — audit every aggregate consumer
+before shrinking a table. The prune stays non-destructive because
+muni_records remains the rebuild source.
+
 ## Lesson — a size gate is not a semantics gate (2026-08-03)
 
 Richmond's first discovered "roll" was `Undeveloped_Parcels_Richmond_

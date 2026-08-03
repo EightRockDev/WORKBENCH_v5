@@ -272,6 +272,7 @@ class CoverageReport:
     provisional_ids: int = 0
     units_from_points: int = 0
     units_from_points_skipped: int = 0   # non-residential parcels (marinas...)
+    pruned_sub10: int = 0                # rows dropped: KNOWN unit count < 10
     coords_backfilled: int = 0           # MF rows given coords by address match
     rents_stamped: int = 0               # MF rows given a HUD-FMR rent estimate
     rents_from_listings: int = 0         # rows given scraped listings rents
@@ -316,6 +317,8 @@ class CoverageReport:
             + ("" if self.rents_from_listings
                else "  (rent_listings empty or crosswalk not built yet)"),
             f"unusable (no parcel/latlng): {self.skipped_no_parcel_or_latlng:,}",
+            f"pruned from backbone (known < {MIN_MF_UNITS} units): "
+            f"{self.pruned_sub10:,}  (full roll kept in parcel_index)",
             f"P0-1 coverage:             {self.coverage:.1%}"
             f"  (gate >= {GATE_COVERAGE:.0%}: {'PASS' if self.gate_passed else 'not yet'})",
             "",
@@ -757,6 +760,7 @@ def build_spine(db_path: Path,
                             WHERE city = ? GROUP BY use_code
                             ORDER BY count(*) DESC LIMIT 8""", (city,))):
                 report.no_mf_use_codes[city][(uc or "").strip()[:40]] = n
+        report.pruned_sub10 = prune_backbone(conn)
         conn.commit()
 
     # Rent signal: scraped listings rents first (best source, mapped via
@@ -768,6 +772,49 @@ def build_spine(db_path: Path,
     report.rents_from_listings = rent_signal.apply_listings_rents(db_path)
     report.rents_stamped = rent_signal.apply_rent_signal(db_path)
     return report
+
+
+def prune_backbone(conn: sqlite3.Connection) -> int:
+    """Drop rows with a KNOWN unit count below 10 from the backbone
+    (owner directive 2026-08-03: single-family parcels are waste).
+
+    What must survive, and why the rule is exactly `units IS NOT NULL AND
+    units < 10` and nothing looser:
+
+      * Every classified multifamily row survives by construction — a known
+        count >= 10 fails the filter, and code-only / learned-code MF rows
+        carry NULL units.
+      * Rows with NO unit count survive. They are not "probably houses":
+        Portsmouth's whole roll is units-NULL, and those rows are the
+        use-code learner's anchors and next cycle's classification targets.
+        Pruning the unknown would freeze every blind city at zero forever.
+      * The prune runs AFTER multi-parcel footprint aggregation, so a
+        258-unit community fragmented across small parcels has already been
+        summed — its rows read >= 10 here.
+
+    The FULL roll is preserved first in `parcel_index` — six compact
+    columns, no heavy attributes — because two consumers genuinely need
+    every parcel: the verified-badge lookup (a user-added property must be
+    checkable against the municipal roll even when the roll says 8 units)
+    and the learner's citywide denominators ("too common to mean
+    apartments" needs the whole city as its base). And the prune is
+    non-destructive by design: the raw `muni_records` cache remains the
+    rebuild source, so a future reclassification resurrects anything.
+
+    ER_SPINE_KEEP_ALL=1 skips the prune (debugging/parity investigation).
+    """
+    import os
+    conn.execute("DROP TABLE IF EXISTS parcel_index")
+    conn.execute("""CREATE TABLE parcel_index AS
+        SELECT fips, apn, address, city, units, use_code
+          FROM properties_8r""")
+    conn.execute("CREATE INDEX ix_pidx_city ON parcel_index (city)")
+    if os.environ.get("ER_SPINE_KEEP_ALL", "").strip() in ("1", "true", "yes"):
+        return 0
+    cur = conn.execute(
+        "DELETE FROM properties_8r WHERE units IS NOT NULL AND units < ?",
+        (MIN_MF_UNITS,))
+    return cur.rowcount
 
 
 def find_workbench_db() -> Path | None:

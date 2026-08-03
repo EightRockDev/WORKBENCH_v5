@@ -670,3 +670,81 @@ def test_backfill_never_invents_coords_for_unknown_addresses(tmp_path):
         lat, lng = conn.execute(
             "SELECT lat, lng FROM properties_8r").fetchone()
     assert lat is None and lng is None
+
+
+# ---------------------------------------------------------------------------
+# Backbone prune (owner directive 2026-08-03: 10+ doors only)
+# ---------------------------------------------------------------------------
+
+def _prune_db(tmp_path):
+    import sqlite3
+    db = tmp_path / "wb.db"
+    conn = sqlite3.connect(db)
+    conn.execute("""CREATE TABLE properties_8r (
+        property_id TEXT PRIMARY KEY, fips TEXT, apn TEXT, address TEXT,
+        city TEXT, units INTEGER, use_code TEXT)""")
+    conn.executemany(
+        "INSERT INTO properties_8r VALUES (?,?,?,?,?,?,?)", [
+            ("8R-A", "51710", "1-1", "1 Main St", "Norfolk", 48, "Apartment"),
+            ("8R-B", "51710", "1-2", "2 Main St", "Norfolk", 4, "Duplex"),
+            ("8R-C", "51710", "1-3", "3 Main St", "Norfolk", 1, "One Family"),
+            # Portsmouth publishes NO unit counts - these are the learner's
+            # anchors and next cycle's classification targets.
+            ("8R-D", "51740", "2-1", "9 High St", "Portsmouth", None, "18"),
+            ("8R-E", "51740", "2-2", "11 High St", "Portsmouth", None, "9"),
+        ])
+    conn.commit()
+    return db, conn
+
+
+def test_prune_drops_known_sub10_and_keeps_mf_and_unknown(tmp_path):
+    from core.phase0 import prune_backbone
+
+    db, conn = _prune_db(tmp_path)
+    assert prune_backbone(conn) == 2                  # the 4- and 1-unit rows
+    left = {r[0] for r in conn.execute(
+        "SELECT property_id FROM properties_8r")}
+    assert left == {"8R-A", "8R-D", "8R-E"}, (
+        "units-NULL rows must survive - pruning the unknown freezes every "
+        "blind city at zero forever")
+
+
+def test_prune_preserves_the_full_roll_in_parcel_index(tmp_path):
+    from core.phase0 import prune_backbone
+
+    db, conn = _prune_db(tmp_path)
+    prune_backbone(conn)
+    n = conn.execute("SELECT COUNT(*) FROM parcel_index").fetchone()[0]
+    assert n == 5, "parcel_index must hold every parcel, pruned or not"
+    units = dict(conn.execute(
+        "SELECT apn, units FROM parcel_index WHERE city='Norfolk'"))
+    assert units["1-2"] == 4                          # the pruned rows' facts survive
+
+
+def test_keep_all_escape_hatch(tmp_path, monkeypatch):
+    from core.phase0 import prune_backbone
+
+    monkeypatch.setenv("ER_SPINE_KEEP_ALL", "1")
+    db, conn = _prune_db(tmp_path)
+    assert prune_backbone(conn) == 0
+    n = conn.execute("SELECT COUNT(*) FROM properties_8r").fetchone()[0]
+    assert n == 5
+
+
+def test_the_badge_still_refutes_against_a_pruned_backbone(tmp_path):
+    """The blue check's power to say NO depends on the roll rows the prune
+    removes: a user claiming 48 units on a parcel the city says is 4 must
+    still fail, from parcel_index."""
+    from core.phase0 import prune_backbone
+    from core import user_properties as up
+    import sqlite3
+
+    db, conn = _prune_db(tmp_path)
+    prune_backbone(conn)
+    conn.commit()
+    conn.close()
+    row = up.submit_property(name="Phantom Lofts", address="2 Main Street",
+                             city="Norfolk", units=48, db_path=db)
+    res = up.validate_property(row["user_property_id"], db)
+    assert res.status == up.FAILED
+    assert "4" in res.reason and "48" in res.reason

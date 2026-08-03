@@ -61,9 +61,18 @@ def _learn_use_codes(db) -> list[str]:
                         if units is None and ucl.is_opaque(uc)]
             if not mf_codes:
                 continue
+            # Citywide tallies come from the FULL roll (parcel_index), not
+            # the pruned backbone: "too common to mean apartments" needs the
+            # whole city as its denominator, or the prune would shrink the
+            # base until a generic code like Chesapeake's 1010 (54% of the
+            # real roll) slipped under the ceiling.
+            has_index = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='parcel_index'").fetchone()
+            roll = "parcel_index" if has_index else "properties_8r"
             citywide = Counter()
             for uc, n in conn.execute(
-                    """SELECT use_code, count(*) FROM properties_8r
+                    f"""SELECT use_code, count(*) FROM {roll}
                         WHERE city = ? GROUP BY use_code""", (city,)):
                 citywide[str(uc or "").strip()] = n
             learning = ucl.learn_city(city, mf_codes, citywide)

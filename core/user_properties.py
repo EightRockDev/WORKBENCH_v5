@@ -156,9 +156,10 @@ def city_capability(conn: sqlite3.Connection, city: str) -> str:
     """What this municipality can prove (§16.3), derived from the data we
     actually hold rather than a hand-maintained list that goes stale."""
     try:
+        table = _roll_table(conn)
         with_apn, total = conn.execute(
-            "SELECT SUM(CASE WHEN apn IS NOT NULL AND apn != '' THEN 1 "
-            "ELSE 0 END), COUNT(*) FROM properties_8r WHERE city = ?",
+            f"SELECT SUM(CASE WHEN apn IS NOT NULL AND apn != '' THEN 1 "
+            f"ELSE 0 END), COUNT(*) FROM {table} WHERE city = ?",
             (city,)).fetchone()
     except sqlite3.Error:
         return "none"
@@ -256,15 +257,29 @@ def validate_property(user_property_id_: str, db_path: Path | str,
     return result
 
 
+def _roll_table(sconn: sqlite3.Connection) -> str:
+    """Where the FULL municipal roll lives. The backbone is pruned to 10+
+    units (phase0.prune_backbone), but the badge must be able to check a
+    submission against every parcel the municipality publishes — including
+    the one that says 8 units and therefore FAILS the claim of 48. The
+    compact `parcel_index` keeps that power; older databases predating the
+    prune still hold the full roll in properties_8r."""
+    row = sconn.execute("SELECT name FROM sqlite_master WHERE type='table' "
+                        "AND name='parcel_index'").fetchone()
+    return "parcel_index" if row else "properties_8r"
+
+
 def _find_candidate(sconn: sqlite3.Connection, city: str, address: str,
                     parcel_id: str | None) -> dict | None:
     """The municipal row this submission claims to be. Parcel wins over
     address when both are present and disagree - the parcel is the claim
     being verified."""
+    table = _roll_table(sconn)
+    pid_col = "NULL" if table == "parcel_index" else "property_id"
     if parcel_id:
         apn = spine.normalize_apn(parcel_id)
         for r in sconn.execute(
-                "SELECT property_id, apn, address, units FROM properties_8r"
+                f"SELECT {pid_col}, apn, address, units FROM {table}"
                 " WHERE city = ? AND apn IS NOT NULL", (city,)):
             if spine.normalize_apn(r[1] or "") == apn:
                 return dict(zip(("property_id", "apn", "address", "units"), r))
@@ -272,7 +287,7 @@ def _find_candidate(sconn: sqlite3.Connection, city: str, address: str,
     if not want:
         return None
     for r in sconn.execute(
-            "SELECT property_id, apn, address, units FROM properties_8r "
+            f"SELECT {pid_col}, apn, address, units FROM {table} "
             " WHERE city = ?", (city,)):
         if norm_addr(r[2]) == want:
             return dict(zip(("property_id", "apn", "address", "units"), r))

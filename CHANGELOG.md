@@ -12,6 +12,36 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.16.2.0.0 — 2026-08-03  ·  the backbone drops single-family (owner directive)
+Owner: "Filter out all single family homes... Only 10 units or greater."
+
+`phase0.prune_backbone` now runs at the end of every spine build: every row
+with a KNOWN unit count under 10 is deleted from `properties_8r`. The rule
+is deliberately exactly that and nothing looser:
+
+- Classified multifamily survives by construction (known ≥10, or MF/learned
+  code with NULL units).
+- **Units-NULL rows survive.** They are not "probably houses" — Portsmouth's
+  entire roll is units-NULL, and those rows are the use-code learner's
+  anchors and the next cycle's classification targets. Pruning the unknown
+  would freeze every blind city at zero forever (mutation-proven: changing
+  the rule to `units IS NULL OR units < 10` fails three tests).
+- The prune runs after multi-parcel footprint aggregation, so fragmented
+  communities have already been summed.
+
+Two consumers genuinely need the full roll, and keep it via the new compact
+`parcel_index` (6 columns, written before the prune): the verified badge —
+its power to say NO depends on the roll row that says 4 units when the user
+claims 48 — and the learner's citywide denominators ("too common to mean
+apartments" needs the whole city as its base; `run_phase0` now tallies from
+parcel_index). Non-destructive: `muni_records` stays the rebuild source, so
+improved classification resurrects anything. `ER_SPINE_KEEP_ALL=1` skips.
+
+The pull itself still fetches full rolls — you cannot know a parcel is 10+
+before classifying it, multi-parcel aggregation needs the fragments, and
+address-point unit derivation needs every point. The waste being cut is
+what's KEPT, not what's fetched.
+
 ## V5.16.1.0.0 — 2026-08-03  ·  discovery learns two lessons the first VGIN cycle taught
 The overnight cycle proved the statewide fallback (Hampton 51,803 and
 Suffolk 45,160 parcels pulled; Suffolk's first 17 multifamily classified;
