@@ -235,12 +235,32 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
          "cost_usd": s["cost_usd"], "retrieved_at": now.isoformat()}
         for s in res.spend_lines
     ]
-    role = "principal" if entity_chain else "owner"
+    # Was the LLC actually pierced to a human? When the state publishes no
+    # member/officer (common for single-purpose apartment LLCs), person_name
+    # is still the entity name — do NOT label that a "principal", it's a
+    # dead end that reads as a resolved contact. Say so, and point at the
+    # manager/registered agent instead (both surfaced elsewhere on the card).
+    pierced_to_human = bool(entity_chain) and not looks_like_entity(person_name)
+    if not entity_chain:
+        role = "owner"
+    elif pierced_to_human:
+        role = "principal"
+    else:
+        role = "entity_unpierced"
     person = {
         "full_name": person_name,
         "age_band": candidate.age_band if candidate else None,
         "deceased": bool(candidate and candidate.deceased),
     }
+    if role == "entity_unpierced":
+        agent = ""
+        for c in entity_chain:
+            agent = c.get("registered_agent") or agent
+        person["unpierced_note"] = (
+            "no individual member/officer on the "
+            f"{entity_chain[-1].get('jurisdiction', 'state')} record — "
+            "reach this owner through the management company"
+            + (f" or registered agent ({agent})" if agent else ""))
     poc = {
         "id": str(uuid.uuid4()),
         "org_id": org_id,

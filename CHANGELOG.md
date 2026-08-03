@@ -12,6 +12,28 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.17.2.0.0 — 2026-08-03  ·  honest labeling when an LLC can't be pierced to a person
+100 PRINCE AVENUE LLC came back as "Principal (LLC-pierced)" with the LLC name
+as the principal and no phone/email — because Georgia publishes no member for
+a single-purpose apartment LLC, so Cobalt named nobody (confidence 0.4). The
+pipeline was labeling that non-result as a resolved principal.
+
+- **New role `entity_unpierced`.** When the owner is an LLC but no human
+  member/officer is on the state record, the card no longer claims a
+  principal or shows empty phone/email lines. It says plainly "Entity · no
+  individual on record" and routes to the reachable contact — the management
+  company (already on the card) and the registered agent when named.
+- **Broader Cobalt parsing.** Officers are read from more array shapes
+  (governors, organizers, people…) and scalar fields (`principalName`,
+  `memberName`, `managerName`…), so when Cobalt *does* carry a member on a
+  given state/plan, it's picked up instead of missed.
+
+This does not manufacture contacts that don't exist: for institutional
+single-purpose LLCs with no published member, there is no individual to skip
+trace, and the honest surface is the manager/sponsor line. Smaller owners
+(individuals, family LLCs that name a member) resolve to real phone/email as
+before. Six new tests.
+
 ## V5.17.1.0.0 — 2026-08-03  ·  pierced principals get traced correctly + show all contact fields
 Cobalt pierced FOUNTAIN VIEW CIRCLE LLC to Grant Cardone (real), but the card
 came back with a name and no phone/email — resolved cost was exactly Cobalt's

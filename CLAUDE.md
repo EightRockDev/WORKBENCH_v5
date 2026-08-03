@@ -703,6 +703,21 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — a non-result must not wear a result's label (2026-08-03)
+
+Skip trace pierced 100 PRINCE AVENUE LLC and, finding no member on the GA
+record, set the "principal" to the LLC name itself and labeled it "Principal
+(LLC-pierced)" with empty contacts. That reads as a resolved decision-maker
+with no phone — indistinguishable from a data gap. **When a resolution step
+fails to produce the thing it's for, say it failed; do not fall back to
+echoing the input as if it were the output.** New `entity_unpierced` role
+states it plainly and routes to the real contact. Also, the honest scope
+line for the owner: skip trace finds INDIVIDUALS — a single-purpose
+institutional LLC with no published member has no individual to find, and no
+amount of parsing invents one; the reachable contact is the manager/sponsor,
+which is a firmographic lookup, not skip trace. Don't imply a capability the
+data can't support.
+
 ## Lesson — half-live provider chains produce confident garbage (2026-08-03)
 
 Skip trace pierces an LLC to a person (SOS/S3), then skip-traces that person

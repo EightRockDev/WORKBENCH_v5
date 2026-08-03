@@ -266,14 +266,22 @@ class CobaltSOS:
         if not isinstance(biz, dict):
             return None
         officers: list[str] = []
+        # Array fields (officers/members/...) AND scalar principal fields -
+        # Cobalt's shape varies by state and plan, so cast a wide net.
         for group in ("officers", "principals", "members", "managers",
-                      "contacts"):
-            for o in (biz.get(group) or []):
+                      "governors", "organizers", "contacts", "people"):
+            val = biz.get(group)
+            for o in (val if isinstance(val, list) else []):
                 nm = (o if isinstance(o, str)
                       else _first(o, "name", "fullName", "fullNameNormalized",
-                                  default=None))
+                                  "officerName", "personName", default=None))
                 if nm and nm not in officers:
                     officers.append(nm)
+        for scalar in ("principalName", "officerName", "memberName",
+                       "managerName", "governorName", "contactName"):
+            nm = _first(biz, scalar, default=None)
+            if nm and nm not in officers:
+                officers.append(nm)
         agent = _first(biz, "registeredAgent.name", "registeredAgent",
                        "agentName", default="")
         # A registered agent is a fallback principal ONLY when it's a person -

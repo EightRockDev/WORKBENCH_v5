@@ -214,3 +214,47 @@ def test_an_individual_owner_is_still_traced_at_the_property_address():
     assert call["name"] == "Robert Cleghorn"
     assert call["addr"] == "900 Colonial Ave, Norfolk VA"
     assert call["state"] == "VA"
+
+
+# ------------------------------------------ unpierced-entity labeling
+
+def test_cobalt_reads_a_scalar_principal_field(monkeypatch):
+    """Cobalt returns officers as an array on some states/plans and a scalar
+    principalName on others - both must resolve."""
+    sos = _cobalt(monkeypatch, {"results": [{
+        "title": "SCALAR LLC", "sosId": "9", "principalName": "Dana Fox"}]})
+    r = sos.resolve_entity("Scalar LLC", "GA")
+    assert r.officers == ["Dana Fox"]
+
+
+def test_an_unpierceable_llc_is_labeled_entity_not_principal():
+    """100 PRINCE AVENUE LLC: GA published no member, so the 'principal' was
+    just the LLC name repeated. That must read as an entity we could not
+    pierce, not a resolved principal with empty contacts."""
+    rec = _RecordingTier()      # returns no candidate
+
+    class _NoOfficer:
+        def resolve_entity(self, entity_name, state):
+            return providers.SOSResult(
+                entity_name=entity_name, jurisdiction="GA", filing_id="18097298",
+                officers=[], registered_agent="RAM Partners LLC",
+                confidence=0.4, vendor="cobalt", query_id="q", cost_usd=1.0)
+
+    prop = dict(property_id="8R-GA-1", owner="100 Prince Avenue LLC",
+                state="GA", owner_address="245 E Broad St STE C, Greenville SC")
+    res = pipeline.resolve_contacts("org", prop,
+                                    registry=_reg(rec, _NoOfficer()),
+                                    persist=False)
+    owner = res.pocs[0]
+    assert owner["role"] == "entity_unpierced"
+    assert "no individual" in owner["person"]["unpierced_note"]
+
+
+def test_a_pierced_human_is_still_a_principal():
+    rec = _RecordingTier()
+    prop = dict(property_id="8R-GA-2", owner="Real Owner LLC", state="GA",
+                owner_address="1 Main St, Atlanta GA")
+    res = pipeline.resolve_contacts("org", prop,
+                                    registry=_reg(rec, _StubSOS("GA")),
+                                    persist=False)
+    assert res.pocs[0]["role"] == "principal"     # StubSOS names Grant Cardone

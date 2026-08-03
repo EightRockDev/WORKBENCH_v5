@@ -99,6 +99,7 @@ def _render_poc(poc: dict) -> None:
     person = poc.get("person") or {}
     name = person.get("full_name", "—")
     role_label = {"owner": "Owner", "principal": "Principal (LLC-pierced)",
+                  "entity_unpierced": "Entity · no individual on record",
                   "pm": "Property Manager", "lender": "Lender", "agent": "Agent",
                   "prior_owner": "Prior owner"}.get(role, role)
 
@@ -109,10 +110,22 @@ def _render_poc(poc: dict) -> None:
         st.markdown(head)
 
         chain = poc.get("entity_chain") or []
-        if chain:
+        if chain and role != "entity_unpierced":
             path = " → ".join(f"{c['entity_name']} ({c['jurisdiction']} {c['filing_id']}, "
                               f"conf {c['confidence']})" for c in chain)
             st.caption(f"Entity chain: {path} → **{name}**")
+
+        # When the LLC could not be pierced to a human, say so plainly and
+        # route the user to the reachable contact instead of showing empty
+        # phone/email lines that read like a failed lookup.
+        if role == "entity_unpierced":
+            st.markdown(f"ℹ️ _{person.get('unpierced_note', 'no individual on the state record')}_")
+            prov = poc.get("provenance") or []
+            if prov:
+                vendors = ", ".join(sorted({p['vendor'] for p in prov}))
+                total = sum(float(p.get('cost_usd') or 0) for p in prov)
+                st.caption(f"Provenance: {vendors} · resolved cost ${total:.2f}")
+            return
 
         if person.get("age_band"):
             st.caption(f"age {person['age_band']}")
