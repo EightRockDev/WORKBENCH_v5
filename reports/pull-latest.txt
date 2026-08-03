@@ -1,11 +1,12 @@
-autopilot pull @ 2026-08-03T11:15:17
+autopilot pull @ 2026-08-03T12:07:58
 
 QUARRIE muni-data ETL — 2026-08-03
-  discovered feeds loaded from data/feeds_extra.json: 14
+  discovered feeds loaded from data/feeds_extra.json: 15
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Residential_Address_Points_w_Housing_Structure/FeatureServer/0
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/SolarVector_PubLayers/FeatureServer/2
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
+    + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Hampton: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
@@ -26,6 +27,7 @@ QUARRIE muni-data ETL — 2026-08-03
   [OK] Virginia Beach/assessor                 177259 records
   [OK] Chesapeake/assessor                     110129 records
   [OK] Chesapeake/assessor                     116302 records
+  [OK] Chesapeake/assessor                      92461 records
   [OK] Hampton/assessor                         51803 records
   [OK] Hampton/assessor                           703 records
   [OK] Portsmouth/assessor                      36464 records
