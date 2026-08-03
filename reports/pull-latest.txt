@@ -1,17 +1,22 @@
-autopilot pull @ 2026-08-02T23:06:20
+autopilot pull @ 2026-08-03T00:07:50
 
-QUARRIE muni-data ETL — 2026-08-02
-  discovered feeds loaded from data/feeds_extra.json: 10
+QUARRIE muni-data ETL — 2026-08-03
+  discovered feeds loaded from data/feeds_extra.json: 13
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Residential_Address_Points_w_Housing_Structure/FeatureServer/0
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/SolarVector_PubLayers/FeatureServer/2
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
+    + Hampton: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
-    + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/42
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
+    + Suffolk: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
+    + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
+    + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/1
+  [swept] Hampton: 716 stale rows from retired feed https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/42
+  stale rows removed: 716
   [OK] Norfolk/assessor+sales                   74253 records
   [OK] Norfolk/permits                         124921 records
   [OK] Virginia Beach/assessor+sales                0 records
@@ -22,9 +27,12 @@ QUARRIE muni-data ETL — 2026-08-02
   [OK] Virginia Beach/assessor                 177259 records
   [OK] Chesapeake/assessor                     110129 records
   [OK] Chesapeake/assessor                     116302 records
+  [OK] Hampton/assessor                         51803 records
   [OK] Hampton/assessor                           703 records
-  [OK] Hampton/assessor                           716 records
   [OK] Portsmouth/assessor                      36464 records
   [OK] Portsmouth/assessor                      36241 records
+  [OK] Suffolk/assessor                         45160 records
   [OK] Norfolk/assessor                         10295 records
   [OK] Norfolk/assessor                         74637 records
+  [OK] Richmond/assessor                         6570 records
+  [OK] Richmond/assessor                         6570 records
