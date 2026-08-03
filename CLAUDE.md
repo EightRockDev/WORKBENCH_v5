@@ -703,6 +703,19 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — v5 UI still had a live import of the v2.4.1 ETL (2026-08-03)
+
+The "Scrape this property now" button imported `hampton-roads-etl/pullers` —
+the frozen predecessor's ETL package, absent from the v5 tree — so it always
+died "No module named 'pullers'". v5 has its own scraper stack
+(`core.listings_pull` + `etl_listings`) that the autopilot already uses; the
+button just never got moved onto it. **After a rewrite, grep the whole tree
+for imports of the OLD system's packages — a UI path that isn't exercised by
+tests can keep importing the dead module long after the engine moved.** Fix
+routed the button through the same code as the nightly pull (one path, one
+row shape), with a test that fails if `pullers` is imported on that path
+again.
+
 ## Lesson — a non-result must not wear a result's label (2026-08-03)
 
 Skip trace pierced 100 PRINCE AVENUE LLC and, finding no member on the GA

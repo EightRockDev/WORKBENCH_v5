@@ -354,72 +354,69 @@ def _render_latest_scrape(property_id: str, legacy_id: str) -> None:
 def _scrape_one_property(property_id: str, legacy_id: str, prop: dict) -> int:
     """Run the scraper for a single property + all its configured sources.
 
-    Returns count of rows actually written to rent_listings.
+    Uses the IN-WORKBENCH scraper stack (`core.listings_pull` + `etl_listings`),
+    not the old v2.4.1 `hampton-roads-etl/pullers` package — importing that
+    package is what raised "No module named 'pullers'" (it isn't in the v5
+    tree). The nightly autopilot pull already runs on this same stack, so the
+    button and the autopilot now share one code path and one row shape.
+
+    Returns count of rows written to rent_listings.
     """
-    # Temporarily add hampton-roads-etl to sys.path so we can import the scraper
-    # modules, then IMMEDIATELY pop it. Leaving it on sys.path breaks the
-    # workbench because both `hampton-roads-etl/config.py` and `python_workbench/
-    # config.py` declare top-level `config` — whichever dir is first on sys.path
-    # wins for `import config`, and the ETL config has no LP_PREF / LP_RESIDUAL_SPLIT
-    # which causes core.waterfall to crash on next module-load. (Streamlit reruns
-    # can re-trigger module imports; the wrong config gets cached and the whole
-    # app breaks.)
-    etl_dir = str(_WB_ROOT / "hampton-roads-etl")
-    sys.path.insert(0, etl_dir)
-    try:
-        try:
-            from pullers.listings.runner import (  # type: ignore
-                SOURCES,
-                _scrape_one as scrape_one_runner,
-                load_favorite_listings,
-            )
-        except ImportError as e:
-            st.error(f"Scraper import failed: {e}")
-            return 0
-    finally:
-        try:
-            sys.path.remove(etl_dir)
-        except ValueError:
-            pass
+    import datetime as dt
 
-    manual_urls = load_favorite_listings()
-    keys_to_try = [property_id, legacy_id or ""]
+    from core import listings_pull as lp
+
+    registry = lp._scraper_registry()
+    manual = lp.load_manual_urls()
     urls_for_property = {}
-    for k in keys_to_try:
-        if k and k in manual_urls:
-            urls_for_property = manual_urls[k]
+    for k in (property_id, legacy_id or ""):
+        if k and k in manual:
+            urls_for_property = manual[k]
             break
-
     if not urls_for_property:
         return 0
 
-    import pandas as pd
-    rows = []
-    prop_for_scraper = {
-        "property_id": property_id,
-        "name": prop.get("name") or "",
-        "address": prop.get("address") or "",
-        "city": prop.get("city") or "",
-        "units": prop.get("units") or 0,
-    }
+    db = _listings_db()
+    now = dt.datetime.now().isoformat(timespec="seconds")
+    rows: list[tuple] = []
+    with sqlite3.connect(db) as conn:
+        for source_id, url in urls_for_property.items():
+            if source_id.startswith("_") or not url:
+                continue
+            cls = registry.get(source_id)
+            if cls is None:
+                continue
+            base = {
+                "property_id": property_id, "name": prop.get("name"),
+                "address": prop.get("address"), "city": prop.get("city"),
+                "source": source_id, "listing_url": url, "listing_name": None,
+                "one_br_rent_low": None, "one_br_rent_high": None,
+                "two_br_rent_low": None, "two_br_rent_high": None,
+                "concession_text": None, "effective_one_br_rent": None,
+                "effective_two_br_rent": None, "scrape_status": "not_found",
+                "error_message": None, "scraped_at": now,
+                "pull_generation": lp.PULL_GENERATION,
+            }
+            try:
+                listing = cls().scrape_property(url)
+                if listing is not None:
+                    base.update(lp._rent_bands(listing))
+                    base["listing_name"] = listing.listing_name
+                    base["concession_text"] = listing.concession_text
+                    base["scrape_status"] = "success"
+            except Exception as e:      # noqa: BLE001 - one bad site never kills the run
+                base["scrape_status"] = "error"
+                base["error_message"] = f"{type(e).__name__}: {e}"
+            rows.append(tuple(base[c] for c in lp._ROW_COLS))
 
-    for source_id, url in urls_for_property.items():
-        if source_id.startswith("_"):
-            continue
-        if not url:
-            continue
-        scraper_cls = SOURCES.get(source_id)
-        if scraper_cls is None:
-            continue
-        scraper = scraper_cls()
-        row = scrape_one_runner(scraper, prop_for_scraper, cached_url=None, manual_url=url)
-        rows.append(row)
-
-    if not rows:
-        return 0
-
-    df = pd.DataFrame(rows)
-    # Append rather than replace — preserve other properties' rows
-    with sqlite3.connect(_listings_db()) as conn:
-        df.to_sql("rent_listings", conn, if_exists="append", index=False)
+        if not rows:
+            return 0
+        conn.execute(f"""CREATE TABLE IF NOT EXISTS rent_listings
+            ({', '.join(c + ' TEXT' if c in lp._TEXT_COLS else c + ' REAL'
+                        for c in lp._ROW_COLS)})""")
+        lp._add_missing_columns(conn, "rent_listings")
+        conn.executemany(
+            f"INSERT INTO rent_listings ({', '.join(lp._ROW_COLS)}) "
+            f"VALUES ({', '.join('?' for _ in lp._ROW_COLS)})", rows)
+        conn.commit()
     return len(rows)

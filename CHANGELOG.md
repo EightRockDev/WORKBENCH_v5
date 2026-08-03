@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.18.1.0.0 — 2026-08-03  ·  "Scrape this property now" no longer imports the dead ETL
+The per-property scrape button failed with **"Scraper import failed: No
+module named 'pullers'"**. It was importing `hampton-roads-etl/pullers`, the
+v2.4.1 ETL package that isn't in the v5 tree. Rewrote `_scrape_one_property`
+to run on the **in-workbench scraper stack** (`core.listings_pull` +
+`etl_listings`) — the same code the nightly autopilot pull already uses, so
+the button and the autopilot now share one path and one row shape (including
+the `pull_generation` tag). A failing site records an error row instead of
+crashing; no saved URL is a clean zero. Four new tests, one of which fails if
+anything on the button path imports `pullers` again.
+
 ## V5.18.0.0.0 — 2026-08-03  ·  firmographic (business-contact) enrichment
 The realistic contact for an institutional owner whose LLC names no member —
 and for the management company — is the firm's main line, not a personal
