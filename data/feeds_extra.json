@@ -49,10 +49,11 @@
     "county": "Hampton",
     "kind": "assessor",
     "platform": "arcgis",
-    "url": "https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "record_count": 703,
-    "note": "auto-discovered: CZM_Hampton_Data; score 6; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 703 records - too small to be a full parcel roll, probably a subset or study extract"
+    "where": "UPPER(LOCALITY) LIKE 'HAMPTON%'",
+    "record_count": 51803,
+    "note": "VGIN statewide fallback: UPPER(LOCALITY) LIKE 'HAMPTON%'; 51,803 records; fields ['apn']"
   },
   {
     "market": "Hampton",
@@ -60,10 +61,10 @@
     "county": "Hampton",
     "kind": "assessor",
     "platform": "arcgis",
-    "url": "https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/42",
+    "url": "https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44",
     "status": "live",
-    "record_count": 716,
-    "note": "auto-discovered: CZM_Hampton_Data; score 6; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 716 records - too small to be a full parcel roll, probably a subset or study extract"
+    "record_count": 703,
+    "note": "auto-discovered: CZM_Hampton_Data; score 6; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 703 records - too small to be a full parcel roll, probably a subset or study extract"
   },
   {
     "market": "Portsmouth",
@@ -88,6 +89,18 @@
     "note": "auto-discovered: Parcels_Real_Estate_View; score 16; fields ['address', 'apn', 'assessed_value', 'owner_name', 'sqft', 'use_code', 'zip']; 36,241 records"
   },
   {
+    "market": "Suffolk",
+    "state": "VA",
+    "county": "Suffolk",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "status": "live",
+    "where": "UPPER(LOCALITY) LIKE 'SUFFOLK%'",
+    "record_count": 45160,
+    "note": "VGIN statewide fallback: UPPER(LOCALITY) LIKE 'SUFFOLK%'; 45,160 records; fields ['apn']"
+  },
+  {
     "market": "Norfolk",
     "state": "VA",
     "county": "Norfolk",
@@ -106,5 +119,27 @@
     "url": "https://data.norfolk.gov/resource/yvpm-8aid.json",
     "status": "live",
     "note": "auto-discovered (socrata): Property Assessment and Sales - FY23; score 12; fields ['apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'year_built', 'zip']; geo-verify inconclusive"
+  },
+  {
+    "market": "Richmond",
+    "state": "VA",
+    "county": "Richmond",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0",
+    "status": "live",
+    "record_count": 6570,
+    "note": "auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 13; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records"
+  },
+  {
+    "market": "Richmond",
+    "state": "VA",
+    "county": "Richmond",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/1",
+    "status": "live",
+    "record_count": 6570,
+    "note": "auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 13; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records"
   }
 ]
