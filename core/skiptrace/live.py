@@ -230,6 +230,83 @@ class VaSccSOS:
         )
 
 
+# ---------------------------------------------------------------------------
+# Cobalt Intelligence — entity → officers, all 50 states (§4.2 S3).
+# The self-serve SOS API for the metro rollout: VA SCC covers only Virginia
+# and has no clean token, so Cobalt is the general-purpose piercing vendor.
+# Keyed by COBALT_API_KEY. Best-effort parse; returns None when unavailable
+# so the registry falls back to mock rather than fabricating a principal.
+# Docs: https://cobaltintelligence.com  (Secretary of State API)
+# ---------------------------------------------------------------------------
+
+class CobaltSOS:
+    name = "cobalt"
+    BASE = os.environ.get("COBALT_BASE",
+                          "https://apigateway.cobaltintelligence.com/v1")
+    COST_PER_LOOKUP = float(os.environ.get("COBALT_COST", "1.00"))
+
+    def __init__(self, api_key: str):
+        self._key = api_key
+
+    def resolve_entity(self, entity_name: str, state: str) -> SOSResult | None:
+        st = (state or "").strip().upper()[:2]   # Cobalt keys results by state
+        if not st:
+            return None
+        headers = {"x-api-key": self._key, "Accept": "application/json"}
+        try:
+            data = _get(f"{self.BASE}/search", headers=headers,
+                        params={"searchQuery": entity_name, "state": st})
+        except ProviderError:
+            return None
+        # Cobalt returns {results:[...]} or a bare object; tolerate both.
+        hits = _first(data, "results", "data", default=None)
+        biz = (hits[0] if isinstance(hits, list) and hits
+               else (data if isinstance(data, dict) and
+                     _first(data, "title", "entityName", "sosId") else None))
+        if not isinstance(biz, dict):
+            return None
+        officers: list[str] = []
+        for group in ("officers", "principals", "members", "managers",
+                      "contacts"):
+            for o in (biz.get(group) or []):
+                nm = (o if isinstance(o, str)
+                      else _first(o, "name", "fullName", "fullNameNormalized",
+                                  default=None))
+                if nm and nm not in officers:
+                    officers.append(nm)
+        agent = _first(biz, "registeredAgent.name", "registeredAgent",
+                       "agentName", default="")
+        # A registered agent is a fallback principal ONLY when it's a person -
+        # a commercial agent (CT Corporation, a law firm) is not the
+        # beneficial owner and must never be handed to skip trace.
+        if not officers and agent and not _is_commercial_agent(agent):
+            officers = [agent]
+        return SOSResult(
+            entity_name=_first(biz, "title", "entityName", "name",
+                               default=entity_name),
+            jurisdiction=st,
+            filing_id=str(_first(biz, "sosId", "entityId", "id", default="")),
+            officers=officers,
+            registered_agent=agent or "",
+            confidence=0.86 if officers else 0.4,
+            vendor=self.name,
+            query_id=str(_first(biz, "sosId", "entityId", default="cobalt")),
+            cost_usd=self.COST_PER_LOOKUP,
+        )
+
+
+_COMMERCIAL_AGENTS = (
+    "ct corporation", "registered agent", "corporation service",
+    "cogency", "incorp", "national registered", "legalzoom", "northwest",
+    "harbor compliance", "csc ", "capitol services", " law", "llp", "pllc",
+)
+
+
+def _is_commercial_agent(name: str) -> bool:
+    low = (name or "").lower()
+    return any(tok in low for tok in _COMMERCIAL_AGENTS)
+
+
 def _e164(num: str) -> str:
     digits = "".join(c for c in str(num) if c.isdigit())
     if len(digits) == 10:

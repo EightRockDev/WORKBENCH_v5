@@ -703,6 +703,22 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — half-live provider chains produce confident garbage (2026-08-03)
+
+Skip trace pierces an LLC to a person (SOS/S3), then skip-traces that person
+(BatchData/S4). Turning ONE stage live (BatchData) while the upstream stage
+(SOS) is still mock is worse than all-mock: the pierce invents a principal,
+and the now-real skip trace attaches genuine phone numbers to that invented
+name — confident, real-looking, and wrong. **When stages compose, a
+downstream stage going live can amplify an upstream mock into a
+false-positive; gate the output on the provenance of the WEAKEST stage in
+the chain, not the strongest.** The fix marks any LLC-pierced contact
+non-callable while its SOS is mock. General rule for the vendor waterfalls:
+before presenting a result as actionable, check that every stage it depended
+on was real. Also: not every data source has an API — VA SCC's CIS portal is
+search/filing only, no token; don't send the owner hunting for one that
+doesn't exist, route to a vendor that does (Cobalt).
+
 ## Lesson — st.tabs and query-param auth both lose state on navigation (2026-08-03)
 
 Two same-day UI bugs, one root shape: state that doesn't survive a

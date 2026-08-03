@@ -12,6 +12,33 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.17.0.0.0 — 2026-08-03  ·  Cobalt SOS piercing + the mock-pierce safeguard
+Trestle went live (owner added the key). This adds the entity-piercing (S3)
+vendor and closes a real correctness hole.
+
+- **`core/skiptrace/live.py::CobaltSOS`** — the self-serve, all-50-states
+  Secretary-of-State adapter (LLC → officers/members). Keyed by
+  `COBALT_API_KEY`; best-effort field parse; returns None on any failure so
+  the registry falls back rather than fabricating a principal. A registered
+  agent is used as a fallback principal ONLY when it's a person — a
+  commercial agent (CT Corporation, a law firm) is rejected, never handed to
+  skip trace.
+- **SOS provider selection** now prefers a free VA-SCC hit for Virginia and
+  falls through to Cobalt for everything VA-SCC can't answer (and every
+  out-of-state entity as the metros expand), via `_SOSWaterfall`. Status
+  line reflects which is live.
+- **The mock-pierce safeguard (the important part).** When the owner is an
+  LLC but the pierce came from a MOCK SOS, the principal name is a guess —
+  so its phones, real or not, are now forced non-callable with a clear
+  reason. This catches the exact half-live state the owner is in right now:
+  BatchData live, SOS still mock → real numbers attached to a fabricated
+  person. Individual owners (no entity chain) are untouched. Mutation-proven:
+  disabling the gate fails `test_llc_pierced_by_mock_sos_is_never_callable`.
+
+VA SCC has no self-serve API token (the CIS portal is search/filing only), so
+Cobalt is the piercing source; VA-SCC stays an optional free supplement.
+10 new tests.
+
 ## V5.16.4.0.0 — 2026-08-03  ·  stay signed in, and stay on the tab you clicked
 Two owner reports, both about being thrown off course.
 

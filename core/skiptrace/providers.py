@@ -165,6 +165,31 @@ class MockSOS:
         )
 
 
+class _SOSWaterfall:
+    """Try SOS providers in order, first non-None wins.
+
+    Lets VA SCC (free, Virginia) run ahead of Cobalt (paid, all states):
+    a Virginia entity resolves for free, and everything VA SCC can't answer -
+    including every out-of-state entity as the metros expand - falls through
+    to Cobalt. A provider that raises is skipped, never fatal.
+    """
+
+    name = "sos-waterfall"
+
+    def __init__(self, providers):
+        self._providers = list(providers)
+
+    def resolve_entity(self, entity_name: str, state: str):
+        for p in self._providers:
+            try:
+                r = p.resolve_entity(entity_name, state)
+            except Exception:      # noqa: BLE001 - one vendor down never blocks
+                continue
+            if r is not None and r.officers:
+                return r
+        return None
+
+
 class MockTier1Append:
     """Mock Datazapp bulk append — cheap, low hit-rate tier (§4.3: $0.01–$0.03)."""
 
@@ -299,9 +324,19 @@ def get_registry() -> ProviderRegistry:
 
     status: dict = {}
 
-    # SOS (entity piercing): VA SCC if a token is set, else mock.
+    # SOS (entity piercing). Cobalt is the general-purpose, all-states vendor
+    # (self-serve key); VA SCC is a free Virginia-only supplement. With both
+    # keyed, try VA SCC first for a VA entity and fall back to Cobalt - keeps
+    # Virginia free without losing the other 49 states. Neither keyed => mock,
+    # and the pipeline marks a mock-pierced contact non-callable (AC-A3).
     va_token = os.environ.get("VA_SCC_API_TOKEN")
-    if va_token:
+    cobalt_key = os.environ.get("COBALT_API_KEY")
+    if cobalt_key and va_token:
+        sos = _SOSWaterfall([live.VaSccSOS(va_token), live.CobaltSOS(cobalt_key)])
+        status["sos"] = "live (va-scc + cobalt)"
+    elif cobalt_key:
+        sos, status["sos"] = live.CobaltSOS(cobalt_key), "live (cobalt)"
+    elif va_token:
         sos, status["sos"] = live.VaSccSOS(va_token), "live (va-scc)"
     else:
         sos, status["sos"] = MockSOS(), "mock"

@@ -200,6 +200,20 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
             break                   # grade-A match — stop the waterfall (§4.2)
     res.stages_run += ["S4", "S5", "S6"]
 
+    # Safeguard: when the owner is an LLC (entity_chain non-empty) but the
+    # pierce came from a MOCK SOS, the principal name is fabricated — so the
+    # phones, real as they are, belong to a guessed person. Never present
+    # them as callable. This catches the common half-live state: BatchData
+    # live, SOS still on mock. Individual owners (no entity_chain) are
+    # unaffected — their name is the deed's, not a guess.
+    sos_status = str((getattr(reg, "status", None) or {}).get("sos", ""))
+    if entity_chain and "mock" in sos_status.lower():
+        for p in validated_phones:
+            p["callable"] = False
+            p["reason"] = ("principal unverified — LLC piercing is on mock "
+                           "SOS; enable a live SOS (Cobalt/VA SCC) before "
+                           "dialing")
+
     # --- assemble poc_records (§4.5 contract) -------------------------------
     provenance = [
         {"field": "phones/emails", "vendor": s["vendor"], "query_id": s["query_id"],
