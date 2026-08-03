@@ -79,6 +79,18 @@
     "note": "auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,302 records"
   },
   {
+    "market": "Chesapeake",
+    "state": "VA",
+    "county": "Chesapeake",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "status": "live",
+    "where": "FIPS = '51550'",
+    "record_count": 92461,
+    "note": "geometry supplement; VGIN statewide fallback: FIPS = '51550'; 92,461 records; fields ['apn']"
+  },
+  {
     "market": "Hampton",
     "state": "VA",
     "county": "Hampton",
@@ -86,9 +98,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "UPPER(LOCALITY) = 'HAMPTON CITY'",
+    "where": "FIPS = '51650'",
     "record_count": 51803,
-    "note": "VGIN statewide fallback: UPPER(LOCALITY) = 'HAMPTON CITY'; 51,803 records; fields ['apn']; geo-verify inconclusive"
+    "note": "VGIN statewide fallback: FIPS = '51650'; 51,803 records; fields ['apn']"
   },
   {
     "market": "Hampton",
@@ -163,9 +175,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "UPPER(LOCALITY) = 'PORTSMOUTH CITY'",
+    "where": "FIPS = '51740'",
     "record_count": 36615,
-    "note": "geometry supplement; VGIN statewide fallback: UPPER(LOCALITY) = 'PORTSMOUTH CITY'; 36,615 records; fields ['apn']"
+    "note": "geometry supplement; VGIN statewide fallback: FIPS = '51740'; 36,615 records; fields ['apn']"
   },
   {
     "market": "Suffolk",
@@ -207,9 +219,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "UPPER(LOCALITY) = 'RICHMOND CITY'",
+    "where": "FIPS = '51760'",
     "record_count": 76739,
-    "note": "VGIN statewide fallback: UPPER(LOCALITY) = 'RICHMOND CITY'; 76,739 records; fields ['apn']"
+    "note": "VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']"
   },
   {
     "market": "Richmond",
