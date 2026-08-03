@@ -1,3 +1,8 @@
-autopilot listings @ 2026-08-03T14:31:28
+autopilot listings @ 2026-08-03T17:20:13
 
-  [listings] fresh (pulled within 7 days, 10 favourites, generation 2) - skipping; 252 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: 100 Prince Avenue -> not_found
+  [listings] zillow: 100 Prince Avenue -> not_found
+  [listings] apartments_com: 100 Prince Avenue -> not_found
+  [listings] property_site: 100 Prince Avenue -> not_found
+  [listings] wrote 4 rows (0 successful scrapes)
