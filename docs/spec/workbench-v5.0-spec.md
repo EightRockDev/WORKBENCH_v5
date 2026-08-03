@@ -847,6 +847,158 @@ Defensible because: (a) transparent pricing is itself rare — only Reonomy and 
 
 Verification discipline (per project workflow rules): no module marked complete without its acceptance tests passing against real Hampton Roads data; every export diffed against the template baseline to prove formatting/formula preservation; compliance gate covered by an adversarial test suite that attempts to dial unstamped numbers and must fail.
 
+# **14. Completion & Remediation Plan (added 2026-08-03)**
+
+Status audit of Section 13 as of V5.14.7.2.0. Everything below is either a
+measured gap or an unbuilt feature; each row states the fix and exactly what
+is needed to make it happen. Items not listed here are code-complete with
+passing acceptance tests.
+
+## **14.1 Blocked on data or gates (code done, numbers not met)**
+
+| Item | Gap | The fix | What is needed |
+|---|---|---|---|
+| P0-2 comp overlap | 66.8% vs ≥90% gate | Resume anchor tuning against the nightly parity report once rent signal improves (rent drives comp selection; tuning before rents land re-fits noise) | Owner go-signal (tuning currently parked); no external inputs |
+| P0-2 rent delta | 26.9% vs ≤5% gate | Scraped listings rents on backbone rows. The ingest funnel now reports where scrapes die; the binding constraint is city coverage below | More starred favourites in covered cities (owner, in-app); Hampton/Portsmouth/Suffolk backbone rows (14.2) |
+| Hampton / Portsmouth / Suffolk backbone | 0 multifamily backbone rows — assessor feeds carry no usable MF data | Hampton: empirical use-code learning + discovery size scoring (shipped, needs a networked discovery run). Portsmouth: numeric use-code learner (shipped, code 18). Suffolk: no public feed found — acquire the parcel roll by FOIA/records request or county GIS contact | A discovery run on the office host (network access to city portals); for Suffolk, one records request — owner signature |
+| Flip day (P0-3→P0-4) | Waits on both gates | `core.cutover.migrate_deal_references` against pilot Postgres → `SPINE_READ_SOURCE="8r"` → full regression → purge legacy tables → AC-P0-5 sweep incl. git history | Both gates green; ~half a day of supervised runtime |
+| Radar v2 backtest (§6.1) | Backtest code shipped; never run on real deed chains | Run `radar_v2.backtest` over the 7-city deed history as an autopilot step; tune weights until top-decile ≥3× base-rate | Host run only (deed data is already local there) |
+| Module A live verification (AC-A1) | Pipeline verified on mocks only | Run `diagnose-skiptrace.bat` on the host; fix `core/skiptrace/live.py` field mapping against real BatchData responses; verify the VA SCC scraper from a non-firewalled network; then the 100-property validation run | Owner double-click on the host; BatchData key already entered |
+
+## **14.2 Blocked on owner accounts (code shipped, wiring pending)**
+
+| Item | The fix | What is needed |
+|---|---|---|
+| OIDC login live (AC-9.4) | Fill `.streamlit/secrets.toml` `[auth]` from an Auth0 (or Entra) app registration; verify external login + pending-approval end to end | Owner creates the Auth0 app (free tier); 15 minutes |
+| Public HTTPS (§9) | Port-forward TCP 80/443 on the Cox gateway → rerun `install-caddy.ps1` (its MISMATCH check is the verification) | Owner router step (runbook: `deploy/windows/README.md`) |
+| Inbox→Deal live (§6.2) | Connect the Eight Rock mailbox via Microsoft Graph consent; engine and confidence gate are built | Owner grants Graph consent to the app registration |
+
+## **14.3 Not yet constructed (ordered by leverage)**
+
+| Item | The fix | What is needed |
+|---|---|---|
+| B1/B3 telephony (§5.1) | Twilio-family integration behind a `DialerProvider` interface (same vendor-abstraction pattern as skip trace): click-to-call, local-presence caller ID, call logging, compliance hard-block on prerecorded drops | Build (~1 week) + a Twilio account + counsel sign-off on TCPA flow before first real dial |
+| AC-B3 mail batch | Batch letter PDF generation (500 in ≤10 min) with per-piece QR/phone tracking; lob.com API handoff optional | Build (~3 days); Lob account only if API fulfillment wanted |
+| User-added properties + verified badge | Section 16 (new) | Build starts now |
+| 50-metro expansion | Section 15 (new) | Per-metro host runs; no new vendors |
+| Module G commercialization (§6.5) | Stripe billing + usage meters, per-tenant encryption keys/cryptoshred, SAML/SCIM, dual-region/PITR/status page, Next.js+FastAPI re-platform | Post-pilot program, sequenced only after first external users |
+| §8.1 attestations | Pen test → SOC 2 Type I → Type II → ISO 27001 via a trust platform (Vanta/Drata-class) | Budget + vendor selection; Type I gates first paying customer |
+
+# **15. Geographic Expansion — the 50-Metro Rollout (added 2026-08-03)**
+
+Ordering principle: **thesis-first, data-quality tie-broken.** Markets where
+Eight Rock would actually buy (Mid-Atlantic/Southeast value-add, then Sunbelt)
+come first, so every new metro is immediately huntable; within a wave, cities
+with strong open parcel data (ArcGIS/Socrata) ship before difficult ones. The
+50 metros, in deployment order:
+
+| Wave | Metros | Target cadence |
+|---|---|---|
+| **1 — Virginia adjacency** | 1 Richmond · 2 Charlottesville · 3 Roanoke · 4 Lynchburg · 5 Fredericksburg | 2–3/week |
+| **2 — Carolinas + DMV** | 6 Raleigh–Durham · 7 Charlotte · 8 Greensboro/Winston-Salem · 9 Fayetteville NC · 10 Wilmington NC · 11 Columbia · 12 Charleston · 13 Greenville–Spartanburg · 14 Washington DC (NoVA) · 15 Baltimore | 3–5/week |
+| **3 — Southeast** | 16 Atlanta · 17 Jacksonville · 18 Orlando · 19 Tampa–St. Pete · 20 Savannah · 21 Augusta · 22 Birmingham · 23 Huntsville · 24 Nashville · 25 Knoxville · 26 Chattanooga · 27 Memphis · 28 Louisville · 29 Lexington | 5/week |
+| **4 — Texas + heartland** | 30 Dallas–Fort Worth · 31 Houston · 32 San Antonio · 33 Austin · 34 Oklahoma City · 35 Tulsa · 36 Little Rock · 37 Kansas City · 38 St. Louis · 39 Indianapolis · 40 Columbus OH · 41 Cincinnati | 5–8/week |
+| **5 — Growth West + fill** | 42 Phoenix · 43 Las Vegas · 44 Denver · 45 Salt Lake City · 46 Boise · 47 Albuquerque · 48 Tucson · 49 Colorado Springs · 50 Pittsburgh | 8–10/week |
+
+**First non-Hampton-Roads metro: Richmond**, target **live within 2 weeks of
+the go-signal** — week 1: automated feed discovery + pull + spine build on the
+host (deed chains for Richmond are already shipped); week 2: parity tuning
+from nightly reports. Charlottesville follows immediately (deeds also
+shipped).
+
+**Why the cadence ramps instead of starting at 10/week:** the Hampton Roads
+scaling playbook (CLAUDE.md) exists because every city broke the pipeline
+differently — geometry formats, use-code vocabularies, split addresses,
+wrong-city layers. Wave 1 exercises those rules on friendly data; each wave
+hardens the pipeline for the next. The end-state goal stands: a new metro
+onboards hands-free from `discover → pull → phase0 → validate` with no
+human round-trips.
+
+**Per-metro definition of done** (the P0-1 gate, generalized): parcel +
+geometry coverage ≥95% of the city's stated parcel count; multifamily
+classification via token rules with the top use codes printed for review;
+unit counts from explicit fields or address-point multiplicity; deeds where
+the county publishes them; rent signal from HUD FMR at minimum; the metro
+registered in the Section 16 validation-capability table.
+
+**Gating item carried forward from §6.4:** counsel review of each public
+source's terms remains required before any metro's data is sold externally —
+internal underwriting use proceeds without waiting.
+
+# **16. User-Added Properties & the Verified Badge (added 2026-08-03)**
+
+The backbone will never be complete — new construction, conversions, and the
+sub-10-unit tail. Users must be able to add a property in under a minute, and
+everyone who later sees that property must know whether its core facts were
+independently confirmed. The badge is the product: a **blue check** in the
+Meta/X sense — visible, binary, earned by verification against records the
+user does not control.
+
+## **16.1 Add flow**
+
+- **"+ Add property"** on the Properties surface: community name, street
+  address, city (required); unit count (required); parcel/tax ID and property
+  website (optional but accelerate verification).
+- The property receives a provisional 8R id (`8R-{FIPS}-u{hash}`) and is
+  **immediately usable by the submitting org** — full Property Card,
+  underwriting, documents — wearing a grey **Unverified** badge.
+- It joins the **shared reference layer and comp sets only after
+  verification** (§10.1 tenancy rule: user-supplied rows must not pollute
+  other tenants' comps unverified).
+
+## **16.2 Core data elements & the bar**
+
+| Element | Verified how | Bar |
+|---|---|---|
+| Address | Geocode + normalized match against municipal parcel/address-point records | **Exact** (normalized) |
+| Parcel / tax ID | Match in the municipality's assessor roll; where the user omits it, reverse-lookup by address | **Exact** |
+| Unit count | Assessor unit field, or address-point multiplicity per parcel (the §7 rule), or licensed-unit registries where published | **±10%** or multiplicity-confirmed |
+| Community name | Soft match against the property's own website/listing page (municipal rolls do not carry marketing names) | **Soft** — mismatch flags, does not fail |
+
+**Badge = address AND parcel exact, AND units within tolerance.** Name
+mismatches annotate the record. A hard mismatch on any exact element fails
+verification **with the reason shown to the submitter** (e.g. "parcel
+12345-67 is a 6-unit per Norfolk assessor; you entered 48").
+
+## **16.3 Municipality-specific validation (the capability table)**
+
+Validation strength is a property of the municipality, not the platform, so
+each city registers what it can prove: `parcel_roll` (full assessor match),
+`address_points` (unit multiplicity), `none` (no public feed — e.g. Suffolk
+today). A city at `none` can still verify address via geocoding but cannot
+award the badge; those submissions queue as **Pending — awaiting municipal
+data**, and the badge lands automatically when the city's feed does (the
+nightly cycle re-validates the queue). Where no API/feed exists, fallbacks in
+order: municipal assessor web lookup (browser automation on the host),
+property-site scrape for name/unit corroboration, manual review.
+
+## **16.4 Badge states & lifecycle**
+
+| State | Render | Meaning |
+|---|---|---|
+| Unverified | grey outline check | Submitted; validation not yet run or city at `none` |
+| Pending | grey pulsing | In the nightly validation queue |
+| **Verified** | **blue filled check** | Core elements confirmed against municipal records; timestamp + source shown on hover |
+| Failed | red outline + reason | A core element contradicts the municipal record |
+
+Re-validation runs on every municipal data refresh; a verified property whose
+core elements drift (parcel retired, unit count changes) drops to Failed with
+the diff shown — the badge is a living claim, not a one-time stamp.
+
+## **16.5 Acceptance criteria**
+
+- **AC-16.1** A user can add a property and use it for underwriting in ≤60
+  seconds, and its badge state is visible on every surface where the
+  property appears (card, inventory, comps, exports).
+- **AC-16.2** No user-added property enters another org's comp set without a
+  blue check (adversarial test: attempt it; must fail).
+- **AC-16.3** Every badge decision stores the evidence — source, matched
+  values, timestamp — and renders it on demand (the audit answer to "why is
+  this verified?").
+- **AC-16.4** A seeded wrong-unit-count submission in a `parcel_roll` city
+  fails with the municipal count named; the same submission in a `none` city
+  parks as Pending, never Verified.
+
 # **Appendix A — Source Notes**
 
 Security benchmark (8.1): fifthdimensionai.com/security, reviewed July 21, 2026 — SOC 2 Type II, ISO 27001, GDPR; per-customer isolated instances; zero-data-training policy; EEA/US data residency; full operation-level audit logging.

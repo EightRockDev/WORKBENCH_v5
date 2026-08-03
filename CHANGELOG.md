@@ -12,6 +12,40 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.15.0.0.0 — 2026-08-03  ·  user-added properties + the verified badge (spec §16)
+Three spec sections added (owner directive 2026-08-03) and the first one
+built the same day.
+
+**Spec**: §14 completion & remediation plan — every remaining item with its
+fix and what the fix needs, in three tables (gate-blocked / owner-blocked /
+unbuilt). §15 the 50-metro rollout — thesis-first order in five waves,
+Richmond first (target: live within 2 weeks of go-signal), cadence ramping
+2–3/week → 8–10/week as the playbook hardens. §16 user-added properties and
+the verified badge, AC-16.1..16.4.
+
+**Built — §16 MVP** (`core/user_properties.py`, `ui/add_property.py`,
+`scripts/run_validate.py`):
+
+- "+ Add property" on the Inventory tab: name, address, city, units, optional
+  parcel/website. Instant provisional id (`8R-{FIPS}-u{hash}`), usable by the
+  submitting org immediately, grey **Unverified** badge. Idempotent —
+  resubmitting corrects, never duplicates.
+- **Blue check earned, never granted**: address AND parcel must match the
+  municipal roll exactly (normalized), units within ±10%. The community name
+  is soft — assessor rolls carry no marketing names. Every decision stores
+  its evidence and renders it behind a "Why?" expander (AC-16.3).
+- **Municipality-aware** (§16.3): capability is derived from the data we
+  actually hold. A city with no feed (Suffolk) parks submissions as Pending —
+  never Verified by waiting — and the new nightly `validate` autopilot step
+  promotes them automatically the cycle their city's data lands.
+- **The badge is a living claim**: a municipal refresh that contradicts a
+  verified submission revokes the check with the diff shown.
+- **AC-16.2 gate**: `comp_eligible_ids()` — only blue-checked user rows may
+  enter comps outside the submitting org.
+
+13 new tests; mutation-proven (dropping the unit-count requirement from the
+verification decision fails two named tests).
+
 ## V5.14.7.2.0 — 2026-08-02  ·  the listings ingest reports its funnel
 The generation-2 re-scrape worked on the first post-fix cycle: 10 favourites
 × 4 sources, 40 rows, 4 successful scrapes, well inside the time budget. And

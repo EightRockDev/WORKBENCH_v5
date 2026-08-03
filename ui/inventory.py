@@ -1097,6 +1097,12 @@ def render_inventory(prop: dict | None = None) -> None:
     `prop` — works the same regardless of which property is selected
     in the sidebar.
     """
+    # §16 — user-added properties live above the ETL views and do not
+    # depend on them: adding a property must work even where the muni
+    # data hasn't landed yet (it parks as Pending, §16.3).
+    from ui.add_property import render_add_property
+    render_add_property()
+
     if not is_etl_available():
         render_etl_missing_notice("the multifamily inventory and alerts")
         return

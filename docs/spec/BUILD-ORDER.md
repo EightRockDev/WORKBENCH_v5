@@ -61,6 +61,11 @@ put in Claude Code's context for that order.
 **Cross-cutting (every phase):** honor Section 11 (LLM-optional) — keep the core
 deterministic; and Section 12 pricing/tiering informs `plan_tier` gating.
 
+**Added 2026-08-03:** §14 (completion & remediation plan — the authoritative
+list of what remains and what each fix needs), §15 (50-metro rollout order
+and cadence, Richmond first), §16 (user-added properties + verified badge,
+AC-16.1..16.4). New work orders draw from §14's tables.
+
 ---
 
 ## What is already done (start Phase 0.5 from here, don't redo)
