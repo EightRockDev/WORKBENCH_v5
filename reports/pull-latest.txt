@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-03T14:07:24
+autopilot pull @ 2026-08-03T17:07:31
 
 QUARRIE muni-data ETL — 2026-08-03
   discovered feeds loaded from data/feeds_extra.json: 15
@@ -17,24 +17,44 @@ QUARRIE muni-data ETL — 2026-08-03
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
     + Richmond: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
+  [fresh] Norfolk/assessor+sales: pulled within 3 days - keeping 74,253 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor+sales                   74253 records
+  [fresh] Norfolk/permits: pulled within 3 days - keeping 124,921 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/permits                         124921 records
   [OK] Virginia Beach/assessor+sales                0 records
+  [fresh] Virginia Beach/permits: pulled within 3 days - keeping 103,672 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/permits                  103672 records
+  [fresh] Newport News/assessor+sales: pulled within 3 days - keeping 54,437 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Newport News/assessor+sales              54437 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,588 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92588 records
+  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 177,893 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/assessor                 177893 records
+  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 177,259 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/assessor                 177259 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 110,129 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     110129 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 116,302 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     116302 records
-  [OK] Chesapeake/assessor                      92461 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 51,803 rows (ER_MUNI_FORCE=1 to re-pull)
+  [OK] Chesapeake/assessor                      51803 records
+  [fresh] Hampton/assessor: pulled within 3 days - keeping 51,803 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Hampton/assessor                         51803 records
+  [fresh] Hampton/assessor: pulled within 3 days - keeping 703 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Hampton/assessor                           703 records
+  [fresh] Portsmouth/assessor: pulled within 3 days - keeping 36,464 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Portsmouth/assessor                      36464 records
+  [fresh] Portsmouth/assessor: pulled within 3 days - keeping 36,241 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Portsmouth/assessor                      36241 records
-  [OK] Portsmouth/assessor                      36615 records
-  [OK] Suffolk/assessor                         45160 records
+  [fresh] Portsmouth/assessor: pulled within 3 days - keeping 51,803 rows (ER_MUNI_FORCE=1 to re-pull)
+  [OK] Portsmouth/assessor                      51803 records
+  [fresh] Suffolk/assessor: pulled within 3 days - keeping 51,803 rows (ER_MUNI_FORCE=1 to re-pull)
+  [OK] Suffolk/assessor                         51803 records
+  [fresh] Norfolk/assessor: pulled within 3 days - keeping 10,295 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor                         10295 records
+  [fresh] Norfolk/assessor: pulled within 3 days - keeping 74,637 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor                         74637 records
-  [OK] Richmond/assessor                        76739 records
+  [fresh] Richmond/assessor: pulled within 3 days - keeping 51,803 rows (ER_MUNI_FORCE=1 to re-pull)
+  [OK] Richmond/assessor                        51803 records
+  [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
