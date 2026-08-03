@@ -12,6 +12,28 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.16.1.0.0 — 2026-08-03  ·  discovery learns two lessons the first VGIN cycle taught
+The overnight cycle proved the statewide fallback (Hampton 51,803 and
+Suffolk 45,160 parcels pulled; Suffolk's first 17 multifamily classified;
+backbone match rate 74.3% → 79.3%) and exposed the next two failure modes:
+
+- **A subset can pass the size gate.** Richmond's roll became
+  `Undeveloped_Parcels_Richmond_Virginia` — 6,570 records, over the 5,000
+  floor, geo-verified, and by definition containing zero apartments. Layers
+  whose NAME declares a subset (undeveloped, vacant, blast, study, CZM,
+  flood...) now demote like small layers and no longer count as a real
+  roll, so the VGIN fallback fires for Richmond next cycle.
+- **A coordinate-less roll starves everything downstream.** Portsmouth's
+  36K-parcel roll has no geometry, so crosswalk matching caps at
+  address-only (14 of 45 legacy apartments), and the use-code learner sat
+  at 7 anchors spread over 5 codes — below the evidence bar it must not
+  lower. Discovery now adds the VGIN layer as a **geometry supplement**
+  whenever a city's real roll maps no lat/lng: same APNs, coordinates
+  merge on, lat/lng matching unlocks, anchors grow.
+- **FIPS before names in VGIN filters.** Virginia has a Richmond CITY and a
+  Richmond COUNTY; a name LIKE could pull the wrong one. FIPS-style fields
+  now try first, the `X CITY` exact variant precedes any prefix LIKE.
+
 ## V5.16.0.0.0 — 2026-08-03  ·  Hampton/Portsmouth/Suffolk fixes, Richmond wave 1, Coverage page
 The §14.1 zero-multifamily gap attacked on all three fronts, Richmond started
 in parallel, and the §15 rollout made visible in the product.

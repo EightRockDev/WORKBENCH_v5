@@ -106,6 +106,19 @@ PLAUSIBLE_ROLL_MIN = 5_000
 SIZE_BONUS = 4
 SIZE_PENALTY = 6
 
+# A layer whose NAME declares a subset can pass the size gate and still
+# never contain the city's apartments (Richmond's Undeveloped_Parcels layer:
+# 6,570 records, all vacant land). Demoted like small layers, and it does
+# not count as a real roll, so the statewide fallback still fires.
+SUBSET_NAME_TOKENS = ("undeveloped", "vacant", "blast", "study", "czm",
+                      "elevation", "missing", "flood", "wetland", "historic",
+                      "easement", "surplus", "solar", "radiation")
+
+
+def subset_named(name: str, url: str) -> bool:
+    text = f"{name} {url}".lower()
+    return any(t in text for t in SUBSET_NAME_TOKENS)
+
 
 def score_fields(field_names: list[str]) -> tuple[int, dict[str, str]]:
     """(score, {spine_field: layer_field}) for one layer's field list."""
@@ -284,8 +297,10 @@ VGIN_LAYER_CANDIDATES = (
 )
 # The locality column has gone by different names across VGIN publications;
 # probe the layer's actual fields rather than assuming.
-VGIN_LOCALITY_FIELDS = ("LOCALITY", "LOCALITY_NAME", "JURISDICTION",
-                        "LOCAL_NAME", "COUNTY", "FIPS", "LOCFIPS")
+# FIPS-style fields first: name fields are ambiguous where the state has
+# both a city and a county by the same name (Richmond, Roanoke, Fairfax...).
+VGIN_LOCALITY_FIELDS = ("FIPS", "LOCFIPS", "LOCALITY", "LOCALITY_NAME",
+                        "JURISDICTION", "LOCAL_NAME", "COUNTY")
 
 
 def vgin_where_candidates(field: str, city: str) -> list[str]:
@@ -299,6 +314,7 @@ def vgin_where_candidates(field: str, city: str) -> list[str]:
     return [f"UPPER({field}) = '{city.upper()}'",
             f"{field} = '{city.upper()}'",
             f"{field} = '{city}'",
+            f"UPPER({field}) = '{city.upper()} CITY'",
             f"UPPER({field}) LIKE '{city.upper()}%'"]
 
 
@@ -468,11 +484,20 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                     rejected.append(
                         f"{name}: only {count:,} records - kept but demoted, "
                         f"a citywide roll should have >= {PLAUSIBLE_ROLL_MIN:,}")
+                is_subset = subset_named(name, layer_url)
+                if is_subset:
+                    score -= SIZE_PENALTY
+                    size_note += "; NAMED as a subset - demoted"
+                    rejected.append(
+                        f"{name}: layer name declares a subset - demoted, "
+                        f"does not count as the city roll")
                 candidates.append((score, {
                     "market": city, "state": "VA", "county": city,
                     "kind": "assessor", "platform": "arcgis",
                     "url": layer_url, "status": "live",
                     "record_count": count,
+                    "fields_mapped": sorted(mapped),
+                    "is_subset": is_subset,
                     "note": f"auto-discovered: {name}; score {score}; "
                             f"fields {sorted(mapped)}{geo_note}{size_note}",
                 }))
@@ -505,15 +530,25 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                         f"fields {sorted(mapped)}{geo_note}",
             }))
         candidates.sort(key=lambda t: -t[0])
-        best_count = max((c.get("record_count") or 0
-                          for _s, c in candidates), default=0)
-        if best_count < PLAUSIBLE_ROLL_MIN:
+        real_rolls = [c for _s, c in candidates
+                      if (c.get("record_count") or 0) >= PLAUSIBLE_ROLL_MIN
+                      and not c.get("is_subset")]
+        if not real_rolls:
             vgin = vgin_fallback(city, fetch)
             if vgin is not None:
                 # Below any real city roll, above every subset/extract.
                 candidates.append((MIN_SCORE + 1, vgin))
                 candidates.sort(key=lambda t: -t[0])
         out[city] = [spec for _s, spec in candidates[:2]]
+        if real_rolls and not any("lat" in (c.get("fields_mapped") or [])
+                                  for c in real_rolls):
+            # The roll is real but coordinate-less (Portsmouth). The
+            # statewide layer's geometry merges onto the same APNs, which
+            # is what parity matching and the learner's anchors need.
+            vgin = vgin_fallback(city, fetch)
+            if vgin is not None:
+                vgin["note"] = "geometry supplement; " + vgin["note"]
+                out[city] = out[city] + [vgin]
         for r in rejected:
             print(f"   [rejected - wrong city] {city}: {r}")
     return out

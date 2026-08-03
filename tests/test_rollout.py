@@ -137,3 +137,73 @@ def test_vgin_rejects_a_filter_whose_sample_lands_outside_the_city():
         return None
 
     assert df.vgin_fallback("Suffolk", fake_fetch) is None
+
+
+def test_a_subset_named_layer_cannot_become_the_city_roll():
+    """Richmond's Undeveloped_Parcels layer carried 6,570 records - past the
+    size gate - and became the city roll; every parcel in it is vacant land.
+    A subset BY NAME must demote and must not suppress the VGIN fallback."""
+    import scripts.discover_feeds as df
+
+    assert df.subset_named("Undeveloped_Parcels_Richmond_Virginia",
+                           "https://x/FeatureServer/0")
+    assert df.subset_named("CZM_Hampton_Data", "https://x")
+    assert not df.subset_named("Parcels_Real_Estate_View", "https://x")
+    assert not df.subset_named("TaxParcels_public", "https://x")
+
+
+def test_vgin_prefers_fips_over_ambiguous_name_fields():
+    """Virginia has a Richmond CITY and a Richmond COUNTY. When the layer
+    exposes a FIPS field, the filter must use it before any name match."""
+    import scripts.discover_feeds as df
+
+    assert df.VGIN_LOCALITY_FIELDS[0] == "FIPS"
+    wheres = df.vgin_where_candidates("FIPS", "Richmond")
+    assert any("51760" in w for w in wheres)
+    # Name-field fallback tries exact and 'RICHMOND CITY' before prefix LIKE.
+    name_wheres = df.vgin_where_candidates("LOCALITY", "Richmond")
+    like = [i for i, w in enumerate(name_wheres) if "LIKE" in w]
+    city_exact = [i for i, w in enumerate(name_wheres)
+                  if "RICHMOND CITY" in w and "LIKE" not in w]
+    assert city_exact and like and city_exact[0] < like[0]
+
+
+def test_a_coordinate_less_roll_gets_the_statewide_geometry_supplement():
+    """Portsmouth: 36K-parcel roll, zero coordinates -> crosswalk matching
+    caps at address-only and the use-code learner starves at 7 anchors. The
+    statewide layer's geometry merges onto the same APNs."""
+    import scripts.discover_feeds as df
+
+    roll_url = "https://city.test/arcgis/rest/services"
+    layer = roll_url + "/Parcels/FeatureServer/3"
+    vgin_url = df.VGIN_LAYER_CANDIDATES[0]
+
+    def fake_fetch(url, params=None):
+        params = params or {}
+        if url == roll_url:
+            return {"services": [{"name": "Parcels", "type": "FeatureServer"}]}
+        if url == roll_url + "/Parcels/FeatureServer":
+            return {"layers": [{"id": 3, "name": "Parcels"}]}
+        if url == layer:
+            return {"fields": [{"name": "PARID"}, {"name": "LANDUSE"},
+                               {"name": "OWNER"}, {"name": "ACREAGE"}]}
+        if url == layer + "/query" and params.get("returnCountOnly"):
+            return {"count": 36464}
+        if url == layer + "/query":
+            return {"features": []}         # no geometry - the point
+        if url == vgin_url:
+            return {"fields": [{"name": "PARCELID"}, {"name": "LOCALITY"}]}
+        if url == vgin_url + "/query" and params.get("returnCountOnly"):
+            where = params.get("where", "")
+            return {"count": 36000 if "PORTSMOUTH" in where.upper() else 0}
+        if url == vgin_url + "/query":
+            return {"features": [{"geometry": {"y": 36.83, "x": -76.35}}] * 5}
+        return None
+
+    found = df.discover(cities=("Portsmouth",), extra_roots=(roll_url,),
+                        fetch=fake_fetch, soda=lambda *a, **k: None)
+    specs = found["Portsmouth"]
+    assert any("geometry supplement" in (s.get("note") or "") for s in specs), (
+        [s.get("note") for s in specs])
+    supp = next(s for s in specs if "geometry supplement" in s["note"])
+    assert "PORTSMOUTH" in supp["where"].upper()

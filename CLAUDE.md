@@ -703,6 +703,23 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — a size gate is not a semantics gate (2026-08-03)
+
+Richmond's first discovered "roll" was `Undeveloped_Parcels_Richmond_
+Virginia`: 6,570 records (over the 5,000 plausible-roll floor), correct
+fields, geo-verified in-city — and by definition containing zero apartments.
+Every numeric guard passed; the layer's NAME was the only tell. **Validate
+the name against subset vocabulary (undeveloped/vacant/study/CZM/flood...)
+as its own check** — count, fields, and location all measure whether data is
+real, none measure whether it is the POPULATION you need. Sibling lesson
+from the same cycle: Portsmouth's real 36K roll carries no geometry, which
+silently capped crosswalk matching at address-only and starved the use-code
+learner (7 anchors over 5 codes — never lower the evidence bar to fix that;
+fix the anchors). The statewide VGIN layer now doubles as a geometry
+supplement for coordinate-less rolls: same APNs, coords merge on. And in
+locality filters, FIPS beats names — Virginia has both a Richmond City and
+a Richmond County.
+
 ## Lesson — a test fixture that mirrors the code inherits its bugs (2026-08-03)
 
 The Portsmouth use-code learner never ran in production: it queried crosswalk
