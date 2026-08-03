@@ -703,6 +703,20 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — a blind adapter + silent mock fallback hides its own bugs (2026-08-03)
+
+The Apollo adapter was written without hitting the live API and had three
+wrong things (POST not GET, `/api/v1` not `/v1`, body not query param). Each
+would 404/error, and the registry's per-provider mock fallback would swallow
+it — so the status line reads "live (apollo)" while every call returns
+nothing or mock. **When an adapter is built blind against a vendor doc,
+verify the method/path/param/auth against the reference before shipping, and
+add a test that pins those exact wire details** — the fallback that makes the
+system robust also makes a broken adapter invisible. Same shape applies to
+the BatchData/Cobalt/Trestle adapters: their field-parse is still
+host-verified, and a silent all-mock result is the tell that a live adapter's
+wire contract is off.
+
 ## Lesson — v5 UI still had a live import of the v2.4.1 ETL (2026-08-03)
 
 The "Scrape this property now" button imported `hampton-roads-etl/pullers` —

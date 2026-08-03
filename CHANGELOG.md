@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.18.2.0.0 — 2026-08-03  ·  fix the Apollo adapter against the real API
+The V5.18.0 Apollo adapter was written without hitting the live endpoint and
+had three bugs that would each make the call fail and silently fall back to
+mock — so "firmographic: live (apollo)" could show while returning nothing:
+
+- used **POST**; Apollo org-enrich is **GET**;
+- called `/api/v1/organizations/enrich`; the real path is `/v1/...`;
+- sent the match term as a JSON body; Apollo takes it as a **query param**.
+
+Corrected against docs.apollo.io/reference/organization-enrichment (GET,
+`X-Api-Key` header, `name`/`domain` query param). A test now asserts the
+method, exact path (no `/api/v1`), query params, and auth header, so a
+regression here fails loudly instead of degrading to mock.
+
+Live verification is host-only (the build sandbox can't reach api.apollo.io).
+
 ## V5.18.1.0.0 — 2026-08-03  ·  "Scrape this property now" no longer imports the dead ETL
 The per-property scrape button failed with **"Scraper import failed: No
 module named 'pullers'"**. It was importing `hampton-roads-etl/pullers`, the

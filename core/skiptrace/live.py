@@ -334,11 +334,15 @@ class ApolloFirmographic:
 
     def enrich_company(self, company: str, city=None, state=None):
         from core.skiptrace.providers import BusinessContact
+        # Apollo org-enrich is a GET with match params in the QUERY string
+        # (domain / name / linkedin / website; at least one). We hold the
+        # company name. Auth is the X-Api-Key header. Verified against
+        # docs.apollo.io/reference/organization-enrichment (2026-08).
         headers = {"Content-Type": "application/json", "Accept": "application/json",
-                   "X-Api-Key": self._key}
+                   "Cache-Control": "no-cache", "X-Api-Key": self._key}
         try:
-            data = _post(f"{self.BASE}/api/v1/organizations/enrich",
-                         headers=headers, json={"name": company})
+            data = _get(f"{self.BASE}/v1/organizations/enrich",
+                        headers=headers, params={"name": company})
         except ProviderError:
             return None
         org = _first(data, "organization", "organizations", default=None)

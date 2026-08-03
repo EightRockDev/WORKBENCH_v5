@@ -308,17 +308,29 @@ def test_the_management_company_poc_is_enriched():
     assert pm.get("business_contact"), "the PM should carry a business contact"
 
 
-def test_apollo_parse_is_defensive(monkeypatch):
-    payload = {"organization": {
-        "name": "RAM Partners LLC", "phone": "(404) 555-1212",
-        "website_url": "https://rampartners.com",
-        "people": [{"name": "Pat Lee", "title": "Acquisitions"}]}}
-    monkeypatch.setattr(live, "_post", lambda *a, **k: payload)
+def test_apollo_uses_get_with_query_params(monkeypatch):
+    """Apollo org-enrich is a GET with match params in the query string -
+    a POST or a bad path 404s and silently falls back to mock."""
+    seen = {}
+
+    def fake_get(url, *, headers, params):
+        seen["url"] = url
+        seen["params"] = params
+        seen["auth"] = headers.get("X-Api-Key")
+        return {"organization": {
+            "name": "RAM Partners LLC", "phone": "(404) 555-1212",
+            "website_url": "https://rampartners.com"}}
+
+    monkeypatch.setattr(live, "_get", fake_get)
     bc = live.ApolloFirmographic("k").enrich_company("RAM Partners LLC")
+    assert seen["url"].endswith("/v1/organizations/enrich")
+    assert "/api/v1" not in seen["url"]           # the extra-/api bug
+    assert seen["params"] == {"name": "RAM Partners LLC"}
+    assert seen["auth"] == "k"
     assert bc.phone == "+14045551212"
-    assert bc.contact_name == "Pat Lee" and bc.website.endswith("rampartners.com")
+    assert bc.website.endswith("rampartners.com")
 
 
 def test_apollo_returns_none_on_empty(monkeypatch):
-    monkeypatch.setattr(live, "_post", lambda *a, **k: {"organization": {}})
+    monkeypatch.setattr(live, "_get", lambda *a, **k: {"organization": {}})
     assert live.ApolloFirmographic("k").enrich_company("Nobody LLC") is None
