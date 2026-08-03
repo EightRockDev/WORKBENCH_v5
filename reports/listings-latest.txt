@@ -1,12 +1,3 @@
-autopilot listings @ 2026-08-03T18:13:39
+autopilot listings @ 2026-08-03T19:13:44
 
-  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
-  [listings] rentcafe: 10X Living at Naples -> not_found
-  [listings] rentcafe: Madison Terrace -> not_found
-  [listings] zillow: 10X Living at Naples -> not_found
-  [listings] zillow: Madison Terrace -> not_found
-  [listings] apartments_com: 10X Living at Naples -> not_found
-  [listings] apartments_com: Madison Terrace -> not_found
-  [listings] property_site: 10X Living at Naples -> not_found
-  [listings] property_site: Madison Terrace -> not_found
-  [listings] wrote 8 rows (0 successful scrapes)
+  [listings] fresh (pulled within 7 days, 13 favourites, generation 2) - skipping; 266 rent_listings rows on hand
