@@ -58,29 +58,87 @@ def require_passcode(st) -> None:
     # in the URL - and changing the passcode invalidates every remembered
     # device at once. Passcode-tier convenience, not auth: real per-user
     # login (OIDC, section 9.4) supersedes this whole gate when configured.
-    device_token = hmac.new(expected.encode(), b"8r-device-v1",
-                            hashlib.sha256).hexdigest()[:20]
+    device_token = passcode_device_token(expected)
+
+    # 1) A real browser COOKIE is the durable path: it survives new tabs,
+    #    fresh ?prop= URLs, and refreshes - which the earlier query-param
+    #    token did NOT (clicking a property link dropped ?k=, re-prompting
+    #    every pull, the exact complaint). st.context.cookies is read-only,
+    #    so the cookie is SET by a tiny JS snippet on unlock (below).
+    if _cookie_matches(st, device_token):
+        st.session_state["_passcode_ok"] = True
+        return
+    # 2) Query-param token still honored (bookmark path, older Streamlit).
     try:
         if st.query_params.get("k") == device_token:
             st.session_state["_passcode_ok"] = True
             return
     except Exception:
-        pass                # older Streamlit without st.query_params
+        pass
     st.markdown("## \U0001f512 Eight Rock Workbench")
-    st.caption("Enter the workbench passcode to continue.")
+    st.caption("Enter the workbench passcode to continue. "
+               "This device stays signed in afterward.")
     with st.form("passcode_gate"):
         entered = st.text_input("Passcode", type="password", key="_passcode_in")
         submitted = st.form_submit_button("Enter", type="primary")
     if submitted and hmac.compare_digest(entered.strip().encode(), expected.encode()):
         st.session_state["_passcode_ok"] = True
+        _set_passcode_cookie(st, device_token)
         try:
-            st.query_params["k"] = device_token   # survives refresh; bookmarkable
+            st.query_params["k"] = device_token   # belt-and-suspenders
         except Exception:
             pass
         return          # unlocked - render the app in this same run
     if submitted:
         st.error("Wrong passcode.")
     st.stop()
+
+
+# Days a remembered device stays signed in without re-entering the passcode.
+PASSCODE_COOKIE = "er_pc"
+PASSCODE_COOKIE_DAYS = 30
+
+
+def passcode_device_token(expected: str) -> str:
+    """HMAC derivation of the passcode - what a remembered device presents.
+
+    The passcode itself never leaves the server: the cookie and the URL only
+    ever carry this derivation, and changing the passcode changes the token,
+    signing every remembered device out at once.
+    """
+    import hashlib
+    import hmac
+    return hmac.new(expected.encode(), b"8r-device-v1",
+                    hashlib.sha256).hexdigest()[:20]
+
+
+def _cookie_matches(st, device_token: str) -> bool:
+    try:
+        return st.context.cookies.get(PASSCODE_COOKIE) == device_token
+    except Exception:
+        return False        # older Streamlit / no cookie context
+
+
+def _set_passcode_cookie(st, device_token: str) -> None:
+    """Write the remember-me cookie from the browser.
+
+    st.context.cookies is read-only, so the cookie is set client-side. The
+    component iframe is same-origin with the app (both on the office host),
+    so writing to the parent document's cookie jar reaches the real page.
+    SameSite=Lax keeps it on same-site navigations (every ?prop= click)
+    without sending it cross-site. Best-effort: if the write is blocked the
+    session_state + query-param paths still cover this tab.
+    """
+    max_age = PASSCODE_COOKIE_DAYS * 24 * 3600
+    js = (
+        "<script>try{(window.parent||window).document.cookie="
+        f"'{PASSCODE_COOKIE}={device_token}; Max-Age={max_age}; Path=/; "
+        "SameSite=Lax';}catch(e){}</script>")
+    try:
+        import streamlit.components.v1 as components
+        components.html(js, height=0, width=0)
+    except Exception:
+        pass
 
 
 def resolve_user(st) -> AdminUser | None:

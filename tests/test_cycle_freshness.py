@@ -128,12 +128,17 @@ def test_spine_meta_round_trips(tmp_path):
 
 # --------------------------------------------------- passcode remember-me
 
+class _Ctx:
+    def __init__(self, cookies): self.cookies = dict(cookies or {})
+
+
 class _FakeSt:
     """The minimum streamlit surface require_passcode touches."""
 
-    def __init__(self, query_params=None):
+    def __init__(self, query_params=None, cookies=None):
         self.session_state: dict = {}
         self.query_params = dict(query_params or {})
+        self.context = _Ctx(cookies)
         self.stopped = False
 
     def markdown(self, *a, **k): ...
@@ -187,3 +192,33 @@ def test_the_url_token_is_not_the_passcode(monkeypatch):
     """The token must be a derivation - the secret never rides in the URL."""
     assert _token("granite") != "granite"
     assert "granite" not in _token("granite")
+
+
+def test_a_cookie_from_a_prior_visit_keeps_the_device_signed_in(monkeypatch):
+    """The durable path: a real cookie survives new tabs and fresh ?prop=
+    URLs, which the query-param token did not."""
+    from core import session
+
+    monkeypatch.setenv("ER_APP_PASSCODE", "granite")
+    tok = session.passcode_device_token("granite")
+    st = _FakeSt(cookies={session.PASSCODE_COOKIE: tok})
+    session.require_passcode(st)
+    assert st.session_state.get("_passcode_ok")
+
+
+def test_a_cookie_for_the_old_passcode_is_rejected(monkeypatch):
+    import pytest
+    from core import session
+
+    monkeypatch.setenv("ER_APP_PASSCODE", "granite")
+    stale = session.passcode_device_token("old-passcode")
+    st = _FakeSt(cookies={session.PASSCODE_COOKIE: stale})
+    with pytest.raises(RuntimeError, match="st.stop"):
+        session.require_passcode(st)
+    assert not st.session_state.get("_passcode_ok")
+
+
+def test_the_cookie_value_is_the_token_not_the_passcode():
+    from core import session
+    tok = session.passcode_device_token("granite")
+    assert tok != "granite" and "granite" not in tok

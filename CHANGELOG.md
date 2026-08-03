@@ -12,6 +12,35 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.16.4.0.0 — 2026-08-03  ·  stay signed in, and stay on the tab you clicked
+Two owner reports, both about being thrown off course.
+
+**"Don't log in every time I pull a property."** The V5.16.3 remember-me
+stamped the token into the URL — but clicking a property navigates to
+`?prop=<id>`, which drops the token and re-prompts on every pull, the exact
+complaint. Replaced with a real browser **cookie** (`er_pc`, 30 days): read
+via `st.context.cookies`, set client-side on unlock (the read-only cookie
+API can't write). A cookie survives new tabs, fresh `?prop=` URLs, and
+refreshes. The cookie carries only an HMAC derivation of the passcode —
+never the passcode itself — and `SameSite=Lax` keeps it on same-site
+navigation without leaking cross-site. The session-state and query-param
+paths remain as fallbacks, so a blocked cookie write degrades to the old
+behavior rather than failing.
+
+**"Resolve on Diligence throws me back to Subject."** `st.tabs` loses its
+selection whenever a widget inside a tab triggers a rerun — every button in
+every property section did this. Replaced the property sub-tab bar with a
+keyed `segmented_control`: its value lives in session_state and survives the
+rerun, so you stay on Diligence. It also mirrors to a `ptab` query param, so
+a bookmarked property URL opens on the right section. Only the active
+section now runs per rerun (st.tabs ran all seven), trimming work too.
+Covered by an AppTest that reproduces the exact bounce (Diligence → button
+rerun → still Diligence) and walks all seven sections.
+
+Who you are, for the record: on the shared passcode there is no per-user
+identity — the "BM" chip shows the `LOCAL_DEV_USER` default ("Brian (local
+dev)"). Real usernames and separate accounts arrive with Auth0 login (§9.4).
+
 ## V5.16.3.0.0 — 2026-08-03  ·  stop re-doing unchanged work + passcode once per device
 The app was "exceptionally slow" and pages showed content twice. The twice
 is Streamlit's stale-element ghosting — the faded copy is the previous

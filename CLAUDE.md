@@ -703,6 +703,22 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — st.tabs and query-param auth both lose state on navigation (2026-08-03)
+
+Two same-day UI bugs, one root shape: state that doesn't survive a
+navigation/rerun. (1) A passcode token stamped into the URL dropped the
+moment a property link navigated to `?prop=<id>` — re-prompting every pull.
+Fix: a real browser COOKIE, not a query param, for anything that must
+outlive navigation. (2) `st.tabs` resets to the first tab on ANY in-tab
+widget rerun (Resolve on Diligence → bounced to Subject). Fix: a KEYED
+widget (`segmented_control`) whose value lives in session_state survives the
+rerun; st.tabs selection does not. General rule: if a piece of state must
+survive a click that reruns the script, it needs a keyed widget
+(within-session) or a cookie (across tabs/devices) — never a query param the
+next navigation can overwrite, and never st.tabs. Both fixes are layered so
+a failure degrades to prior behavior, and both carry AppTests that reproduce
+the exact regression.
+
 ## Lesson — a batch pipeline sharing a box with the app IS an app feature (2026-08-03)
 
 "The entire site is running exceptionally slow. It's showing lots of

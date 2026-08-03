@@ -72,6 +72,56 @@ from ui.v2_theme_05292026 import (
     record_property_view as _v2_record_view,
 )
 
+# Property sub-tabs (Subject … Investors). st.tabs loses its selection on
+# any in-tab widget rerun — click "Resolve" on Diligence and Streamlit snaps
+# back to Subject (owner report 2026-08-03). A keyed segmented_control does
+# NOT: its value lives in session_state and survives the rerun, so the user
+# stays put. It also mirrors to a `ptab` query param so a bookmarked/shared
+# property URL opens on the right section.
+_PTAB_KEYS = ("subject", "underwriting", "returns", "market",
+              "summary", "diligence", "investors")
+_PTAB_LABELS_V2 = ("Subject", "Underwriting", "Returns", "Market",
+                   "Summary", "Diligence", "Investors")
+_PTAB_LABELS_V1 = ("🏢 Subject", "📊 Underwriting", "💰 Returns & Waterfall",
+                   "📍 Performance & Market", "📄 Exec Summary",
+                   "📋 Due Diligence", "💼 Investors")
+
+
+def _sticky_property_tab(is_v2: bool) -> str:
+    """Render the property section selector and return the active key.
+
+    The selector is a keyed widget, so a button-triggered rerun inside a
+    section keeps the section selected instead of resetting to Subject.
+    """
+    labels = _PTAB_LABELS_V2 if is_v2 else _PTAB_LABELS_V1
+    qp = None
+    try:
+        qp = st.query_params.get("ptab")
+    except Exception:
+        pass
+    default_idx = _PTAB_KEYS.index(qp) if qp in _PTAB_KEYS else 0
+    sel = None
+    try:
+        sel = st.segmented_control(
+            "Section", list(labels), default=labels[default_idx],
+            key="ptab_sel", label_visibility="collapsed")
+    except Exception:
+        try:
+            sel = st.radio("Section", list(labels), index=default_idx,
+                           key="ptab_sel", horizontal=True,
+                           label_visibility="collapsed")
+        except Exception:
+            sel = labels[default_idx]
+    if sel not in labels:
+        sel = labels[default_idx]
+    active = _PTAB_KEYS[labels.index(sel)]
+    try:
+        st.query_params["ptab"] = active
+    except Exception:
+        pass
+    return active
+
+
 # Path to the dark-background SVG variant. We embed it as a base64 data URI
 # inside an <img> tag rather than inlining the SVG markup — <img> is much
 # better behaved in Streamlit's CSS-scoped context, and browsers reliably
@@ -824,36 +874,24 @@ def main() -> None:
             #   - Acquisition tab DELETED → its content moves to top of Diligence
             #   - Tab order is now: Subject · Underwriting · Returns ·
             #     Market · Summary · Diligence · Owner Portal (7 tabs total)
-            tab_subject, tab_uw, tab_wf, tab_perf, tab_summary, tab_dd, tab_owner = st.tabs([
-                "Subject",
-                "Underwriting",
-                "Returns",
-                "Market",
-                "Summary",
-                "Diligence",
-                "Investors",
-            ])
+            active_tab = _sticky_property_tab(is_v2=True)
+        # Section content renders back inside the main column so the sticky
+        # right-rail inspector keeps its place (st.tabs used to nest it here).
+        _section_ctx = main_col
     else:
         # V1 path — full descriptive labels with emojis, same reorder /
         # tab removals for parity. Acquisition + IC Memo content lives
         # inside the Diligence + Summary tabs respectively.
-        tab_subject, tab_uw, tab_wf, tab_perf, tab_summary, tab_dd, tab_owner = st.tabs([
-            "🏢 Subject",
-            "📊 Underwriting",
-            "💰 Returns & Waterfall",
-            "📍 Performance & Market",
-            "📄 Exec Summary",
-            "📋 Due Diligence",
-            "💼 Investors",
-        ])
-
         if selected_property_id is None:
-            for tab in (tab_subject, tab_uw, tab_wf, tab_perf, tab_summary, tab_dd, tab_owner):
-                with tab:
-                    st.info("Pick a property from the sidebar to begin.")
+            st.info("Pick a property from the sidebar to begin.")
             return
+        active_tab = _sticky_property_tab(is_v2=False)
+        _section_ctx = None       # V1 has no column layout to nest into
 
-    # ---- Render each tab's content (same renderers for V1 and V2) ----
+    # ---- Render the active section (same renderers for V1 and V2) ----
+    # A keyed selector replaces st.tabs so an in-section rerun (e.g. Resolve
+    # Contacts on Diligence) keeps the user on that section. Only the active
+    # section runs, which also trims per-rerun work.
     # Brian 5/29 v2.0.27 — IC Memo + Acquisition no longer have their own
     # tabs. IC Memo Validator now renders at the BOTTOM of Summary; the
     # Acquisition Checklist renders at the TOP of Diligence.
@@ -861,49 +899,51 @@ def main() -> None:
     # the module grant — otherwise a lock notice explains the restriction. This
     # is how "a Maintenance preset cannot see the purchase price" is enforced
     # in the UI: the financial renderers are never invoked for that role.
-    with tab_subject:
-        # Property detail leads: the header card (photo, name, address,
-        # Favorite, Open Folder) identifies the deal, so it holds the top.
-        render_property_detail(prop, folder)
-        # Module C (§6.1): forced-seller distress score + evidence panel.
-        # Brian 2026-07-31: moved BELOW the property detail — it used to run
-        # first, which pushed the header card off the top of the tab.
-        st.divider()
-        from ui.radar_panel import render_radar
-        render_radar(prop)
-    with tab_perf:
-        if _authz.guard_module("comps", "Performance & Market"):
-            render_comps(prop, folder)
-    with tab_uw:
-        if _authz.guard_module("underwriting", "Underwriting"):
-            render_underwriting(prop, folder)
-    with tab_dd:
-        # Owner Intelligence (Module A) — gated internally by the skip_trace
-        # module grant, so a role with skip trace but not underwriting still
-        # sees it. Renders above the underwriting-gated diligence content.
-        from ui.skiptrace_panel import render_owner_intel
-        render_owner_intel(prop)
-        st.divider()
-        # Module B (§5): compliant outreach on the resolved contacts. Gated
-        # internally by the `outreach` module grant / `send_outreach` action.
-        from ui.outreach_panel import render_outreach
-        render_outreach(prop)
-        st.divider()
-        if _authz.guard_module("underwriting", "Due Diligence"):
-            # Acquisition Checklist sits at the TOP of Diligence now.
-            render_acquisition_checklist(prop, folder)
-            render_due_diligence(prop, folder)
-    with tab_wf:
-        if _authz.guard_module("waterfall", "Returns & Waterfall"):
-            render_waterfall(prop, folder)
-    with tab_owner:
-        if _authz.guard_module("lp_portal", "Investors"):
-            render_owner_portal(prop, folder)
-    with tab_summary:
-        if _authz.guard_module("documents", "Exec Summary"):
-            render_exec_summary(prop, folder)
-            # IC Memo Validator sits at the BOTTOM of Summary now.
-            render_ic_memo_validator(prop, folder)
+    import contextlib
+    with (_section_ctx if _section_ctx is not None else contextlib.nullcontext()):
+        if active_tab == "subject":
+            # Property detail leads: the header card (photo, name, address,
+            # Favorite, Open Folder) identifies the deal, so it holds the top.
+            render_property_detail(prop, folder)
+            # Module C (§6.1): forced-seller distress score + evidence panel.
+            # Brian 2026-07-31: moved BELOW the property detail — it used to
+            # run first, which pushed the header card off the top of the tab.
+            st.divider()
+            from ui.radar_panel import render_radar
+            render_radar(prop)
+        elif active_tab == "market":
+            if _authz.guard_module("comps", "Performance & Market"):
+                render_comps(prop, folder)
+        elif active_tab == "underwriting":
+            if _authz.guard_module("underwriting", "Underwriting"):
+                render_underwriting(prop, folder)
+        elif active_tab == "diligence":
+            # Owner Intelligence (Module A) — gated internally by the
+            # skip_trace module grant, so a role with skip trace but not
+            # underwriting still sees it. Above the underwriting-gated DD.
+            from ui.skiptrace_panel import render_owner_intel
+            render_owner_intel(prop)
+            st.divider()
+            # Module B (§5): compliant outreach on the resolved contacts.
+            # Gated internally by `outreach` grant / `send_outreach` action.
+            from ui.outreach_panel import render_outreach
+            render_outreach(prop)
+            st.divider()
+            if _authz.guard_module("underwriting", "Due Diligence"):
+                # Acquisition Checklist sits at the TOP of Diligence now.
+                render_acquisition_checklist(prop, folder)
+                render_due_diligence(prop, folder)
+        elif active_tab == "returns":
+            if _authz.guard_module("waterfall", "Returns & Waterfall"):
+                render_waterfall(prop, folder)
+        elif active_tab == "investors":
+            if _authz.guard_module("lp_portal", "Investors"):
+                render_owner_portal(prop, folder)
+        elif active_tab == "summary":
+            if _authz.guard_module("documents", "Exec Summary"):
+                render_exec_summary(prop, folder)
+                # IC Memo Validator sits at the BOTTOM of Summary now.
+                render_ic_memo_validator(prop, folder)
 
 
 if __name__ == "__main__":
