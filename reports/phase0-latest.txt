@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-03T09:30:11
+autopilot phase0 @ 2026-08-03T10:34:22
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,778,960
@@ -31,6 +31,7 @@ coords backfilled by address (multifamily): 205
 rent estimates stamped (HUD FMR blend): 18,928
 rents from scraped listings: 1
 unusable (no parcel/latlng): 0
+pruned from backbone (known < 10 units): 49,678  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
 Multifamily by city: Virginia Beach 15,858, Chesapeake 1,963, Norfolk 863, Newport News 244, Richmond 111
@@ -65,29 +66,29 @@ P0-1 GATE PASSED.
 P0-2 shadow parity: comparing against 13,657 legacy rows...
 
 legacy multifamily rows:  639
-matched to the 8R backbone: 475 (74.3%)  [125 by address, 314 by lat/lng, 36 by proximity]
-unit counts agree:        147/237
-year built agrees:        100/210
+matched to the 8R backbone: 467 (73.1%)  [106 by address, 317 by lat/lng, 44 by proximity]
+unit counts agree:        151/205
+year built agrees:        88/190
 
-comp-set replay subjects: 195  (+4 skipped - city has no 8R coordinates yet)
-avg comp-set overlap:     67.1%  (gate >= 90%)
+comp-set replay subjects: 196  (+3 skipped - city has no 8R coordinates yet)
+avg comp-set overlap:     70.7%  (gate >= 90%)
 avg-rent delta:           26.9%  (gate <= 5%)
 
 P0-2 GATE: not met yet
-crosswalk persisted:      475 legacy->8R mappings (property_crosswalk)
-(+32 unit disagreements resolved by multi-parcel footprint totals)
-match rate, covered cities only: 94.0%  (cities whose feed has multifamily data)
+crosswalk persisted:      467 legacy->8R mappings (property_crosswalk)
+(+30 unit disagreements resolved by multi-parcel footprint totals)
+match rate, covered cities only: 92.4%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
   Virginia Beach    174 ->   174 |    387 |    387
-  Norfolk           124 ->    96 |    856 |    204
-  Newport News      121 ->   120 |    283 |    283
+  Norfolk           124 ->    89 |    857 |    204
+  Newport News      121 ->   119 |    243 |    243
   Hampton            75 ->     5 |      0 |      0   <- feed has no usable multifamily data
-  Chesapeake         66 ->    66 |    522 |    522
+  Chesapeake         66 ->    66 |    515 |    515
   Portsmouth         45 ->    14 |      0 |      0   <- feed has no usable multifamily data
   Suffolk            34 ->     0 |      0 |      0   <- feed has no usable multifamily data
 
-Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,175, Chesapeake 133
+Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,176, Chesapeake 133
 
 Largest unit-count disagreements (check these matches):
   Acorn Grove: legacy 108 vs 8R 197
@@ -114,10 +115,11 @@ Learning apartment use codes from matched properties:
       [reject] code '7440': on 1 MF parcels, 10/94,295 citywide (0.0%) - only 1 supporting parcel(s), need 3
       [reject] code '4407': on 1 MF parcels, 14/94,295 citywide (0.0%) - only 1 supporting parcel(s), need 3
       [reject] code '2000': on 1 MF parcels, 3,417/94,295 citywide (3.6%) - only 1 supporting parcel(s), need 3
-  Portsmouth: 7 known-MF parcels matched
+  Portsmouth: 8 known-MF parcels matched
       [reject] code '7': on 2 MF parcels, 139/959 citywide (14.5%) - only 2 supporting parcel(s), need 3
       [reject] code '5': on 2 MF parcels, 80/959 citywide (8.3%) - only 2 supporting parcel(s), need 3
       [reject] code '20': on 1 MF parcels, 2/959 citywide (0.2%) - only 1 supporting parcel(s), need 3
+      [reject] code '3': on 1 MF parcels, 27/959 citywide (2.8%) - only 1 supporting parcel(s), need 3
       [reject] code '56': on 1 MF parcels, 10/959 citywide (1.0%) - only 1 supporting parcel(s), need 3
       [reject] code '61': on 1 MF parcels, 9/959 citywide (0.9%) - only 1 supporting parcel(s), need 3
   no new codes met the evidence bar this run
