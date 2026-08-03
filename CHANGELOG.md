@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.19.0.0.0 — 2026-08-03  ·  ingest the availability board + Apollo name-search
+Two things from the same session.
+
+**Availability-board ingestion (owner ask).** Scrapers can now carry a
+listing's per-unit "Available units" table (`UnitAvailability`), and
+`core.unit_signal` derives the underwriting signal a rent range hides: at-
+least-N vacancy, units available now, unit mix ("all 2br/1ba"), per-unit
+rent min/max, concession count, and the next turn date. Stored on
+`rent_listings` (schema-healed columns + a JSON snapshot) and shown on the
+listings panel as an **🏘️ Availability** line. Wording stays honest — the
+board is a FLOOR on vacancy, not the rent roll. Until each scraper parses
+the table, a floorplan-count fallback still gives a partial vacancy floor.
+
+**Apollo "nothing coming back" fix.** Two causes: (1) the V5.18.0 adapter's
+wire bugs (fixed in V5.18.2 — GET, `/v1/...`, query params); (2) org
+*enrich* matches best by domain, so a bare company name like "Nexus
+Management Company" enriched to nothing. Now it hits Apollo's name-based
+**org search** (`POST /v1/mixed_companies/search`) first and falls back to
+enrich. And a live provider that finds nothing now leaves a legible "no
+business contact found (apollo)" note instead of silently omitting the block
+— so an empty result reads as empty, not broken. Verified against Apollo's
+docs; live confirmation is host-only (sandbox can't reach api.apollo.io).
+
 ## V5.18.2.0.0 — 2026-08-03  ·  fix the Apollo adapter against the real API
 The V5.18.0 Apollo adapter was written without hitting the live endpoint and
 had three bugs that would each make the call fail and silently fall back to

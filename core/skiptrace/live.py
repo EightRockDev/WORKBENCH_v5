@@ -34,9 +34,11 @@ class ProviderError(RuntimeError):
     """A live vendor call failed (network, auth, or unexpected payload)."""
 
 
-def _post(url: str, *, headers: dict, json: dict) -> dict:
+def _post(url: str, *, headers: dict, json: dict | None = None,
+          params: dict | None = None) -> dict:
     try:
-        r = requests.post(url, headers=headers, json=json, timeout=_TIMEOUT)
+        r = requests.post(url, headers=headers, json=json, params=params,
+                          timeout=_TIMEOUT)
         r.raise_for_status()
         return r.json()
     except requests.RequestException as e:
@@ -332,29 +334,50 @@ class ApolloFirmographic:
     def __init__(self, api_key: str):
         self._key = api_key
 
-    def enrich_company(self, company: str, city=None, state=None):
-        from core.skiptrace.providers import BusinessContact
-        # Apollo org-enrich is a GET with match params in the QUERY string
-        # (domain / name / linkedin / website; at least one). We hold the
-        # company name. Auth is the X-Api-Key header. Verified against
-        # docs.apollo.io/reference/organization-enrichment (2026-08).
-        headers = {"Content-Type": "application/json", "Accept": "application/json",
-                   "Cache-Control": "no-cache", "X-Api-Key": self._key}
+    def _headers(self) -> dict:
+        return {"Content-Type": "application/json", "Accept": "application/json",
+                "Cache-Control": "no-cache", "X-Api-Key": self._key}
+
+    def _search_org(self, company: str) -> dict | None:
+        """Name-based org SEARCH — the right call for a bare company name.
+        Org ENRICH matches best by domain, which we don't have, so a name
+        like "Nexus Management Company" often enriches to nothing. Search
+        does fuzzy name matching. POST /v1/mixed_companies/search with the
+        term in the query string (Apollo's documented shape)."""
+        try:
+            data = _post(f"{self.BASE}/v1/mixed_companies/search",
+                         headers=self._headers(),
+                         params={"q_organization_name": company, "per_page": 1})
+        except ProviderError:
+            return None
+        orgs = _first(data, "organizations", "accounts", default=[]) or []
+        return orgs[0] if isinstance(orgs, list) and orgs else None
+
+    def _enrich_org(self, company: str) -> dict | None:
+        """Org ENRICH by name — GET, match params in the query string.
+        Verified against docs.apollo.io/reference/organization-enrichment."""
         try:
             data = _get(f"{self.BASE}/v1/organizations/enrich",
-                        headers=headers, params={"name": company})
+                        headers=self._headers(), params={"name": company})
         except ProviderError:
             return None
         org = _first(data, "organization", "organizations", default=None)
         if isinstance(org, list):
             org = org[0] if org else None
+        return org if isinstance(org, dict) else None
+
+    def enrich_company(self, company: str, city=None, state=None):
+        from core.skiptrace.providers import BusinessContact
+        if not company:
+            return None
+        # Search first (name is what we have), enrich as fallback.
+        org = self._search_org(company) or self._enrich_org(company)
         if not isinstance(org, dict):
             return None
         phone = _first(org, "phone", "primary_phone.number", "sanitized_phone",
                        default="") or ""
         website = _first(org, "website_url", "website", default="") or ""
-        # Best-available named contact: Apollo org enrich returns leadership
-        # under a few shapes depending on plan; take the first with a name.
+        # Best-available named contact when the plan returns leadership.
         contact_name = contact_title = ""
         people = _first(org, "people", "contacts", "leadership", default=[]) or []
         for p in (people if isinstance(people, list) else []):

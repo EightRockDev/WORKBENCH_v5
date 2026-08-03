@@ -276,12 +276,7 @@ def _render_latest_scrape(property_id: str, legacy_id: str) -> None:
         with sqlite3.connect(_listings_db()) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
-                "SELECT source, scrape_status, listing_url, listing_name, "
-                "       one_br_rent_low, one_br_rent_high, "
-                "       two_br_rent_low, two_br_rent_high, "
-                "       concession_text, concession_months_free, "
-                "       effective_one_br_rent, effective_two_br_rent, "
-                "       scraped_at, error_message "
+                "SELECT * "
                 "FROM rent_listings "
                 "WHERE property_id IN (?, ?) "
                 "ORDER BY scraped_at DESC LIMIT 4",
@@ -350,6 +345,39 @@ def _render_latest_scrape(property_id: str, legacy_id: str) -> None:
     squares_html += '</div>'
     st.markdown(squares_html, unsafe_allow_html=True)
 
+    _render_availability(rows, c)
+
+
+def _render_availability(rows, c) -> None:
+    """Vacancy / unit-mix signal from the availability board (owner ask
+    2026-08-03). Uses the most recent successful scrape that captured units."""
+    from core import unit_signal as us
+
+    best = None
+    for r in rows:
+        keys = r.keys() if hasattr(r, "keys") else []
+        if "units_available" not in keys or not r["units_available"]:
+            continue
+        best = r
+        break
+    if best is None:
+        return
+    sig = {k: (best[k] if k in best.keys() else None) for k in (
+        "units_available", "units_available_now", "next_available",
+        "unit_mix", "unit_rent_min", "unit_rent_max", "units_special_offers")}
+    line = us.headline(sig)
+    if not line:
+        return
+    st.markdown(
+        f'<div style="background:{c["bg2"]};border:1px solid {c["bdr"]};'
+        f'border-left:3px solid {c["ac"]};border-radius:6px;padding:8px 12px;'
+        f'margin-bottom:8px;font-size:12px;color:{c["tx"]}">'
+        f'🏘️ <b>Availability</b> — {line}'
+        f'<div style="font-size:10px;color:{c["tx3"]};margin-top:2px">'
+        f'From the listing\'s advertised units; a floor on vacancy, not the '
+        f'full rent roll.</div></div>',
+        unsafe_allow_html=True)
+
 
 def _scrape_one_property(property_id: str, legacy_id: str, prop: dict) -> int:
     """Run the scraper for a single property + all its configured sources.
@@ -396,11 +424,13 @@ def _scrape_one_property(property_id: str, legacy_id: str, prop: dict) -> int:
                 "effective_two_br_rent": None, "scrape_status": "not_found",
                 "error_message": None, "scraped_at": now,
                 "pull_generation": lp.PULL_GENERATION,
+                **lp._UNIT_SIGNAL_DEFAULTS,
             }
             try:
                 listing = cls().scrape_property(url)
                 if listing is not None:
                     base.update(lp._rent_bands(listing))
+                    base.update(lp._unit_signal(listing))
                     base["listing_name"] = listing.listing_name
                     base["concession_text"] = listing.concession_text
                     base["scrape_status"] = "success"

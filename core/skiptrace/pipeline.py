@@ -316,6 +316,13 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
             except Exception:      # noqa: BLE001 - enrichment never blocks
                 bc = None
             if bc is None:
+                # Live provider that returned nothing — record it so the card
+                # says "no business contact found" instead of silently
+                # omitting the block (the "nothing coming back" ambiguity).
+                vendor = getattr(firmographic, "name", "firmographic")
+                if "mock" not in vendor:
+                    poc["business_contact_note"] = (
+                        f"no business contact found ({vendor})")
                 continue
             res.total_cost_usd += bc.cost_usd
             res.spend_lines.append(_spend(org_id, bc.vendor, bc.query_id, bc.cost_usd))

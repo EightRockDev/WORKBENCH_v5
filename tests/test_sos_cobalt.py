@@ -334,3 +334,65 @@ def test_apollo_uses_get_with_query_params(monkeypatch):
 def test_apollo_returns_none_on_empty(monkeypatch):
     monkeypatch.setattr(live, "_get", lambda *a, **k: {"organization": {}})
     assert live.ApolloFirmographic("k").enrich_company("Nobody LLC") is None
+
+
+# ------------------------------------------ Apollo search-first + empty note
+
+def test_apollo_searches_by_name_first(monkeypatch):
+    """A bare company name ('Nexus Management Company') should hit the
+    name-SEARCH endpoint, not just domain-based enrich."""
+    seen = {}
+
+    def fake_post(url, *, headers, json=None, params=None):
+        seen["url"] = url
+        seen["params"] = params
+        return {"organizations": [{
+            "name": "Nexus Management Company", "phone": "(804) 555-0100",
+            "website_url": "https://nexusmgmt.com"}]}
+
+    monkeypatch.setattr(live, "_post", fake_post)
+    bc = live.ApolloFirmographic("k").enrich_company("Nexus Management Company")
+    assert seen["url"].endswith("/v1/mixed_companies/search")
+    assert seen["params"]["q_organization_name"] == "Nexus Management Company"
+    assert bc.phone == "+18045550100"
+    assert bc.company == "Nexus Management Company"
+
+
+def test_apollo_falls_back_to_enrich_when_search_is_empty(monkeypatch):
+    monkeypatch.setattr(live, "_post", lambda *a, **k: {"organizations": []})
+    monkeypatch.setattr(live, "_get", lambda *a, **k: {"organization": {
+        "name": "RAM Partners LLC", "website_url": "https://rampartners.com"}})
+    bc = live.ApolloFirmographic("k").enrich_company("RAM Partners LLC")
+    assert bc and bc.website.endswith("rampartners.com")
+
+
+def test_apollo_all_empty_is_none(monkeypatch):
+    monkeypatch.setattr(live, "_post", lambda *a, **k: {"organizations": []})
+    monkeypatch.setattr(live, "_get", lambda *a, **k: {"organization": {}})
+    assert live.ApolloFirmographic("k").enrich_company("Nobody LLC") is None
+
+
+def test_a_live_firmographic_miss_leaves_a_legible_note():
+    """The 'nothing coming back' ambiguity: a live provider that finds
+    nothing must annotate the POC, not silently omit the block."""
+    rec = _RecordingTier()
+
+    class _NoOfficer:
+        def resolve_entity(self, entity_name, state):
+            return providers.SOSResult(
+                entity_name=entity_name, jurisdiction="VA", filing_id="1",
+                officers=[], registered_agent="", confidence=0.4,
+                vendor="cobalt", query_id="q", cost_usd=1.0)
+
+    class _EmptyFirm:
+        name = "apollo"
+        def enrich_company(self, *a, **k): return None
+
+    prop = dict(property_id="8R-VA-9", owner="Spada III LLC", state="VA",
+                management_company="Nexus Management Company")
+    res = pipeline.resolve_contacts(
+        "org", prop,
+        registry=_reg_with_firm(rec, _NoOfficer(), _EmptyFirm()),
+        persist=False)
+    pm = next(p for p in res.pocs if p["role"] == "pm")
+    assert "no business contact found (apollo)" in pm["business_contact_note"]

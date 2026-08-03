@@ -54,13 +54,26 @@ _ROW_COLS = (
     "listing_name", "one_br_rent_low", "one_br_rent_high",
     "two_br_rent_low", "two_br_rent_high", "concession_text",
     "effective_one_br_rent", "effective_two_br_rent", "scrape_status",
-    "error_message", "scraped_at", "pull_generation")
+    "error_message", "scraped_at", "pull_generation",
+    # Availability board (owner ask 2026-08-03): per-unit vacancy signal
+    # derived by core.unit_signal.summarize_units. Added via schema-heal so
+    # existing rent_listings tables gain them on the next pull.
+    "units_available", "units_available_now", "next_available", "unit_mix",
+    "unit_rent_min", "unit_rent_max", "units_special_offers", "units_json")
 
 
 _TEXT_COLS = frozenset({
     "property_id", "name", "address", "city", "source", "listing_url",
     "listing_name", "concession_text", "scrape_status", "error_message",
-    "scraped_at"})
+    "scraped_at", "next_available", "unit_mix", "units_json"})
+
+
+# The availability-board keys summarize_units() emits, defaulted onto every
+# row so a listing with no board still writes a valid row.
+_UNIT_SIGNAL_DEFAULTS = {
+    "units_available": None, "units_available_now": None,
+    "next_available": None, "unit_mix": None, "unit_rent_min": None,
+    "unit_rent_max": None, "units_special_offers": None, "units_json": None}
 
 
 def _add_missing_columns(conn, table: str) -> list[str]:
@@ -156,6 +169,32 @@ def favorite_universe() -> list[dict]:
             d.pop("legacy_id", None)
             out.append(d)
     return out
+
+
+def _unit_signal(listing) -> dict:
+    """Availability-board signal for a listing (owner ask 2026-08-03).
+
+    Prefers the per-unit ``units`` board when the scraper captured one; falls
+    back to floorplan ``available_units`` counts so a partial signal lands
+    even before every scraper parses the unit table. Returns exactly the
+    availability columns in `_ROW_COLS`.
+    """
+    from core import unit_signal as us
+    units = getattr(listing, "units", None) or []
+    if units:
+        return us.summarize_units(units)
+    # Floorplan fallback: sum the advertised per-floorplan unit counts.
+    total = 0
+    have = False
+    for fp in (listing.floorplans or []):
+        n = getattr(fp, "available_units", None)
+        if n:
+            total += int(n)
+            have = True
+    sig = dict(_UNIT_SIGNAL_DEFAULTS)
+    if have:
+        sig["units_available"] = total
+    return sig
 
 
 def _rent_bands(listing) -> dict:
@@ -379,7 +418,8 @@ def pull_listings(db_path: Path | None = None,
                         "error_message": None,
                         "scraped_at": dt.datetime.now().isoformat(
                             timespec="seconds"),
-                        "pull_generation": PULL_GENERATION}
+                        "pull_generation": PULL_GENERATION,
+                        **_UNIT_SIGNAL_DEFAULTS}
                 try:
                     url = (manual.get(pid, {}).get(source_id)
                            or _cached_url(conn, pid, source_id)
@@ -392,6 +432,7 @@ def pull_listings(db_path: Path | None = None,
                         listing = scraper.scrape_property(url)
                         if listing is not None:
                             base.update(_rent_bands(listing))
+                            base.update(_unit_signal(listing))
                             base["listing_name"] = listing.listing_name
                             base["concession_text"] = listing.concession_text
                             base["scrape_status"] = "success"

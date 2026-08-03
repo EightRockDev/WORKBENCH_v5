@@ -43,6 +43,23 @@ class FloorplanRent:
 
 
 @dataclasses.dataclass
+class UnitAvailability:
+    """One row of a listing's "Available units" table (owner ask 2026-08-03).
+
+    A live unit board is real underwriting signal a rent RANGE hides: how many
+    units are actually on the market right now, the true bed/bath mix, per-
+    unit asking rent, when each turns, and which carry a concession. Every
+    field is optional - sites publish different columns."""
+    unit: str | None = None
+    bedrooms: int | None = None
+    bathrooms: float | None = None
+    sqft: int | None = None
+    available: str | None = None       # "Now", a date string, or None
+    base_rent: float | None = None
+    special_offer: bool = False
+
+
+@dataclasses.dataclass
 class ScrapedListing:
     """The raw data each scraper returns. Persisted as a single row in
     ``rent_listings`` after concession parsing + effective rent calc."""
@@ -52,6 +69,7 @@ class ScrapedListing:
     listing_name: str | None
     listing_address: str | None
     floorplans: list[FloorplanRent] = dataclasses.field(default_factory=list)
+    units: list[UnitAvailability] = dataclasses.field(default_factory=list)
     concession_text: str | None = None           # raw banner copy
     amenities: list[str] = dataclasses.field(default_factory=list)
     photo_urls: list[str] = dataclasses.field(default_factory=list)
