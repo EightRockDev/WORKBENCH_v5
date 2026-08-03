@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.18.0.0.0 — 2026-08-03  ·  firmographic (business-contact) enrichment
+The realistic contact for an institutional owner whose LLC names no member —
+and for the management company — is the firm's main line, not a personal
+cell that isn't in any skip-trace database. New enrichment fills that:
+
+- **`BusinessContact` + provider slot.** A firmographic provider on the
+  registry: mock (deterministic, $0) by default, **Apollo** live when
+  `APOLLO_API_KEY` is set. Returns company phone, email, website, and a
+  best-available named contact (acquisitions/asset-management).
+- **Applied where individuals fall short.** The pipeline enriches the
+  management-company POC and any `entity_unpierced` owner. The result is
+  clearly a **business main line — a manual call**, never compliance-stamped
+  for the auto-dialer (that gate is for personal numbers).
+- **Surfaced on the card** under a "🏢 Business contact" block, with the
+  provider status line now showing `firmographic: live (apollo)`.
+
+So 100 PRINCE AVENUE LLC, which pierces to no individual, now shows RAM
+Partners' business line/website/contact instead of a dead end. Personal skip
+trace (BatchData/Trestle/Cobalt) is unchanged for owners who do resolve to a
+person. Nine new tests; Apollo parse is defensive and falls back to mock.
+
 ## V5.17.2.0.0 — 2026-08-03  ·  honest labeling when an LLC can't be pierced to a person
 100 PRINCE AVENUE LLC came back as "Principal (LLC-pierced)" with the LLC name
 as the principal and no phone/email — because Georgia publishes no member for

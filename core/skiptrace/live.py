@@ -315,6 +315,63 @@ def _is_commercial_agent(name: str) -> bool:
     return any(tok in low for tok in _COMMERCIAL_AGENTS)
 
 
+# ---------------------------------------------------------------------------
+# Apollo.io — firmographic / business-contact enrichment (§4 enrichment).
+# The realistic contact for an institutional owner whose LLC names no member:
+# the management company / sponsor's main line, website, and a named
+# acquisitions/asset-management contact. NOT skip trace, NOT auto-dialer
+# compliant (a business main line is a manual call). Keyed by APOLLO_API_KEY.
+# Docs: https://apolloio.github.io/apollo-api-docs/
+# ---------------------------------------------------------------------------
+
+class ApolloFirmographic:
+    name = "apollo"
+    BASE = os.environ.get("APOLLO_BASE", "https://api.apollo.io")
+    COST_PER_LOOKUP = float(os.environ.get("APOLLO_COST", "0.10"))
+
+    def __init__(self, api_key: str):
+        self._key = api_key
+
+    def enrich_company(self, company: str, city=None, state=None):
+        from core.skiptrace.providers import BusinessContact
+        headers = {"Content-Type": "application/json", "Accept": "application/json",
+                   "X-Api-Key": self._key}
+        try:
+            data = _post(f"{self.BASE}/api/v1/organizations/enrich",
+                         headers=headers, json={"name": company})
+        except ProviderError:
+            return None
+        org = _first(data, "organization", "organizations", default=None)
+        if isinstance(org, list):
+            org = org[0] if org else None
+        if not isinstance(org, dict):
+            return None
+        phone = _first(org, "phone", "primary_phone.number", "sanitized_phone",
+                       default="") or ""
+        website = _first(org, "website_url", "website", default="") or ""
+        # Best-available named contact: Apollo org enrich returns leadership
+        # under a few shapes depending on plan; take the first with a name.
+        contact_name = contact_title = ""
+        people = _first(org, "people", "contacts", "leadership", default=[]) or []
+        for p in (people if isinstance(people, list) else []):
+            nm = _first(p, "name", "full_name", default=None)
+            if nm:
+                contact_name = nm
+                contact_title = _first(p, "title", "headline", default="") or ""
+                break
+        email = _first(org, "email", "primary_email", default="") or ""
+        if not (phone or website or email or contact_name):
+            return None
+        return BusinessContact(
+            company=_first(org, "name", default=company),
+            phone=_e164(phone) if phone else "",
+            email=email, website=website,
+            contact_name=contact_name, contact_title=contact_title,
+            vendor=self.name,
+            query_id=str(_first(org, "id", default="apollo")),
+            cost_usd=self.COST_PER_LOOKUP)
+
+
 def _e164(num: str) -> str:
     digits = "".join(c for c in str(num) if c.isdigit())
     if len(digits) == 10:

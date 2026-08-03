@@ -299,6 +299,36 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
             "compliance": {"stamped_at": None, "expires_at": None, "revocations": []},
         })
 
+    # --- Firmographic enrichment (business contact) ------------------------
+    # For an institutional owner whose LLC names no member, and for the
+    # management company, the reachable contact is the FIRM's main line, not
+    # an individual's cell. Enrich those POCs with a business contact. This
+    # is a directory lookup, not skip trace, and is never auto-dialer stamped.
+    firmographic = getattr(reg, "firmographic", None)
+    if firmographic is not None:
+        for poc in res.pocs:
+            if poc.get("role") not in ("pm", "entity_unpierced"):
+                continue
+            company = (poc.get("person") or {}).get("full_name", "")
+            try:
+                bc = firmographic.enrich_company(
+                    company, prop.get("city"), prop.get("state"))
+            except Exception:      # noqa: BLE001 - enrichment never blocks
+                bc = None
+            if bc is None:
+                continue
+            res.total_cost_usd += bc.cost_usd
+            res.spend_lines.append(_spend(org_id, bc.vendor, bc.query_id, bc.cost_usd))
+            poc["business_contact"] = {
+                "company": bc.company, "phone": bc.phone, "email": bc.email,
+                "website": bc.website, "contact_name": bc.contact_name,
+                "contact_title": bc.contact_title, "vendor": bc.vendor,
+            }
+            poc.setdefault("provenance", []).append({
+                "field": "business_contact", "vendor": bc.vendor,
+                "query_id": bc.query_id, "cost_usd": bc.cost_usd,
+                "retrieved_at": now.isoformat()})
+
     res.total_cost_usd = round(res.total_cost_usd, 4)
 
     # --- S7 PERSIST & MONITOR ----------------------------------------------

@@ -78,7 +78,8 @@ def test_trestle_maps_validation(monkeypatch):
 
 def test_registry_all_mock_by_default():
     reg = prov.get_registry()
-    assert reg.status == {"sos": "mock", "skiptrace": "mock", "validation": "mock"}
+    assert reg.status == {"sos": "mock", "skiptrace": "mock",
+                          "validation": "mock", "firmographic": "mock"}
 
 
 def test_registry_goes_live_per_key(monkeypatch):

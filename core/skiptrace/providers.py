@@ -85,6 +85,27 @@ class EmailValidation:
     cost_usd: float
 
 
+@dataclass(frozen=True)
+class BusinessContact:
+    """Firmographic contact for a COMPANY (§4 enrichment), not an individual.
+
+    The realistic contact for an institutional owner whose LLC names no
+    member: the management company / sponsor's main line, website, and a
+    best-available named contact (acquisitions/asset-management). This is a
+    directory/firmographic lookup, not skip trace, and it is NOT compliance-
+    stamped for auto-dialing - a business main line is a manual call.
+    """
+    company: str
+    phone: str
+    email: str
+    website: str
+    contact_name: str
+    contact_title: str
+    vendor: str
+    query_id: str
+    cost_usd: float
+
+
 # ---------------------------------------------------------------------------
 # Interfaces (Protocol = structural typing; adapters need no base class)
 # ---------------------------------------------------------------------------
@@ -163,6 +184,32 @@ class MockSOS:
             # VA SCC free in home market; expansion-market SOS costs $0.03-$2.00
             cost_usd=0.0 if (state or "VA") == "VA" else 0.50,
         )
+
+
+class MockFirmographic:
+    """Mock business-contact enrichment (deterministic, $0). Real vendor is
+    Apollo/PDL, keyed in get_registry()."""
+
+    name = "mock-firmographic"
+
+    def enrich_company(self, company: str, city: str | None = None,
+                       state: str | None = None) -> BusinessContact | None:
+        if not company:
+            return None
+        base = _h("firm" + company)
+        slug = "".join(c for c in company.lower() if c.isalnum())[:18] or "firm"
+        contact = _principal_name_for(company + "|amgr")
+        return BusinessContact(
+            company=company,
+            phone=f"+1{200 + base % 700:03d}{base % 900 + 100:03d}"
+                  f"{base % 9000 + 1000:04d}",
+            email=f"acquisitions@{slug}.com",
+            website=f"https://{slug}.com",
+            contact_name=contact,
+            contact_title=_pick(company + "|title",
+                                ["Acquisitions", "Asset Management",
+                                 "Managing Principal", "Director of Investments"]),
+            vendor=self.name, query_id=f"firm-{base:x}", cost_usd=0.0)
 
 
 class _SOSWaterfall:
@@ -295,6 +342,7 @@ class ProviderRegistry:
     sos: SOSProvider
     trace_waterfall: list[SkipTraceProvider] = field(default_factory=list)
     validation: ValidationProvider = None  # type: ignore[assignment]
+    firmographic: object = None            # BusinessContact enrichment (opt.)
     status: dict = field(default_factory=dict)  # {'sos': 'live'|'mock', ...}
 
 
@@ -305,7 +353,9 @@ def _mock_registry() -> ProviderRegistry:
             [MockTier1Append(), MockTier2BatchData(), MockTier3Enformion()],
             key=lambda p: p.tier),
         validation=MockTrestle(),
-        status={"sos": "mock", "skiptrace": "mock", "validation": "mock"},
+        firmographic=MockFirmographic(),
+        status={"sos": "mock", "skiptrace": "mock", "validation": "mock",
+                "firmographic": "mock"},
     )
 
 
@@ -358,5 +408,16 @@ def get_registry() -> ProviderRegistry:
     else:
         validation, status["validation"] = MockTrestle(), "mock"
 
+    # Firmographic (business contact for a company). Apollo if keyed, else
+    # mock. This is the realistic path to an institutional owner whose LLC
+    # names no member - the manager/sponsor's main line, not skip trace.
+    apollo_key = os.environ.get("APOLLO_API_KEY")
+    if apollo_key:
+        firmographic, status["firmographic"] = (
+            live.ApolloFirmographic(apollo_key), "live (apollo)")
+    else:
+        firmographic, status["firmographic"] = MockFirmographic(), "mock"
+
     return ProviderRegistry(sos=sos, trace_waterfall=waterfall,
-                            validation=validation, status=status)
+                            validation=validation, firmographic=firmographic,
+                            status=status)

@@ -120,6 +120,7 @@ def _render_poc(poc: dict) -> None:
         # phone/email lines that read like a failed lookup.
         if role == "entity_unpierced":
             st.markdown(f"ℹ️ _{person.get('unpierced_note', 'no individual on the state record')}_")
+            _render_business_contact(poc.get("business_contact"))
             prov = poc.get("provenance") or []
             if prov:
                 vendors = ", ".join(sorted({p['vendor'] for p in prov}))
@@ -171,6 +172,8 @@ def _render_poc(poc: dict) -> None:
             if names:
                 st.caption(f"Relatives / associates: {names}")
 
+        _render_business_contact(poc.get("business_contact"))
+
         others = poc.get("other_properties") or []
         if others:
             st.caption(f"Portfolio: also owns {len(others)} other parcel(s) "
@@ -184,3 +187,24 @@ def _render_poc(poc: dict) -> None:
             stamp = comp.get("expires_at")
             st.caption(f"Provenance: {vendors} · resolved cost ${total:.2f}"
                        + (f" · DNC stamp valid to {stamp[:10]}" if stamp else ""))
+
+
+def _render_business_contact(bc: dict | None) -> None:
+    """The firm's directory contact — for a management company or an
+    institutional owner with no individual on record. A business main line,
+    so it's a manual call (not compliance-stamped for the dialer)."""
+    if not bc:
+        return
+    who = bc.get("contact_name")
+    title = bc.get("contact_title")
+    header = "🏢 **Business contact**"
+    if who:
+        header += f" — {who}" + (f", {title}" if title else "")
+    st.markdown(header)
+    if bc.get("phone"):
+        st.markdown(f'&nbsp;&nbsp;📞 <b>{bc["phone"]}</b> · <i>main line — manual call</i>',
+                    unsafe_allow_html=True)
+    if bc.get("email"):
+        st.markdown(f'&nbsp;&nbsp;✉️ {bc["email"]}', unsafe_allow_html=True)
+    if bc.get("website"):
+        st.markdown(f'&nbsp;&nbsp;🌐 {bc["website"]}')

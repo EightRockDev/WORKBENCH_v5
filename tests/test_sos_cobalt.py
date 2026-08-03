@@ -258,3 +258,67 @@ def test_a_pierced_human_is_still_a_principal():
                                     registry=_reg(rec, _StubSOS("GA")),
                                     persist=False)
     assert res.pocs[0]["role"] == "principal"     # StubSOS names Grant Cardone
+
+
+# ------------------------------------------ firmographic enrichment
+
+def _reg_with_firm(rec, sos, firm):
+    r = providers.ProviderRegistry(
+        sos=sos, trace_waterfall=[rec], validation=_Val(),
+        firmographic=firm,
+        status={"sos": "live (cobalt)", "skiptrace": "live (batchdata)",
+                "validation": "live (trestle)", "firmographic": "mock"})
+    return r
+
+
+def test_an_unpierced_entity_gets_a_business_contact():
+    """The realistic contact for an institutional owner: the firm's line."""
+    rec = _RecordingTier()
+
+    class _NoOfficer:
+        def resolve_entity(self, entity_name, state):
+            return providers.SOSResult(
+                entity_name=entity_name, jurisdiction="GA", filing_id="1",
+                officers=[], registered_agent="RAM Partners LLC",
+                confidence=0.4, vendor="cobalt", query_id="q", cost_usd=1.0)
+
+    prop = dict(property_id="8R-GA-9", owner="100 Prince Avenue LLC",
+                state="GA", city="Athens", management_company="RAM Partners LLC")
+    res = pipeline.resolve_contacts(
+        "org", prop,
+        registry=_reg_with_firm(rec, _NoOfficer(), providers.MockFirmographic()),
+        persist=False)
+    owner = next(p for p in res.pocs if p["role"] == "entity_unpierced")
+    bc = owner.get("business_contact")
+    assert bc and bc["phone"] and bc["email"] and bc["website"]
+
+
+def test_the_management_company_poc_is_enriched():
+    rec = _RecordingTier()
+
+    class _NoPierce:
+        def resolve_entity(self, *a): return None
+    prop = dict(property_id="8R-1", owner="Jane Roe", state="GA",
+                management_company="RAM Partners LLC")
+    res = pipeline.resolve_contacts(
+        "org", prop,
+        registry=_reg_with_firm(rec, _NoPierce(), providers.MockFirmographic()),
+        persist=False)
+    pm = next(p for p in res.pocs if p["role"] == "pm")
+    assert pm.get("business_contact"), "the PM should carry a business contact"
+
+
+def test_apollo_parse_is_defensive(monkeypatch):
+    payload = {"organization": {
+        "name": "RAM Partners LLC", "phone": "(404) 555-1212",
+        "website_url": "https://rampartners.com",
+        "people": [{"name": "Pat Lee", "title": "Acquisitions"}]}}
+    monkeypatch.setattr(live, "_post", lambda *a, **k: payload)
+    bc = live.ApolloFirmographic("k").enrich_company("RAM Partners LLC")
+    assert bc.phone == "+14045551212"
+    assert bc.contact_name == "Pat Lee" and bc.website.endswith("rampartners.com")
+
+
+def test_apollo_returns_none_on_empty(monkeypatch):
+    monkeypatch.setattr(live, "_post", lambda *a, **k: {"organization": {}})
+    assert live.ApolloFirmographic("k").enrich_company("Nobody LLC") is None
