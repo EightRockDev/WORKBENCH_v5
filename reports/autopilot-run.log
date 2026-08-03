@@ -2396,3 +2396,5 @@ Checked 107 packages in 10ms
 [phase0] exit 0 -> phase0-latest.txt
 [publish] pushed to GitHub
 [alerts] exit 0 -> alerts-latest.txt
+[publish] pushed to GitHub
+[preflight] exit 0 -> cutover-preflight.txt
