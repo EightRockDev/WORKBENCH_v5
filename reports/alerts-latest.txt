@@ -1,8 +1,10 @@
-autopilot alerts @ 2026-08-03T14:41:30
+autopilot alerts @ 2026-08-03T18:24:01
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 304 - new_mf 304
-  showing the 25 most recent of 304
+alert sweep, NEW this cycle: 2 multifamily, 0 unit-count moves, 0 ownership changes
+OPEN alerts (carried forward): 306 - new_mf 306
+  showing the 25 most recent of 306
+  [new_mf] New multifamily on the backbone: 8R-51650-d90f05ffc736  (12 units · Hampton)
+  [new_mf] New multifamily on the backbone: 8R-51650-8888a1230bd5  (10 units · Hampton)
   [new_mf] New multifamily on the backbone: 8R-51760-3082390d682a  (63 units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-c5a867bf38e7  (16 units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-bf4fd5bf4712  (15 units · Richmond)
@@ -26,5 +28,3 @@ OPEN alerts (carried forward): 304 - new_mf 304
   [new_mf] New multifamily on the backbone: 8R-51760-fd8b47dac36a  (28 units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-c3f801efd789  (13 units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-6c4d72aa2fdf  (13 units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-0dcf97a79e27  (11 units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-c2fc7a9b7f81  (13 units · Richmond)
