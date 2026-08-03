@@ -12,6 +12,36 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.16.3.0.0 — 2026-08-03  ·  stop re-doing unchanged work + passcode once per device
+The app was "exceptionally slow" and pages showed content twice. The twice
+is Streamlit's stale-element ghosting — the faded copy is the previous
+render lingering through a long rerun. The slowness had a server-side cause:
+autopilot cycles chain continuously in dev cadence, and every cycle
+re-downloaded ~1M municipal records and rebuilt the whole spine from
+identical inputs, saturating the same box that serves the app.
+
+- **Muni pull freshness** (`MUNI_REFRESH_DAYS = 3`): a feed whose rows were
+  pulled within the window skips without touching the network. A NEW feed
+  URL (discovery found something better) is never fresh; an empty prior
+  pull is never fresh; `ER_MUNI_FORCE=1` overrides.
+- **Spine rebuild skip**: `run_phase0` fingerprints everything the build
+  consumes — muni rows, learned use codes, scraped rents, plus
+  `SPINE_BUILD_GENERATION` — and skips the rebuild when nothing moved,
+  reprinting the stored full report so the cycle's report file keeps its
+  gate numbers. The stored fingerprint is PRE-run state, so codes learned
+  during a run always trigger the next rebuild. `ER_PHASE0_FORCE=1` forces.
+- **Coverage tab cached** (10 min): `st.tabs` renders every tab's body on
+  every rerun, so its backbone GROUP BY was taxing every widget click in
+  the CRM module.
+- **Passcode once per device** (owner ask): a correct entry stamps an
+  HMAC-derived token into the URL — refreshes and bookmarks keep it, so
+  the prompt is once per device, not once per tab-session. The passcode
+  itself never appears in the URL, and changing it invalidates every
+  remembered device. To change it: re-run `install-lan-service.ps1` (it
+  prompts; `-KeepPasscode` reuses). Real per-user logins are the Auth0/
+  Entra step (§9.4) — the admin page and 18-role library are already
+  waiting behind it.
+
 ## V5.16.2.0.0 — 2026-08-03  ·  the backbone drops single-family (owner directive)
 Owner: "Filter out all single family homes... Only 10 units or greater."
 

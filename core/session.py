@@ -42,6 +42,7 @@ def require_passcode(st) -> None:
     Once OIDC is configured the real login supersedes this; the variable can
     then be removed from ``.env``.
     """
+    import hashlib
     import hmac
 
     expected = os.getenv("ER_APP_PASSCODE", "").strip()
@@ -49,6 +50,22 @@ def require_passcode(st) -> None:
         return
     if st.session_state.get("_passcode_ok"):
         return
+    # Remember-this-device (owner ask 2026-08-03: "enter it once"). A
+    # correct entry stamps a derived token into the URL; the browser keeps
+    # query params across refreshes and a bookmark keeps them forever, so
+    # the prompt happens once per device instead of once per tab-session.
+    # The token is an HMAC derivation - the passcode itself never appears
+    # in the URL - and changing the passcode invalidates every remembered
+    # device at once. Passcode-tier convenience, not auth: real per-user
+    # login (OIDC, section 9.4) supersedes this whole gate when configured.
+    device_token = hmac.new(expected.encode(), b"8r-device-v1",
+                            hashlib.sha256).hexdigest()[:20]
+    try:
+        if st.query_params.get("k") == device_token:
+            st.session_state["_passcode_ok"] = True
+            return
+    except Exception:
+        pass                # older Streamlit without st.query_params
     st.markdown("## \U0001f512 Eight Rock Workbench")
     st.caption("Enter the workbench passcode to continue.")
     with st.form("passcode_gate"):
@@ -56,6 +73,10 @@ def require_passcode(st) -> None:
         submitted = st.form_submit_button("Enter", type="primary")
     if submitted and hmac.compare_digest(entered.strip().encode(), expected.encode()):
         st.session_state["_passcode_ok"] = True
+        try:
+            st.query_params["k"] = device_token   # survives refresh; bookmarkable
+        except Exception:
+            pass
         return          # unlocked - render the app in this same run
     if submitted:
         st.error("Wrong passcode.")

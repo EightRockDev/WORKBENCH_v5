@@ -22,9 +22,17 @@ from core import rollout
 from data.db import DB_PATH
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def _coverage_cached():
+    """st.tabs renders EVERY tab's body on EVERY rerun, so an uncached
+    GROUP BY over the backbone taxed every widget interaction in the whole
+    CRM module. Ten minutes matches the nightly-cycle granularity."""
+    return rollout.coverage(DB_PATH)
+
+
 def render_coverage() -> None:
     c = config.COLORS
-    rows = rollout.coverage(DB_PATH)
+    rows = _coverage_cached()
     live = [r for r in rows if r.live]
     total_doors = sum(r.doors for r in live)
     total_records = sum(r.records for r in live)

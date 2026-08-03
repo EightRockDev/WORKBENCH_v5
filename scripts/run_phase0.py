@@ -101,6 +101,46 @@ def main() -> int:
         print("or run etl_munidata.py here to pull fresh municipal data.")
         return 1
 
+    # Skip the whole rebuild when nothing it consumes has moved. The
+    # autopilot chains cycles continuously in dev cadence, and rebuilding a
+    # ~1M-row spine hourly from identical inputs starved the office server -
+    # the app crawled and Streamlit reruns ghosted. The stored fingerprint is
+    # PRE-run state: anything this run changes (learned codes, new rents)
+    # makes the next run's fingerprint differ, so a fix always applies.
+    import contextlib
+    import io
+    import os
+    fp = phase0.spine_input_fingerprint(db)
+    force = os.environ.get("ER_PHASE0_FORCE", "").strip() in ("1", "true", "yes")
+    if not force and fp == phase0.load_spine_meta(db, "fingerprint"):
+        prev = phase0.load_spine_meta(db, "last_report")
+        if prev:
+            print("phase0: inputs unchanged since the last build - rebuild "
+                  "skipped (ER_PHASE0_FORCE=1 to force).")
+            print("Last full report follows so the gate numbers stay in "
+                  "this cycle's report file:")
+            print()
+            print(prev, end="")
+            return 0
+
+    buf = io.StringIO()
+    real = sys.stdout
+
+    class _Tee(io.TextIOBase):
+        def write(self, text):
+            buf.write(text)
+            real.write(text)
+            return len(text)
+
+    with contextlib.redirect_stdout(_Tee()):
+        rc = _phase0_flow(db)
+    if rc == 0:
+        phase0.save_spine_meta(db, "fingerprint", fp)
+        phase0.save_spine_meta(db, "last_report", buf.getvalue())
+    return rc
+
+
+def _phase0_flow(db) -> int:
     n = phase0.has_muni_records(db)
     print(f"Database: {db}")
     print(f"Assessor records available: {n:,}")

@@ -703,6 +703,21 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — a batch pipeline sharing a box with the app IS an app feature (2026-08-03)
+
+"The entire site is running exceptionally slow. It's showing lots of
+information twice." The twice was Streamlit stale-element ghosting — faded
+previous-render copies visible because reruns took so long. The cause was
+not in the UI at all: continuously-chained autopilot cycles re-downloaded
+~1M muni records and rebuilt the spine from IDENTICAL inputs every cycle on
+the same machine serving Streamlit. **When the app and the pipeline share a
+host, every wasted pipeline cycle is a UI latency bug.** Fix shape is the
+listings lesson generalized: every expensive step skips against an INPUT
+fingerprint (+ a code generation so fixes always apply), never against the
+clock alone — `_feed_fresh` (muni), `spine_input_fingerprint` (phase0), each
+with a force env. Also: `st.tabs` renders EVERY tab body on every rerun —
+anything heavy behind a tab needs `st.cache_data`.
+
 ## Lesson — prune the known, never the unknown (2026-08-03)
 
 Owner directive: only 10+ unit properties matter. The safe implementation

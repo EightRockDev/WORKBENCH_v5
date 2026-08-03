@@ -774,6 +774,59 @@ def build_spine(db_path: Path,
     return report
 
 
+# Bump when the BUILD's behavior changes (new classification rule, new
+# aliasing, prune logic...) so an unchanged-inputs skip cannot pin an old
+# spine under new code. Same pattern, same reason as listings
+# PULL_GENERATION: a fix that cannot run is indistinguishable from no fix.
+SPINE_BUILD_GENERATION = 1
+
+
+def spine_input_fingerprint(db_path: Path) -> str:
+    """Hash of everything the spine build consumes.
+
+    The autopilot chains cycles continuously in dev cadence; rebuilding a
+    ~1M-row spine when NONE of its inputs moved starved the office server
+    (the app crawled, reruns ghosted stale elements). Inputs: the muni
+    cache, learned use codes, and scraped rents - plus the code generation
+    above.
+    """
+    import hashlib
+    parts = [f"gen={SPINE_BUILD_GENERATION}"]
+    with sqlite3.connect(db_path) as conn:
+        for label, sql in (
+                ("muni", "SELECT COUNT(*), MAX(pulled_at) FROM muni_records"),
+                ("learned", "SELECT COUNT(*), MAX(learned_at) "
+                            "FROM learned_mf_use_codes"),
+                ("rents", "SELECT COUNT(*), MAX(scraped_at) "
+                          "FROM rent_listings")):
+            try:
+                n, latest = conn.execute(sql).fetchone()
+            except sqlite3.Error:
+                n, latest = 0, None
+            parts.append(f"{label}={n}:{latest}")
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
+
+
+def load_spine_meta(db_path: Path, key: str) -> str | None:
+    try:
+        with sqlite3.connect(db_path) as conn:
+            row = conn.execute(
+                "SELECT value FROM spine_meta WHERE key = ?", (key,)).fetchone()
+        return row[0] if row else None
+    except sqlite3.Error:
+        return None
+
+
+def save_spine_meta(db_path: Path, key: str, value: str) -> None:
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("CREATE TABLE IF NOT EXISTS spine_meta "
+                     "(key TEXT PRIMARY KEY, value TEXT)")
+        conn.execute("INSERT INTO spine_meta (key, value) VALUES (?, ?) "
+                     "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                     (key, value))
+        conn.commit()
+
+
 def prune_backbone(conn: sqlite3.Connection) -> int:
     """Drop rows with a KNOWN unit count below 10 from the backbone
     (owner directive 2026-08-03: single-family parcels are waste).

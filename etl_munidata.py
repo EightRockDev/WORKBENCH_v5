@@ -473,8 +473,43 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(_MUNI_SCHEMA)
 
 
+# Assessor rolls change on assessment cycles (annual) and permit feeds
+# weekly at most. Re-downloading ~1M records every autopilot cycle was pure
+# waste - it saturated the office server's CPU/disk (the app crawled and
+# Streamlit reruns ghosted), hammered the city portals, and never yielded a
+# new row. A feed re-pulls when its stamp ages out, when its URL/where
+# changes (discovery found something better), or on ER_MUNI_FORCE=1.
+MUNI_REFRESH_DAYS = 3
+
+
+def _feed_fresh(conn: sqlite3.Connection, feed: FeedSpec) -> bool:
+    import os
+    if os.environ.get("ER_MUNI_FORCE", "").strip() in ("1", "true", "yes"):
+        return False
+    try:
+        row = conn.execute(
+            "SELECT MAX(pulled_at), COUNT(*) FROM muni_records "
+            " WHERE source_url = ?", (feed.url,)).fetchone()
+    except sqlite3.Error:
+        return False
+    if not row or not row[0] or not row[1]:
+        return False                    # never pulled (or pulled empty)
+    try:
+        age = dt.datetime.now() - dt.datetime.fromisoformat(row[0])
+    except ValueError:
+        return False
+    return age <= dt.timedelta(days=MUNI_REFRESH_DAYS)
+
+
 def run_feed(feed: FeedSpec, conn: sqlite3.Connection,
              app_token: str | None = None, limit: int | None = None) -> int:
+    if _feed_fresh(conn, feed):
+        n = conn.execute("SELECT COUNT(*) FROM muni_records "
+                         " WHERE source_url = ?", (feed.url,)).fetchone()[0]
+        print(f"  [fresh] {feed.market}/{feed.kind}: pulled within "
+              f"{MUNI_REFRESH_DAYS} days - keeping {n:,} rows "
+              f"(ER_MUNI_FORCE=1 to re-pull)")
+        return n
     puller = puller_for(feed, app_token=app_token)
     if puller is None:
         return 0
