@@ -2660,3 +2660,5 @@ Checked 107 packages in 10ms
 [listings] exit 0 -> listings-latest.txt
 [publish] pushed to GitHub
 [phase0] exit 0 -> phase0-latest.txt
+[publish] pushed to GitHub
+[validate] exit 0 -> validate-latest.txt
