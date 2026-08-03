@@ -170,11 +170,26 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
     res.stages_run.append("S3")
 
     # --- S4 PERSON SKIP TRACE (waterfall, stop on grade-A, §4.2) ------------
+    # Targeting depends on WHO we're tracing. For a deed's individual owner,
+    # the property mailing address is their address - use it, it's the best
+    # signal. For an LLC-pierced PRINCIPAL, the property address is the LLC's,
+    # not the person's home (a fund's principal does not live at the apartment
+    # complex the fund owns), so pinning the skip trace to it returns nothing.
+    # Search the principal by name in the entity's home jurisdiction instead.
+    # This is why a pierced owner card came back with a name but no
+    # phone/email.
+    if entity_chain:
+        trace_addr = None
+        trace_state = (entity_chain[-1].get("jurisdiction") or state)
+    else:
+        trace_addr = mailing
+        trace_state = state
+
     validated_phones: list[dict] = []
     validated_emails: list[dict] = []
     candidate = None
     for tier in reg.trace_waterfall:
-        cand = tier.trace_person(person_name, mailing, state)
+        cand = tier.trace_person(person_name, trace_addr, trace_state)
         if cand is None:
             continue
         res.total_cost_usd += cand.cost_usd

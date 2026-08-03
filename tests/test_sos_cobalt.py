@@ -143,3 +143,74 @@ def test_an_individual_owner_is_unaffected_by_the_safeguard():
     assert not owner.get("entity_chain")
     # at least one phone stays callable on the mock individual path
     assert any(p["callable"] for p in owner["phones"])
+
+
+# ------------------------------------------- S4 targeting for principals
+
+class _RecordingTier:
+    """A trace tier that records how it was called and returns nothing."""
+    name = "recorder"
+    tier = 2
+
+    def __init__(self):
+        self.calls = []
+
+    def trace_person(self, full_name, address_hint, state):
+        self.calls.append({"name": full_name, "addr": address_hint, "state": state})
+        return None
+
+
+class _StubSOS:
+    def __init__(self, jurisdiction):
+        self._j = jurisdiction
+
+    def resolve_entity(self, entity_name, state):
+        return providers.SOSResult(
+            entity_name=entity_name, jurisdiction=self._j, filing_id="1",
+            officers=["Grant Cardone"], registered_agent="", confidence=0.86,
+            vendor="cobalt", query_id="q", cost_usd=1.0)
+
+
+class _Val:
+    def validate_phone(self, *a, **k): raise AssertionError("no phones here")
+    def validate_email(self, *a, **k): raise AssertionError("no emails here")
+
+
+def _reg(rec, sos):
+    return providers.ProviderRegistry(
+        sos=sos, trace_waterfall=[rec], validation=_Val(),
+        status={"sos": "live (cobalt)", "skiptrace": "live (batchdata)",
+                "validation": "live (trestle)"})
+
+
+def test_a_pierced_principal_is_traced_by_name_in_the_entity_jurisdiction():
+    """The Grant Cardone bug: searching a fund's principal against the
+    PROPERTY address finds nothing. A pierced principal must be traced by
+    name in the entity's home state, not pinned to the property address."""
+    rec = _RecordingTier()
+    prop = dict(property_id="8R-FL-1", owner="Fountain View Circle LLC",
+                state="FL", owner_address="123 Naples Blvd, Naples FL")
+    pipeline.resolve_contacts("org", prop, registry=_reg(rec, _StubSOS("FL")),
+                              persist=False)
+    assert rec.calls, "the trace tier was never called"
+    call = rec.calls[0]
+    assert call["name"] == "Grant Cardone"
+    assert call["addr"] is None, "principal must NOT be pinned to the property address"
+    assert call["state"] == "FL"
+
+
+def test_an_individual_owner_is_still_traced_at_the_property_address():
+    """The change must not regress the common case: a deed's own owner is
+    best found AT the property mailing address."""
+    rec = _RecordingTier()
+    prop = dict(property_id="8R-FL-2", owner="Robert Cleghorn",
+                state="VA", owner_address="900 Colonial Ave, Norfolk VA")
+
+    class _NoPierce:
+        def resolve_entity(self, *a): return None
+    pipeline.resolve_contacts("org", prop, registry=_reg(rec, _NoPierce()),
+                              persist=False)
+    call = rec.calls[0]
+    assert call["name"] == "Robert Cleghorn"
+    assert call["addr"] == "900 Colonial Ave, Norfolk VA"
+    assert call["state"] == "VA"

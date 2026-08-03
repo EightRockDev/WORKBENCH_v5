@@ -12,6 +12,28 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.17.1.0.0 — 2026-08-03  ·  pierced principals get traced correctly + show all contact fields
+Cobalt pierced FOUNTAIN VIEW CIRCLE LLC to Grant Cardone (real), but the card
+came back with a name and no phone/email — resolved cost was exactly Cobalt's
+$1.00, meaning the BatchData skip trace found nothing. Two causes, both fixed:
+
+- **Wrong skip-trace target.** S4 fed BatchData the *property* address while
+  searching for the *pierced principal*. A fund's principal doesn't live at
+  the complex the fund owns (Cardone isn't at the Naples property), so the
+  search returned nobody. Now: an individual deed owner is still traced at
+  the property address (best signal), but an LLC-pierced principal is traced
+  by name in the **entity's home jurisdiction**, unpinned from the property.
+  Two tests lock both paths.
+- **Half the fields were never rendered.** The POC card showed phones,
+  emails, and portfolio — but not the **mailing/known addresses** or
+  **relatives/associates** the trace already returns, and showed nothing at
+  all when a field was empty. Now it renders addresses, relatives, and age,
+  and prints an explicit "no phone/email resolved" so an empty result is
+  legible instead of a blank card.
+
+Net effect: re-Resolve an LLC-owned property and the principal should come
+back with phone/email/address instead of a bare name.
+
 ## V5.17.0.0.0 — 2026-08-03  ·  Cobalt SOS piercing + the mock-pierce safeguard
 Trestle went live (owner added the key). This adds the entity-piercing (S3)
 vendor and closes a real correctness hole.

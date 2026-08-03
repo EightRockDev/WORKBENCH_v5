@@ -114,6 +114,9 @@ def _render_poc(poc: dict) -> None:
                               f"conf {c['confidence']})" for c in chain)
             st.caption(f"Entity chain: {path} → **{name}**")
 
+        if person.get("age_band"):
+            st.caption(f"age {person['age_band']}")
+
         phones = poc.get("phones") or []
         if phones:
             for ph in phones:
@@ -126,11 +129,34 @@ def _render_poc(poc: dict) -> None:
                     line = (f'{badge}  🔒 <span style="color:#b91c1c">{ph["e164"]}</span> · '
                             f'{ph["line_type"]} · <i>blocked: {ph["reason"]}</i>')
                 st.markdown(line, unsafe_allow_html=True)
+        else:
+            st.markdown("📞 _no phone resolved_")
 
         emails = poc.get("emails") or []
-        for em in emails:
-            st.markdown(f'✉️ {em["address"]} · grade {em["grade"]} '
-                        f'(deliverability {em["deliverability"]})')
+        if emails:
+            for em in emails:
+                st.markdown(f'✉️ <b>{em["address"]}</b> · grade {em["grade"]} '
+                            f'(deliverability {em["deliverability"]})',
+                            unsafe_allow_html=True)
+        else:
+            st.markdown("✉️ _no email resolved_")
+
+        # Mailing / known addresses (§4.5 poc_record.addresses) — resolved by
+        # the trace but never shown before; half of "see more information".
+        for a in (poc.get("addresses") or []):
+            formatted = a.get("formatted") if isinstance(a, dict) else a
+            kind = a.get("kind", "mailing") if isinstance(a, dict) else "mailing"
+            if formatted:
+                st.markdown(f'🏠 {formatted} · _{kind}_')
+
+        relatives = poc.get("relatives") or []
+        if relatives:
+            names = ", ".join(
+                ((r.get("name") if isinstance(r, dict) else str(r))
+                 + (f" ({r['relation']})" if isinstance(r, dict) and r.get("relation") else ""))
+                for r in relatives if (r.get("name") if isinstance(r, dict) else r))
+            if names:
+                st.caption(f"Relatives / associates: {names}")
 
         others = poc.get("other_properties") or []
         if others:
