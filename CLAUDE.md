@@ -703,6 +703,21 @@ that will move the LAN address and break the forward silently. Confirmed by
 the owner: `192.168.0.45` / `DESKTOP-RINL8AD` is the workbench desktop, public
 IP `98.190.60.27` (Cox Business).
 
+## Lesson — a test fixture that mirrors the code inherits its bugs (2026-08-03)
+
+The Portsmouth use-code learner never ran in production: it queried crosswalk
+columns `legacy_id`/`r8_id` where the real table has `legacy_property_id`/
+`r8_property_id`, and a bare `except sqlite3.Error` renamed the column error
+to "no crosswalk yet". The end-to-end test PASSED the whole time — its
+fixture hand-built a crosswalk table with the code's wrong column names.
+**When a test needs a table another module owns, create it through that
+module's own writer** (`persist_crosswalk`), never by copying the consumer's
+expectations into a CREATE TABLE. And when catching a broad exception class,
+print the exception — "no crosswalk yet" was a guess wearing the costume of
+a diagnosis. Same failure family as the freshness stamp: the system reported
+a plausible benign state while silently doing nothing, and only a
+falsifiable end-to-end path (fixture through the real writer) exposes it.
+
 ## Lesson — killing a supervised process is not stopping it (2026-08-02)
 
 The updater killed the PIDs on 8501/8502 before syncing. Under NSSM that

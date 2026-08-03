@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from core import spine
-from core.market_data import HR_CITY_TO_COUNTY_FIPS_5
+from core.market_data import CITY_TO_COUNTY_FIPS_5
 
 UNVERIFIED = "unverified"
 PENDING = "pending"
@@ -90,7 +90,7 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
 def _fips_for(city: str) -> str:
     # Metro expansion (§15) registers more cities here; an unknown city
     # still gets a stable id under the placeholder FIPS.
-    return HR_CITY_TO_COUNTY_FIPS_5.get(city, "00000")
+    return CITY_TO_COUNTY_FIPS_5.get(city, "00000")
 
 
 def user_property_id(city: str, address: str, name: str) -> str:

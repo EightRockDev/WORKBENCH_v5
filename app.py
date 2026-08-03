@@ -709,11 +709,12 @@ def main() -> None:
         # ---- CRM & Sourcing module ----
         if _is_v2():
             _v2_topbar(None)  # V2 chrome above CRM module
-        tab_inv, tab_pipe, tab_out, tab_inbox = st.tabs([
+        tab_inv, tab_pipe, tab_out, tab_inbox, tab_cov = st.tabs([
             "🏠 Inventory & Alerts",
             "🎯 Pipeline & Sourcing",
             "📞 Outreach",
             "📥 Inbox → Deal",
+            "🗺️ Coverage",
         ])
         with tab_inv:
             render_inventory(prop=None)
@@ -730,6 +731,10 @@ def main() -> None:
             # confidence-gated with a one-click confirm queue.
             from ui.inbox_panel import render_inbox
             render_inbox()
+        with tab_cov:
+            # §15 — the 50-metro rollout, live counts vs Coming soon.
+            from ui.coverage import render_coverage
+            render_coverage()
         return
 
     if active_module == "portfolio":

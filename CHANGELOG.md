@@ -12,6 +12,43 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.16.0.0.0 — 2026-08-03  ·  Hampton/Portsmouth/Suffolk fixes, Richmond wave 1, Coverage page
+The §14.1 zero-multifamily gap attacked on all three fronts, Richmond started
+in parallel, and the §15 rollout made visible in the product.
+
+**Portsmouth — the learner never ran, and now does.** The use-code learner
+shipped weeks ago but queried crosswalk columns named `legacy_id`/`r8_id`;
+the real table has `legacy_property_id`/`r8_property_id`, and a bare
+`except sqlite3.Error` translated the column error into "no crosswalk yet"
+every cycle. Worse, the end-to-end test built its own crosswalk fixture WITH
+the code's wrong column names, so the suite stayed green while production
+silently no-oped. Fixed both: the queries, the error message (it now prints
+the actual exception), and the fixture now writes the crosswalk through the
+same `persist_crosswalk` production uses. Portsmouth's numeric code 18
+should classify within two host cycles (learn, then apply).
+
+**Hampton & Suffolk — the VGIN statewide fallback.** Hampton's portal serves
+only ~700-row CZM study extracts and Suffolk's serves nothing, but the
+Commonwealth aggregates every locality's parcels into VGIN's `VA_Parcels`
+service. Discovery now falls back to it whenever a city ends with no
+plausible-roll candidate: it probes the layer's actual locality field name,
+tries FIPS and name filter variants, requires a ≥5,000-record count AND an
+in-bbox sample under that exact filter (a wrong filter would file another
+city's parcels under this FIPS — geo-veto proven by test), and emits the
+feed with its `where` clause. `FeedSpec` gained `where`, carried through
+both pullers.
+
+**Richmond — wave 1 starts.** Added to discovery targets (own GIS root,
+Socrata portal, bbox), to `EXPANSION_MARKETS` (rides the same nightly pull
+and stale-row sweep), and to the FIPS map (`51760`) so the spine can mint
+its 8R ids. The VGIN fallback covers it even if its portals disappoint.
+
+**Coverage page (new tab, CRM module).** The §15 rollout rendered live:
+states in deployment order with door totals, each metro showing
+`(N doors · M properties)` from the backbone or `(Coming soon)` — all 50
+metros always listed, counts from `properties_8r` at the 10-door floor, so
+the page can never advertise coverage the comp engine doesn't have.
+
 ## V5.15.0.0.0 — 2026-08-03  ·  user-added properties + the verified badge (spec §16)
 Three spec sections added (owner directive 2026-08-03) and the first one
 built the same day.

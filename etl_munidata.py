@@ -59,6 +59,10 @@ class FeedSpec:
     key_required: bool = False
     field_map: dict[str, str] = dataclasses.field(default_factory=dict)
     note: str = ""
+    # Optional row filter. Statewide aggregates (VGIN's VA_Parcels covers
+    # every locality in Virginia) are only usable per-city WITH this - an
+    # unfiltered pull would ingest 4M rows under one market's FIPS.
+    where: str = ""
 
 
 # The verified Top-25 feed map. status="live" feeds are pull-ready, no key
@@ -193,7 +197,7 @@ MUNI_FEEDS: list[FeedSpec] = [
 
 
 _HR_CITY_NAMES = ("virginia beach", "chesapeake", "hampton", "portsmouth",
-                  "suffolk", "norfolk", "newport news")
+                  "suffolk", "norfolk", "newport news", "richmond")
 
 
 def named_for_other_city(text_parts: str, city: str) -> bool:
@@ -232,7 +236,7 @@ def _extra_feeds() -> list[FeedSpec]:
         if not (isinstance(d, dict) and d.get("url")):
             continue
         market = str(d.get("market") or "")
-        if market in HR_MARKETS and named_for_other_city(
+        if market in ACTIVE_MARKETS and named_for_other_city(
                 f"{d.get('url', '')} {d.get('note', '')}", market):
             print(f"  [skipped] {market}: {d['url']} - layer is named for "
                   "another city (re-run discover-feeds.bat)")
@@ -438,9 +442,10 @@ class SocrataPuller:
 
 def puller_for(feed: FeedSpec, app_token: str | None = None):
     if feed.platform == "arcgis":
-        return ArcGISPuller(feed.url)
+        return ArcGISPuller(feed.url, where=feed.where or "1=1")
     if feed.platform == "socrata":
-        return SocrataPuller(feed.url, app_token=app_token)
+        return SocrataPuller(feed.url, app_token=app_token,
+                             where=feed.where or None)
     return None  # file/portal/paid handled out-of-band
 
 
@@ -494,6 +499,11 @@ def run_feed(feed: FeedSpec, conn: sqlite3.Connection,
 HR_MARKETS = ("Norfolk", "Virginia Beach", "Chesapeake", "Hampton",
               "Newport News", "Portsmouth", "Suffolk")
 
+# 50-metro rollout (spec 15): expansion markets whose feeds ride the same
+# nightly --hr pull and stale-row sweep as Hampton Roads. Wave 1 starts here.
+EXPANSION_MARKETS = ("Richmond",)
+ACTIVE_MARKETS = HR_MARKETS + EXPANSION_MARKETS
+
 
 def run_all(app_token: str | None = None, market: str | None = None,
             limit: int | None = None, hr_only: bool = False) -> dict[str, int]:
@@ -513,7 +523,7 @@ def run_all(app_token: str | None = None, market: str | None = None,
     results: dict[str, int] = {}
     todo = feeds(status="live", market=market)
     if hr_only:
-        todo = [f for f in todo if f.market in HR_MARKETS]
+        todo = [f for f in todo if f.market in ACTIVE_MARKETS]
     # Reconciliation sweep: rows from feeds that are NO LONGER in the
     # registry linger forever otherwise (run_feed only replaces feeds it
     # re-pulls). That left retired discovery layers in the DB - including
@@ -522,7 +532,7 @@ def run_all(app_token: str | None = None, market: str | None = None,
     # national pulls are untouched.
     current_urls = {f.url for f in feeds(status=None)}
     swept = 0
-    for m in HR_MARKETS:
+    for m in ACTIVE_MARKETS:
         rows = conn.execute(
             "SELECT DISTINCT source_url FROM muni_records WHERE market = ?",
             (m,)).fetchall()

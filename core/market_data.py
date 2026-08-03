@@ -47,6 +47,15 @@ HR_CITY_TO_COUNTY_FIPS_5 = {
     "Newport News":   "51700",
 }
 
+# 50-metro rollout (spec 15) - expansion cities join here as their wave
+# starts. The spine builder and the verified badge both key on this map;
+# a city absent from it cannot mint 8R ids.
+EXPANSION_CITY_TO_FIPS_5 = {
+    "Richmond": "51760",
+}
+CITY_TO_COUNTY_FIPS_5 = {**HR_CITY_TO_COUNTY_FIPS_5,
+                         **EXPANSION_CITY_TO_FIPS_5}
+
 
 def is_etl_available() -> bool:
     """True if the ETL database exists and has at least one expected table."""

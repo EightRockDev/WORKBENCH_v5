@@ -161,8 +161,6 @@ def _portsmouth_db(tmp_path):
             property_id TEXT PRIMARY KEY, city TEXT, use_code TEXT, units REAL);
         CREATE TABLE properties (
             property_id TEXT PRIMARY KEY, city TEXT, units REAL);
-        CREATE TABLE property_crosswalk (
-            legacy_id TEXT, r8_id TEXT);
     """)
     # 12 known apartment parcels, all carrying code 18, no units in the feed.
     for i in range(12):
@@ -170,8 +168,7 @@ def _portsmouth_db(tmp_path):
                      (f"8R-P-{i}", "Portsmouth", "18", None))
         conn.execute("INSERT INTO properties VALUES (?,?,?)",
                      (f"LEG-{i}", "Portsmouth", 120))
-        conn.execute("INSERT INTO property_crosswalk VALUES (?,?)",
-                     (f"LEG-{i}", f"8R-P-{i}"))
+
     # The rest of the roll: mostly houses on code 9, a few more 18s.
     for i in range(14000):
         conn.execute("INSERT INTO properties_8r VALUES (?,?,?,?)",
@@ -181,6 +178,13 @@ def _portsmouth_db(tmp_path):
                      (f"8R-A-{i}", "Portsmouth", "18", None))
     conn.commit()
     conn.close()
+    # The crosswalk is written by the SAME function production uses - a
+    # hand-rolled fixture table once carried the code's wrong column names
+    # (legacy_id/r8_id), so these tests passed for weeks while the learner
+    # never ran in production against the real schema.
+    from core import phase0_parity as pp
+    pp.persist_crosswalk(db, [(f"LEG-{i}", f"8R-P-{i}", "address", 1)
+                              for i in range(12)])
     return db
 
 
@@ -251,3 +255,45 @@ def test_no_crosswalk_is_reported_not_crashed(tmp_path):
     sqlite3.connect(db).close()
     lines = _learn_use_codes(db)
     assert any("nothing to learn" in ln for ln in lines)
+
+
+# ---------------------------------------------------------------------------
+# End-to-end through the REAL crosswalk schema
+# ---------------------------------------------------------------------------
+# The unit tests above all passed while the learner had never once run in
+# production: scripts/run_phase0.py queried crosswalk columns named
+# `legacy_id`/`r8_id`, the real table (phase0_parity.persist_crosswalk) has
+# `legacy_property_id`/`r8_property_id`, and a bare `except sqlite3.Error`
+# translated the column error into "no crosswalk yet". Portsmouth sat at 0
+# multifamily for weeks. This test goes in through the same door the
+# autopilot uses, against the schema the parity run actually writes.
+
+def test_learning_runs_end_to_end_against_the_real_crosswalk_schema(tmp_path):
+    from core import phase0_parity as pp
+    from scripts.run_phase0 import _learn_use_codes
+
+    db = tmp_path / "wb.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("CREATE TABLE properties "
+                     "(property_id TEXT PRIMARY KEY, units INTEGER)")
+        conn.executemany("INSERT INTO properties VALUES (?,?)",
+                         [(f"LEG-{i}", 24) for i in range(3)])
+        conn.execute("""CREATE TABLE properties_8r (
+            property_id TEXT PRIMARY KEY, city TEXT, use_code TEXT,
+            units INTEGER)""")
+        conn.executemany(
+            "INSERT INTO properties_8r VALUES (?,?,?,?)",
+            [(f"8R-51740-{i:012d}", "Portsmouth", "18", None)
+             for i in range(3)]
+            + [(f"8R-51740-f{i:011d}", "Portsmouth", "9", None)
+               for i in range(100)])
+    pp.persist_crosswalk(db, [(f"LEG-{i}", f"8R-51740-{i:012d}",
+                               "address", 1) for i in range(3)])
+
+    out = "\n".join(_learn_use_codes(db))
+    assert "crosswalk unavailable" not in out, out
+    assert "ACCEPT" in out and "'18'" in out, out
+    with sqlite3.connect(db) as conn:
+        learned = load(conn)
+    assert "18" in learned.get("Portsmouth", set()), (
+        "code 18 must be learned and persisted for Portsmouth")

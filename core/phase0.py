@@ -37,7 +37,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from core import spine
-from core.market_data import HR_CITY_TO_COUNTY_FIPS_5
+from core.market_data import CITY_TO_COUNTY_FIPS_5
 
 MIN_MF_UNITS = 10          # the coverage gate counts parcels >= this
 GATE_COVERAGE = 0.95       # P0-1 gate from spec 7.3
@@ -470,7 +470,7 @@ def is_mf_ten_plus(use_code: str | None, units: float | None) -> bool:
 def build_row(city: str, state: str, raw: dict,
               report: CoverageReport | None = None) -> SpineRow | None:
     """One muni record -> one SpineRow, or None when it can't carry an id."""
-    fips = HR_CITY_TO_COUNTY_FIPS_5.get(city)
+    fips = CITY_TO_COUNTY_FIPS_5.get(city)
     if fips is None:
         return None
     mapped = normalize_record(city, state, raw, report)
@@ -581,7 +581,7 @@ def _decode_muni_record(record: str | None) -> dict | None:
 
 
 def build_spine(db_path: Path,
-                cities: tuple[str, ...] = tuple(HR_CITY_TO_COUNTY_FIPS_5),
+                cities: tuple[str, ...] = tuple(CITY_TO_COUNTY_FIPS_5),
                 rebuild: bool = True) -> CoverageReport:
     """P0-1: populate properties_8r inside `db_path` from its muni_records.
 

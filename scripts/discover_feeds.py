@@ -35,7 +35,7 @@ from etl_munidata import named_for_other_city as _named_for_other_city  # noqa: 
 # no lat/lng at all (parity: "no coordinates in feed"), capping matches at
 # address-only. An ArcGIS parcel layer fixes that.
 TARGET_CITIES = ("Virginia Beach", "Chesapeake", "Hampton", "Portsmouth",
-                 "Suffolk", "Norfolk")
+                 "Suffolk", "Norfolk", "Richmond")
 
 KNOWN_ROOTS: dict[str, list[str]] = {
     "Virginia Beach": [
@@ -58,6 +58,11 @@ KNOWN_ROOTS: dict[str, list[str]] = {
     "Norfolk": [
         "https://gis.norfolk.gov/arcgis/rest/services",
     ],
+    # Wave 1 of the 50-metro rollout (spec 15). Richmond's own server plus
+    # AGOL search; the VGIN statewide fallback below covers it regardless.
+    "Richmond": [
+        "https://gis.richmondgov.com/arcgis/rest/services",
+    ],
 }
 
 AGOL_SEARCH = "https://www.arcgis.com/sharing/rest/search"
@@ -75,6 +80,7 @@ CITY_BBOX = {
     "Suffolk":        (36.55, 36.95, -76.78, -76.32),
     "Norfolk":        (36.82, 36.98, -76.35, -76.16),
     "Newport News":   (36.93, 37.22, -76.65, -76.35),
+    "Richmond":       (37.44, 37.62, -77.61, -77.38),
 }
 
 MAX_SERVICES_PER_ROOT = 200
@@ -149,7 +155,8 @@ def named_for_other_city(layer_name: str, layer_url: str, city: str) -> bool:
     return _named_for_other_city(f"{layer_name} {layer_url}", city)
 
 
-def sample_in_city(layer_url: str, city: str, fetch) -> bool | None:
+def sample_in_city(layer_url: str, city: str, fetch,
+                   where: str = "1=1") -> bool | None:
     """Sample a few real records and check they sit inside the city's box.
 
     True = verified in-city; False = verified OUT of city (reject);
@@ -159,7 +166,7 @@ def sample_in_city(layer_url: str, city: str, fetch) -> bool | None:
     if bbox is None:
         return None
     data = fetch(f"{layer_url}/query", {
-        "where": "1=1", "outFields": "*", "resultRecordCount": 5,
+        "where": where, "outFields": "*", "resultRecordCount": 5,
         "returnGeometry": "true", "outSR": 4326}) or {}
     lat_min, lat_max, lng_min, lng_max = bbox
     inside = outside = 0
@@ -256,8 +263,91 @@ def search_agol(city: str, fetch=_get_json):
 # ArcGIS walk finds nothing (Norfolk: "nothing suitable found" while its
 # assessment roll lives on data.norfolk.gov without coordinates - a Socrata
 # dataset WITH a location column is the fix).
+# ---------------------------------------------------------------------------
+# Statewide fallback - VGIN's Virginia parcel aggregate
+# ---------------------------------------------------------------------------
+# Hampton's own portal serves only CZM study extracts (~700 rows for a ~50K
+# parcel city) and Suffolk's serves nothing at all - but the Commonwealth
+# aggregates EVERY locality's parcels into one VGIN service. One layer,
+# filtered per locality, is a full roll for any Virginia city whose own GIS
+# fails us. Attributes are thinner than a city assessor roll (units rarely
+# present), so it ranks BELOW any real city roll: parcels + APNs + geometry
+# make address-point unit derivation and the verified-badge parcel check
+# work, which is exactly what Hampton and Suffolk are missing.
+VGIN_LAYER_CANDIDATES = (
+    "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/"
+    "VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/"
+    "VA_Base_layers/VA_Parcels/FeatureServer/0",
+    "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/"
+    "VA_Base_Layers/VA_Parcels/MapServer/0",
+)
+# The locality column has gone by different names across VGIN publications;
+# probe the layer's actual fields rather than assuming.
+VGIN_LOCALITY_FIELDS = ("LOCALITY", "LOCALITY_NAME", "JURISDICTION",
+                        "LOCAL_NAME", "COUNTY", "FIPS", "LOCFIPS")
+
+
+def vgin_where_candidates(field: str, city: str) -> list[str]:
+    """Filter clauses to try, most specific first. FIPS-style fields get the
+    numeric codes; name fields get case variants."""
+    from core.market_data import CITY_TO_COUNTY_FIPS_5
+    fips5 = CITY_TO_COUNTY_FIPS_5.get(city, "")
+    if "fips" in field.lower():
+        vals = [fips5, fips5[2:].lstrip("0"), fips5[2:]]
+        return [f"{field} = '{v}'" for v in vals if v] +                [f"{field} = {v}" for v in (fips5[2:].lstrip("0"),) if v]
+    return [f"UPPER({field}) = '{city.upper()}'",
+            f"{field} = '{city.upper()}'",
+            f"{field} = '{city}'",
+            f"UPPER({field}) LIKE '{city.upper()}%'"]
+
+
+def vgin_fallback(city: str, fetch) -> dict | None:
+    """A per-locality FeedSpec over the statewide parcel layer, or None.
+
+    Verified the same three ways as any candidate: the filter must select a
+    plausible-roll count, a sample must geo-verify inside the city's bbox,
+    and the layer must expose a parcel id. Never trusted blind - a wrong
+    filter here would ingest another locality under this city's FIPS.
+    """
+    for layer_url in VGIN_LAYER_CANDIDATES:
+        detail = fetch(layer_url) or {}
+        fields = [f.get("name", "") for f in (detail.get("fields") or [])]
+        if not fields:
+            continue
+        score, mapped = score_fields(fields)
+        if "apn" not in mapped:
+            continue
+        by_upper = {f.upper(): f for f in fields}
+        loc_fields = [by_upper[c] for c in VGIN_LOCALITY_FIELDS
+                      if c in by_upper]
+        for loc_field in loc_fields:
+            for where in vgin_where_candidates(loc_field, city):
+                data = fetch(f"{layer_url}/query",
+                             {"where": where, "returnCountOnly": "true"})
+                count = (data or {}).get("count")
+                if not isinstance(count, (int, float))                         or count < PLAUSIBLE_ROLL_MIN:
+                    continue
+                verdict = sample_in_city(layer_url, city, fetch, where=where)
+                if verdict is False:
+                    continue
+                geo_note = "" if verdict else "; geo-verify inconclusive"
+                return {
+                    "market": city, "state": "VA", "county": city,
+                    "kind": "assessor", "platform": "arcgis",
+                    "url": layer_url, "status": "live", "where": where,
+                    "record_count": int(count),
+                    "note": (f"VGIN statewide fallback: {where}; "
+                             f"{int(count):,} records; fields "
+                             f"{sorted(mapped)}{geo_note}"),
+                }
+    return None
+
+
 SOCRATA_PORTALS = {
     "Norfolk": "https://data.norfolk.gov",
+    # Richmond's open-data portal (wave 1, spec 15).
+    "Richmond": "https://data.richmondgov.com",
 }
 SOCRATA_QUERIES = ("parcel", "real estate", "property", "address")
 _COORD_DATATYPES = ("point", "location")
@@ -415,6 +505,14 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                         f"fields {sorted(mapped)}{geo_note}",
             }))
         candidates.sort(key=lambda t: -t[0])
+        best_count = max((c.get("record_count") or 0
+                          for _s, c in candidates), default=0)
+        if best_count < PLAUSIBLE_ROLL_MIN:
+            vgin = vgin_fallback(city, fetch)
+            if vgin is not None:
+                # Below any real city roll, above every subset/extract.
+                candidates.append((MIN_SCORE + 1, vgin))
+                candidates.sort(key=lambda t: -t[0])
         out[city] = [spec for _s, spec in candidates[:2]]
         for r in rejected:
             print(f"   [rejected - wrong city] {city}: {r}")

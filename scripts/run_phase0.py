@@ -33,9 +33,15 @@ def _learn_use_codes(db) -> list[str]:
     with sqlite3.connect(db) as conn:
         try:
             crosswalk = conn.execute(
-                "SELECT legacy_id, r8_id FROM property_crosswalk").fetchall()
-        except sqlite3.Error:
-            return out + ["  (no property_crosswalk yet - nothing to learn from)"]
+                "SELECT legacy_property_id, r8_property_id "
+                "  FROM property_crosswalk").fetchall()
+        except sqlite3.Error as e:
+            # Print the ERROR, not a guess at its cause. This except once
+            # translated a wrong column name into "no crosswalk yet" and the
+            # learner silently never ran - Portsmouth sat at 0 multifamily
+            # for weeks with a healthy crosswalk right there.
+            return out + [f"  (crosswalk unavailable: {e} - "
+                          f"nothing to learn from)"]
         if not crosswalk:
             return out + ["  (crosswalk empty - nothing to learn from)"]
 
@@ -48,8 +54,8 @@ def _learn_use_codes(db) -> list[str]:
             rows = conn.execute(
                 """SELECT p8.use_code, p8.units
                      FROM property_crosswalk x
-                     JOIN properties_8r p8 ON p8.property_id = x.r8_id
-                     JOIN properties leg   ON leg.property_id = x.legacy_id
+                     JOIN properties_8r p8 ON p8.property_id = x.r8_property_id
+                     JOIN properties leg   ON leg.property_id = x.legacy_property_id
                     WHERE p8.city = ? AND leg.units >= 10""", (city,)).fetchall()
             mf_codes = [uc for uc, units in rows
                         if units is None and ucl.is_opaque(uc)]
