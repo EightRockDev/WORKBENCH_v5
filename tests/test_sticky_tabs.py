@@ -74,3 +74,50 @@ def test_every_key_is_reachable():
         at.segmented_control[0].set_value(label)
         at = at.run()
         assert _active(at) == key
+
+
+# ---- cross-tab ghost kill (owner, escalated 2026-08-04) -----------------
+# Switching to Underwriting still ghosted the Subject header's "Photo Upload"
+# button, faded, until the new section finished rendering. The fix hides stale
+# DOM in every section wrapper EXCEPT the active one, so the outgoing section's
+# leftovers vanish while the active section keeps its normal in-place fade.
+
+CSS_SCRIPT = textwrap.dedent("""
+    import streamlit as st
+    import app
+    app._inject_ghost_kill_css("underwriting")
+""")
+
+
+def _css_app():
+    return AppTest.from_string(CSS_SCRIPT, default_timeout=60)
+
+
+def _emitted_css(at):
+    return "\\n".join(str(b.value) for b in at.markdown)
+
+
+def test_ghost_kill_targets_stale_dom():
+    at = _css_app().run()
+    assert not at.exception, at.exception
+    css = _emitted_css(at)
+    assert 'data-stale="true"' in css, "must target Streamlit's stale marker"
+
+
+def test_ghost_kill_spares_the_active_section():
+    """The active section must be EXCLUDED so a same-tab rerun (dragging an
+    Underwriting slider) keeps its normal fade and never strobes."""
+    at = _css_app().run()
+    css = _emitted_css(at)
+    assert ":not(.st-key-ptab_section_underwriting)" in css, (
+        "the active section must be spared - without the :not() discriminator "
+        "the active tab's own widgets get hidden mid-rerun and strobe")
+
+
+def test_ghost_kill_hides_the_outgoing_section():
+    """Sanity: the rule reaches OTHER section wrappers (the outgoing one that
+    still holds the faded 'Photo Upload')."""
+    at = _css_app().run()
+    css = _emitted_css(at)
+    assert 'display: none' in css or "display:none" in css
+    assert '[class*="st-key-ptab_section_"]' in css

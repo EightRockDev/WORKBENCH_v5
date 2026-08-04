@@ -929,6 +929,38 @@ justifies skipping work must state what it is protecting** — the count is now
 in the message, so a stuck pull is visible in the daily report instead of
 needing a query to find.
 
+## Lesson — a keyed container does not stop the stale-DOM ghost (2026-08-04)
+
+The property sub-tabs ghosted: switching to Underwriting showed the Subject
+header's "Photo Upload"/"Open Folder" bleeding in, faded. v5.19.1 wrapped the
+dispatch in `st.container(key=f"ptab_section_{active_tab}")` on the theory that
+a per-tab key makes Streamlit unmount the old section cleanly. It did NOT — the
+owner reported the exact same ghost after. The key changes React identity, but
+that is irrelevant to the symptom: on a switch Streamlit does a server round
+trip and keeps the PREVIOUS run's DOM on screen marked `data-stale="true"`,
+painted faded, until the new render lands. The ghost is the outgoing section's
+own leftover, shown during the round trip — a keyed container cannot make it
+vanish faster because the new content simply isn't there yet.
+
+Two things this cost:
+- **Don't reach for `st.tabs` as the fix.** It has no round-trip ghost (switch
+  is client-side CSS), but it snaps back to the first tab on ANY in-tab widget
+  rerun — dragging an Underwriting slider bounces you to Subject. That is why
+  the sticky `segmented_control` exists; reverting to `st.tabs` trades one
+  owner complaint for a worse one.
+- **The real fix targets the stale marker, discriminated by the active key.**
+  `_inject_ghost_kill_css(active_tab)` injects, per run, CSS that hides
+  `[data-stale="true"]` elements inside any `st-key-ptab_section_*` wrapper
+  EXCEPT `:not(.st-key-ptab_section_<active>)`. The outgoing section's faded
+  leftovers disappear; the active section is spared so a same-tab rerun keeps
+  its normal in-place fade and never strobes its own widgets. Prove it by
+  mutation: drop the `:not()` and the active-section-spared test must fail.
+
+General rule: when Streamlit "shows data from another tab", the mechanism is
+`data-stale` DOM lingering through a rerun round trip, not element identity.
+Fix it at the stale marker, and always exempt the element that is legitimately
+re-rendering in place — otherwise the cure strobes the thing the user is using.
+
 ## Lesson — the installer knows the answer the operator is guessing (2026-08-02)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.20.2.0.0 — 2026-08-04  ·  kill the cross-tab ghost for real
+Escalated owner report: switching to Underwriting still showed the Subject
+header's "Photo Upload" / "Open Folder" buttons bleeding in, faded, from
+another tab. The v5.19.1 per-tab keyed container did NOT fix it.
+
+Root cause is intrinsic to the sticky-selector design: the property sub-tabs
+are a keyed `segmented_control` + a conditional render into ONE slot (we can't
+use `st.tabs` — it snaps back to Subject on every slider drag, so a chosen
+section can't survive an in-section rerun). On a switch Streamlit does a server
+round trip and, until the NEW section finishes rendering, keeps the PREVIOUS
+section's DOM on screen marked `data-stale="true"` and painted faded. That
+faded leftover is the ghost. A keyed container can't help — the stale old DOM
+still lingers through the round trip.
+
+Fix (`_inject_ghost_kill_css`): per run, inject CSS that hides stale elements
+living in any section wrapper OTHER than the active one. Streamlit tags each
+`st.container(key=...)` with a `st-key-<key>` class, so
+`:not(.st-key-ptab_section_<active>)` selects exactly the outgoing section —
+its stale "Photo Upload" leaves vanish instead of ghosting. The active section
+is EXCLUDED, so a same-tab rerun (dragging an Underwriting slider) keeps its
+normal in-place fade and never strobes. Mutation-proven in
+`tests/test_sticky_tabs.py` (drop the `:not()` discriminator → the
+active-section-spared test fails).
+
 ## V5.20.1.0.0 — 2026-08-04  ·  fix the VGIN shared-URL feed collision
 Overnight, comp overlap dropped from ~67% to 50.5% and Suffolk/Richmond came
 back with ~no multifamily. Cause: the VGIN statewide fallback serves Hampton,

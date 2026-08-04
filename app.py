@@ -122,6 +122,43 @@ def _sticky_property_tab(is_v2: bool) -> str:
     return active
 
 
+def _inject_ghost_kill_css(active_tab: str) -> None:
+    """Stop a section switch from ghosting the previous section's content.
+
+    Escalated owner report 2026-08-04: switching to Underwriting still showed
+    the Subject header's "Photo Upload" / "Open Folder" bleeding in, faded.
+
+    Why it happens: the property sub-tabs are a sticky ``segmented_control``
+    plus a conditional render into ONE slot. (We can't use ``st.tabs`` — it
+    snaps back to Subject on every slider drag, so a chosen section can't
+    survive an in-section rerun.) On a switch Streamlit does a server round
+    trip and, until the NEW section finishes rendering, keeps the PREVIOUS
+    section's DOM on screen marked ``data-stale="true"`` and painted faded.
+    That faded leftover is the ghost. A per-tab keyed container (v5.19.1) did
+    not fix it: the stale old DOM still lingers through the round trip.
+
+    Fix: hide stale elements that live in a section wrapper OTHER than the one
+    we're rendering now. Streamlit tags each ``st.container(key=...)`` with a
+    ``st-key-<key>`` class, so ``:not(.st-key-ptab_section_<active>)`` selects
+    exactly the outgoing section — its stale "Photo Upload" leaves vanish
+    instead of ghosting. The ACTIVE section is excluded from the rule, so a
+    same-tab rerun (dragging an Underwriting slider) keeps its normal in-place
+    fade and never strobes. Injected per run because it pins the active key.
+    """
+    active_cls = f"st-key-ptab_section_{active_tab}"
+    st.markdown(
+        f"""<style>
+[class*="st-key-ptab_section_"]:not(.{active_cls})
+  [data-testid="stElementContainer"][data-stale="true"],
+[class*="st-key-ptab_section_"]:not(.{active_cls})
+  [data-testid="stVerticalBlock"][data-stale="true"],
+[class*="st-key-ptab_section_"]:not(.{active_cls})
+  [data-testid="stHorizontalBlock"][data-stale="true"] {{ display: none !important; }}
+</style>""",
+        unsafe_allow_html=True,
+    )
+
+
 # Path to the dark-background SVG variant. We embed it as a base64 data URI
 # inside an <img> tag rather than inlining the SVG markup — <img> is much
 # better behaved in Streamlit's CSS-scoped context, and browsers reliably
@@ -903,16 +940,10 @@ def main() -> None:
     # the module grant — otherwise a lock notice explains the restriction. This
     # is how "a Maintenance preset cannot see the purchase price" is enforced
     # in the UI: the financial renderers are never invoked for that role.
-    # A per-tab KEYED container is what stops the fade from showing another
-    # tab's content (owner report 2026-08-03). The sticky selector renders
-    # each section into the same slot; without a stable per-tab key Streamlit
-    # diffs the old tab's elements against the new one and shows the previous
-    # content, faded, during the rerun ("sometimes it shows data from other
-    # tabs"). Keying the container by active_tab makes Streamlit UNMOUNT the
-    # old section and mount the new one cleanly - no cross-tab ghosting.
     import contextlib
     _outer = _section_ctx if _section_ctx is not None else contextlib.nullcontext()
     with _outer:
+        _inject_ghost_kill_css(active_tab)
         with st.container(key=f"ptab_section_{active_tab}"):
             _render_active_section(active_tab, prop, folder)
 
