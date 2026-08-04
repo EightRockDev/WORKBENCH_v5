@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.23.1.0.0 — 2026-08-04  ·  detailed Auth0 login walkthrough (docs)
+Added `docs/AUTH0_SETUP.md` — a click-by-click, no-experience-assumed guide to
+turning on real login (Google / Microsoft / email+password) for
+workbench.eight-rock.com: Auth0 app creation, callback URLs, enabling the three
+connections (incl. the Azure app registration Microsoft needs), the
+`.streamlit/secrets.toml` contents, the Postgres requirement, the admin-updater
+restart, and first-login-becomes-admin + approval. Written for owner review
+before the live setup session.
+
 ## V5.23.0.0.0 — 2026-08-04  ·  who's-online count in the topbar + a who's-online page
 Owner ask: replace the "V1" topbar pill with a live count of users on the site,
 clickable to a page showing who each one is logged in as, their IP, and their
