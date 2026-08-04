@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-04T05:06:29
+autopilot pull @ 2026-08-04T06:06:40
 
 QUARRIE muni-data ETL — 2026-08-04
   discovered feeds loaded from data/feeds_extra.json: 15
@@ -36,6 +36,7 @@ QUARRIE muni-data ETL — 2026-08-04
   [OK] Chesapeake/assessor                     110129 records
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 116,302 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     116302 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,461 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92461 records
   [fresh] Hampton/assessor: pulled within 3 days - keeping 51,803 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Hampton/assessor                         51803 records
@@ -45,12 +46,15 @@ QUARRIE muni-data ETL — 2026-08-04
   [OK] Portsmouth/assessor                      36464 records
   [fresh] Portsmouth/assessor: pulled within 3 days - keeping 36,241 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Portsmouth/assessor                      36241 records
+  [fresh] Portsmouth/assessor: pulled within 3 days - keeping 36,615 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Portsmouth/assessor                      36615 records
+  [fresh] Suffolk/assessor: pulled within 3 days - keeping 45,160 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Suffolk/assessor                         45160 records
   [fresh] Norfolk/assessor: pulled within 3 days - keeping 10,295 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor                         10295 records
   [fresh] Norfolk/assessor: pulled within 3 days - keeping 74,637 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor                         74637 records
+  [fresh] Richmond/assessor: pulled within 3 days - keeping 76,739 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                        76739 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
