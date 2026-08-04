@@ -929,6 +929,17 @@ justifies skipping work must state what it is protecting** — the count is now
 in the message, so a stuck pull is visible in the daily report instead of
 needing a query to find.
 
+## Lesson — don't ACTIVE-health-check an upstream that's usually down (2026-08-04)
+
+The Windows Caddyfile active-health-checked both blue-green upstreams every 3s,
+but the green slot (8502) is normally not running. Result: caddy-err.log got a
+"connection refused" line every 3 seconds, which buried the certificate and
+error lines exactly when we needed to read them during go-live. Use PASSIVE
+health (`lb_try_duration` + `fail_duration`) for an upstream expected to be
+absent much of the time; reserve active polling for upstreams that should always
+be up. A log you can't read is nearly as bad as no log — noisy INFO drowns the
+ERROR you're hunting.
+
 ## Lesson — ingestion needs dedup, temperature=0, and a leaf-based count (2026-08-04)
 
 Owner uploaded the same T-12 several times and saw "6 fields" then "9 fields",

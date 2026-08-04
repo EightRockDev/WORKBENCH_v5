@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.20.7.0.0 — 2026-08-04  ·  stop Caddy from spamming the log with 8502 health checks
+During go-live the certificate lines were nearly impossible to find in
+`caddy-err.log`: it was flooded with a "connection refused" line every 3s from
+the active health check against the green blue-green slot (8502), which normally
+isn't running. Switched `deploy/windows/Caddyfile` to PASSIVE health only —
+dropped `health_uri`/`health_interval`/`health_timeout`, added `lb_try_duration`
+so a request still fails over to the other upstream, and kept `lb_policy first`
++ `fail_duration`. Blue-green failover still works when green is up; the idle
+polling noise is gone. Also dropped the redundant `X-Forwarded-For`/`-Proto`
+header_up lines Caddy warned about.
+
+Takes effect after re-running `install-caddy.bat` (it regenerates
+Caddyfile.active and restarts the service).
+
 ## V5.20.6.0.0 — 2026-08-04  ·  document ingestion: dedup, determinism, honest counts
 Owner asked why re-uploading the same T-12 gave "6 fields" then "9 fields" and
 why identical files kept appearing in the history. Three fixes:
