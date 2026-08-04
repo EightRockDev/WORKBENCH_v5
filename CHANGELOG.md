@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.22.1.0.0 — 2026-08-04  ·  Market tab = Comparables -> Owner Intelligence -> Data Sources
+Owner ask: pull the back-office property tools onto the Market tab where they
+belong. The Market tab now reads top-to-bottom: **Comparables**, then **Owner
+Intelligence + Compliant Outreach** (the LLC-piercing / contact resolution),
+then **Rent Listing URLs (Data Sources)**. Removed those panels from the Admin
+back-office; Admin is now just organization administration (users/roles) for a
+real admin, with a note pointing to the Market tab. Each panel still self-gates
+(module grant / Postgres / providers).
+
 ## V5.22.0.0.0 — 2026-08-04  ·  enable real SSO login (add the authlib dependency)
 Owner wants true login (Microsoft / Google / email+password) tonight. Good news:
 the whole OIDC stack was already built — `core/oidc.py` bridges `st.login`/

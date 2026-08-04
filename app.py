@@ -963,43 +963,21 @@ def main() -> None:
 
 
 def _render_backoffice(st, user, org_id, selected_property_id) -> None:
-    """Back-office panel behind the Admin toggle (owner ask 2026-08-04).
+    """Back-office panel behind the Admin toggle.
 
-    Data Sources (Rent Listing URLs) and Leads (Owner Intelligence + outreach)
-    were cluttering the deal-analysis tabs; they live here now, scoped to the
-    property selected in the sidebar. Below them, the real user/org admin page
-    renders only for an actual admin.
+    Data Sources (Rent Listing URLs) and Owner Intelligence + Outreach moved
+    OUT to the Market tab (owner ask 2026-08-04) — they belong with the
+    market/owner analysis, not in a catch-all Admin. What's left here is real
+    organization administration (users, roles), for an actual admin.
     """
     st.header("🔧 Admin")
-    st.caption("Data sources and lead resolution for the selected property, "
-               "plus organization administration.")
-
-    prop = get_property(selected_property_id) if selected_property_id else None
-    tab_data, tab_leads = st.tabs(["🔗 Data Sources", "🧑‍💼 Leads"])
-    with tab_data:
-        if prop is None:
-            st.info("Select a property in the sidebar to configure its "
-                    "listing data sources.")
-        else:
-            st.caption(f"Property: **{prop.get('name') or prop.get('address')}**")
-            from ui.listings_panel import render_listing_urls_panel
-            render_listing_urls_panel(prop)
-    with tab_leads:
-        if prop is None:
-            st.info("Select a property in the sidebar to resolve its owner "
-                    "contacts and run outreach.")
-        else:
-            st.caption(f"Property: **{prop.get('name') or prop.get('address')}**")
-            from ui.skiptrace_panel import render_owner_intel
-            render_owner_intel(prop)
-            st.divider()
-            from ui.outreach_panel import render_outreach
-            render_outreach(prop)
-
     if user is not None and user.is_admin:
-        st.divider()
         from ui.admin import render_admin_page
         render_admin_page(st, user, org_id)
+    else:
+        st.caption("Organization administration. The property tools moved out of "
+                   "Admin: **Comparables, Owner Intelligence, and Rent Listing "
+                   "URLs (Data Sources) are all on the Market tab now.**")
 
 
 def _render_active_section(active_tab, prop, folder) -> None:
@@ -1015,8 +993,21 @@ def _render_active_section(active_tab, prop, folder) -> None:
             from ui.radar_panel import render_radar
             render_radar(prop)
         elif active_tab == "market":
+            # Owner ask 2026-08-04: Market tab reads top-to-bottom as
+            # Comparables -> Owner Intelligence -> Data Sources. Owner
+            # Intelligence + Outreach and the Rent Listing URLs panel moved
+            # here out of the Admin back-office. Each panel self-gates (module
+            # grant / Postgres / providers) and shows its own notice.
             if _authz.guard_module("comps", "Performance & Market"):
                 render_comps(prop, folder)
+            st.divider()
+            from ui.skiptrace_panel import render_owner_intel
+            from ui.outreach_panel import render_outreach
+            render_owner_intel(prop)
+            render_outreach(prop)
+            st.divider()
+            from ui.listings_panel import render_listing_urls_panel
+            render_listing_urls_panel(prop)
         elif active_tab == "underwriting":
             if _authz.guard_module("underwriting", "Underwriting"):
                 render_underwriting(prop, folder)
