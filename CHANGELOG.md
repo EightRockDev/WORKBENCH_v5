@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.20.1.0.0 — 2026-08-04  ·  fix the VGIN shared-URL feed collision
+Overnight, comp overlap dropped from ~67% to 50.5% and Suffolk/Richmond came
+back with ~no multifamily. Cause: the VGIN statewide fallback serves Hampton,
+Suffolk, Richmond and Portsmouth from the SAME `VA_Parcels` URL (only the
+locality `where` differs), but `muni_records` keyed on `source_url` alone —
+so `run_feed`'s DELETE wiped every market's rows under that URL and
+`_feed_fresh` let one market's freshness skip the others. Only the last/first
+market kept data; the rest were emptied, churning the backbone.
+
+Feed identity is now `(source_url, market, kind)` in `_feed_key`, used by both
+the freshness check and the row-count, and the DELETE now scopes to all three.
+Self-heals next cycle — each market re-pulls its own VGIN slice (no
+ER_MUNI_FORCE needed) — and comp overlap should recover toward its ~67%
+ceiling. Mutation-proven: reverting the DELETE to url-only fails
+`test_pulling_one_market_keeps_a_siblings_shared_url_rows`.
+
 ## V5.20.0.0.0 — 2026-08-04  ·  Data Sources + Leads move to the Admin panel
 Owner ask: get the data-source config and lead-resolution tools off the
 deal-analysis tabs. They were back-office functions cluttering the flow (and

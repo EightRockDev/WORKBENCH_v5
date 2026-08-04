@@ -482,14 +482,26 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
 MUNI_REFRESH_DAYS = 3
 
 
+# Feeds are identified by (market, kind, source_url), NOT source_url alone.
+# The VGIN statewide fallback (spec 15) serves Hampton, Suffolk, Richmond and
+# Portsmouth from the SAME VA_Parcels URL, differing only by the locality
+# `where`. Keying on url alone made those markets collide: one market's pull
+# deleted the others' rows and one market's freshness skipped the rest, so
+# Suffolk/Richmond came back empty while Hampton kept the shared rows. The
+# whole triple is the identity.
+def _feed_key(conn, feed: FeedSpec, cols: str):
+    return conn.execute(
+        f"SELECT {cols} FROM muni_records "
+        " WHERE source_url = ? AND market = ? AND kind = ?",
+        (feed.url, feed.market, feed.kind))
+
+
 def _feed_fresh(conn: sqlite3.Connection, feed: FeedSpec) -> bool:
     import os
     if os.environ.get("ER_MUNI_FORCE", "").strip() in ("1", "true", "yes"):
         return False
     try:
-        row = conn.execute(
-            "SELECT MAX(pulled_at), COUNT(*) FROM muni_records "
-            " WHERE source_url = ?", (feed.url,)).fetchone()
+        row = _feed_key(conn, feed, "MAX(pulled_at), COUNT(*)").fetchone()
     except sqlite3.Error:
         return False
     if not row or not row[0] or not row[1]:
@@ -504,8 +516,7 @@ def _feed_fresh(conn: sqlite3.Connection, feed: FeedSpec) -> bool:
 def run_feed(feed: FeedSpec, conn: sqlite3.Connection,
              app_token: str | None = None, limit: int | None = None) -> int:
     if _feed_fresh(conn, feed):
-        n = conn.execute("SELECT COUNT(*) FROM muni_records "
-                         " WHERE source_url = ?", (feed.url,)).fetchone()[0]
+        n = _feed_key(conn, feed, "COUNT(*)").fetchone()[0]
         print(f"  [fresh] {feed.market}/{feed.kind}: pulled within "
               f"{MUNI_REFRESH_DAYS} days - keeping {n:,} rows "
               f"(ER_MUNI_FORCE=1 to re-pull)")
@@ -522,8 +533,12 @@ def run_feed(feed: FeedSpec, conn: sqlite3.Connection,
         n += 1
         if limit and n >= limit:
             break
-    # Replace prior records for this (market, kind, url)
-    conn.execute("DELETE FROM muni_records WHERE source_url = ?", (feed.url,))
+    # Replace prior records for this (market, kind, url) - all three, so a
+    # URL shared across markets (the VGIN statewide layer) does not wipe a
+    # sibling market's rows.
+    conn.execute("DELETE FROM muni_records WHERE source_url = ? "
+                 " AND market = ? AND kind = ?",
+                 (feed.url, feed.market, feed.kind))
     conn.executemany(
         "INSERT INTO muni_records (market,state,county,kind,source_url,pulled_at,record) "
         "VALUES (?,?,?,?,?,?,?)", rows)

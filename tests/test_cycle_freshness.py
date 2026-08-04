@@ -222,3 +222,56 @@ def test_the_cookie_value_is_the_token_not_the_passcode():
     from core import session
     tok = session.passcode_device_token("granite")
     assert tok != "granite" and "granite" not in tok
+
+
+# ---- VGIN shared-URL collision (spec 15 fallback, fixed 2026-08-04) -----
+
+def test_two_markets_sharing_a_url_do_not_collide(monkeypatch):
+    """The VGIN statewide layer serves several markets from ONE url. Feed
+    identity is (market, kind, source_url) - one market's freshness or pull
+    must not touch another's rows under the same url."""
+    monkeypatch.delenv("ER_MUNI_FORCE", raising=False)
+    vgin = "https://vgin.test/VA_Parcels/0"
+    conn = sqlite3.connect(":memory:")
+    conn.execute("""CREATE TABLE muni_records (
+        id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+        kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+    now = dt.datetime.now().isoformat(timespec="seconds")
+    # Hampton already pulled from VGIN today; Suffolk has NOT.
+    conn.executemany(
+        "INSERT INTO muni_records (market,state,county,kind,source_url,"
+        "pulled_at,record) VALUES (?,?,?,?,?,?,?)",
+        [("Hampton", "VA", "Hampton", "assessor", vgin, now, "{}")] * 3)
+
+    hampton = em.FeedSpec("Hampton", "VA", "Hampton", "assessor", "arcgis", vgin)
+    suffolk = em.FeedSpec("Suffolk", "VA", "Suffolk", "assessor", "arcgis", vgin)
+    assert em._feed_fresh(conn, hampton)           # Hampton is fresh
+    assert not em._feed_fresh(conn, suffolk), (
+        "Suffolk must NOT inherit Hampton's freshness on the shared VGIN url")
+
+
+def test_pulling_one_market_keeps_a_siblings_shared_url_rows(monkeypatch):
+    monkeypatch.delenv("ER_MUNI_FORCE", raising=False)
+    vgin = "https://vgin.test/VA_Parcels/0"
+    conn = sqlite3.connect(":memory:")
+    conn.execute("""CREATE TABLE muni_records (
+        id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+        kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+    conn.execute(
+        "INSERT INTO muni_records (market,state,county,kind,source_url,"
+        "pulled_at,record) VALUES ('Hampton','VA','Hampton','assessor',?, "
+        "'2020-01-01','{}')", (vgin,))
+
+    class _P:
+        def iter_records(self):
+            yield {"PARCELID": "S-1"}
+    monkeypatch.setattr(em, "puller_for", lambda *a, **k: _P())
+    suffolk = em.FeedSpec("Suffolk", "VA", "Suffolk", "assessor", "arcgis", vgin)
+    em.run_feed(suffolk, conn)
+
+    hampton_rows = conn.execute(
+        "SELECT COUNT(*) FROM muni_records WHERE market='Hampton'").fetchone()[0]
+    suffolk_rows = conn.execute(
+        "SELECT COUNT(*) FROM muni_records WHERE market='Suffolk'").fetchone()[0]
+    assert hampton_rows == 1, "Suffolk's pull wiped Hampton's shared-url rows"
+    assert suffolk_rows == 1

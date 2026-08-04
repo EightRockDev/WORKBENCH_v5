@@ -761,6 +761,20 @@ on was real. Also: not every data source has an API — VA SCC's CIS portal is
 search/filing only, no token; don't send the owner hunting for one that
 doesn't exist, route to a vendor that does (Cobalt).
 
+## Lesson — a feed's identity is (market, kind, url), not url alone (2026-08-04)
+
+The VGIN statewide fallback (spec 15) serves Hampton, Suffolk, Richmond and
+Portsmouth from ONE `VA_Parcels` url, differing only by the locality `where`.
+But `muni_records` deduped on `source_url` alone: `run_feed`'s DELETE wiped
+every market's rows under that url and `_feed_fresh` let one market's
+freshness skip the rest — so Suffolk/Richmond came back empty while Hampton
+kept the shared rows, and comp overlap dropped from ~67% to 50.5% on the
+churn. The code comment even said "(market, kind, url)" while the SQL used
+only url. **When one physical source is reused across logical partitions,
+the dedupe/refresh key must include the partition** — fixed to
+`(source_url, market, kind)` in `_feed_key`; it self-heals next cycle (each
+market re-pulls its own slice). Watch comp overlap recover.
+
 ## Lesson — a reused element slot ghosts across reruns; key it (2026-08-04)
 
 The sticky-tab fix (keyed segmented_control + `if active_tab ==` into one
