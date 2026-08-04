@@ -820,6 +820,23 @@ clock alone — `_feed_fresh` (muni), `spine_input_fingerprint` (phase0), each
 with a force env. Also: `st.tabs` renders EVERY tab body on every rerun —
 anything heavy behind a tab needs `st.cache_data`.
 
+## Lesson — don't gate a feature behind chrome you've hidden (2026-08-04)
+
+Admin was a toggle inside `st.sidebar`. But `_inject_branding` hides Streamlit's
+default chrome — including the sidebar collapse/expand handle. So when the
+sidebar was collapsed, there was no visible control to reopen it, and Admin
+(and anything else sidebar-only) became unreachable — owner: "I don't see an
+arrow." Rules:
+- If you hide Streamlit's default chrome, you own re-providing every control it
+  carried (the sidebar handle, the menu). Don't hide the handle AND put the
+  only entrance to a feature behind it.
+- Put primary entry points in the MAIN pane where they can't be hidden by a
+  collapsed sidebar, and add a URL fallback (`?admin=1`) for anything important
+  so it's reachable even if a control is ever obscured.
+- The owner had actually asked for Admin by the top-right 8R chrome, not in the
+  sidebar; the sidebar placement ignored that and then broke. Build where the
+  owner said, not where it was easiest to bolt on.
+
 ## Lesson — absence of data is not evidence; never score a default as a fact (2026-08-04)
 
 Owner asked "is any of this accurate?" of a Forced-Seller score. It was ~38 and

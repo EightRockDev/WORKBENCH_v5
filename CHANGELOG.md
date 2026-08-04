@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.21.1.0.0 — 2026-08-04  ·  Admin toggle out of the (hidden) sidebar into the main pane
+Owner couldn't reach Admin: it was a toggle inside `st.sidebar`, but the custom
+top bar hides Streamlit's sidebar handle, so a collapsed sidebar left no way to
+open it ("I don't see an arrow"). Moved the **🔧 Admin** toggle into the MAIN
+pane (top-right of the content), always visible regardless of sidebar state, and
+added a `?admin=1` URL fallback that opens it directly. Admin still gates on
+operator/admin; the org-admin tabs inside still require a real admin. This is
+also where the owner asked for it (by the 8R chrome, not buried in the sidebar).
+
 ## V5.21.0.0.0 — 2026-08-04  ·  make the Forced-Seller Radar honest (no fabricated distress)
 Owner asked "is any of this accurate?" of a 38/MONITOR score. It wasn't: the
 panel scored hardcoded widget DEFAULTS and absence-of-data heuristics, not real

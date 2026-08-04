@@ -753,19 +753,33 @@ def main() -> None:
 
     active_module, selected_property_id = render_sidebar()
 
-    # Account chip + logout, then admin panel (admins only). The admin toggle
-    # lives in the sidebar; when on, it takes over the content area.
+    # Account chip + logout, then the admin panel (operators only).
     core_session.render_account_chip(st, user)
     # Back-office panel (owner ask 2026-08-04): Data Sources + Leads live here,
     # not on the deal-analysis tabs. Shown to the operator - an admin, or the
     # single-tenant owner in ungated/passcode mode (user is None). The
     # user/org admin tabs inside still require a real admin.
+    #
+    # The toggle lives in the MAIN pane, NOT the sidebar: the custom top bar
+    # hides Streamlit's sidebar handle, so a collapsed sidebar left Admin with
+    # no way to open it (owner report 2026-08-04 — "I don't see an arrow").
+    # `?admin=1` in the URL also opens it, a handle that can never be hidden.
     _is_operator = (user is None) or user.is_admin
     if _is_operator:
-        with st.sidebar:
-            st.session_state["_show_admin"] = st.toggle(
-                "🔧 Admin panel", value=st.session_state.get("_show_admin", False))
-        if st.session_state.get("_show_admin"):
+        try:
+            _qp_admin = str(st.query_params.get("admin", "")).lower() in ("1", "true", "yes")
+        except Exception:
+            _qp_admin = False
+        if _qp_admin and "admin_toggle_main" not in st.session_state:
+            st.session_state["admin_toggle_main"] = True
+        _acols = st.columns([5, 1])
+        with _acols[1]:
+            _show_admin = st.toggle("🔧 Admin", key="admin_toggle_main",
+                                    help="Data Sources + Leads (owner intelligence, "
+                                         "LLC piercing) for the selected property, "
+                                         "plus organization administration.")
+        st.session_state["_show_admin"] = _show_admin
+        if _show_admin:
             _render_backoffice(st, user, org_id, selected_property_id)
             return
 
