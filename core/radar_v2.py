@@ -48,10 +48,22 @@ class Component:
     score: float                 # 0-100 before weighting
     weight: float
     evidence: list[str] = field(default_factory=list)
+    known: bool = True           # False = the underlying data is ABSENT
 
     @property
     def contribution(self) -> float:
+        # An unknown component contributes nothing. Absence of data is not
+        # evidence of distress (owner report 2026-08-04: "no permit history on
+        # record" was scoring 75, "no deed record" 30 — fabricated points).
+        if not self.known:
+            return 0.0
         return round(self.score * self.weight, 2)
+
+
+def _unknown(key: str, note: str) -> "Component":
+    """A component whose data is not on file: score 0, contributes nothing,
+    and says so plainly rather than asserting a fact we never checked."""
+    return Component(key, 0.0, WEIGHTS[key], [note], known=False)
 
 
 @dataclass
@@ -61,21 +73,45 @@ class RadarScore:
     components: list[Component] = field(default_factory=list)
 
     @property
+    def known_count(self) -> int:
+        return sum(1 for c in self.components if c.known)
+
+    @property
     def band(self) -> str:
+        # With no real data on any signal, the score is 0 by construction — but
+        # that is "we don't know", not "healthy". Say so, so a 0 is never read
+        # as an all-clear.
+        if self.known_count == 0:
+            return "NO DATA"
         return "ACT" if self.score >= BAND_GO else ("WATCH" if self.score >= BAND_WATCH else "MONITOR")
 
     @property
+    def coverage_note(self) -> str:
+        n = self.known_count
+        total = len(self.components)
+        if n == 0:
+            return ("No distress signals on file yet — connect the loan / tax / "
+                    "permit / deed feeds or enter them to score this property.")
+        return f"Scored on {n} of {total} signals with data; the rest are not on file."
+
+    @property
     def evidence(self) -> list[str]:
-        out: list[str] = []
-        for c in sorted(self.components, key=lambda c: -c.contribution):
+        # Known signals first (ranked by contribution), then the not-on-file
+        # ones, so real facts lead and gaps are visible but don't masquerade.
+        out: list[str] = [self.coverage_note]
+        known = sorted((c for c in self.components if c.known), key=lambda c: -c.contribution)
+        unknown = [c for c in self.components if not c.known]
+        for c in [*known, *unknown]:
             out.extend(c.evidence)
         return out
 
     def as_dict(self) -> dict:
         return {
             "property_id": self.property_id, "score": self.score, "band": self.band,
+            "known_count": self.known_count, "coverage_note": self.coverage_note,
             "components": [{"key": c.key, "score": c.score, "weight": c.weight,
-                            "contribution": c.contribution, "evidence": c.evidence}
+                            "contribution": c.contribution, "evidence": c.evidence,
+                            "known": c.known}
                            for c in self.components],
         }
 
@@ -93,8 +129,8 @@ def score_loan_maturity(maturity: dt.date | None, *, today: dt.date,
     """Closer maturity = more pressure. Peaks inside 12 months; decays past 36."""
     ev: list[str] = []
     if not maturity:
-        return Component("loan_maturity", 0.0, WEIGHTS["loan_maturity"],
-                         ["No loan maturity on file (GRANITE)"])
+        return _unknown("loan_maturity",
+                        "No loan data on file — connect the GRANITE HUD feed")
     months = (maturity.year - today.year) * 12 + (maturity.month - today.month)
     lt = f"{loan_type} " if loan_type else ""
     if months < -6:
@@ -115,9 +151,12 @@ def score_loan_maturity(maturity: dt.date | None, *, today: dt.date,
     return Component("loan_maturity", _clamp(s), WEIGHTS["loan_maturity"], ev)
 
 
-def score_tax_delinquency(years_delinquent: float = 0.0, amount: float | None = None,
+def score_tax_delinquency(years_delinquent: float | None = 0.0, amount: float | None = None,
                           *, units: int | None = None) -> Component:
     ev: list[str] = []
+    if years_delinquent is None:
+        return _unknown("tax_delinquency",
+                        "No tax-status data — connect the municipal portal")
     if years_delinquent <= 0:
         return Component("tax_delinquency", 0.0, WEIGHTS["tax_delinquency"],
                          ["Property taxes current"])
@@ -134,12 +173,16 @@ def score_permit_decay(permits_last_5y: int = 0, last_permit_year: int | None = 
                        *, today_year: int) -> Component:
     """No capital going in = deferred maintenance = seller fatigue."""
     ev: list[str] = []
+    if permits_last_5y == 0 and last_permit_year is None:
+        # No permits AND no permit history at all = we have no permit data, not
+        # observed inactivity. Absence is not distress (owner report 2026-08-04).
+        return _unknown("permit_decay",
+                        "No permit history on record — connect the city permit feed")
     if permits_last_5y == 0:
-        gap = (today_year - last_permit_year) if last_permit_year else None
-        s = 75.0 if gap is None or gap >= 10 else 60.0
-        ev.append(f"No permits pulled in 5 years"
-                  + (f"; last permit {last_permit_year} ({gap}y ago)" if gap else
-                     "; no permit history on record"))
+        gap = today_year - last_permit_year
+        s = 75.0 if gap >= 10 else 60.0
+        ev.append(f"No permits pulled in 5 years; last permit "
+                  f"{last_permit_year} ({gap}y ago)")
     elif permits_last_5y <= 2:
         s = 40.0
         ev.append(f"Only {permits_last_5y} permit(s) in 5 years - light reinvestment")
@@ -153,7 +196,7 @@ def score_tenure(last_sale_year: int | None, *, today_year: int) -> Component:
     """Hold-period fatigue: 10-25 years is the classic sell window."""
     ev: list[str] = []
     if not last_sale_year:
-        return Component("tenure", 30.0, WEIGHTS["tenure"], ["No deed record on file"])
+        return _unknown("tenure", "No deed record on file — connect the deed feed")
     held = today_year - last_sale_year
     if held < 3:
         s = 5.0
@@ -185,8 +228,10 @@ def score_listing(listed_now: bool = False, delisted_within_days: int | None = N
         ev.append(f"Listed and withdrawn {delisted_within_days} days ago - "
                   "failed sale, owner still wants out")
     else:
-        s = 15.0
-        ev.append("No recent listing activity")
+        # No positive listing signal and no scraper feed wired = unknown, not a
+        # confirmed "not listed". Absence is not a low-distress fact.
+        return _unknown("listing",
+                        "No listing data — connect the listing scraper")
     return Component("listing", _clamp(s), WEIGHTS["listing"], ev)
 
 
@@ -223,7 +268,13 @@ def score_poc_signals(pocs: list[dict] | None = None, *,
         ev.append("Owning entity shows a dissolution filing - wind-down in progress")
 
     if not ev:
-        ev.append("No adverse POC signals")
+        # No adverse signals. Distinguish "we checked resolved contacts and
+        # found nothing" (known, low) from "no contacts resolved yet" (unknown)
+        # — the latter must not read as an all-clear (owner report 2026-08-04).
+        if not pocs:
+            return _unknown("poc_signals",
+                            "No owner contacts resolved yet — run Resolve Contacts")
+        ev.append("No adverse signals among the resolved contacts")
     return Component("poc_signals", _clamp(s), WEIGHTS["poc_signals"], ev)
 
 
@@ -240,10 +291,15 @@ def score_property(prop: dict, *, pocs: list[dict] | None = None,
     """
     today = today or dt.date.today()
     sig = signals or {}
+    # Absent signals are passed through as-is (None / 0-with-no-history) so the
+    # scorers can tell "not on file" from a real observation. Nothing here
+    # invents a default value — that was the source of the fabricated score
+    # (owner report 2026-08-04). `years_delinquent`/`permits_last_5y` default to
+    # None so an unwired feed reads as unknown, not "current"/"no reinvestment".
     comps = [
         score_loan_maturity(sig.get("loan_maturity"), today=today,
                             loan_type=sig.get("loan_type")),
-        score_tax_delinquency(sig.get("years_delinquent", 0.0), sig.get("tax_amount"),
+        score_tax_delinquency(sig.get("years_delinquent"), sig.get("tax_amount"),
                               units=prop.get("units")),
         score_poc_signals(pocs, property_state=prop.get("state"),
                           entity_dissolved=sig.get("entity_dissolved", False)),

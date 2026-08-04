@@ -820,6 +820,31 @@ clock alone — `_feed_fresh` (muni), `spine_input_fingerprint` (phase0), each
 with a force env. Also: `st.tabs` renders EVERY tab body on every rerun —
 anything heavy behind a tab needs `st.cache_data`.
 
+## Lesson — absence of data is not evidence; never score a default as a fact (2026-08-04)
+
+Owner asked "is any of this accurate?" of a Forced-Seller score. It was ~38 and
+almost entirely fabricated: `ui/radar_panel.py` fed hardcoded widget DEFAULTS to
+the scorer (a pre-checked "HUD loan matures Mar 2027", "taxes current" from an
+input defaulting to 0), and `core/radar_v2.py` emitted distress points for
+MISSING data ("no permit history" → 75, "no deed record" → 30). So every empty
+property scored the same confident number off invented inputs.
+
+Rules:
+- A component with no underlying data must be UNKNOWN (contributes nothing),
+  never a default score. Absence of a permit record is not "no reinvestment";
+  absence of a deed is not a tenure; an unchecked input is not "current". Model
+  it as `known=False` and exclude it from the total — don't let it add OR
+  dilute.
+- The UI must not manufacture inputs. Default every not-yet-wired signal to "not
+  on file" and make the user opt in to entering one; a widget's default value is
+  not data.
+- Distinguish "checked and found nothing" (known, low) from "never checked"
+  (unknown). A 0 that means "no data" must never render as an all-clear — show
+  NO DATA and say what feed would fill it.
+- When a score aggregates several signals, show coverage (how many had real
+  data). A confident number built on 1 real signal and 5 defaults is a lie of
+  omission.
+
 ## Lesson — prune the known, never the unknown (2026-08-03)
 
 Owner directive: only 10+ unit properties matter. The safe implementation

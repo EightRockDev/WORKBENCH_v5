@@ -12,6 +12,36 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.21.0.0.0 — 2026-08-04  ·  make the Forced-Seller Radar honest (no fabricated distress)
+Owner asked "is any of this accurate?" of a 38/MONITOR score. It wasn't: the
+panel scored hardcoded widget DEFAULTS and absence-of-data heuristics, not real
+per-property data. The single biggest driver (loan maturity, 65% of the total)
+was a fixed "HUD loan matures Mar 2027" default shown for every property;
+"permit decay 75" and "ownership tenure 30" were emitted precisely BECAUSE
+there was no permit/deed data; "taxes current" was asserted from an input that
+defaulted to 0 with nothing checked.
+
+Fixes:
+- **Absence is no longer distress.** Each scorer now returns a component marked
+  `known=False` (score 0, contributes nothing) when its data is not on file,
+  instead of inventing points. A `Component.contribution` of an unknown signal
+  is 0, so missing data can neither add nor dilute — the score is the strength
+  of the signals we actually have.
+- **No fabricated inputs.** `ui/radar_panel.py` defaults every signal to "not
+  on file" (no pre-checked HUD/Mar-2027 loan, no default "taxes current"); you
+  tick a box to enter one by hand. `score_property` passes absent signals
+  through as unknown rather than defaulting them.
+- **Honest labels + coverage.** A property with nothing on file now reads
+  **NO DATA / 0**, not MONITOR/38, with "No distress signals on file yet —
+  connect the loan / tax / permit / deed feeds." Every score shows how many of
+  the 6 signals had data; not-on-file signals render greyed and "excluded".
+- POC signals distinguish "checked resolved contacts, nothing adverse" (known,
+  low) from "no contacts resolved yet" (unknown) — the latter no longer reads
+  as an all-clear.
+
+The §6.1 backtest (top-decile lift ≥ 3×) still passes. Tests in
+`tests/test_radar_v2.py`.
+
 ## V5.20.7.0.0 — 2026-08-04  ·  stop Caddy from spamming the log with 8502 health checks
 During go-live the certificate lines were nearly impossible to find in
 `caddy-err.log`: it was flooded with a "connection refused" line every 3s from

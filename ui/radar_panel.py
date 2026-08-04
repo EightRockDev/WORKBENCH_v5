@@ -24,6 +24,7 @@ _BAND_STYLE = {
     "ACT":     ("#b91c1c", "#fee2e2", "ACT NOW"),
     "WATCH":   ("#b45309", "#fef3c7", "WATCH"),
     "MONITOR": ("#15803d", "#dcfce7", "MONITOR"),
+    "NO DATA": ("#6b7280", "#f3f4f6", "NO DATA"),
 }
 _LABEL = {
     "loan_maturity": "Loan maturity", "tax_delinquency": "Tax delinquency",
@@ -52,24 +53,51 @@ def render_radar(prop: dict | None) -> None:
         except Exception:
             pocs = []
 
-    with st.expander("Signal inputs (until Phase 0 / GRANITE wire these automatically)"):
+    # Everything defaults to NOT ON FILE. The score reflects only signals that
+    # have real data — nothing here fabricates a value. (Owner report
+    # 2026-08-04: the old panel defaulted a "HUD loan matures Mar 2027" and
+    # "taxes current", so every property scored ~38 off invented inputs.)
+    with st.expander("Signal inputs (manual until Phase 0 / GRANITE wire these automatically)"):
+        st.caption("Every signal defaults to **not on file**. Tick a box to enter "
+                   "one by hand; blanks are excluded from the score, never scored as 0.")
         c1, c2, c3 = st.columns(3)
-        has_loan = c1.checkbox("Loan maturity known", value=True, key="rv-hasloan")
-        mat = c1.date_input("Matures", value=dt.date(2027, 3, 1), key="rv-mat") if has_loan else None
-        ltype = c1.text_input("Loan type", value="HUD", key="rv-ltype")
-        delinq = c2.number_input("Years tax delinquent", 0.0, 10.0, 0.0, 0.5, key="rv-delinq")
-        permits = c2.number_input("Permits last 5 years", 0, 50, 0, key="rv-permits")
-        listed = c3.checkbox("Currently listed", key="rv-listed")
-        delisted = c3.number_input("Delisted N days ago (0 = n/a)", 0, 2000, 0, key="rv-delisted")
-        dissolved = c3.checkbox("Entity dissolution filing", key="rv-diss")
 
-    signals = {
-        "loan_maturity": mat if has_loan else None, "loan_type": ltype or None,
-        "years_delinquent": float(delinq), "permits_last_5y": int(permits),
-        "listed_now": bool(listed),
-        "delisted_within_days": int(delisted) or None,
-        "entity_dissolved": bool(dissolved),
-    }
+        has_loan = c1.checkbox("Loan maturity known", value=False, key="rv-hasloan")
+        mat = c1.date_input("Matures", value=dt.date.today(),
+                            key="rv-mat") if has_loan else None
+        ltype = (c1.text_input("Loan type", value="", key="rv-ltype")
+                 if has_loan else None)
+
+        has_tax = c2.checkbox("Tax status known", value=False, key="rv-hastax")
+        delinq = (c2.number_input("Years tax delinquent (0 = current)", 0.0, 10.0,
+                                  0.0, 0.5, key="rv-delinq") if has_tax else None)
+
+        has_permits = c2.checkbox("Permit history known", value=False, key="rv-haspermits")
+        permits = last_permit = None
+        if has_permits:
+            permits = c2.number_input("Permits last 5 years", 0, 50, 0, key="rv-permits")
+            last_permit = c2.number_input("Year of last permit (0 = none on record)",
+                                          0, dt.date.today().year, 0, key="rv-lastpermit") or None
+
+        listed = c3.checkbox("Currently listed", value=False, key="rv-listed")
+        delisted = c3.number_input("Delisted N days ago (0 = n/a)", 0, 2000, 0, key="rv-delisted")
+        dissolved = c3.checkbox("Entity dissolution filing", value=False, key="rv-diss")
+
+    signals: dict = {"entity_dissolved": bool(dissolved)}
+    if has_loan:
+        signals["loan_maturity"] = mat
+        signals["loan_type"] = ltype or None
+    if has_tax:
+        signals["years_delinquent"] = float(delinq)
+    if has_permits:
+        signals["permits_last_5y"] = int(permits or 0)
+        if last_permit:
+            signals["last_permit_year"] = int(last_permit)
+    if listed:
+        signals["listed_now"] = True
+    if int(delisted):
+        signals["delisted_within_days"] = int(delisted)
+
     score = rv.score_property(prop, pocs=pocs, signals=signals)
 
     fg, bg, label = _BAND_STYLE[score.band]
@@ -82,13 +110,22 @@ def render_radar(prop: dict | None) -> None:
         f"<div style='font-size:11px;font-weight:700;color:{fg};letter-spacing:1px'>"
         f"{label}</div></div>", unsafe_allow_html=True)
     with c2:
-        for comp in sorted(score.components, key=lambda c: -c.contribution):
+        st.caption(score.coverage_note)
+        known = sorted((c for c in score.components if c.known),
+                       key=lambda c: -c.contribution)
+        unknown = [c for c in score.components if not c.known]
+        for comp in known:
             pct = comp.contribution / max(score.score, 1) * 100 if score.score else 0
             st.markdown(
                 f"**{_LABEL.get(comp.key, comp.key)}** — {comp.contribution:.1f} pts "
                 f"({comp.score:.0f}/100 × {comp.weight:.0%})"
                 + (f"  ·  {pct:.0f}% of total" if score.score else ""))
             st.progress(min(1.0, comp.score / 100))
+        for comp in unknown:
+            # Shown, but greyed and explicitly NOT scored — a gap, not a zero.
+            st.markdown(
+                f"<span style='color:#9ca3af'>{_LABEL.get(comp.key, comp.key)} "
+                f"— not on file (excluded)</span>", unsafe_allow_html=True)
 
     st.markdown("**Evidence**")
     for e in score.evidence:

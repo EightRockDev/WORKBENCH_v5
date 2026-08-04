@@ -54,6 +54,36 @@ def test_permit_decay_flags_no_reinvestment():
     dead = rv.score_permit_decay(0, 2009, today_year=2026)
     active = rv.score_permit_decay(6, 2025, today_year=2026)
     assert dead.score > active.score and "No permits" in dead.evidence[0]
+    assert dead.known and active.known
+
+
+def test_absent_permit_history_is_unknown_not_distress():
+    """No permits AND no history = no data, not 75 points (owner 2026-08-04)."""
+    c = rv.score_permit_decay(0, None, today_year=2026)
+    assert not c.known and c.score == 0.0 and c.contribution == 0.0
+    assert "No permit history" in c.evidence[0]
+
+
+def test_absent_tenure_is_unknown_not_thirty():
+    c = rv.score_tenure(None, today_year=2026)
+    assert not c.known and c.score == 0.0 and c.contribution == 0.0
+
+
+def test_absent_loan_is_unknown():
+    c = rv.score_loan_maturity(None, today=TODAY)
+    assert not c.known and c.contribution == 0.0
+
+
+def test_absent_tax_is_unknown_but_explicit_zero_is_current():
+    unknown = rv.score_tax_delinquency(None)
+    current = rv.score_tax_delinquency(0)
+    assert not unknown.known and unknown.contribution == 0.0
+    assert current.known and current.score == 0.0 and "current" in current.evidence[0]
+
+
+def test_absent_listing_is_unknown_not_low_distress():
+    c = rv.score_listing(False, None)
+    assert not c.known and c.contribution == 0.0
 
 
 def test_delisted_scores_above_currently_listed():
@@ -92,9 +122,18 @@ def test_entity_dissolution_flag():
     assert c.score >= 90 and "dissolution" in c.evidence[0]
 
 
-def test_no_signals_is_explained_not_silent():
+def test_unresolved_pocs_are_unknown_not_all_clear():
+    """Empty POCs = not resolved yet, NOT 'owner is clean' (owner 2026-08-04)."""
     c = rv.score_poc_signals([])
-    assert c.score == 0 and c.evidence == ["No adverse POC signals"]
+    assert not c.known and c.score == 0 and c.contribution == 0.0
+    assert "resolved" in c.evidence[0].lower()
+
+
+def test_resolved_pocs_with_nothing_adverse_are_known_low():
+    pocs = [{"person": {"full_name": "Clean Owner"},
+             "addresses": [{"formatted": "1 Main St, Norfolk VA", "kind": "mailing"}]}]
+    c = rv.score_poc_signals(pocs, property_state="VA")
+    assert c.known and c.score == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -121,6 +160,14 @@ def test_every_score_has_evidence_and_components_sum():
     assert abs(sum(c.contribution for c in s.components) - s.score) < 0.15
     assert s.evidence and all(isinstance(e, str) for e in s.evidence)
     assert abs(sum(rv.WEIGHTS.values()) - 1.0) < 1e-9
+
+
+def test_a_property_with_no_data_scores_no_data_not_monitor():
+    """The reported bug: an empty property must not show a confident ~38.
+    With nothing on file it reads NO DATA / 0, not MONITOR."""
+    s = rv.score_property(_prop(last_sold_year=None), today=TODAY, pocs=[], signals={})
+    assert s.known_count == 0 and s.score == 0.0 and s.band == "NO DATA"
+    assert "No distress signals on file" in s.evidence[0]
 
 
 def test_no_single_signal_alone_reaches_act_band():
