@@ -1351,12 +1351,9 @@ def render_comps(prop: dict[str, Any], folder: PropertyFolder | None = None) -> 
                         )
                 st.dataframe(styler, use_container_width=True, hide_index=True)
 
-    # ============================================================
-    # 2. Rent Listing URLs (panel includes Latest scrape result squares)
-    # ============================================================
-    with section_card("Rent Listing URLs", icon="🔗"):
-        from ui.listings_panel import render_listing_urls_panel
-        render_listing_urls_panel(prop)
+    # Rent Listing URLs (data-source config) moved to the Admin panel's Data
+    # Sources tab (owner ask 2026-08-04) - it was back-office config
+    # cluttering the Market/comps analysis view.
 
     # ============================================================
     # 3. Data Sources & Last Refresh (Refresh All + per-source buttons)

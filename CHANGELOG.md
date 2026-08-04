@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.20.0.0.0 — 2026-08-04  ·  Data Sources + Leads move to the Admin panel
+Owner ask: get the data-source config and lead-resolution tools off the
+deal-analysis tabs. They were back-office functions cluttering the flow (and
+the heavier ones were what made the Underwriting tab reruns slow enough to
+fade).
+
+- **Rent Listing URLs** (data-source config) removed from the Market/comps
+  view.
+- **Owner Intelligence + outreach** (leads) removed from the Diligence tab
+  (Diligence keeps the acquisition checklist + due-diligence).
+- Both now live under the **🔧 Admin panel** in two tabs — **Data Sources**
+  and **Leads** — scoped to the property selected in the sidebar.
+- The Admin panel is reachable by the single-tenant owner, not just a
+  multi-tenant admin: the toggle shows when `user.is_admin` OR the app is
+  ungated/passcode (`user is None`). The user/org administration tabs inside
+  still require a real admin; the Data/Leads tabs work for the operator.
+
+Net: deal analysis (Subject/Underwriting/Returns/Market/Summary/Diligence)
+is now just underwriting, and back-office config lives in one place.
+
 ## V5.19.1.0.0 — 2026-08-04  ·  stop the tab fade from showing other tabs' data
 "Underwriting keeps fading out so I can't update … sometimes it shows data
 from other tabs." The V5.16.4 sticky-tab change renders each section into the

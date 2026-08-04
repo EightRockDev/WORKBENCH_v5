@@ -719,13 +719,17 @@ def main() -> None:
     # Account chip + logout, then admin panel (admins only). The admin toggle
     # lives in the sidebar; when on, it takes over the content area.
     core_session.render_account_chip(st, user)
-    if user is not None and user.is_admin:
+    # Back-office panel (owner ask 2026-08-04): Data Sources + Leads live here,
+    # not on the deal-analysis tabs. Shown to the operator - an admin, or the
+    # single-tenant owner in ungated/passcode mode (user is None). The
+    # user/org admin tabs inside still require a real admin.
+    _is_operator = (user is None) or user.is_admin
+    if _is_operator:
         with st.sidebar:
             st.session_state["_show_admin"] = st.toggle(
                 "🔧 Admin panel", value=st.session_state.get("_show_admin", False))
         if st.session_state.get("_show_admin"):
-            from ui.admin import render_admin_page
-            render_admin_page(st, user, org_id)
+            _render_backoffice(st, user, org_id, selected_property_id)
             return
 
     # (Removed the legacy "Try V2.0" theme-switch pill — "V2.0" was an old
@@ -913,6 +917,46 @@ def main() -> None:
             _render_active_section(active_tab, prop, folder)
 
 
+def _render_backoffice(st, user, org_id, selected_property_id) -> None:
+    """Back-office panel behind the Admin toggle (owner ask 2026-08-04).
+
+    Data Sources (Rent Listing URLs) and Leads (Owner Intelligence + outreach)
+    were cluttering the deal-analysis tabs; they live here now, scoped to the
+    property selected in the sidebar. Below them, the real user/org admin page
+    renders only for an actual admin.
+    """
+    st.header("🔧 Admin")
+    st.caption("Data sources and lead resolution for the selected property, "
+               "plus organization administration.")
+
+    prop = get_property(selected_property_id) if selected_property_id else None
+    tab_data, tab_leads = st.tabs(["🔗 Data Sources", "🧑‍💼 Leads"])
+    with tab_data:
+        if prop is None:
+            st.info("Select a property in the sidebar to configure its "
+                    "listing data sources.")
+        else:
+            st.caption(f"Property: **{prop.get('name') or prop.get('address')}**")
+            from ui.listings_panel import render_listing_urls_panel
+            render_listing_urls_panel(prop)
+    with tab_leads:
+        if prop is None:
+            st.info("Select a property in the sidebar to resolve its owner "
+                    "contacts and run outreach.")
+        else:
+            st.caption(f"Property: **{prop.get('name') or prop.get('address')}**")
+            from ui.skiptrace_panel import render_owner_intel
+            render_owner_intel(prop)
+            st.divider()
+            from ui.outreach_panel import render_outreach
+            render_outreach(prop)
+
+    if user is not None and user.is_admin:
+        st.divider()
+        from ui.admin import render_admin_page
+        render_admin_page(st, user, org_id)
+
+
 def _render_active_section(active_tab, prop, folder) -> None:
         from ui import authz as _authz     # module-gating, same as the caller
         if active_tab == "subject":
@@ -932,19 +976,10 @@ def _render_active_section(active_tab, prop, folder) -> None:
             if _authz.guard_module("underwriting", "Underwriting"):
                 render_underwriting(prop, folder)
         elif active_tab == "diligence":
-            # Owner Intelligence (Module A) — gated internally by the
-            # skip_trace module grant, so a role with skip trace but not
-            # underwriting still sees it. Above the underwriting-gated DD.
-            from ui.skiptrace_panel import render_owner_intel
-            render_owner_intel(prop)
-            st.divider()
-            # Module B (§5): compliant outreach on the resolved contacts.
-            # Gated internally by `outreach` grant / `send_outreach` action.
-            from ui.outreach_panel import render_outreach
-            render_outreach(prop)
-            st.divider()
+            # Owner Intelligence (leads) + outreach moved to the Admin panel's
+            # Leads tab (owner ask 2026-08-04) - they were back-office tools
+            # cluttering deal analysis. Diligence keeps the DD checklist.
             if _authz.guard_module("underwriting", "Due Diligence"):
-                # Acquisition Checklist sits at the TOP of Diligence now.
                 render_acquisition_checklist(prop, folder)
                 render_due_diligence(prop, folder)
         elif active_tab == "returns":
