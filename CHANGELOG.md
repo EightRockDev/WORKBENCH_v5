@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.20.3.0.0 — 2026-08-04  ·  the REAL cause of the fading: file-watch auto-reruns
+The tab kept fading and re-showing "Photo Upload" with nobody touching the
+keyboard ("just keep coming and going without me touching anything"). This was
+never a tab bug — a keyed-container test confirms a clean section switch removes
+the Subject header cleanly. The app was being re-run from OUTSIDE the browser.
+
+Cause: `.streamlit/config.toml` had `runOnSave = true` with the default file
+watcher. The daily autopilot runs in the SAME directory and writes to the DB
+(+ WAL), `reports/`, and `sources.json` on every cycle. Streamlit's watcher
+treats that disk churn as "a source file changed" and auto-reruns the app —
+every rerun marks the whole pane stale (faded) and repaints, endlessly, hands
+off keyboard. That also explains the intermittent "Photo Upload from another
+tab": a spontaneous rerun repaints the last DOM faded mid-interaction.
+
+Fix: `runOnSave = false` + `fileWatcherType = "none"` — nothing outside the
+browser can trigger a rerun now. Real code updates need a manual server restart
+(`update-workbench.bat` already does this), correct for an always-on shared box.
+NOTE: config.toml is read at startup — the running server must be RESTARTED for
+this to take effect; a rerun will not pick it up.
+
 ## V5.20.2.0.0 — 2026-08-04  ·  kill the cross-tab ghost for real
 Escalated owner report: switching to Underwriting still showed the Subject
 header's "Photo Upload" / "Open Folder" buttons bleeding in, faded, from

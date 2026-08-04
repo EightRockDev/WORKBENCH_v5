@@ -20,7 +20,19 @@ address = "0.0.0.0"
 port = 8501
 # Open the browser tab automatically when run.bat launches.
 headless = false
-runOnSave = true
+
+# DO NOT set runOnSave = true here. The daily autopilot runs IN THIS SAME
+# directory and writes to the DB (+ WAL), reports/, and sources.json
+# continuously. Streamlit's file watcher treats that disk churn as "a source
+# changed" and auto-reruns the app — the whole pane fades and repaints, over
+# and over, with nobody touching the keyboard (owner report 2026-08-04:
+# "Faded... just keep coming and going without me touching anything"). We turn
+# the watcher OFF entirely so nothing outside the browser can trigger a rerun.
+# Trade-off: a real code update needs a manual server restart to take effect
+# (update-workbench.bat already restarts), which is the correct behavior for a
+# shared, always-on deployment.
+runOnSave = false
+fileWatcherType = "none"
 
 [browser]
 gatherUsageStats = false

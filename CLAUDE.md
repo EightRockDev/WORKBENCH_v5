@@ -929,6 +929,37 @@ justifies skipping work must state what it is protecting** — the count is now
 in the message, so a stuck pull is visible in the daily report instead of
 needing a query to find.
 
+## Lesson — "fading with nobody touching it" is a rerun from OUTSIDE the browser (2026-08-04)
+
+Chased a "tab keeps fading / shows Photo Upload from another tab" report as a
+tab-switch ghost twice (keyed container v5.19.1, then discriminating CSS
+v5.20.2) — both missed. The owner's third clue settled it: "just keep coming
+and going without me touching anything." A pane that fades and repaints with no
+user input is not a rendering bug — it is the app being RE-RUN repeatedly. In
+Streamlit a rerun happens only from (a) a widget interaction, (b) `st.rerun`,
+(c) `st_autorefresh`/`run_every`/a component returning a changing value, or
+(d) the file watcher when `runOnSave` is on. There was none of (a)-(c) in the
+tree — grep confirmed no `run_every`, no `setComponentValue`, no fragments — so
+it was (d).
+
+Root cause: `.streamlit/config.toml` had `runOnSave = true` while the daily
+autopilot runs IN THE SAME DIRECTORY, writing the DB (+ WAL), `reports/`, and
+`sources.json` every cycle. Streamlit's watcher read that disk churn as a
+source change and auto-reran the UI endlessly. Fix: `runOnSave = false` +
+`fileWatcherType = "none"`.
+
+General rules paid for here:
+- Before theorizing about stale DOM / ghosting, ask FIRST whether the pane is
+  re-running on its own. "Comes and goes untouched" = spontaneous rerun; find
+  the trigger, don't restyle the symptom.
+- On any always-on box that also runs a background writer (autopilot, ETL),
+  Streamlit's file watcher MUST be off. `runOnSave` is a dev-only convenience.
+- config.toml is read at STARTUP. A config fix does nothing until the server is
+  restarted — say so in the handoff, or the owner "still sees it."
+- A keyed-container switch DOES cleanly unmount the old section (proven by an
+  AppTest: switch tabs → the old tab's button is gone). So a persistent ghost
+  is not the switch; look for what repaints the old DOM — here, the auto-rerun.
+
 ## Lesson — a keyed container does not stop the stale-DOM ghost (2026-08-04)
 
 The property sub-tabs ghosted: switching to Underwriting showed the Subject
