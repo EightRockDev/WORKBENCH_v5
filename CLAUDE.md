@@ -929,6 +929,30 @@ justifies skipping work must state what it is protecting** — the count is now
 in the message, so a stuck pull is visible in the daily report instead of
 needing a query to find.
 
+## Lesson — a port-forward target must be RFC1918, not just "not loopback" (2026-08-04)
+
+`install-caddy.ps1` picks the machine's LAN IP to tell the operator what to
+forward 80/443 to. It excluded `127.*` and `169.254.*`, then took the lowest-
+metric interface. On Brian's box that surfaced the **Tailscale** address
+(100.113.210.35, in the 100.64.0.0/10 CGNAT range) instead of the real LAN IP
+(192.168.0.120). A router cannot forward to a Tailscale/CGNAT virtual
+interface, so the printed instruction was a dead end that looks like "the site
+never comes up".
+
+Rules:
+- When you need "the address a router forwards to", filter to the RFC1918
+  private ranges explicitly (10/8, 172.16/12, 192.168/16). Excluding
+  loopback/link-local is not enough — 100.64.0.0/10 (Tailscale, cellular
+  CGNAT) and public addresses also pass that weaker test.
+- On any box that might run a VPN/mesh (Tailscale, ZeroTier, WireGuard),
+  interface-metric ordering can rank the virtual NIC first. Never trust
+  "first interface" for a physical-LAN answer.
+- When auto-detecting a value the operator will act on blindly, print the
+  alternatives too, so a wrong pick is visible instead of silently followed.
+- Tailscale is present on this deployment (100.113.210.35). It's the simpler
+  remote-access path for Brian/Peter (no port-forward, no cert); the public
+  domain + Caddy path is only needed for outside users.
+
 ## Lesson — an auto-save that rebuilds a model can loop forever (2026-08-04)
 
 The Underwriting tab faded in/out on its own at 4% CPU / 0% disk — not

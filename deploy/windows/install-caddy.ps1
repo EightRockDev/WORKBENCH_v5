@@ -179,14 +179,36 @@ foreach ($pair in @(@("Workbench HTTP", 80), @("Workbench HTTPS", 443))) {
 # comes up". This machine knows its own address; print it rather than let
 # anyone guess.
 Step "Port-forwarding target"
-$lan = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-    Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" } |
-    Sort-Object -Property SkipAsSource, InterfaceMetric |
-    Select-Object -First 1
+# A router can only forward to a real private-LAN address. Excluding just
+# 127.* / 169.254.* is NOT enough: a box running Tailscale (or on cellular
+# CGNAT) also has a 100.64.0.0/10 address on a VIRTUAL interface the router
+# cannot reach. On Brian's PC (2026-08-04) that Tailscale address
+# (100.113.210.35) sorted ahead of the real LAN IP and got printed as the
+# forward target - exactly the "picking the wrong device -> site never comes
+# up" failure this section exists to prevent. So restrict candidates to the
+# RFC1918 private ranges (10/8, 172.16/12, 192.168/16), which is what a home/
+# office router actually hands out and forwards to.
+function Test-PrivateLan([string]$ip) {
+    if ($ip -like "192.168.*") { return $true }
+    if ($ip -like "10.*") { return $true }
+    if ($ip -match "^172\.(1[6-9]|2[0-9]|3[0-1])\.") { return $true }
+    return $false   # rejects 100.64/10 (Tailscale/CGNAT), 127.*, 169.254.*, public
+}
+$candidates = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object { Test-PrivateLan $_.IPAddress } |
+    Sort-Object -Property SkipAsSource, InterfaceMetric)
+$lan = $candidates | Select-Object -First 1
 if ($lan) {
     Write-Host ("   Forward TCP 80 and 443 to THIS machine: " + $lan.IPAddress) -ForegroundColor Green
+    if ($candidates.Count -gt 1) {
+        $others = ($candidates | Select-Object -Skip 1 -ExpandProperty IPAddress) -join ", "
+        Write-Host ("   (also has: " + $others + " - use the 192.168.x LAN address above)") -ForegroundColor Cyan
+    }
     Write-Host "   Also reserve that address in the router's DHCP settings -" -ForegroundColor Cyan
     Write-Host "   if it changes on a lease renewal, the forward silently breaks." -ForegroundColor Cyan
+} else {
+    Write-Host "   No private-LAN IPv4 found on this PC - check its network" -ForegroundColor Yellow
+    Write-Host "   connection (a 100.x Tailscale-only address can't be forwarded)." -ForegroundColor Yellow
 }
 try {
     $pub = (Invoke-WebRequest -UseBasicParsing -TimeoutSec 6 `

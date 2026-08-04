@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.20.5.0.0 — 2026-08-04  ·  Caddy installer printed a Tailscale IP as the forward target
+Go-live: `install-caddy.bat` ran clean (Caddy installed, config valid, DNS →
+98.190.60.27, 8501 healthy, firewall opened, service started) but told the
+operator to "Forward TCP 80 and 443 to THIS machine: 100.113.210.35" — which is
+the **Tailscale** address on a virtual interface a router can't forward to. The
+real LAN IP is 192.168.0.120. Following the printed target would have produced
+exactly the "site never comes up" failure this section exists to prevent.
+
+Cause: the LAN-IP picker excluded only `127.*` / `169.254.*`, then sorted by
+SkipAsSource / InterfaceMetric and took the first — on a Tailscale box the
+100.64.0.0/10 CGNAT address sorted ahead of the real LAN address.
+
+Fix (`deploy/windows/install-caddy.ps1`): restrict candidates to the RFC1918
+private ranges (10/8, 172.16/12, 192.168/16), which is what a router actually
+forwards to — this rejects 100.64/10 (Tailscale/CGNAT) and public addresses.
+Prints any other local addresses as an aside so the operator can sanity-check,
+and warns clearly if only a non-forwardable address exists.
+
 ## V5.20.4.0.0 — 2026-08-04  ·  the ACTUAL fade: an infinite auto-save/rerun loop
 Task Manager showed 4% CPU / 0% disk while Underwriting faded in/out the moment
 it opened, "Photo Upload" never clearing — so it was neither performance nor the
