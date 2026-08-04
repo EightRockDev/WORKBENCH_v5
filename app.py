@@ -730,6 +730,13 @@ def main() -> None:
     user = core_session.resolve_user(st)  # may st.stop() for login / pending
     st.session_state["user"] = user
 
+    # Who's-online presence (owner ask 2026-08-04). Best-effort — never let it
+    # break the page. Records this session's identity + IP each run; the topbar
+    # shows the live count and the ?who=1 page lists everyone. IP comes from the
+    # Caddy-set X-Real-IP / X-Forwarded-For; direct-LAN hits have no such header
+    # and read as a local address.
+    _record_presence(user)
+
     # v5.0 multi-tenancy (Section 10): resolve the active org + effective
     # permissions (module grants / field masks / action grants / scope).
     org_id, perms = core_session.resolve_org_context(user)
@@ -765,6 +772,16 @@ def main() -> None:
     # no way to open it (owner report 2026-08-04 — "I don't see an arrow").
     # `?admin=1` in the URL also opens it, a handle that can never be hidden.
     _is_operator = (user is None) or user.is_admin
+    # Who's-online page (topbar count links here with ?who=1). Operator-only —
+    # it exposes other users' IPs, so it's not for every signed-in user.
+    if _is_operator:
+        try:
+            _qp_who = str(st.query_params.get("who", "")).lower() in ("1", "true", "yes")
+        except Exception:
+            _qp_who = False
+        if _qp_who:
+            _render_who_online(st)
+            return
     if _is_operator:
         try:
             _qp_admin = str(st.query_params.get("admin", "")).lower() in ("1", "true", "yes")
@@ -960,6 +977,70 @@ def main() -> None:
         _inject_ghost_kill_css(active_tab)
         with st.container(key=f"ptab_section_{active_tab}"):
             _render_active_section(active_tab, prop, folder)
+
+
+def _record_presence(user) -> None:
+    """Stamp this session into the who's-online registry (best-effort)."""
+    try:
+        from core import presence
+        try:
+            from streamlit.runtime.scriptrunner import get_script_run_ctx
+            _ctx = get_script_run_ctx()
+            sid = getattr(_ctx, "session_id", "") if _ctx else ""
+        except Exception:
+            sid = ""
+        if not sid:
+            return
+        # Client IP from Caddy's forwarded headers (deploy Caddyfile sets
+        # `header_up X-Real-IP {remote_host}`). Direct LAN hits lack these.
+        ip = ""
+        try:
+            h = st.context.headers
+            xff = h.get("X-Forwarded-For") or h.get("x-forwarded-for") or ""
+            ip = (xff.split(",")[0].strip()
+                  or h.get("X-Real-IP") or h.get("x-real-ip") or "")
+        except Exception:
+            ip = ""
+        if user is not None:
+            name = (getattr(user, "display_name", None)
+                    or getattr(user, "email", None) or "User")
+        else:
+            name = "Passcode user"
+        presence.touch(sid, name, ip)
+    except Exception:
+        pass
+
+
+def _render_who_online(st) -> None:
+    """Live who's-online page (owner ask 2026-08-04): each active session's
+    identity, IP, and locality. Reached from the topbar count (?who=1)."""
+    import datetime as _dt
+    from core import presence
+    st.header("👤 Who's online")
+    if st.button("← Back to the workbench"):
+        try:
+            del st.query_params["who"]
+        except Exception:
+            pass
+        st.rerun()
+    rows = presence.active()
+    if not rows:
+        st.info("No active sessions right now.")
+        return
+    st.caption(f"{len(rows)} session(s) active in the last "
+               f"{presence.ACTIVE_WINDOW_SECONDS // 60} minutes.")
+    table = []
+    for r in rows:
+        ip = r.get("ip") or ""
+        table.append({
+            "Logged in as": r.get("name") or "Unknown",
+            "IP address": ip or "—",
+            "Locality": presence.locality_for_ip(ip),
+            "Last active": _dt.datetime.fromtimestamp(r["last_seen"]).strftime("%H:%M:%S"),
+        })
+    st.dataframe(table, use_container_width=True, hide_index=True)
+    st.caption("Locality is looked up from the public IP; LAN and Tailscale "
+               "addresses show as “Local network.”")
 
 
 def _render_backoffice(st, user, org_id, selected_property_id) -> None:

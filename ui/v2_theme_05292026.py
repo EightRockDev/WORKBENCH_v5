@@ -2269,14 +2269,22 @@ def render_v2_topbar(prop: dict | None = None) -> None:
         # avatar sit in their own columns to stay on one line.
         r_pills, r_avatar = st.columns([9.0, 1.0], vertical_alignment="center")
         with r_pills:
+            # Owner ask 2026-08-04: the old "V1" switch pill is replaced by a
+            # live who's-online count. Clicking it opens the ?who=1 page
+            # (identity + IP + locality per active session).
+            try:
+                from core import presence as _presence
+                _online = _presence.count()
+            except Exception:
+                _online = 0
             st.markdown(
                 f'<div class="v2-nav-inline v2-nav-right">'
                 f'<span class="v2-nav-tag"><span class="d"></span>Live · {when}</span>'
                 f'<span class="v2-version-pill" title="{version}">{get_v2_version_short()}</span>'
-                f'<a class="v2-switch-pill" href="{switch_url}" target="_self" '
-                f'title="Open the same property in V1 (port 8501)" '
+                f'<a class="v2-switch-pill" href="?who=1" target="_self" '
+                f'title="Who is on the site right now — click for identities, IPs, locality" '
                 f'style="font-size:10px;padding:4px 10px;">'
-                f'<span class="arrow">↘</span><span>V1</span></a>'
+                f'<span class="arrow">👤</span><span>{_online} online</span></a>'
                 f'</div>',
                 unsafe_allow_html=True,
             )

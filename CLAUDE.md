@@ -820,6 +820,18 @@ clock alone — `_feed_fresh` (muni), `spine_input_fingerprint` (phase0), each
 with a force env. Also: `st.tabs` renders EVERY tab body on every rerun —
 anything heavy behind a tab needs `st.cache_data`.
 
+## Lesson — run the FULL suite before pushing, not just the obvious test (2026-08-04)
+
+Moved the property panels to the Market tab and pushed after running only
+`test_sticky_tabs.py`. The full suite then failed: `test_backoffice_move.py`
+still asserted the OLD placement. A cross-cutting move (relocating a panel)
+breaks tests that pin the old location, which live in files you didn't touch.
+Always `pytest -q` the whole suite before a push, especially for a move/rename —
+the failing test names point you straight at every place that encoded the old
+structure. (Client IP for who's-online comes from Caddy's `X-Real-IP` header —
+which only exists because the Caddyfile sets `header_up X-Real-IP {remote_host}`;
+direct-to-8501 LAN hits have no such header and read as a local address.)
+
 ## Lesson — check for existing scaffolding before planning a build (2026-08-04)
 
 Owner asked for "true login (Microsoft/Google/email) tonight." The instinct was

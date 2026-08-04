@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.23.0.0.0 — 2026-08-04  ·  who's-online count in the topbar + a who's-online page
+Owner ask: replace the "V1" topbar pill with a live count of users on the site,
+clickable to a page showing who each one is logged in as, their IP, and their
+locality.
+
+- New `core/presence.py`: an in-memory registry. `touch(session_id, name, ip)`
+  runs on every rerun (cheap, no network); `active()` / `count()` return
+  sessions seen within a 5-minute window (stale ones pruned). `locality_for_ip`
+  maps a public IP to "City, Region" via a cached free IP-geo lookup and
+  returns "Local network" for LAN / loopback / Tailscale (100.64/10) — those
+  never hit the network.
+- `app.py` stamps each session (identity from the signed-in user or "Passcode
+  user"; IP from Caddy's `X-Real-IP` / `X-Forwarded-For`) via `_record_presence`.
+- Topbar (`render_v2_topbar`): the V1 switch pill is now "👤 N online", linking
+  to `?who=1`.
+- `?who=1` renders `_render_who_online` (operator-only, since it exposes IPs):
+  a table of Logged-in-as / IP / Locality / Last active, with a Back button.
+
+Tests in `tests/test_presence.py`. Also updated `tests/test_backoffice_move.py`
+for the Market-tab placement from V5.22.1.
+
 ## V5.22.1.0.0 — 2026-08-04  ·  Market tab = Comparables -> Owner Intelligence -> Data Sources
 Owner ask: pull the back-office property tools onto the Market tab where they
 belong. The Market tab now reads top-to-bottom: **Comparables**, then **Owner
