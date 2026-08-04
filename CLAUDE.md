@@ -820,6 +820,27 @@ clock alone — `_feed_fresh` (muni), `spine_input_fingerprint` (phase0), each
 with a force env. Also: `st.tabs` renders EVERY tab body on every rerun —
 anything heavy behind a tab needs `st.cache_data`.
 
+## Lesson — check for existing scaffolding before planning a build (2026-08-04)
+
+Owner asked for "true login (Microsoft/Google/email) tonight." The instinct was
+to plan a multi-file OAuth build. But an Explore pass found the entire OIDC stack
+already written and wired: `core/oidc.py` (st.login/st.user bridge),
+`core/user_admin.py` (users table + first-user-is-admin onboarding + approval),
+`core/session.resolve_user` (already dispatches to `oidc.gate` when `[auth]` is
+in secrets), `ui/admin.py` (approve/suspend), and `.streamlit/secrets.toml.example`
+with the exact `[auth.auth0]` template. The ONLY code gap was an undeclared
+runtime dep (`authlib`, required by Streamlit's native OIDC). Rules:
+- Before scoping a feature, grep the tree for it — a surprising amount here is
+  pre-built and config-gated (this stack, blue-green, the GRANITE feeds). A
+  20-minute investigation turned a "big build" into a one-line dependency add.
+- Streamlit native `st.login`/`st.user` needs `Authlib>=1.3.2` installed or it
+  raises at login time; declare it explicitly (it's not pulled by `streamlit`).
+- The identity path is: `st.user` (sub/email/name) -> `oidc._provider_identity`
+  -> `user_admin.sync_user_on_login(idp_sub,...)` (keyed on the OIDC `sub`, not
+  email) -> `AdminUser` + org + `Permissions`. First login = admin; the rest are
+  pending until approved. Don't confuse this with the legacy `core/auth.py`
+  MSAL `User` — the active stack is `AdminUser`.
+
 ## Lesson — a script that controls services must self-elevate (2026-08-04)
 
 `update-workbench.bat` synced code fine but the blue/green swap at the end died:

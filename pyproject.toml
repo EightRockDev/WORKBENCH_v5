@@ -5,6 +5,10 @@ description = "Eight Rock Capital Partners — multifamily underwriting workbenc
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "streamlit>=1.40",
+    # Streamlit's native OIDC login (st.login / st.user) requires Authlib at
+    # runtime — without it, clicking "Log in" raises. Needed for real SSO
+    # (Google / Microsoft / email+password via Auth0). See core/oidc.py.
+    "authlib>=1.3.2",
     "pandas>=2.2",
     "numpy>=2.0",
     "numpy-financial>=1.0",

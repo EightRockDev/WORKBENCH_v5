@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.22.0.0.0 — 2026-08-04  ·  enable real SSO login (add the authlib dependency)
+Owner wants true login (Microsoft / Google / email+password) tonight. Good news:
+the whole OIDC stack was already built — `core/oidc.py` bridges `st.login`/
+`st.user` into `core/user_admin.sync_user_on_login` -> the `users` table ->
+`AdminUser`/org/`Permissions`; `core/session.resolve_user` already dispatches to
+`oidc.gate` the moment `[auth]` exists in secrets; `ui/admin.py` has the
+approval flow; first login becomes admin, others land on a pending-approval
+screen. The ONLY code gap was that Streamlit's native OIDC needs **Authlib** at
+runtime and it wasn't declared. Added `authlib>=1.3.2` to pyproject + uv.lock.
+
+Turning login on now needs no more code — only host config (owner):
+1. Create an Auth0 app; enable Google + Microsoft social + Username-Password
+   (email/password) connections; set callback `https://workbench.eight-rock.com/oauth2callback`.
+2. Create `.streamlit/secrets.toml` from `secrets.toml.example` with `[postgres].url`,
+   `[auth]` (redirect_uri + a strong cookie_secret), `[auth.auth0]`
+   (client_id, client_secret, server_metadata_url).
+3. Ensure Postgres is live (pilot_schema applied) so `pg.is_configured()` is True.
+4. Unset `ER_APP_PASSCODE` / `ER_DEV_LOGIN` in production.
+
 ## V5.21.3.0.0 — 2026-08-04  ·  browser tab title -> "Quarrie Workbench"
 Owner ask: renamed the browser-tab / page title from "Eight Rock · Virginia
 Property Workbench" to **"Quarrie Workbench"** (`st.set_page_config(page_title=)`
