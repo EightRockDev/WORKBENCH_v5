@@ -12,6 +12,11 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.21.3.0.0 — 2026-08-04  ·  browser tab title -> "Quarrie Workbench"
+Owner ask: renamed the browser-tab / page title from "Eight Rock · Virginia
+Property Workbench" to **"Quarrie Workbench"** (`st.set_page_config(page_title=)`
+in app.py). The in-app top-bar wordmark (QUARRIE + property name) is unchanged.
+
 ## V5.21.2.0.0 — 2026-08-04  ·  the updater must self-elevate for the blue/green swap
 `update-workbench.bat` synced the new code but the zero-downtime swap failed —
 `Restart-Service` needs admin, the updater wasn't elevated, and it died with

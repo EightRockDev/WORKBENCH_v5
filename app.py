@@ -680,7 +680,7 @@ small {{
 
 def main() -> None:
     st.set_page_config(
-        page_title="Eight Rock · Virginia Property Workbench",
+        page_title="Quarrie Workbench",
         page_icon="🏢",
         layout="wide",
         initial_sidebar_state="expanded",
