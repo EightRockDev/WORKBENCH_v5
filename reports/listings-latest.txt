@@ -1,3 +1,8 @@
-autopilot listings @ 2026-08-04T17:11:47
+autopilot listings @ 2026-08-04T18:10:39
 
-  [listings] fresh (pulled within 7 days, 13 favourites, generation 2) - skipping; 268 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: Falcon Creek -> not_found
+  [listings] zillow: Falcon Creek -> not_found
+  [listings] apartments_com: Falcon Creek -> not_found
+  [listings] property_site: Falcon Creek -> not_found
+  [listings] wrote 4 rows (0 successful scrapes)
