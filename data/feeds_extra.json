@@ -219,9 +219,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "UPPER(LOCALITY) = 'RICHMOND CITY'",
+    "where": "FIPS = '51760'",
     "record_count": 76739,
-    "note": "VGIN statewide fallback: UPPER(LOCALITY) = 'RICHMOND CITY'; 76,739 records; fields ['apn']"
+    "note": "VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']"
   },
   {
     "market": "Richmond",
