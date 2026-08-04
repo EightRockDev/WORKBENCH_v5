@@ -12,6 +12,32 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.20.4.0.0 — 2026-08-04  ·  the ACTUAL fade: an infinite auto-save/rerun loop
+Task Manager showed 4% CPU / 0% disk while Underwriting faded in/out the moment
+it opened, "Photo Upload" never clearing — so it was neither performance nor the
+file watcher (v5.20.3, still correct hygiene). It was a rerun LOOP inside the
+Underwriting render itself.
+
+`_render_dials` rebuilt the candidate deal with
+`DealState.model_validate({...dial widgets only...})`. But `DealState` also
+carries non-dial fields the widgets never touch: `selected_levers` and the
+FR-9.3.1 concurrency metadata `row_version` / `updated_by` / `updated_at` (added
+2026-07-31). model_validate reset those to defaults (row_version=0,
+updated_at=None, selected_levers=[]), so any deal saved even once was NEVER equal
+to the rebuild → the `if new_deal != deal:` auto-save fired on EVERY render →
+`save_deal()` (bumping row_version) → `st.rerun()` → reload → still unequal →
+forever. The pane never reached a stable run, so the previous tab's DOM (the
+Subject "Photo Upload" header) never cleanly cleared and just kept re-fading.
+The loop also silently wiped `selected_levers` and churned the version counter
+on every cycle.
+
+Fix: build `new_deal` with `deal.model_copy(update={...dials...})` so the non-
+dial fields round-trip — `!=` now reflects only real dial edits. Also scoped the
+post-save `st.rerun()` to folder-CREATION only (an ordinary edit already reran
+via the widget interaction), so a stale-equality regression can never again
+become an infinite UI loop. Regression + mutation tests in
+`tests/test_underwriting.py`.
+
 ## V5.20.3.0.0 — 2026-08-04  ·  the REAL cause of the fading: file-watch auto-reruns
 The tab kept fading and re-showing "Photo Upload" with nobody touching the
 keyboard ("just keep coming and going without me touching anything"). This was

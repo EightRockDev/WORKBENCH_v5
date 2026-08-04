@@ -929,6 +929,40 @@ justifies skipping work must state what it is protecting** — the count is now
 in the message, so a stuck pull is visible in the daily report instead of
 needing a query to find.
 
+## Lesson — an auto-save that rebuilds a model can loop forever (2026-08-04)
+
+The Underwriting tab faded in/out on its own at 4% CPU / 0% disk — not
+performance, not the file watcher, but an infinite rerun loop in the render.
+The pattern to recognize (and never write):
+
+    new = Model.model_validate({...SOME fields...})   # loses the others
+    if new != loaded:
+        save(new); st.rerun()
+
+`_render_dials` rebuilt the deal from ONLY the dial widgets, but `DealState`
+also has `selected_levers` + concurrency metadata (`row_version`, `updated_by`,
+`updated_at`). model_validate reset those to defaults, so a once-saved deal was
+never equal to the rebuild → auto-save + `st.rerun()` fired every render →
+row_version kept climbing, levers kept getting wiped, the page never settled.
+
+Rules paid for here:
+- To diff "did the user change anything?", build the candidate with
+  `loaded.model_copy(update={...only the edited fields...})`, NEVER a fresh
+  `model_validate` of a subset. A partial rebuild silently resets every field
+  you didn't list, and any of them (especially auto-incremented metadata like
+  row_version) makes the equality always-unequal.
+- An auto-save must be idempotent: saving with no user change, then reloading,
+  must produce an EQUAL object. If it doesn't, and you `st.rerun()` on
+  inequality, you have an infinite loop. Test the no-op: rebuild-from-own-values
+  == original.
+- Gate any post-save `st.rerun()` to the narrow reason it exists (here: a
+  brand-new folder). A widget edit already triggers its own rerun, so an
+  unconditional rerun-on-save only adds loop risk.
+- Diagnostic order for "fades on its own": (1) is it re-running? low CPU +
+  visible cadence = yes; (2) external trigger (file watcher / autorefresh) or
+  in-script (`st.rerun` reachable every run)? Grep the active tab's render for
+  `st.rerun` and for `!= ... : save; rerun` shapes before blaming CSS.
+
 ## Lesson — "fading with nobody touching it" is a rerun from OUTSIDE the browser (2026-08-04)
 
 Chased a "tab keeps fading / shows Photo Upload from another tab" report as a

@@ -561,14 +561,25 @@ def _render_dials(
     if abs(vac - deal.vac) > 0.001:
         new_vacancy_source = "user"
 
-    new_deal = DealState.model_validate({
-        "s-pp": pp, "s-noi": noi, "s-dp": dp, "s-ir": ir,
-        "s-vac": vac, "s-rg": rg, "s-eg": eg, "s-xc": xc,
-        # Amortization is locked at 25 yrs (config.AMORT_YEARS) — the dial
-        # input was removed in v0.71 since it was always disabled. We still
-        # write it to deal.json so DealState validates and existing deals
-        # round-trip cleanly.
-        "s-hp": hp, "s-am": int(config.AMORT_YEARS), "s-io": io, "s-amf": amf,
+    # Build the candidate from a COPY of the loaded deal, updating only the
+    # dial fields. This is load-bearing: DealState also carries non-dial fields
+    # the widgets don't touch — `selected_levers`, and the FR-9.3.1 concurrency
+    # metadata `row_version` / `updated_by` / `updated_at`. Rebuilding via
+    # `model_validate({...dials...})` reset those to defaults (row_version=0,
+    # updated_at=None, selected_levers=[]), so a once-saved deal (non-zero
+    # row_version, a timestamp) was NEVER equal to `new_deal` — the `!=` below
+    # fired on every render, auto-saving and `st.rerun()`-ing forever. That is
+    # the "Underwriting fades in/out on its own, Photo Upload never clears"
+    # loop (owner, 2026-08-04): the page never reached a stable run. Copying
+    # preserves those fields, so `!=` now reflects only real dial edits — and
+    # it stops silently wiping `selected_levers` on every rerun.
+    # Amortization stays locked at 25 yrs (config.AMORT_YEARS); the dial was
+    # removed in v0.71 but the field is still written so old deals round-trip.
+    new_deal = deal.model_copy(update={
+        "pp": float(pp), "noi": float(noi), "dp": float(dp), "ir": float(ir),
+        "vac": float(vac), "rg": float(rg), "eg": float(eg), "xc": float(xc),
+        "hp": int(hp), "am": int(config.AMORT_YEARS), "io": int(io),
+        "amf": float(amf),
         "raise_amount": raise_amount if raise_amount != int(default_raise) else None,
         "vacancy_source": new_vacancy_source,
         "tax_reassessment_on": bool(tax_reassess),
@@ -581,8 +592,10 @@ def _render_dials(
     # first save if one doesn't exist yet — that's how a "no folder yet"
     # property becomes a real deal.
     if new_deal != deal:
+        created_folder = False
         if folder is None:
             folder = ensure_property_folder(prop)
+            created_folder = True
             st.success(f"📁 Created folder `{folder.folder_name}`")
         # FR-9.3.1: save against the version this session loaded, so a
         # co-worker's save between our load and our write is caught instead
@@ -594,9 +607,14 @@ def _render_dials(
             _render_save_conflict(st, folder, new_deal, res)
             return deal
         st.caption("✓ saved")
-        # Trigger an immediate rerun so the rest of the page (and other tabs)
-        # pick up the new folder via the next discover_property_folders() call.
-        st.rerun()
+        # Only a BRAND-NEW folder needs a full rerun (so the sidebar and other
+        # tabs discover it via discover_property_folders()). An ordinary dial
+        # edit does NOT: the slider interaction already triggered this rerun,
+        # and the metrics below recompute from `new_deal` in this same run.
+        # Rerunning on every save is what turned a stale-equality bug into an
+        # infinite fade loop — keep the rerun scoped to folder creation.
+        if created_folder:
+            st.rerun()
 
     return new_deal
 
