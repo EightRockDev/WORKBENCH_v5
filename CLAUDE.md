@@ -761,6 +761,20 @@ on was real. Also: not every data source has an API — VA SCC's CIS portal is
 search/filing only, no token; don't send the owner hunting for one that
 doesn't exist, route to a vendor that does (Cobalt).
 
+## Lesson — a reused element slot ghosts across reruns; key it (2026-08-04)
+
+The sticky-tab fix (keyed segmented_control + `if active_tab ==` into one
+container) cured the st.tabs bounce but introduced a worse symptom: on a slow
+rerun the shared slot painted the PREVIOUS tab's content, faded, until the
+run finished — "the underwriting tab keeps fading and shows other tabs'
+data." Streamlit diffs elements by position across reruns; when the content
+at a position changes shape (tab switch) it shows the stale subtree during
+the fade. **Any place you render different content into the same slot across
+reruns needs a stable per-state `key`** — `st.container(key=f"...{state}")`
+makes Streamlit unmount the old and mount the new instead of ghosting. st.tabs
+never had this because each pane is its own keyed container; the conditional-
+render pattern must recreate that explicitly.
+
 ## Lesson — st.tabs and query-param auth both lose state on navigation (2026-08-03)
 
 Two same-day UI bugs, one root shape: state that doesn't survive a

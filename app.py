@@ -899,8 +899,22 @@ def main() -> None:
     # the module grant — otherwise a lock notice explains the restriction. This
     # is how "a Maintenance preset cannot see the purchase price" is enforced
     # in the UI: the financial renderers are never invoked for that role.
+    # A per-tab KEYED container is what stops the fade from showing another
+    # tab's content (owner report 2026-08-03). The sticky selector renders
+    # each section into the same slot; without a stable per-tab key Streamlit
+    # diffs the old tab's elements against the new one and shows the previous
+    # content, faded, during the rerun ("sometimes it shows data from other
+    # tabs"). Keying the container by active_tab makes Streamlit UNMOUNT the
+    # old section and mount the new one cleanly - no cross-tab ghosting.
     import contextlib
-    with (_section_ctx if _section_ctx is not None else contextlib.nullcontext()):
+    _outer = _section_ctx if _section_ctx is not None else contextlib.nullcontext()
+    with _outer:
+        with st.container(key=f"ptab_section_{active_tab}"):
+            _render_active_section(active_tab, prop, folder)
+
+
+def _render_active_section(active_tab, prop, folder) -> None:
+        from ui import authz as _authz     # module-gating, same as the caller
         if active_tab == "subject":
             # Property detail leads: the header card (photo, name, address,
             # Favorite, Open Folder) identifies the deal, so it holds the top.

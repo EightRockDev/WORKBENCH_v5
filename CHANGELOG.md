@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.19.1.0.0 — 2026-08-04  ·  stop the tab fade from showing other tabs' data
+"Underwriting keeps fading out so I can't update … sometimes it shows data
+from other tabs." The V5.16.4 sticky-tab change renders each section into the
+same slot; without a stable per-tab key, Streamlit diffs the previous tab's
+elements against the new tab's during a rerun and paints the OLD content,
+faded, until the run finishes — so the Market tab's Rent Listing URLs and
+Diligence's Owner Intelligence bled onto Underwriting.
+
+Fix: the section dispatch now renders inside `st.container(key=
+f"ptab_section_{active_tab}")`. A per-tab key makes Streamlit UNMOUNT the
+prior section and mount the new one cleanly — no cross-tab ghosting — while
+keeping the sticky selector (no bounce). Sticky-tab AppTests still pass.
+
 ## V5.19.0.0.0 — 2026-08-03  ·  ingest the availability board + Apollo name-search
 Two things from the same session.
 
