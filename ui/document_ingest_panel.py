@@ -109,6 +109,25 @@ def _run_extraction(target: Path, doc_type, overwrite: bool, fp: Path, c: dict) 
     """Ingest one on-disk file and render the outcome. Shared by the
     browser-upload path and the from-disk picker."""
     from core.ai_gate import AIDisabled
+
+    # Dedup: if this exact file was already ingested (and wrote data), don't
+    # re-run — re-running just re-extracts the same values and, for PDFs, burns
+    # another API call. Skipped only when the operator asks to Overwrite.
+    # Owner report 2026-08-04: the same doc uploaded several times each re-ran
+    # and appended a "0 fields written" row.
+    if not overwrite:
+        prior = di.find_prior_ingestion(fp, di.file_content_hash(target))
+        if prior is not None:
+            when = str(prior.get("extracted_at", "")).replace("T", " ")
+            st.info(
+                f"**{target.name}** is identical to a file already ingested "
+                f"on {when} as `{prior.get('document_type')}` "
+                f"({prior.get('fields_written')} data points). Skipped. "
+                "Tick **Overwrite existing fields** to re-run it anyway.",
+                icon="🛈",
+            )
+            return
+
     try:
         with st.spinner(f"Extracting fields from {target.name}..."):
             result = di.ingest_document(target, document_type=doc_type)

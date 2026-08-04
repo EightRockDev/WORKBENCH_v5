@@ -929,6 +929,24 @@ justifies skipping work must state what it is protecting** — the count is now
 in the message, so a stuck pull is visible in the daily report instead of
 needing a query to find.
 
+## Lesson — ingestion needs dedup, temperature=0, and a leaf-based count (2026-08-04)
+
+Owner uploaded the same T-12 several times and saw "6 fields" then "9 fields",
+plus duplicate history rows. Three separate causes, worth remembering:
+- No content-hash dedup meant every re-upload re-ran (and, for PDFs, re-billed
+  an API call) and appended a row even when 0 new fields were written. Fix:
+  `file_content_hash` + `find_prior_ingestion`, skip unless Overwrite.
+- The extraction LLM call left `temperature` at the API default, so the same
+  PDF could extract slightly different values run-to-run. Always pin
+  `temperature=0` for extraction/classification — anything meant to be a pure
+  function of its input.
+- "fields written" counted top-level keys, so a whole nested block counted as
+  1 and a null counted as written. Count leaves, skip nulls.
+- The headline "6 vs 9" was mostly a red herring: the SAME file had been run
+  under different TYPES (t12 vs om), and each type is a different extractor
+  writing a different key set. When a count looks wrong, check whether the
+  inputs (here, the document TYPE) were actually the same first.
+
 ## Lesson — a port-forward target must be RFC1918, not just "not loopback" (2026-08-04)
 
 `install-caddy.ps1` picks the machine's LAN IP to tell the operator what to

@@ -208,6 +208,11 @@ class IngestionResult:
     confidence: float
     extraction_notes: str = ""
     error: str | None = None
+    # sha256 of the source file's bytes — used to skip re-ingesting an
+    # identical file (owner report 2026-08-04: the same doc uploaded several
+    # times each re-ran and appended a "0 fields written" row). Set by the
+    # ingest_document wrapper; recorded in the _ingestion_log for dedup.
+    content_hash: str = ""
 
     @property
     def is_success(self) -> bool:
@@ -376,7 +381,70 @@ _PROMPTS = {
 }
 
 
+def file_content_hash(path: Path) -> str:
+    """sha256 of a file's bytes, streamed so a 200 MB upload isn't loaded whole.
+
+    Returns '' if the file can't be read — an empty hash never matches, so a
+    read failure degrades to "not a duplicate" rather than blocking ingest.
+    """
+    import hashlib
+    h = hashlib.sha256()
+    try:
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+    except OSError:
+        return ""
+    return h.hexdigest()
+
+
+def find_prior_ingestion(folder: Path, content_hash: str) -> dict | None:
+    """Return the log entry for a previously-ingested identical file, or None.
+
+    Dedup key is the file's content hash: the same bytes ingested before (that
+    actually wrote data) need not be re-run — re-running just re-extracts the
+    same values and, pre-fix, appended another "0 fields written" row. Only
+    entries that wrote at least one field count, so a prior failed/empty run
+    doesn't block a real retry.
+    """
+    if not content_hash:
+        return None
+    from core.storage import get_storage
+    from data.property_io import _rel
+    storage = get_storage()
+    key = f"{_rel(folder)}/sources.json"
+    if not storage.is_file(key):
+        return None
+    try:
+        data = json.loads(storage.read_text(key))
+    except (json.JSONDecodeError, OSError):
+        return None
+    for entry in reversed((data or {}).get("_ingestion_log", []) or []):
+        if (entry.get("content_hash") == content_hash
+                and (entry.get("fields_written") or 0) > 0):
+            return entry
+    return None
+
+
 def ingest_document(
+    file_path: Path,
+    document_type: str | None = None,
+    *,
+    max_chars: int = 60_000,
+) -> IngestionResult:
+    """Extract structured data from one document, stamping the content hash.
+
+    Thin wrapper over ``_ingest_document`` so every return path — success or
+    error — carries ``content_hash`` for dedup, without threading it through
+    each of the impl's return statements.
+    """
+    result = _ingest_document(file_path, document_type, max_chars=max_chars)
+    if not result.content_hash:
+        result.content_hash = file_content_hash(file_path)
+    return result
+
+
+def _ingest_document(
     file_path: Path,
     document_type: str | None = None,
     *,
@@ -505,6 +573,10 @@ def ingest_document(
         msg = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=4096,
+            # temperature=0: extraction must be repeatable. Without it the API
+            # default sampling made the same PDF+type return slightly different
+            # values (and field counts) run-to-run (owner report 2026-08-04).
+            temperature=0,
             messages=[{"role": "user", "content": prompt + truncated}],
         )
         content = msg.content[0].text if msg.content else ""
@@ -612,19 +684,50 @@ def commit_to_sources_json(
         if k in existing and not overwrite:
             continue
         existing[k] = wrapped
-        n_written += 1
+        n_written += _count_data_points(k, wrapped)
 
-    # Add extraction metadata sidecar
+    # Add extraction metadata sidecar. content_hash lets a later upload of the
+    # same file be recognized as a duplicate (see find_prior_ingestion).
     existing.setdefault("_ingestion_log", []).append({
         "source_doc": result.source_doc,
         "document_type": result.document_type,
         "extracted_at": extracted_at,
         "fields_written": n_written,
+        "content_hash": result.content_hash,
         "extraction_notes": result.extraction_notes,
     })
 
     storage.write_text(key, json.dumps(existing, indent=2, default=str))
     return n_written
+
+
+def _count_leaves(v: Any) -> int:
+    """Count committed data points, not top-level keys.
+
+    The old count incremented once per top-level key — so a whole nested
+    block (all the T-12 revenue lines) counted as 1, a null value counted as
+    a written field, and a rent-roll counted as 1 (owner report 2026-08-04:
+    "6 fields" vs "9 fields" was not comparing like with like). This counts
+    real leaves: a wrapped scalar with a non-null value = 1, a nested dict =
+    the sum of its leaves, a list = its length, a bare scalar = 1.
+    """
+    if v is None:
+        return 0
+    if isinstance(v, dict):
+        if "value" in v and "source_doc" in v:      # a wrapped scalar field
+            return 0 if v.get("value") is None else 1
+        return sum(_count_leaves(x) for x in v.values())
+    if isinstance(v, list):
+        return len(v)
+    return 1
+
+
+def _count_data_points(key: str, wrapped: Any) -> int:
+    """Leaf count for one committed key; rentRoll counts as its unit rows."""
+    if key == "rentRoll" and isinstance(wrapped, dict):
+        units = wrapped.get("units")
+        return len(units) if isinstance(units, list) else 1
+    return _count_leaves(wrapped)
 
 
 def _wrap_nested(d: dict, source_doc: str, extracted_at: str, confidence: float) -> dict:

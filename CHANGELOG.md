@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.20.6.0.0 — 2026-08-04  ·  document ingestion: dedup, determinism, honest counts
+Owner asked why re-uploading the same T-12 gave "6 fields" then "9 fields" and
+why identical files kept appearing in the history. Three fixes:
+
+- **Dedup.** `file_content_hash` (streamed sha256) + `find_prior_ingestion`
+  recognize an identical re-upload and skip it (unless Overwrite is ticked),
+  instead of re-running and appending a "0 fields written" row. The hash is
+  recorded in `_ingestion_log`. A prior run that wrote nothing does not block a
+  real retry.
+- **Determinism.** The extraction LLM call now sets `temperature=0`. Without it
+  the same PDF+type could return slightly different values/counts each run.
+- **Honest count.** "fields written" now counts data points (`_count_leaves` /
+  `_count_data_points`), not top-level keys: a nested block counts its leaves,
+  a null is not counted, a rent roll counts its unit rows. The 6-vs-9 was
+  mostly the same file processed under two different TYPES (t12 vs om), each a
+  different extractor — but the count method made it look worse than it was.
+
+Tests in `tests/test_document_ingest.py`.
+
 ## V5.20.5.0.0 — 2026-08-04  ·  Caddy installer printed a Tailscale IP as the forward target
 Go-live: `install-caddy.bat` ran clean (Caddy installed, config valid, DNS →
 98.190.60.27, 8501 healthy, firewall opened, service started) but told the
