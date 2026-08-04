@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.21.2.0.0 — 2026-08-04  ·  the updater must self-elevate for the blue/green swap
+`update-workbench.bat` synced the new code but the zero-downtime swap failed —
+`Restart-Service` needs admin, the updater wasn't elevated, and it died with
+"Cannot open WorkbenchBlue service", leaving the app on the OLD code. Added a
+self-elevation block to `update-workbench.bat` (same `net session` + RunAs
+pattern as install-caddy/install-service), so the whole update runs with the
+rights the service restart needs. Also gave `deploy-swap.ps1` an explicit admin
+check that fails early with a clear instruction instead of the opaque
+"Cannot open service" error.
+
 ## V5.21.1.0.0 — 2026-08-04  ·  Admin toggle out of the (hidden) sidebar into the main pane
 Owner couldn't reach Admin: it was a toggle inside `st.sidebar`, but the custom
 top bar hides Streamlit's sidebar handle, so a collapsed sidebar left no way to

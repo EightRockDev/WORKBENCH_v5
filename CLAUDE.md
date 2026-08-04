@@ -820,6 +820,22 @@ clock alone — `_feed_fresh` (muni), `spine_input_fingerprint` (phase0), each
 with a force env. Also: `st.tabs` renders EVERY tab body on every rerun —
 anything heavy behind a tab needs `st.cache_data`.
 
+## Lesson — a script that controls services must self-elevate (2026-08-04)
+
+`update-workbench.bat` synced code fine but the blue/green swap at the end died:
+`Restart-Service` (and `sc stop`) need administrator rights, the updater didn't
+elevate, and it failed with "Cannot open WorkbenchBlue service" — leaving the
+app running the OLD code after a "successful" update. install-caddy.bat and
+install-service.bat already self-elevate; the updater didn't, even though it
+grew a service-restart step. Rules:
+- Any .bat/.ps1 that stops/starts/restarts a Windows service, writes to
+  Program Files, or creates a scheduled task MUST self-elevate at the top
+  (`net session` + `Start-Process -Verb RunAs`, or an IsInRole check in PS).
+- When a step is added that needs new privileges, re-check the entry point's
+  elevation — don't assume the wrapper still has enough rights.
+- Fail LOUD and specific: `deploy-swap.ps1` now checks IsInRole and prints how
+  to fix it, instead of surfacing the opaque "Cannot open service".
+
 ## Lesson — don't gate a feature behind chrome you've hidden (2026-08-04)
 
 Admin was a toggle inside `st.sidebar`. But `_inject_branding` hides Streamlit's

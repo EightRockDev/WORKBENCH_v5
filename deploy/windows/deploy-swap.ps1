@@ -13,6 +13,21 @@
 # ===========================================================================
 $ErrorActionPreference = "Stop"
 
+# Restart-Service needs administrator rights. Without them it fails with the
+# opaque "Cannot open WorkbenchBlue service on computer '.'" and the swap dies
+# mid-way, leaving the old code serving (owner report 2026-08-04). Fail early
+# with a clear instruction instead. (update-workbench.bat self-elevates, so the
+# normal path already runs elevated; this guards a direct run.)
+$isAdmin = ([Security.Principal.WindowsPrincipal] `
+    [Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Write-Host "[swap] Administrator rights are required to restart the services."
+    Write-Host "[swap] Open PowerShell as Administrator and re-run, or just run"
+    Write-Host "[swap] update-workbench.bat (it elevates itself)."
+    exit 1
+}
+
 function Wait-Healthy([int]$Port) {
     for ($i = 0; $i -lt 60; $i++) {
         try {

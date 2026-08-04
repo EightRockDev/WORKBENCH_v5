@@ -7,6 +7,19 @@ REM ===================================================================
 cd /d "%~dp0"
 title Update workbench - press a key to close when finished
 
+REM Self-elevate. In blue/green service mode the update MUST restart the
+REM WorkbenchBlue/Green services at the end (and may `sc stop` them if a
+REM dependency file is locked) - both need administrator rights. Without this,
+REM deploy-swap.ps1 died with "Cannot open WorkbenchBlue service" and the app
+REM kept serving the OLD code (owner report 2026-08-04). Elevate up front so
+REM the whole update runs with the rights it needs.
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+  echo Requesting administrator rights...
+  powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+  exit /b
+)
+
 REM Never stop to ask "Should I try again? (y/n)" - fail fast instead
 REM so the retry logic below (not a human) handles locked files.
 set "GIT_ASK_YESNO=false"
