@@ -1,15 +1,13 @@
-autopilot phase0 @ 2026-08-04T04:15:14
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-08-04T05:14:07
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,754,024
+Assessor records available: 4,004,999
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,129  .../Accela_base_map_pro/MapServer/0
   Chesapeake        116,302  .../Address_Points/MapServer/0
   Chesapeake         92,588  .../OpenData/MapServer/15
+  Chesapeake         92,461  .../VA_Parcels/FeatureServer/0
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
   Hampton            51,803  .../VA_Parcels/FeatureServer/0
   Newport News       54,437  .../Parcel/MapServer/0
@@ -18,71 +16,77 @@ Assessor feeds present (Hampton Roads):
   Norfolk            74,637  .../data.norfolk.gov/resource/yvpm-8aid.json
   Portsmouth         36,464  .../Parcels/FeatureServer/3
   Portsmouth         36,241  .../Parcels_Real_Estate_View/FeatureServer/3
+  Portsmouth         36,615  .../VA_Parcels/FeatureServer/0
+  Suffolk            45,160  .../VA_Parcels/FeatureServer/0
   Virginia Beach    177,893  .../Residential_Address_Points_w_Housing_Structure/FeatureServer/0
   Virginia Beach    177,259  .../SolarVector_PubLayers/FeatureServer/2
 
 Building the Eight Rock property backbone (properties_8r)...
-  [rent-signal] listings ingest: 15 success rows -> 4 properties, 2 with usable rents, 1 in crosswalk -> 1 stamped
-  [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
+  [rent-signal] listings ingest: 17 success rows -> 5 properties, 3 with usable rents, 1 in crosswalk -> 1 stamped
+  [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b, a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
 
-muni records scanned:      1,019,574
-parcels normalized:        1,019,574
-multifamily (>= 10 units): 18,933
-written to properties_8r:  1,019,574
-provisional (no-APN) ids:  25,929
-units derived from address points: 3,139  (skipped non-residential: 34,776)
+muni records scanned:      1,270,549
+parcels normalized:        1,270,549
+multifamily (>= 10 units): 19,058
+written to properties_8r:  1,270,549
+provisional (no-APN) ids:  27,413
+units derived from address points: 4,178  (skipped non-residential: 34,806)
 coords backfilled by address (multifamily): 205
-rent estimates stamped (HUD FMR blend): 18,930
+rent estimates stamped (HUD FMR blend): 18,947
 rents from scraped listings: 1
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 49,188  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 50,102  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Virginia Beach 15,858, Chesapeake 1,963, Norfolk 863, Newport News 244, Richmond 3, Hampton 2
+Multifamily by city: Virginia Beach 15,858, Chesapeake 1,963, Norfolk 863, Newport News 244, Richmond 111, Suffolk 17, Hampton 2
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Norfolk: Apartment x863
   Chesapeake: Apartments x744, 1060 x186, 3015 x166, (units only) x164, 4020 x151
   Newport News: A x237, C x4, (units only) x2, R x1
-  Richmond: Multi-Family x3
+  Richmond: (units only) x108, Multi-Family x3
   Virginia Beach: Multi Family x15682, (units only) x176
   Hampton: (units only) x2
+  Suffolk: (units only) x17
 
 Cities with parcels but NO multifamily found - their top use codes:
-  Portsmouth: 9 x314, 18 x181, 7 x139, 5 x80, 3 x27, 2 x23, 29 x19, (blank) x17
+  Portsmouth: (blank) x36617, 9 x314, 18 x181, 7 x139, 5 x80, 3 x27, 2 x23, 29 x19
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Norfolk: code only (no units): 858, units>=10: 5
   Chesapeake: units>=10: 1,830, code only (no units): 133
   Newport News: units>=10: 244
-  Richmond: code only (no units): 3
+  Richmond: units>=10: 108, code only (no units): 3
   Virginia Beach: code only (no units): 15,470, units>=10: 388
   Hampton: units>=10: 2
+  Suffolk: units>=10: 17
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Norfolk: property_name, number_of_buildings, national_median_site_energy, national_median_site_energy_1, national_median_source_energy, national_median_source_energy_1, percent_difference_from
-  Richmond: OBJECTID_12, CountOfPIN, DwellingVa, LandSqFt, ProvalAsmt, PropertyCl, Mailable, Locality, ParcelID_1, CountOfP_1, LandValu_1, Dwelling_1
+  Richmond: VGIN_QPID, LOCALITY, PTM_ID, OBJECTID_12, CountOfPIN, DwellingVa, LandSqFt, ProvalAsmt, PropertyCl, Mailable, Locality, ParcelID_1
   Hampton: VGIN_QPID, LOCALITY, VGIN_GEOID, VGIN_LASTU, NEW_ZONE_S, NOTES, EC_FLOOD_1, EC_FLOOD_2
-  Portsmouth: PREV_INST_, COMBLDFACT, COMPHDPRC1, COMFNDPRC2, COMECDPRC3, FRONT, LOC_ZIP, OWNER_ST_N, MP, ACRES_A, LOT_SEQ_A, ACPRICE_A
+  Portsmouth: PREV_INST_, VGIN_QPID, LOCALITY, PTM_ID, COMBLDFACT, COMPHDPRC1, COMFNDPRC2, COMECDPRC3, FRONT, LOC_ZIP, OWNER_ST_N, MP
   Virginia Beach: OBJECTID_12, SDO_AREA, OBJECTID_12_13, OBJECTID_12_13_14, COUNT_, AREA, MIN_, MAX_, RANGE, An_MEAN, STD, SUM_
+  Chesapeake: VGIN_QPID, LOCALITY, PTM_ID
+  Suffolk: VGIN_QPID, LOCALITY, PTM_ID
 
 P0-1 GATE PASSED.
 
 P0-2 shadow parity: comparing against 13,657 legacy rows...
 
 legacy multifamily rows:  639
-matched to the 8R backbone: 531 (83.1%)  [106 by address, 381 by lat/lng, 44 by proximity]
-unit counts agree:        151/205
+matched to the 8R backbone: 594 (93.0%)  [106 by address, 446 by lat/lng, 42 by proximity]
+unit counts agree:        151/203
 year built agrees:        87/186
 
 comp-set replay subjects: 184  (+16 skipped - city has no 8R coordinates yet)
-avg comp-set overlap:     50.5%  (gate >= 90%)
-avg-rent delta:           26.9%  (gate <= 5%)
+avg comp-set overlap:     48.7%  (gate >= 90%)
+avg-rent delta:           27.0%  (gate <= 5%)
 
 P0-2 GATE: not met yet
-crosswalk persisted:      531 legacy->8R mappings (property_crosswalk)
+crosswalk persisted:      594 legacy->8R mappings (property_crosswalk)
 (+30 unit disagreements resolved by multi-parcel footprint totals)
-match rate, covered cities only: 92.3%  (cities whose feed has multifamily data)
+match rate, covered cities only: 92.4%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
   Virginia Beach    174 ->   174 |    387 |    387
@@ -90,8 +94,8 @@ By city (legacy rows -> matched | backbone MF entities | w/ coords):
   Newport News      121 ->   119 |    243 |    243
   Hampton            75 ->    69 |      2 |      2
   Chesapeake         66 ->    66 |    515 |    515
-  Portsmouth         45 ->    14 |      0 |      0   <- feed has no usable multifamily data
-  Suffolk            34 ->     0 |      0 |      0   <- feed has no usable multifamily data
+  Portsmouth         45 ->    45 |      0 |      0   <- feed has no usable multifamily data
+  Suffolk            34 ->    32 |     17 |     17
 
 Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,176, Chesapeake 133
 
@@ -106,25 +110,19 @@ Largest unit-count disagreements (check these matches):
   Cottages at Great Bridge: legacy 128 vs 8R 50
 
 Learning apartment use codes from matched properties:
-  Chesapeake: 19 known-MF parcels matched
-      [reject] code '1010': on 5 MF parcels, 50,451/94,295 citywide (53.5%) - 54% of the whole roll carries it - too common to mean apartments
-      [reject] code '4000': on 2 MF parcels, 924/94,295 citywide (1.0%) - only 2 supporting parcel(s), need 3
-      [reject] code '7430': on 2 MF parcels, 20/94,295 citywide (0.0%) - only 2 supporting parcel(s), need 3
-      [reject] code '4341': on 1 MF parcels, 65/94,295 citywide (0.1%) - only 1 supporting parcel(s), need 3
-      [reject] code '4344': on 1 MF parcels, 180/94,295 citywide (0.2%) - only 1 supporting parcel(s), need 3
-      [reject] code '1060': on 1 MF parcels, 7,134/94,295 citywide (7.6%) - only 1 supporting parcel(s), need 3
-      [reject] code '1050': on 1 MF parcels, 5,882/94,295 citywide (6.2%) - only 1 supporting parcel(s), need 3
-      [reject] code '7410': on 1 MF parcels, 765/94,295 citywide (0.8%) - only 1 supporting parcel(s), need 3
-      [reject] code '4406': on 1 MF parcels, 325/94,295 citywide (0.3%) - only 1 supporting parcel(s), need 3
-      [reject] code '2010': on 1 MF parcels, 7,117/94,295 citywide (7.5%) - only 1 supporting parcel(s), need 3
-      [reject] code '7440': on 1 MF parcels, 10/94,295 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '4407': on 1 MF parcels, 14/94,295 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '2000': on 1 MF parcels, 3,417/94,295 citywide (3.6%) - only 1 supporting parcel(s), need 3
-  Portsmouth: 8 known-MF parcels matched
-      [reject] code '7': on 2 MF parcels, 139/959 citywide (14.5%) - only 2 supporting parcel(s), need 3
-      [reject] code '5': on 2 MF parcels, 80/959 citywide (8.3%) - only 2 supporting parcel(s), need 3
-      [reject] code '20': on 1 MF parcels, 2/959 citywide (0.2%) - only 1 supporting parcel(s), need 3
-      [reject] code '3': on 1 MF parcels, 27/959 citywide (2.8%) - only 1 supporting parcel(s), need 3
-      [reject] code '56': on 1 MF parcels, 10/959 citywide (1.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '61': on 1 MF parcels, 9/959 citywide (0.9%) - only 1 supporting parcel(s), need 3
+  Chesapeake: 18 known-MF parcels matched
+      [reject] code '1010': on 5 MF parcels, 50,451/94,312 citywide (53.5%) - 53% of the whole roll carries it - too common to mean apartments
+      [reject] code '4000': on 2 MF parcels, 924/94,312 citywide (1.0%) - only 2 supporting parcel(s), need 3
+      [reject] code '7430': on 2 MF parcels, 20/94,312 citywide (0.0%) - only 2 supporting parcel(s), need 3
+      [reject] code '4341': on 1 MF parcels, 65/94,312 citywide (0.1%) - only 1 supporting parcel(s), need 3
+      [reject] code '4344': on 1 MF parcels, 180/94,312 citywide (0.2%) - only 1 supporting parcel(s), need 3
+      [reject] code '1060': on 1 MF parcels, 7,134/94,312 citywide (7.6%) - only 1 supporting parcel(s), need 3
+      [reject] code '1050': on 1 MF parcels, 5,882/94,312 citywide (6.2%) - only 1 supporting parcel(s), need 3
+      [reject] code '7410': on 1 MF parcels, 765/94,312 citywide (0.8%) - only 1 supporting parcel(s), need 3
+      [reject] code '2010': on 1 MF parcels, 7,117/94,312 citywide (7.5%) - only 1 supporting parcel(s), need 3
+      [reject] code '7440': on 1 MF parcels, 10/94,312 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '4407': on 1 MF parcels, 14/94,312 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '2000': on 1 MF parcels, 3,417/94,312 citywide (3.6%) - only 1 supporting parcel(s), need 3
+  Portsmouth: 1 known-MF parcels matched
+      [reject] code '20': on 1 MF parcels, 2/37,559 citywide (0.0%) - only 1 supporting parcel(s), need 3
   no new codes met the evidence bar this run

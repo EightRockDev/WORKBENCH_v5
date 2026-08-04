@@ -1,14 +1,14 @@
 {
   "coverage": 1.0,
   "p0_1_passed": true,
-  "comp_overlap": 0.5046697565719306,
-  "rent_delta": 0.26882950217149304,
-  "rent_pairs": 283,
-  "match_rate": 0.8309859154929577,
-  "covered_match_rate": 0.9232142857142858,
+  "comp_overlap": 0.4871253293807643,
+  "rent_delta": 0.26965376243890543,
+  "rent_pairs": 281,
+  "match_rate": 0.9295774647887324,
+  "covered_match_rate": 0.9242424242424242,
   "comp_subjects": 184,
-  "crosswalk_rows": 531,
+  "crosswalk_rows": 594,
   "p0_2_passed": false,
-  "rents_stamped": 18930,
+  "rents_stamped": 18947,
   "rents_from_listings": 1
 }
