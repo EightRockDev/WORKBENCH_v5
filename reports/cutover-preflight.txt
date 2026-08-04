@@ -1,11 +1,11 @@
-autopilot preflight @ 2026-08-04T04:15:43
+autopilot preflight @ 2026-08-04T05:27:30
 
     (no local deals tables - pilot Postgres migrated at flip)
 
   [PASS] P0-1 coverage 100.0% (>= 95%)
-  [----] comp overlap 50.5% (>= 90%)
-  [----] rent delta 26.9% (<= 5%, must be MEASURED)
-  [PASS] crosswalk materialized (531 mappings)
-  [PASS] rent coverage 100.0% of 18,933 MF rows (hud_fmr: 18,930, none: 3)
+  [----] comp overlap 48.7% (>= 90%)
+  [----] rent delta 27.0% (<= 5%, must be MEASURED)
+  [PASS] crosswalk materialized (594 mappings)
+  [PASS] rent coverage 99.4% of 19,058 MF rows (hud_fmr: 18,947, none: 111)
 
 CUTOVER PREFLIGHT: not ready - unmet items marked [----] above.
