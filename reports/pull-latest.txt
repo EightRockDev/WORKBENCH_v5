@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-05T11:08:23
+autopilot pull @ 2026-08-05T12:08:19
 
 QUARRIE muni-data ETL — 2026-08-05
   discovered feeds loaded from data/feeds_extra.json: 15
@@ -17,8 +17,6 @@ QUARRIE muni-data ETL — 2026-08-05
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
     + Richmond: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
-  [swept] Hampton: 716 stale rows from retired feed https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/42
-  stale rows removed: 716
   [fresh] Norfolk/assessor+sales: pulled within 3 days - keeping 74,253 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor+sales                   74253 records
   [fresh] Norfolk/permits: pulled within 3 days - keeping 124,921 rows (ER_MUNI_FORCE=1 to re-pull)
