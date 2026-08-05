@@ -498,6 +498,22 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — an empty data card is a source question, not always a code bug (2026-08-05)
+
+Sale history read empty. We first found and fixed a real code bug (wrong function
+name, V5.24.9) — but it was STILL empty after, because the deeper issue is data
+availability, not code. Sale history has three possible sources (folder
+`sales.json`, `sources.json → assessmentHistory`, `muni_records`), and the
+assessor feed we actually ingest carries FY assessment VALUES, not deed/transfer
+records — so "who sold to whom for how much" simply isn't in our data for a
+freshly-pulled property. Rule: before writing more code to "fix" an empty
+feature, prove where the data is supposed to come from and whether it exists
+there — a read-only diagnostic that names the empty source
+(`scripts/diagnose_sale_history.py`) settles in one run what a round of guessing
+can't, and stops you from building a fancier reader over a source that has
+nothing to read. Assessment value ≠ sale price; don't conflate the feed you have
+with the feed the feature needs.
+
 ## Lesson — you can't kill a remote Streamlit session; flag it and let it self-logout (2026-08-05)
 
 Owner wanted admins to "sign people out" from the who's-online screen. There is

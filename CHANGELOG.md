@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.13.0.0 — 2026-08-05  ·  Sale-history diagnostic (why it reads empty)
+Owner: "I don't see sale history." The V5.24.9 fix corrected the function-name
+bug, but the card can still be empty for a *data* reason, and there are three
+possible sources. New `scripts/diagnose_sale_history.py` (read-only) names which,
+per property: (1) a curated `sales.json` in the folder, (2) an `assessmentHistory`
+block in `sources.json` (FY assessed values — what the va_assessors ETL actually
+provides, NOT deed/transfer), (3) `muni_records` assessor rows for the locality
+and whether ANY carry sale price/date fields. Run on the box:
+`uv run python scripts/diagnose_sale_history.py "East Beach"`. Early read from the
+code: freshly-pulled properties have no `sales.json`, and the assessor feed we
+ingest carries assessment values, not deed/transfer records — so real sale
+history needs a deed/clerk source we don't yet pull. The diagnostic confirms this
+per property before we wire anything.
+
 ## V5.24.12.0.0 — 2026-08-05  ·  Who's-online: admin-only, with sign-out
 Two owner asks on the who's-online pill. (1) **Only admins can click the count.**
 The topbar "N online" pill is a link to the who's-online page (identities + IPs)
