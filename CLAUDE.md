@@ -854,6 +854,30 @@ structure. (Client IP for who's-online comes from Caddy's `X-Real-IP` header —
 which only exists because the Caddyfile sets `header_up X-Real-IP {remote_host}`;
 direct-to-8501 LAN hits have no such header and read as a local address.)
 
+## Lesson — a mock provider must never surface as real when live is configured (2026-08-05)
+
+Owner saw a pierced principal with provenance `mock-va-scc` and no contacts
+while the providers line said SOS was `live (cobalt)`. The mock SOS fabricates
+an officer name from the entity ("Robert Brg" ← "Brg Aura"), and it was shown as
+a verified "Principal (LLC-pierced)"; BatchData found nothing because the person
+isn't real. Same integrity failure as the radar/coverage work: fabricated data
+presented as real. Rules:
+- Tag every result with its vendor and, at assembly time, check whether a mock
+  vendor produced it. In LIVE-configured mode a mock result must be demoted to
+  the honest "unknown/unresolved" state (here: `entity_unpierced`), not shown as
+  verified. Keep demo/mock mode's deterministic output only when the whole
+  system is in mock mode (`status` says "mock").
+- Diagnose provenance by SIGNATURE: MockSOS's filing-id `VA-<7 digits>` and
+  conf ~0.85-0.94 are distinguishable from Cobalt's real `sosId`/0.86-0.4. A
+  "live" status label is not proof a given record is live — the stored record
+  can be a stale mock from an earlier resolve.
+- `resolve_contacts` is idempotent (re-run replaces the POC set), so a stale
+  mock record is fixed by re-running once live keys are in — say that instead of
+  writing a migration.
+- Root cause here is coverage, not code: Cobalt's VA officer data is thin, so
+  the real fix for VA LLC principals is the live VA SCC token; skip-trace can't
+  find a phone/email until the pierce yields a REAL name.
+
 ## Lesson — label the data gap; don't reclassify blind to hide it (2026-08-05)
 
 Owner said "do both" — (1) fix the VB "Multi Family" over-count + Hampton/

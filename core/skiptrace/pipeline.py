@@ -145,6 +145,7 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
 
     # --- S3 ENTITY RESOLUTION (recurse to depth 4, §4.2/FR-A3) --------------
     entity_chain: list[dict] = []
+    pierce_vendors: list[str] = []      # which SOS answered each hop
     person_name = owner_name
     if looks_like_entity(owner_name):
         current = owner_name
@@ -152,6 +153,7 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
             sos = reg.sos.resolve_entity(current, state)
             if sos is None:
                 break
+            pierce_vendors.append(sos.vendor)
             res.total_cost_usd += sos.cost_usd
             res.spend_lines.append(_spend(org_id, sos.vendor, sos.query_id, sos.cost_usd))
             entity_chain.append({
@@ -240,7 +242,24 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
     # is still the entity name — do NOT label that a "principal", it's a
     # dead end that reads as a resolved contact. Say so, and point at the
     # manager/registered agent instead (both surfaced elsewhere on the card).
-    pierced_to_human = bool(entity_chain) and not looks_like_entity(person_name)
+    # A MOCK SOS fabricates officer names from the entity name (owner report
+    # 2026-08-05: "Robert Brg" spun from "Brg Aura", no real phone/email). When
+    # the system is CONFIGURED LIVE, presenting that as a verified principal is
+    # dishonest — a stale/half-live artifact, not intended output. Relabel it
+    # entity_unpierced, restore the entity name so the guessed human isn't
+    # shown, and drop the contacts traced against that guess. In full mock/demo
+    # mode (status 'mock') the deterministic principal is intended and is left
+    # alone. (`sos_status` was read above for the callable safeguard.)
+    pierce_was_mock = (any("mock" in (v or "").lower() for v in pierce_vendors)
+                       and "live" in sos_status.lower())
+    if entity_chain and pierce_was_mock:
+        person_name = entity_chain[-1].get("entity_name") or person_name
+        validated_phones = []
+        validated_emails = []
+        candidate = None
+
+    pierced_to_human = (bool(entity_chain) and not looks_like_entity(person_name)
+                        and not pierce_was_mock)
     if not entity_chain:
         role = "owner"
     elif pierced_to_human:
@@ -256,11 +275,18 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
         agent = ""
         for c in entity_chain:
             agent = c.get("registered_agent") or agent
-        person["unpierced_note"] = (
-            "no individual member/officer on the "
-            f"{entity_chain[-1].get('jurisdiction', 'state')} record — "
-            "reach this owner through the management company"
-            + (f" or registered agent ({agent})" if agent else ""))
+        if pierce_was_mock:
+            person["unpierced_note"] = (
+                "LLC piercing is on the MOCK SOS — no verified principal. "
+                "Enable a live SOS (Cobalt / VA SCC) and re-run Resolve "
+                "Contacts for a real member/officer"
+                + (f"; registered agent: {agent}" if agent else ""))
+        else:
+            person["unpierced_note"] = (
+                "no individual member/officer on the "
+                f"{entity_chain[-1].get('jurisdiction', 'state')} record — "
+                "reach this owner through the management company"
+                + (f" or registered agent ({agent})" if agent else ""))
     poc = {
         "id": str(uuid.uuid4()),
         "org_id": org_id,

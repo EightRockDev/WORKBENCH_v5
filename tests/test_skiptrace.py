@@ -189,3 +189,30 @@ def test_persisted_callable_invariant(org):
             for ph in row["phones"]:
                 if ph.get("callable"):
                     assert ph["dnc"]["scrubbed_at"] and ph["dnc"]["federal"] is False
+
+
+# --- mock pierce must not masquerade as a real principal in live mode --------
+# Owner report 2026-08-05: SOS showed "live (cobalt)" but a principal came from
+# the mock (name fabricated from the entity, no real phone/email).
+
+def test_a_mock_pierce_while_live_is_configured_reads_entity_unpierced():
+    from core.skiptrace import providers as prov
+    reg = prov._mock_registry()
+    reg.status["sos"] = "live (cobalt)"          # half-live / stale artifact
+    res = pipeline.resolve_contacts(
+        "org", _prop(owner="Brg Aura At East Beach LLC", state="VA"),
+        registry=reg, persist=False)
+    poc = res.pocs[0]
+    assert poc["role"] == "entity_unpierced"
+    assert "mock" in poc["person"]["unpierced_note"].lower()
+    # the fabricated human is gone; the entity name stands in its place
+    assert "brg aura" in poc["person"]["full_name"].lower()
+    # contacts traced against the guessed name are dropped, not shown
+    assert poc["phones"] == [] and poc["emails"] == []
+
+
+def test_full_mock_demo_mode_still_pierces_to_a_principal():
+    """No live keys -> status 'mock' -> the deterministic demo principal stays."""
+    res = pipeline.resolve_contacts(
+        "org", _prop(owner="Ghent Holdings LLC", state="VA"), persist=False)
+    assert res.pocs[0]["role"] == "principal"     # unchanged in demo mode

@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.3.0.0 — 2026-08-05  ·  a mock LLC pierce no longer masquerades as a real principal
+Owner flagged a pierced principal ("Robert Brg") with provenance `mock-va-scc`,
+no phone, no email — while the providers line said SOS was `live (cobalt)`. The
+filing-id/confidence signature (`VA-7338246`, conf 0.91) is the MOCK SOS, which
+fabricates an officer name from the entity ("Robert Brg" ← "Brg Aura"). It was
+shown as a verified "Principal (LLC-pierced)", and BatchData found no contacts
+because it's not a real person.
+
+Fix (`core/skiptrace/pipeline.py`): the pierce loop now records each hop's SOS
+vendor. When a pierce came from a mock SOS **while the system is configured
+live** (`status.sos` contains "live"), the principal is relabeled
+`entity_unpierced`, the entity name is restored (the guessed human is not
+shown), the contacts traced against that guess are dropped, and the note reads
+"LLC piercing is on the MOCK SOS — enable a live SOS (Cobalt / VA SCC) and
+re-run." Full mock/demo mode (status "mock") is unchanged — its deterministic
+principal is intended. Tests in `tests/test_skiptrace.py`.
+
+Two operational notes for the owner: (1) `resolve_contacts` is idempotent, so
+**re-running Resolve Contacts replaces** the stale mock record; (2) a real VA
+LLC principal needs the **live VA SCC token** — Cobalt's VA officer coverage is
+thin, which is why the pierce fell back to mock. BatchData can only find a phone/
+email once it has a REAL person name.
+
 ## V5.24.2.0.0 — 2026-08-05  ·  Market tab: Owner Intelligence to the top
 Owner ask: promote Owner Intelligence to the top of the Market tab. Order is now
 Owner Intelligence (+ Outreach) -> Comparables -> Data Sources (was
