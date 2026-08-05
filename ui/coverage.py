@@ -60,10 +60,19 @@ def render_coverage() -> None:
             f'({state_head})</span></div>',
             unsafe_allow_html=True)
         for m in metros:
-            if m.live:
+            if m.confident:
                 line = (f'{m.metro} '
                         f'<span style="color:{c["tx2"]}">({m.doors:,} doors '
                         f'· {m.records:,} properties)</span>')
+            elif m.feed_incomplete:
+                # Parcels are on hand but the locality's feed omits unit counts,
+                # so 10+ doors can't be confirmed. Say so instead of showing a
+                # tiny number as if it were the whole market (owner 2026-08-05).
+                confirmed = (f'{m.records:,} confirmed · ' if m.records else '')
+                line = (f'{m.metro} '
+                        f'<span style="color:{c["tx3"]}">({confirmed}feed '
+                        f'incomplete — unit counts not published for this '
+                        f'locality)</span>')
             else:
                 line = (f'<span style="color:{c["tx3"]}">{m.metro} '
                         f'(Coming soon)</span>')

@@ -854,6 +854,23 @@ structure. (Client IP for who's-online comes from Caddy's `X-Real-IP` header —
 which only exists because the Caddyfile sets `header_up X-Real-IP {remote_host}`;
 direct-to-8501 LAN hits have no such header and read as a local address.)
 
+## Lesson — label the data gap; don't reclassify blind to hide it (2026-08-05)
+
+Owner said "do both" — (1) fix the VB "Multi Family" over-count + Hampton/
+Suffolk/Portsmouth aliasing, and (2) label near-empty covered cities. I did (2)
+and deliberately did NOT do (1). Why: (1) means editing phase 0's MF classifier,
+which last time (the R-40 substring bug) misclassified 116K parcels, and there
+is no way to validate a use-code change against the host's real rolls from the
+build env. "Prune the known, never the unknown" also means VB's units-NULL rows
+are kept on purpose — dropping them to "fix the over-count" would empty VB the
+way Portsmouth was once emptied. The safe, honest move is to LABEL the gap: the
+Coverage page now says "feed incomplete — unit counts not published" for a
+covered metro with parcels but no confirmable MF, instead of a tiny number or a
+false "Coming soon". An owner "do it now" authorizes the GOAL, not a blind change
+that could regress the backbone — do the safe half, ship it, and say exactly
+what the risky half needs (host validation + the locality use-code dictionaries)
+before touching it.
+
 ## Lesson — the data was already pulled; surface it, don't re-pull (2026-08-05)
 
 Owner asked for a "deed feed" for Sale History ("we had it and it worked

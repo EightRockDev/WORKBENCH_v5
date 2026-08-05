@@ -207,3 +207,49 @@ def test_a_coordinate_less_roll_gets_the_statewide_geometry_supplement():
         [s.get("note") for s in specs])
     supp = next(s for s in specs if "geometry supplement" in s["note"])
     assert "PORTSMOUTH" in supp["where"].upper()
+
+
+# --- honest labeling for covered-but-unconfirmable metros (owner 2026-08-05) ---
+# Hampton (2 confirmed vs ~52K parcels) etc. must read "feed incomplete", not a
+# tiny number as if it were the whole market, nor a false "Coming soon".
+
+def test_a_big_roll_with_almost_no_confirmed_mf_is_feed_incomplete(tmp_path):
+    rows = [(f"h{i}", "Hampton", 1) for i in range(3000)]      # sub-floor roll
+    rows += [("h-a", "Hampton", 20), ("h-b", "Hampton", 15)]   # 2 confirmed MF
+    m = {r.metro: r for r in rollout.coverage(_db(tmp_path, rows))}["Hampton"]
+    assert m.records == 2 and m.parcels >= 3000
+    assert m.feed_incomplete and not m.confident
+
+
+def test_a_real_market_count_is_confident(tmp_path):
+    rows = [(f"n{i}", "Norfolk", 40) for i in range(30)]       # 30 confirmed MF
+    m = {r.metro: r for r in rollout.coverage(_db(tmp_path, rows))}["Norfolk"]
+    assert m.records == 30 and m.confident and not m.feed_incomplete
+
+
+def test_parcels_but_zero_confirmed_is_incomplete_not_coming_soon(tmp_path):
+    rows = [(f"p{i}", "Portsmouth", 2) for i in range(4000)]   # all sub-floor
+    m = {r.metro: r for r in rollout.coverage(_db(tmp_path, rows))}["Portsmouth"]
+    assert m.records == 0 and m.parcels >= 4000
+    assert not m.live and m.feed_incomplete and not m.confident
+
+
+def test_no_parcels_at_all_stays_coming_soon(tmp_path):
+    m = {r.metro: r for r in rollout.coverage(_db(tmp_path, [("a", "Norfolk", 40)]))}
+    charlotte = m["Charlotte"]
+    assert charlotte.parcels == 0 and not charlotte.feed_incomplete
+    assert not charlotte.confident        # renders "Coming soon"
+
+
+def test_coverage_uses_parcel_index_when_present(tmp_path):
+    # After a prune, the full roll lives in parcel_index; parcels must count it.
+    db = tmp_path / "wb.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("CREATE TABLE properties_8r (property_id TEXT, city TEXT, units INTEGER)")
+        conn.executemany("INSERT INTO properties_8r VALUES (?,?,?)",
+                         [("a", "Suffolk", 20)])          # 1 confirmed kept
+        conn.execute("CREATE TABLE parcel_index (fips TEXT, apn TEXT, address TEXT, city TEXT, units INTEGER, use_code TEXT)")
+        conn.executemany("INSERT INTO parcel_index (city, units) VALUES (?,?)",
+                         [("Suffolk", None)] * 4000)      # full roll, units NULL
+    m = {r.metro: r for r in rollout.coverage(db)}["Suffolk"]
+    assert m.records == 1 and m.parcels >= 4000 and m.feed_incomplete

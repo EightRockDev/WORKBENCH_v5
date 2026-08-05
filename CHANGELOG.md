@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.1.0.0 — 2026-08-05  ·  Coverage page: honest "feed incomplete" labels
+Owner ask: don't let "Hampton: 2" read as the real market. Hampton (2 confirmed
+MF vs ~52K parcels) and Suffolk (17) look empty because their VGIN feed publishes
+no unit counts, so 10+ doors can't be confirmed — the parcels are on hand, the
+market is real, the DATA is incomplete. Portsmouth (36K parcels, 0 confirmed)
+was even showing a false "Coming soon".
+
+`core/rollout.py` now also counts each metro's total parcels (from `parcel_index`
+after a prune, else `properties_8r`) and adds `MetroCoverage.confident` /
+`.feed_incomplete`: a covered metro is "confident" only when its confirmed count
+is a real number (>=25, or >0 with a small roll). `ui/coverage.py` renders three
+honest states: real number ("N doors · M properties"), **"feed incomplete — unit
+counts not published for this locality"** (parcels present, MF unconfirmable),
+or "Coming soon" (no parcels at all). Tests in `tests/test_rollout.py`.
+
+NOT done (deliberately): the VB "Multi Family" code-only over-count and the
+Hampton/Suffolk/Portsmouth use-code aliasing. Changing phase 0's MF
+classification blind risks a repeat of the R-40 substring bug (116K parcels
+misclassified) and can only be validated against host data. The honest labels
+above surface the gap without touching the delicate classifier.
+
 ## V5.24.0.0.0 — 2026-08-05  ·  Sale History auto-fills from the assessor deed/transfer record
 Owner: "do sale history and deed feed — we had it and it worked great, don't
 reinvent." We already pull the county assessor feeds nightly, and those carry
