@@ -1255,6 +1255,19 @@ General rule: when Streamlit "shows data from another tab", the mechanism is
 Fix it at the stale marker, and always exempt the element that is legitimately
 re-rendering in place — otherwise the cure strobes the thing the user is using.
 
+## Lesson — an interactive control that reads Postgres must degrade, not crash (2026-08-05)
+
+The owner-contact popover (People block, `ui/v2_theme_05292026.py`) shows
+resolved skiptrace POCs — which live in the Postgres `poc_records` store, absent
+on the single-user desktop path. The read is funnelled through
+`_load_resolved_pocs`, which returns **None** (→ "Run Resolve Contacts" pointer)
+for every unreachable-store case: no `property_id`, no `org_id` in session, `pg`
+not configured, or any exception from `load_pocs`. Rule: any UI control that
+touches the pilot-only DB must assume the DB isn't there and fall back to the
+always-on card data, never raise into the render path. The inspector renders on
+every property view — one unguarded `load_pocs` would blank the whole right rail
+on the owner's own machine, where there's no Postgres at all.
+
 ## Lesson — a deterministic export reuses the computed data, it doesn't recompute (2026-08-05)
 
 First-user feedback: investors want the deal's *numbers* in a spreadsheet, not

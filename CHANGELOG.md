@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.5.0.0 — 2026-08-05  ·  Click the owner under People → full-contact popover
+Second first-user feedback item. The People block in the right-rail inspector
+was static HTML; now a native "👤 {owner} — contact" popover sits directly
+beneath it. Open it and you get the owner of record + management + the mailing
+address on the card, and — when Owner Intelligence has been run — the resolved
+principal/entity, compliance-scrubbed phones and emails (with grades), mailing
+addresses, and the LLC entity chain. On a DB-less desktop session it degrades to
+a pointer to Resolve Contacts instead of erroring: new `_load_resolved_pocs`
+returns None (never raises) whenever the Postgres POC store isn't reachable.
+Four tests in `tests/test_owner_popover.py`.
+
 ## V5.24.4.0.0 — 2026-08-05  ·  Download-to-Excel on the Exec Summary tab
 First of the four first-user feedback items. Investors said they already have
 the letters and memos (the Artifact Engine's Word docs) but want the *numbers*

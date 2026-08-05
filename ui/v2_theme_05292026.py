@@ -2708,6 +2708,84 @@ def _calibration_help_html() -> str:
     )
 
 
+def _load_resolved_pocs(prop: dict) -> list[dict] | None:
+    """Best-effort read of the stored Owner-Intelligence POC set for a property.
+
+    Returns a list of poc_records dicts, or None when the store isn't reachable
+    (no Postgres / no org context — the single-user desktop path), so the caller
+    can show the Resolve-Contacts fallback instead of an error.
+    """
+    prop_id = prop.get("property_id")
+    if not prop_id:
+        return None
+    org_id = st.session_state.get("org_id")
+    if not org_id:
+        return None
+    try:
+        from data import pg
+        if not pg.is_configured():
+            return None
+        from core.skiptrace import pipeline
+        return pipeline.load_pocs(str(org_id), str(prop_id))
+    except Exception:
+        return None
+
+
+def _render_owner_contact_popover(prop: dict, owner: str, mgmt: str) -> None:
+    """Native popover with the owner's full contact detail, opened from the
+    People block. Shows the resolved principal/entity + phones/emails/mailing +
+    entity chain when Owner Intelligence has been run, otherwise the always-on
+    identity (owner of record, management, mailing address on the card) plus a
+    pointer to Resolve Contacts."""
+    pop = st.popover(f"👤 {owner[:36]} — contact", use_container_width=True)
+    with pop:
+        st.markdown(f"**{owner}**  \nOwner of record")
+        card_mail = (prop.get("owner_address") or "").strip()
+        if card_mail:
+            st.caption(f"📬 Mailing (assessor): {card_mail}")
+        if mgmt:
+            st.markdown(f"**{mgmt}**  \nCurrent management")
+
+        pocs = _load_resolved_pocs(prop)
+        if not pocs:
+            st.divider()
+            st.caption(
+                "Run **Resolve Contacts** on the Owner Intelligence panel to "
+                "pierce the LLC to the true decision-maker and add "
+                "compliance-scrubbed phones, emails, and a mailing address.")
+            return
+
+        st.divider()
+        for poc in pocs:
+            person = poc.get("person") or {}
+            name = person.get("full_name") or "—"
+            role = (poc.get("role") or "").replace("_", " ").title()
+            st.markdown(f"**{name}** · {role or 'Contact'}")
+            note = person.get("unpierced_note")
+            if note:
+                st.caption(f"⚠ {note}")
+            for ph in (poc.get("phones") or []):
+                grade = ph.get("grade")
+                num = ph.get("number") or ph.get("formatted") or "—"
+                st.markdown(f"📞 {num}" + (f"  ·  grade {grade}" if grade else ""))
+            for em in (poc.get("emails") or []):
+                grade = em.get("grade")
+                addr = em.get("email") or em.get("address") or "—"
+                st.markdown(f"✉️ {addr}" + (f"  ·  grade {grade}" if grade else ""))
+            for ad in (poc.get("addresses") or []):
+                fmt = ad.get("formatted")
+                if fmt:
+                    kind = ad.get("kind") or "address"
+                    st.markdown(f"📬 {fmt}  ·  {kind}")
+            chain = poc.get("entity_chain") or []
+            if chain:
+                hops = " → ".join(
+                    c.get("entity_name", "?") for c in chain if c.get("entity_name"))
+                if hops:
+                    st.caption(f"🏢 Entity chain: {hops}")
+            st.divider()
+
+
 def render_v2_inspector(prop: dict, metrics: dict | None = None) -> None:
     """Right-rail inspector with the four standard blocks:
     Calibration · Diligence · People · Key documents.
@@ -2944,6 +3022,15 @@ def render_v2_inspector(prop: dict, metrics: dict | None = None) -> None:
 
     if blocks:
         st.markdown("".join(blocks), unsafe_allow_html=True)
+
+    # ===== Owner contact popover (first-user feedback 2026-08) =====
+    # "Clicking on the owner under People opens a box with full contact info."
+    # The People block above is static HTML; this native popover sits directly
+    # beneath it and carries the resolved phone/email/mailing + entity chain
+    # when Owner Intelligence has been run, or points at Resolve Contacts when
+    # it hasn't. Guarded so a DB-less desktop session degrades gracefully.
+    if owner:
+        _render_owner_contact_popover(prop, owner, mgmt)
 
     # ===== Key documents — read from the property folder =====
     # Brian 5/29 v2.0.33 — filter out app-internal state files (anything
