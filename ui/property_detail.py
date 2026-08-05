@@ -1123,13 +1123,30 @@ def _render_assessment_history(folder: PropertyFolder | None) -> None:
         )
 
 
-def _render_sales(folder: PropertyFolder | None) -> None:
-    if folder is None:
-        return
-    sales = load_sales(folder.path)
+def _render_sales(folder: PropertyFolder | None,
+                  prop: dict[str, Any] | None = None) -> None:
+    sales = load_sales(folder.path) if folder is not None else None
+    auto_sourced = False
+    if not sales and prop is not None:
+        # No manual sales.json — surface the sale on the assessor transfer
+        # record we already pull nightly (core/sale_history, read-only). This
+        # is what auto-fills Sale History without a manual deed lookup.
+        try:
+            from core.sale_history import sale_history_for
+            auto = sale_history_for(prop)
+        except Exception:
+            auto = []
+        if auto:
+            for rec in auto:
+                rec.pop("source", None)         # shown once as a caption below
+            sales = {"last_3_apartment_sales": auto}
+            auto_sourced = True
     if not sales:
         st.caption("No sale history available.")
         return
+    if auto_sourced:
+        st.caption("📜 From the county assessor's transfer record — verify "
+                   "against the recorded deed for the full chain.")
 
     # Newer auto-pulled shape: dict with `last_3_apartment_sales` list
     if isinstance(sales, dict):
@@ -1395,7 +1412,7 @@ def render_property_detail(
 
     # 2. Sale History
     with section_card("Sale History"):
-        _render_sales(folder)
+        _render_sales(folder, prop)
 
     # 2b. Tax Assessment History (conditional — only when there's data)
     if folder is not None and (

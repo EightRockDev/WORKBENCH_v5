@@ -854,6 +854,28 @@ structure. (Client IP for who's-online comes from Caddy's `X-Real-IP` header —
 which only exists because the Caddyfile sets `header_up X-Real-IP {remote_host}`;
 direct-to-8501 LAN hits have no such header and read as a local address.)
 
+## Lesson — the data was already pulled; surface it, don't re-pull (2026-08-05)
+
+Owner asked for a "deed feed" for Sale History ("we had it and it worked
+great"). The instinct is to build a scraper against a deeds source. But the
+assessor feeds we ALREADY pull nightly into `muni_records` carry last-sale
+price/date/buyer — phase 0 just lists them in `_IGNORED_KEYS` and drops them.
+So the "feed" was a READ, not a new pull: `core/sale_history.py` reads the raw
+`muni_records` back out. Rules paid for here:
+- Before adding a data source, check what the existing feeds already carry (grep
+  the ignored/unmapped keys and the raw record). A new scraper is the last
+  resort, not the first.
+- A read-only resolver over already-stored data can't break the nightly build —
+  vastly safer than touching `phase0.build_spine`. Prefer it for "surface X".
+- Reuse the proven matcher: `phase0.normalize_record` already turns a raw record
+  into `{apn, address, ...}`; the sale resolver keys off that instead of
+  reinventing parcel matching.
+- When you can't validate against host data from the build env, make the logic
+  fully unit-tested with synthetic records AND fully guarded (miss/error -> the
+  old empty state, never a wrong value), and say plainly it needs one host
+  verification pass. `apn` had to be threaded onto the 8R property dict
+  (`data/db._r8_to_legacy_shape`) for the exact-parcel match — it wasn't exposed.
+
 ## Lesson — check for existing scaffolding before planning a build (2026-08-04)
 
 Owner asked for "true login (Microsoft/Google/email) tonight." The instinct was

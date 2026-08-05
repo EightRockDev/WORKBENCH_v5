@@ -225,6 +225,7 @@ def _r8_to_legacy_shape(row: dict[str, Any]) -> dict[str, Any]:
         "longitude": row.get("lng"),
         "assessed_value": row.get("assessed_value"),
         "use_code": row.get("use_code"),
+        "apn": row.get("apn"),              # parcel id — lets sale_history match
         "source_file": "properties_8r",
         "provenance": row.get("provenance") or "8r",
         "rent_source": row.get("rent_source"),

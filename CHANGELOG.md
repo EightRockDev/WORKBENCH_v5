@@ -12,6 +12,32 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.0.0.0 — 2026-08-05  ·  Sale History auto-fills from the assessor deed/transfer record
+Owner: "do sale history and deed feed — we had it and it worked great, don't
+reinvent." We already pull the county assessor feeds nightly, and those carry
+last-sale price/date/buyer (+ deed book/page for some) — but phase 0 lists those
+fields in `_IGNORED_KEYS`, so the data was on hand yet never surfaced, and Sale
+History showed "No sale history available" for every property.
+
+New `core/sale_history.py` (READ-ONLY — no change to the nightly spine build):
+- `extract_sale_records(raw)` pulls the sale out of one raw assessor record,
+  tolerant of the many county spellings (`last_sale_price` / `saleprice` /
+  `consideration`; epoch-ms, ISO, or M/D/Y dates; `deedbk`/`deedpg` -> notes).
+- `sale_history_for(prop)` matches a property to its `muni_records` assessor
+  row — **reusing phase 0's proven `normalize_record`** (APN first, normalized
+  address fallback) so we don't reinvent the parcel matcher — and returns the
+  `{date, price, grantor, grantee}` shape the existing card already renders.
+- `ui/property_detail._render_sales` now falls back to this when there's no
+  manual `sales.json`, labeled "From the county assessor's transfer record —
+  verify against the recorded deed." `data/db` now passes `apn` through on the
+  8R property dict so the match can key on the parcel id.
+
+Tests in `tests/test_sale_history.py` (10). Read-only + fully guarded: any miss
+or error just shows "No sale history available," never a wrong sale.
+NOTE: needs one host verification pass (can't see live assessor data from the
+build env); per-locality coverage depends on which feeds carry sale fields
+(Chesapeake confirmed; VGIN-only localities may not).
+
 ## V5.23.1.0.0 — 2026-08-04  ·  detailed Auth0 login walkthrough (docs)
 Added `docs/AUTH0_SETUP.md` — a click-by-click, no-experience-assumed guide to
 turning on real login (Google / Microsoft / email+password) for
