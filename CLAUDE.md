@@ -498,6 +498,21 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — put the data where the eye already is; a popover is a second click (2026-08-05)
+
+Shipped the owner contact detail as an `st.popover` beneath the People block.
+Owner's reaction: "Move all POC/Contact information under PEOPLE — no weird
+dropdown below." A collapsed popover reads as a detour when the user is already
+looking at the People card — the contact info belongs *in* that card, inline
+under the person it describes. Rebuilt as inline HTML (`_poc_contact_rows_html`
+/ `_people_contact_html`) rendered inside the existing People markdown, routed by
+POC role to the right person. Rule: surface derived detail where the user is
+already looking, not behind an extra click — a popover/expander is justified only
+when the detail is genuinely secondary or space is truly scarce, not as a default
+home for "extra" data. (Also: because People renders on every property view, the
+POC read is done ONCE per render and shared across the owner/manager rows — see
+the DB-degrades-not-crashes lesson; three popover-era reads became one.)
+
 ## Lesson — verify WHICH repo the owner is actually running (2026-07-31)
 
 A full ALN sweep, product rename and theme panel were built and pushed to

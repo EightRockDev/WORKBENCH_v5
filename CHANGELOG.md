@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.8.0.0 — 2026-08-05  ·  Contact info moved INLINE into the People block
+Owner report: "Move all POC/Contact information under PEOPLE — no weird dropdown
+below." The separate `st.popover` is gone; each person's resolved contacts now
+render inline under their name in the right-rail People block — phones, emails,
+mailing address, entity chain, and any unpierced note, routed to the right person
+by role (`_OWNER_ROLES` under Owner of record, `_MGMT_ROLES` under management).
+Empty waterfalls read honestly ("no phone resolved" / "no email resolved") rather
+than as silence. POCs are loaded once per render and shared; the DB-less desktop
+path shows a one-line Resolve-Contacts pointer under the owner. New
+`_poc_contact_rows_html` / `_people_contact_html`; `test_owner_popover.py`
+reworked to 10 tests covering the inline builders and the load guard.
+
 ## V5.24.7.0.0 — 2026-08-05  ·  New "Input" tab — the quick-start first-numbers front door
 Fourth and final first-user feedback item: "the first tab should be called Input
 where they enter the first numbers." New `ui/input_tab.py` leads the property

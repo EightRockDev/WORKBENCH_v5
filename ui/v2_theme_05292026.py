@@ -1769,6 +1769,16 @@ body.v2-on-diligence .v2-dd-inspector {{ display: block; }}
 .v2-person-info {{ flex: 1; min-width: 0; }}
 .v2-person-info .n {{ font-size: 13px; font-weight: 600; color: {v['ink']}; }}
 .v2-person-info .r {{ font-size: 11px; color: {v['ink_3']}; }}
+/* Inline contact detail under a person (Owner Intelligence POCs) — owner
+   report 2026-08-05: all contact info lives INSIDE the People block, no
+   separate popover. */
+.v2-person-contact {{ margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }}
+.v2-person-contact .crow {{ font-size: 12px; color: {v['ink_2']}; word-break: break-word; }}
+.v2-person-contact .cnote {{ font-size: 11px; color: {v['ink_3']}; font-style: italic; }}
+.v2-person-contact .cgrade {{ color: {v['ink_4']}; font-size: 11px; }}
+.v2-person-poc {{ padding-top: 6px; margin-top: 4px; border-top: 1px dashed {v['line_faint']}; }}
+.v2-person-poc .pn {{ font-size: 12px; font-weight: 600; color: {v['ink']}; }}
+.v2-person-poc .pr {{ font-size: 11px; color: {v['ink_3']}; margin-bottom: 2px; }}
 
 /* Doc row */
 .v2-doc-row {{ display: flex; align-items: center; gap: 10px; padding: 9px 0; font-size: 13px; border-bottom: 1px dashed {v['line_faint']}; }}
@@ -2761,59 +2771,90 @@ def _load_resolved_pocs(prop: dict) -> list[dict] | None:
         return None
 
 
-def _render_owner_contact_popover(prop: dict, owner: str, mgmt: str) -> None:
-    """Native popover with the owner's full contact detail, opened from the
-    People block. Shows the resolved principal/entity + phones/emails/mailing +
-    entity chain when Owner Intelligence has been run, otherwise the always-on
-    identity (owner of record, management, mailing address on the card) plus a
-    pointer to Resolve Contacts."""
-    pop = st.popover(f"👤 {owner[:36]} — contact", use_container_width=True)
-    with pop:
-        st.markdown(f"**{owner}**  \nOwner of record")
-        card_mail = (prop.get("owner_address") or "").strip()
-        if card_mail:
-            st.caption(f"📬 Mailing (assessor): {card_mail}")
-        if mgmt:
-            st.markdown(f"**{mgmt}**  \nCurrent management")
+# Roles that belong under the "Owner of record" person vs the management row.
+_OWNER_ROLES = {"owner", "principal", "entity_unpierced"}
+_MGMT_ROLES = {"manager", "property_manager", "agent", "registered_agent"}
 
-        pocs = _load_resolved_pocs(prop)
-        if not pocs:
-            st.divider()
-            st.caption(
-                "Run **Resolve Contacts** on the Owner Intelligence panel to "
-                "pierce the LLC to the true decision-maker and add "
-                "compliance-scrubbed phones, emails, and a mailing address.")
-            return
 
-        st.divider()
-        for poc in pocs:
-            person = poc.get("person") or {}
-            name = person.get("full_name") or "—"
-            role = (poc.get("role") or "").replace("_", " ").title()
-            st.markdown(f"**{name}** · {role or 'Contact'}")
-            note = person.get("unpierced_note")
-            if note:
-                st.caption(f"⚠ {note}")
-            for ph in (poc.get("phones") or []):
-                grade = ph.get("grade")
-                num = ph.get("number") or ph.get("formatted") or "—"
-                st.markdown(f"📞 {num}" + (f"  ·  grade {grade}" if grade else ""))
-            for em in (poc.get("emails") or []):
-                grade = em.get("grade")
-                addr = em.get("email") or em.get("address") or "—"
-                st.markdown(f"✉️ {addr}" + (f"  ·  grade {grade}" if grade else ""))
-            for ad in (poc.get("addresses") or []):
-                fmt = ad.get("formatted")
-                if fmt:
-                    kind = ad.get("kind") or "address"
-                    st.markdown(f"📬 {fmt}  ·  {kind}")
-            chain = poc.get("entity_chain") or []
-            if chain:
-                hops = " → ".join(
-                    c.get("entity_name", "?") for c in chain if c.get("entity_name"))
-                if hops:
-                    st.caption(f"🏢 Entity chain: {hops}")
-            st.divider()
+def _poc_contact_rows_html(poc: dict) -> str:
+    """Inline HTML for one POC's contact detail — phones, emails, mailing
+    address, entity chain, and any unpierced note. Returns the rows only (no
+    wrapper), each an honest reflection of what resolved: "no phone resolved"
+    when the waterfall came back empty rather than an omission that reads as
+    "not looked at". Embedded inside the People block, not a popover."""
+    import html as _h
+    rows: list[str] = []
+
+    phones = poc.get("phones") or []
+    if phones:
+        for ph in phones:
+            grade = ph.get("grade")
+            num = _h.escape(str(ph.get("number") or ph.get("formatted") or "—"))
+            g = f' <span class="cgrade">· grade {_h.escape(str(grade))}</span>' if grade else ""
+            rows.append(f'<div class="crow">📞 {num}{g}</div>')
+    else:
+        rows.append('<div class="crow cnote">📞 no phone resolved</div>')
+
+    emails = poc.get("emails") or []
+    if emails:
+        for em in emails:
+            grade = em.get("grade")
+            addr = _h.escape(str(em.get("email") or em.get("address") or "—"))
+            g = f' <span class="cgrade">· grade {_h.escape(str(grade))}</span>' if grade else ""
+            rows.append(f'<div class="crow">✉️ {addr}{g}</div>')
+    else:
+        rows.append('<div class="crow cnote">✉️ no email resolved</div>')
+
+    for ad in (poc.get("addresses") or []):
+        fmt = ad.get("formatted")
+        if fmt:
+            kind = _h.escape(str(ad.get("kind") or "address"))
+            rows.append(f'<div class="crow">📬 {_h.escape(str(fmt))} '
+                        f'<span class="cgrade">· {kind}</span></div>')
+
+    chain = poc.get("entity_chain") or []
+    if chain:
+        hops = " → ".join(_h.escape(str(c.get("entity_name")))
+                          for c in chain if c.get("entity_name"))
+        if hops:
+            rows.append(f'<div class="crow cnote">🏢 {hops}</div>')
+
+    note = (poc.get("person") or {}).get("unpierced_note")
+    if note:
+        rows.append(f'<div class="crow cnote">⚠ {_h.escape(str(note))}</div>')
+
+    return "".join(rows)
+
+
+def _people_contact_html(prop: dict, roles: set[str],
+                         pocs: list[dict] | None) -> str:
+    """Inline contact HTML for the People person whose POC role is in `roles`.
+
+    `pocs` is the already-loaded POC set (loaded once per render by the caller
+    to avoid repeat DB hits). Returns '' when there's nothing to add (no
+    matching resolved POC): on the Postgres pilot path it renders each matching
+    POC's resolved contacts inline under the person; on the DB-less desktop path
+    `pocs` is None/empty so the person row stays as-is (identity still shows; a
+    Resolve-Contacts pointer is added once for the owner by the caller)."""
+    if not pocs:
+        return ""
+    import html as _h
+    blocks: list[str] = []
+    for poc in pocs:
+        if (poc.get("role") or "").lower() not in roles:
+            continue
+        person = poc.get("person") or {}
+        pname = _h.escape(str(person.get("full_name") or ""))
+        prole = _h.escape((poc.get("role") or "").replace("_", " ").title())
+        header = ""
+        # Only add a sub-header when the resolved name differs from the person
+        # row's name (e.g. a pierced principal); otherwise it's redundant.
+        if pname and pname.lower() != (prop.get("owner") or "").strip().lower():
+            header = (f'<div class="pn">{pname}</div>'
+                      f'<div class="pr">{prole}</div>')
+        blocks.append(
+            f'<div class="v2-person-poc">{header}{_poc_contact_rows_html(poc)}</div>')
+    return "".join(blocks)
 
 
 def render_v2_inspector(prop: dict, metrics: dict | None = None) -> None:
@@ -3028,20 +3069,40 @@ def render_v2_inspector(prop: dict, metrics: dict | None = None) -> None:
     # Underwriting tab (Market Calibration card) where they belong.
 
     # ===== People =====
+    # Owner report 2026-08-05: all POC / contact info lives INSIDE this block,
+    # inline under each person — no separate popover/dropdown below. Resolved
+    # phones/emails/mailing/entity-chain (Owner Intelligence) render as contact
+    # rows under the person they belong to. On a DB-less desktop session the
+    # rows are absent (identity still shows) and the owner gets a one-line
+    # Resolve-Contacts pointer instead.
     people: list[str] = []
     owner = (prop.get("owner") or "").strip()
     mgmt = (prop.get("management_company") or "").strip()
+    pocs = _load_resolved_pocs(prop)   # one read per render, shared below
+    has_pocs = bool(pocs)
     if owner:
         initials = "".join(w[0].upper() for w in owner.split()[:2] if w and w[0].isalpha())[:2] or "—"
+        owner_contact = _people_contact_html(prop, _OWNER_ROLES, pocs)
+        if not owner_contact and not has_pocs:
+            owner_contact = (
+                '<div class="v2-person-contact"><div class="crow cnote">'
+                'Run Resolve Contacts (Owner Intelligence) to add phones, '
+                'emails &amp; mailing address.</div></div>')
+        else:
+            owner_contact = f'<div class="v2-person-contact">{owner_contact}</div>' if owner_contact else ""
         people.append(
             f'<div class="v2-person"><div class="v2-person-avatar">{initials}</div>'
-            f'<div class="v2-person-info"><div class="n">{owner[:40]}</div><div class="r">Owner of record</div></div></div>'
+            f'<div class="v2-person-info"><div class="n">{owner[:40]}</div>'
+            f'<div class="r">Owner of record</div>{owner_contact}</div></div>'
         )
     if mgmt:
         initials = "".join(w[0].upper() for w in mgmt.split()[:2] if w and w[0].isalpha())[:2] or "—"
+        mgmt_contact = _people_contact_html(prop, _MGMT_ROLES, pocs)
+        mgmt_contact = f'<div class="v2-person-contact">{mgmt_contact}</div>' if mgmt_contact else ""
         people.append(
             f'<div class="v2-person"><div class="v2-person-avatar">{initials}</div>'
-            f'<div class="v2-person-info"><div class="n">{mgmt[:40]}</div><div class="r">Current management</div></div></div>'
+            f'<div class="v2-person-info"><div class="n">{mgmt[:40]}</div>'
+            f'<div class="r">Current management</div>{mgmt_contact}</div></div>'
         )
     if people:
         blocks.append(f"""
@@ -3052,15 +3113,6 @@ def render_v2_inspector(prop: dict, metrics: dict | None = None) -> None:
 
     if blocks:
         st.markdown("".join(blocks), unsafe_allow_html=True)
-
-    # ===== Owner contact popover (first-user feedback 2026-08) =====
-    # "Clicking on the owner under People opens a box with full contact info."
-    # The People block above is static HTML; this native popover sits directly
-    # beneath it and carries the resolved phone/email/mailing + entity chain
-    # when Owner Intelligence has been run, or points at Resolve Contacts when
-    # it hasn't. Guarded so a DB-less desktop session degrades gracefully.
-    if owner:
-        _render_owner_contact_popover(prop, owner, mgmt)
 
     # ===== Key documents — read from the property folder =====
     # Brian 5/29 v2.0.33 — filter out app-internal state files (anything
