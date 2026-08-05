@@ -2,13 +2,13 @@
   "coverage": 1.0,
   "p0_1_passed": true,
   "comp_overlap": 0.4871253293807643,
-  "rent_delta": 0.26965376243890543,
-  "rent_pairs": 281,
+  "rent_delta": 0.26991486109014884,
+  "rent_pairs": 282,
   "match_rate": 0.9295774647887324,
   "covered_match_rate": 0.9242424242424242,
   "comp_subjects": 184,
   "crosswalk_rows": 594,
   "p0_2_passed": false,
   "rents_stamped": 18947,
-  "rents_from_listings": 1
+  "rents_from_listings": 2
 }
