@@ -397,6 +397,28 @@ Do NOT resume anchor tuning; revisit via replay-methodology review
 when cutover becomes the priority again. Rent gate path: listings
 scraper (26.4% FMR baseline measured).
 
+**Morning analysis 2026-08-05 (do not re-diagnose these):**
+- comp overlap now **48.7%** (was 66.9% pre-VGIN-collision). The VGIN fix
+  (V5.20.1) restored **Richmond (111 MF)** but **Hampton (2), Suffolk (17),
+  Portsmouth (0)** are still near-empty: their VGIN VA_Parcels feed carries no
+  unit counts AND their use codes are unmapped (Portsmouth codes are blank;
+  Hampton/Suffolk numeric). Separately, **Virginia Beach = 15,858 MF of which
+  15,470 are "Multi Family" code-only (no units)** — likely over-inclusive
+  (duplex/condo swept in), which both inflates the backbone and dilutes overlap.
+  These are the real levers, NOT anchor methodology — but both are the
+  BACKLOGGED feed/aliasing work, still owner-gated. Do not touch phase0 aliasing
+  blind; validate against host data first.
+- rent delta **27.0%**, `rents_from_listings` still **1**. Root cause is now
+  precise (from the phase0 rent-signal log): scraped/favourited properties are
+  in cities with **no backbone** (e.g. Madison Terrace is in Hopewell, not a
+  covered metro) -> not in the crosswalk -> can't stamp a listing rent. HUD_API_
+  TOKEN IS now live on the host (public-data pulls FMR with token). So the gate
+  moves only when favourites land in COVERED cities, not from more scraping of
+  uncovered ones. Not a bug.
+- Autopilot: all steps exit 0. A transient `Could not resolve host: github.com`
+  appears mid-run (host DNS blip) but the ret/next pushes succeed — reports are
+  current. Not actionable from here; only flag if it stops self-recovering.
+
 ### Public-data self-feeding — SHIPPED V5.12.0.0.0
 `core/public_data.py` + autopilot step `publicdata`: HMDA + HUD FMR
 pull in-workbench, freshness-gated, LEI names cached in `lei_names`.
