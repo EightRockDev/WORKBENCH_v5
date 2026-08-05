@@ -1,4 +1,4 @@
-autopilot discover @ 2026-08-05T09:00:02
+autopilot discover @ 2026-08-05T10:00:02
 
 Probing city GIS portals for unit-bearing parcel layers...
 (a few minutes - each city's services are walked layer by layer)
@@ -59,31 +59,25 @@ Virginia Beach: 2 candidate layer(s)
    https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/SolarVector_PubLayers/FeatureServer/2
       auto-discovered: SolarVector_PubLayers/Radiation Energy Production; score 5; fields ['apn', 'assessed_value', 'year_built']; 177,259 records; NAMED as a subset - demoted
 
-Chesapeake: 3 candidate layer(s)
+Chesapeake: 2 candidate layer(s)
    https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
       auto-discovered: Accela_base_map_pro/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 110,131 records
    https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
       auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,304 records
-   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      geometry supplement; VGIN statewide fallback: FIPS = '51550'; 92,461 records; fields ['apn']
 
 Hampton: 2 candidate layer(s)
-   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      VGIN statewide fallback: FIPS = '51650'; 51,803 records; fields ['apn']
    https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
       auto-discovered: CZM_Hampton_Data; score 0; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 703 records - too small to be a full parcel roll, probably a subset or study extract; NAMED as a subset - demoted
+   https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/42
+      auto-discovered: CZM_Hampton_Data; score 0; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 716 records - too small to be a full parcel roll, probably a subset or study extract; NAMED as a subset - demoted
 
-Portsmouth: 3 candidate layer(s)
+Portsmouth: 2 candidate layer(s)
    https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
       auto-discovered: Parcels; score 16; fields ['address', 'apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'zip']; 36,464 records
    https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
       auto-discovered: Parcels_Real_Estate_View; score 16; fields ['address', 'apn', 'assessed_value', 'owner_name', 'sqft', 'use_code', 'zip']; 36,241 records
-   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      geometry supplement; VGIN statewide fallback: FIPS = '51740'; 36,615 records; fields ['apn']
 
-Suffolk: 1 candidate layer(s)
-   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      VGIN statewide fallback: FIPS = '51800'; 45,160 records; fields ['apn']
+Suffolk: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
 
 Norfolk: 2 candidate layer(s)
    https://data.norfolk.gov/resource/ykcq-76im.json
@@ -93,9 +87,9 @@ Norfolk: 2 candidate layer(s)
 
 Richmond: 2 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']
+      VGIN statewide fallback: UPPER(LOCALITY) LIKE 'RICHMOND%'; 84,715 records; fields ['apn']
    https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
       auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records; NAMED as a subset - demoted
 
-Wrote 15 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
+Wrote 12 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
 NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.
