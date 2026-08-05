@@ -126,3 +126,28 @@ def test_non_assessor_rows_are_ignored(tmp_path, monkeypatch):
 def test_missing_db_is_safe(tmp_path):
     prop = {"apn": "1", "city": "Norfolk", "state": "VA", "market": "Norfolk"}
     assert sh.sale_history_for(prop, db_path=tmp_path / "nope.db") == []
+
+
+def test_default_db_path_uses_the_real_phase0_locator(monkeypatch):
+    """Regression (owner 2026-08-05, 'no sale history on ANY property'): the
+    default-path branch called phase0.workbench_db(), which does not exist —
+    every call raised AttributeError, swallowed by the broad except, so the
+    card blanket-showed 'No sale history available'. The whole test suite passed
+    because every other test injects db_path= and never touches this branch.
+    Pin that _muni_db_path(None) resolves through find_workbench_db without
+    raising."""
+    from core import phase0
+    assert not hasattr(phase0, "workbench_db"), (
+        "sale_history must call find_workbench_db, not workbench_db")
+
+    from pathlib import Path
+    sentinel = Path("/tmp/does-not-exist-muni.db")
+    monkeypatch.setattr(phase0, "find_workbench_db", lambda: sentinel)
+    assert sh._muni_db_path(None) == sentinel
+
+    # And None from the locator must be tolerated (no muni DB on this box).
+    monkeypatch.setattr(phase0, "find_workbench_db", lambda: None)
+    assert sh._muni_db_path(None) is None
+    # end-to-end: a None locator degrades to [] rather than crashing.
+    prop = {"apn": "1", "city": "Norfolk", "state": "VA", "market": "Norfolk"}
+    assert sh.sale_history_for(prop) == []

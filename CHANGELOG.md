@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.9.0.0 — 2026-08-05  ·  Fix: sale history was blank on EVERY property (wrong function name)
+Owner report: "Why no sale history on any properties?" Root cause: `_muni_db_path`
+called `phase0.workbench_db()`, which does not exist — the function is
+`find_workbench_db()`. Every default-path call raised `AttributeError`, swallowed
+by the broad `except` in `sale_history_for`, so the card blanket-read "No sale
+history available" no matter what data was present. The whole test suite passed
+because every sale-history test injects an explicit `db_path=`, never touching
+the default-path branch that the live app uses. Fixed to call
+`find_workbench_db()` and tolerate its `None` return (no muni DB on this box).
+Regression test pins `_muni_db_path(None)` through the real locator + asserts the
+old name is gone. (This is why the V5.24.0 feature never surfaced a single sale.)
+
 ## V5.24.8.0.0 — 2026-08-05  ·  Contact info moved INLINE into the People block
 Owner report: "Move all POC/Contact information under PEOPLE — no weird dropdown
 below." The separate `st.popover` is gone; each person's resolved contacts now

@@ -148,11 +148,16 @@ def _norm_apn(s: Any) -> str:
     return _KEY_JUNK.sub("", str(s or "").lower())
 
 
-def _muni_db_path(db_path: Path | None) -> Path:
+def _muni_db_path(db_path: Path | None) -> Path | None:
     if db_path is not None:
         return Path(db_path)
     from core import phase0
-    return phase0.workbench_db()
+    # phase0 exposes `find_workbench_db()` (→ Path | None), NOT `workbench_db()`.
+    # The old name raised AttributeError on every call, which the broad
+    # `except` in sale_history_for swallowed — so EVERY property silently read
+    # "No sale history available." Locating the DB can also legitimately return
+    # None (no muni DB on this box); callers must handle None.
+    return phase0.find_workbench_db()
 
 
 def sale_history_for(prop: dict, *, db_path: Path | None = None) -> list[dict]:
@@ -181,7 +186,7 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
         return []
 
     path = _muni_db_path(db_path)
-    if not Path(path).exists():
+    if path is None or not Path(path).exists():
         return []
 
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)

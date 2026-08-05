@@ -498,6 +498,24 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — a broad `except` + an untested default path = a feature that never ran (2026-08-05)
+
+Sale history read "No sale history available" on EVERY property from day one.
+Cause: `_muni_db_path` called `phase0.workbench_db()` — a function that does not
+exist (it's `find_workbench_db`). Every call raised `AttributeError`, and
+`sale_history_for`'s `try/except Exception: return []` swallowed it into a clean
+empty list. Two failures stacked: (1) a broad except that turns a NameError-class
+bug into "no data", indistinguishable from a legitimate empty result; (2) 10
+passing tests that ALL injected `db_path=`, so not one exercised the
+`db_path=None` branch the live app actually takes. Rules: a bare
+`except Exception` around a whole feature must not be the thing that decides
+"empty vs broken" — let coding errors (AttributeError/NameError/TypeError)
+surface, or log them, don't fold them into the success-shaped fallback. And a
+test that hard-codes the injectable dependency proves the injected path, never
+the default one the product runs — cover the no-argument path explicitly. Verify
+a data feature actually returns data against a populated store, not just that it
+doesn't crash.
+
 ## Lesson — put the data where the eye already is; a popover is a second click (2026-08-05)
 
 Shipped the owner contact detail as an `st.popover` beneath the People block.
