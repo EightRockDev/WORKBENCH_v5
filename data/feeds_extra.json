@@ -79,6 +79,30 @@
     "note": "auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,304 records"
   },
   {
+    "market": "Chesapeake",
+    "state": "VA",
+    "county": "Chesapeake",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "status": "live",
+    "where": "FIPS = '51550'",
+    "record_count": 92461,
+    "note": "geometry supplement; VGIN statewide fallback: FIPS = '51550'; 92,461 records; fields ['apn']"
+  },
+  {
+    "market": "Hampton",
+    "state": "VA",
+    "county": "Hampton",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "status": "live",
+    "where": "FIPS = '51650'",
+    "record_count": 51803,
+    "note": "VGIN statewide fallback: FIPS = '51650'; 51,803 records; fields ['apn']"
+  },
+  {
     "market": "Hampton",
     "state": "VA",
     "county": "Hampton",
@@ -99,28 +123,6 @@
     ],
     "is_subset": true,
     "note": "auto-discovered: CZM_Hampton_Data; score 0; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 703 records - too small to be a full parcel roll, probably a subset or study extract; NAMED as a subset - demoted"
-  },
-  {
-    "market": "Hampton",
-    "state": "VA",
-    "county": "Hampton",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/42",
-    "status": "live",
-    "record_count": 716,
-    "fields_mapped": [
-      "address",
-      "apn",
-      "assessed_value",
-      "city",
-      "lat",
-      "lng",
-      "use_code",
-      "year_built"
-    ],
-    "is_subset": true,
-    "note": "auto-discovered: CZM_Hampton_Data; score 0; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 716 records - too small to be a full parcel roll, probably a subset or study extract; NAMED as a subset - demoted"
   },
   {
     "market": "Portsmouth",
@@ -166,6 +168,30 @@
     "note": "auto-discovered: Parcels_Real_Estate_View; score 16; fields ['address', 'apn', 'assessed_value', 'owner_name', 'sqft', 'use_code', 'zip']; 36,241 records"
   },
   {
+    "market": "Portsmouth",
+    "state": "VA",
+    "county": "Portsmouth",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "status": "live",
+    "where": "FIPS = '51740'",
+    "record_count": 36615,
+    "note": "geometry supplement; VGIN statewide fallback: FIPS = '51740'; 36,615 records; fields ['apn']"
+  },
+  {
+    "market": "Suffolk",
+    "state": "VA",
+    "county": "Suffolk",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "status": "live",
+    "where": "FIPS = '51800'",
+    "record_count": 45160,
+    "note": "VGIN statewide fallback: FIPS = '51800'; 45,160 records; fields ['apn']"
+  },
+  {
     "market": "Norfolk",
     "state": "VA",
     "county": "Norfolk",
@@ -193,9 +219,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "UPPER(LOCALITY) LIKE 'RICHMOND%'",
-    "record_count": 84715,
-    "note": "VGIN statewide fallback: UPPER(LOCALITY) LIKE 'RICHMOND%'; 84,715 records; fields ['apn']"
+    "where": "FIPS = '51760'",
+    "record_count": 76739,
+    "note": "VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']"
   },
   {
     "market": "Richmond",
