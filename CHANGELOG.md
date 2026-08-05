@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.11.0.0 — 2026-08-05  ·  Login live + auth secrets template/doc fixed to the shape the code reads
+Real per-user login is now live on `https://workbench.eight-rock.com` — Auth0
+(Google / Microsoft / email), first-admin bootstrap, pending-approval gate. Two
+setup-doc/template fixes so the next person doesn't hit what we hit tonight:
+(1) **`secrets.toml.example` and `docs/AUTH0_SETUP.md` now use a flat `[auth]`
+block** — all five keys (`redirect_uri`, `cookie_secret`, `client_id`,
+`client_secret`, `server_metadata_url`) directly under `[auth]`. `core/oidc.py`
+calls `st.login()` with no provider name, so it reads the single default
+provider; the old nested `[auth.auth0]` made it throw "missing keys" with the
+keys sitting right there. (2) The template's `[postgres]` block is **commented
+out by default** with a warning that `secrets.toml`'s `url` overrides the
+`.env` `DATABASE_URL` that `setup-db.ps1` writes — the placeholder was an
+override trap. Doc also gains the NAT-hairpin `hosts` workaround, the
+promote-yourself SQL for when a test account took the admin slot, the
+save-as-`.txt` gotcha, and the "secrets reload only on restart" note. No app-code
+change.
+
 ## V5.24.10.0.0 — 2026-08-05  ·  setup-db.ps1 upserts .env instead of clobbering it (login setup)
 Caught while walking the owner through login setup: `setup-db.ps1`'s final step
 wrote a fresh 3-line `.env` with `Set-Content`, which would have **destroyed

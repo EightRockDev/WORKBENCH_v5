@@ -498,6 +498,28 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — st.login() reads the FLAT [auth] table; a config TEMPLATE that lies costs an hour (2026-08-05)
+
+Streamlit native auth has two shapes: a single **default** provider (all keys —
+`redirect_uri`, `cookie_secret`, `client_id`, `client_secret`,
+`server_metadata_url` — directly under `[auth]`, used by `st.login()` with no
+argument) and **named** providers (`[auth.<name>]` sub-tables, used by
+`st.login("<name>")`). `core/oidc.py` calls bare `st.login()`, so it needs the
+FLAT shape — but `secrets.toml.example` and the setup doc showed the nested
+`[auth.auth0]` form. Result during go-live: `StreamlitAuthError: missing keys
+['client_id','client_secret','server_metadata_url']` with the keys visibly
+present, and several confused restarts. Auth0 is ONE provider that federates
+Google/Microsoft/email internally — there was never a reason for a named sub-table.
+Rules: (1) a config template/example is load-bearing documentation — it must
+match exactly what the code parses, or it actively misleads; when you change how
+config is read, fix the template in the same breath. (2) For Streamlit auth
+specifically: bare `st.login()` ⇒ flat `[auth]`. Two more go-live traps folded
+into the doc the same day: secrets reload only on **restart** (the file-watcher
+is off from the fade fix), Windows silently saves `secrets.toml.txt` with the
+extension hidden, and the OAuth callback to the public host times out from
+INSIDE the LAN (NAT hairpin) — fixed per-machine with a `hosts` entry, not a code
+change.
+
 ## Lesson — a setup script that WRITES a shared file must upsert, never clobber (2026-08-05)
 
 `setup-db.ps1` ended by writing a fresh 3-line `.env` via `Set-Content` — fine on

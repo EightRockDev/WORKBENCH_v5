@@ -136,26 +136,32 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"   # copy the output
 notepad .streamlit\secrets.toml
 ```
 
-Make the file look like this, filling the five blanks:
+Make the file look like this. **All five auth keys go directly under `[auth]`** —
+do NOT nest them under `[auth.auth0]`. The app calls `st.login()` with no
+provider name, so it reads the single default provider; a nested block makes it
+report "missing keys: client_id, client_secret, server_metadata_url" even though
+they're present.
 
 ```toml
-[postgres]
-url = "postgresql://USER:PASSWORD@localhost:5432/workbench"   # your Postgres
-
 [auth]
-redirect_uri = "https://workbench.eight-rock.com/oauth2callback"
-cookie_secret = "PASTE_THE_TOKEN_FROM_THE_python_-c_COMMAND_ABOVE"
-
-[auth.auth0]
-client_id     = "PASTE_CLIENT_ID_FROM_PART_D"
-client_secret = "PASTE_CLIENT_SECRET_FROM_PART_D"
+redirect_uri        = "https://workbench.eight-rock.com/oauth2callback"
+cookie_secret       = "PASTE_THE_TOKEN_YOU_GENERATED"
+client_id           = "PASTE_CLIENT_ID_FROM_PART_D"
+client_secret       = "PASTE_CLIENT_SECRET_FROM_PART_D"
 server_metadata_url = "https://YOUR_DOMAIN/.well-known/openid-configuration"
 ```
 
 - Replace `YOUR_DOMAIN` with the **Domain** from Part D, e.g.
   `https://eightrock.us.auth0.com/.well-known/openid-configuration`.
-- Save and close Notepad. This file is gitignored — it never leaves the machine
-  and is never committed.
+- **No `[postgres]` block** when you set up the database with `setup-db.ps1`
+  (Part F) — that script writes the real `DATABASE_URL` into `.env`, and
+  `secrets.toml`'s `[postgres].url` would *override* it. Only add a `[postgres]`
+  block here if you are deliberately not using `.env` for the database.
+- Generate `cookie_secret` with either:
+  - PowerShell (no Python needed): `$b=New-Object 'byte[]' 48; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b).TrimEnd('=').Replace('+','-').Replace('/','_')`
+  - or Python: `python -c "import secrets; print(secrets.token_urlsafe(48))"`
+- Save as `secrets.toml` (NOT `secrets.toml.txt` — turn on Explorer's "File name
+  extensions" so a stray `.txt` can't hide). This file is gitignored.
 
 ---
 
@@ -197,6 +203,30 @@ cd C:\WORKBENCH_V5
    You approve them: open the **🔧 Admin** toggle (top-right) → the user list →
    **Approve**. You can also set roles and suspend accounts there.
 
+> **Testing from inside the office network?** After you authenticate, the
+> browser is redirected to `https://workbench.eight-rock.com/oauth2callback`.
+> Many routers won't loop a request to your own public address back to the LAN
+> (NAT hairpin), so that callback can time out *only from inside* — outside
+> users are fine. Fix it for the office PC by pointing that hostname at itself:
+> in an **elevated** PowerShell,
+> `Add-Content C:\Windows\System32\drivers\etc\hosts "127.0.0.1`tworkbench.eight-rock.com"; ipconfig /flushdns`
+> then browse the public URL directly. Caddy still serves the real cert (it's
+> keyed to the hostname, not the IP), and external access is unaffected.
+
+> **Not the first login, stuck on "pending approval"?** If a test account
+> already claimed the admin slot, promote yourself directly (elevated
+> PowerShell, reads the DB URL from `.env`):
+> ```powershell
+> $dburl = ((Select-String -Path C:\WORKBENCH_V5\.env -Pattern '^DATABASE_URL=').Line -replace '^DATABASE_URL=','')
+> & 'C:\Program Files\PostgreSQL\16\bin\psql.exe' $dburl
+> ```
+> then at the `=#` prompt:
+> ```sql
+> UPDATE users SET platform_role='admin', status='active' WHERE email='YOUR_EMAIL';
+> ```
+> Expect `UPDATE 1`, `\q` to quit, then refresh the browser (no re-login needed —
+> an existing user's role/status is never overwritten on login).
+
 ---
 
 ## Troubleshooting
@@ -204,10 +234,14 @@ cd C:\WORKBENCH_V5
 | Symptom | Fix |
 |---|---|
 | No "Log in" button, app opens straight to properties | `secrets.toml` missing the `[auth]` block, or Postgres not running (Part F). |
+| Clicking Log in throws `StreamlitAuthError: ... missing keys ['client_id','client_secret','server_metadata_url']` | The auth keys are nested under `[auth.auth0]` (or another sub-table). Move all five directly under `[auth]` — `st.login()` reads the single default provider. Restart after editing (the file-watcher is off, so secrets reload only on restart). |
+| App still behaves as before after editing `secrets.toml` | Secrets reload only on **restart** (`Restart-Service WorkbenchBlue,WorkbenchGreen -Force`) — the file-watcher is disabled. |
+| Saved `secrets.toml` but the app ignores it | Windows may have saved it as `secrets.toml.txt` with the extension hidden. Turn on Explorer → View → **File name extensions** and rename to exactly `secrets.toml`. |
 | "Callback URL mismatch" on the Auth0 screen | The Auth0 **Allowed Callback URLs** (Part C) must exactly equal `redirect_uri` (Part E), incl. `/oauth2callback`. |
+| Callback **times out** but only from inside the office | NAT hairpin — see the "Testing from inside the office network?" note above (add a `hosts` entry). |
 | Clicking Log in throws a Python error | `authlib` not installed — run the admin updater (Part G-1). |
 | Google works but Microsoft is missing | Finish Part B-3 (Azure app registration + enable the Microsoft connection for this app). |
-| Signed in but stuck on "pending approval" | That's expected for everyone after the first user; approve them in Admin (Part H-3). If YOU are stuck, you weren't the first login — tell me and I'll promote your account. |
+| Signed in but stuck on "pending approval" | Expected for everyone after the first user; approve them in Admin (Part H-3). If YOU are stuck, you weren't the first login — promote yourself with the SQL in the note above. |
 
 Send me your **Domain** and **Client ID** and I'll sanity-check the
 `server_metadata_url` before you restart.
