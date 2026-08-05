@@ -87,3 +87,35 @@ def test_active_is_newest_first():
     p.touch("new", "B", "x", now=1005.0)
     order = [r["name"] for r in p.active(now=1006.0)]
     assert order == ["B", "A"]
+
+
+# ---- admin sign-out (owner ask 2026-08-05) ------------------------------
+
+def test_request_logout_drops_the_session_from_the_list_immediately():
+    p.touch("s1", "Brian", "x", now=1000.0)
+    p.touch("s2", "Peter", "x", now=1000.0)
+    p.request_logout("s2")
+    names = {r["name"] for r in p.active(now=1000.0)}
+    assert names == {"Brian"}          # Peter gone from the online list at once
+
+
+def test_should_logout_fires_exactly_once():
+    p.request_logout("s2")
+    assert p.should_logout("s2") is True    # target's next rerun → st.logout()
+    assert p.should_logout("s2") is False   # and never again
+
+
+def test_should_logout_false_for_unflagged_session():
+    p.touch("s1", "Brian", "x", now=1000.0)
+    assert p.should_logout("s1") is False
+
+
+def test_request_logout_ignores_blank_sid():
+    p.request_logout("")
+    assert p.should_logout("") is False
+
+
+def test_reset_clears_pending_logouts():
+    p.request_logout("s9")
+    p._reset_for_tests()
+    assert p.should_logout("s9") is False

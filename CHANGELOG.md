@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.12.0.0 — 2026-08-05  ·  Who's-online: admin-only, with sign-out
+Two owner asks on the who's-online pill. (1) **Only admins can click the count.**
+The topbar "N online" pill is a link to the who's-online page (identities + IPs)
+only for operators (ungated/legacy or admin); everyone else sees it as plain,
+non-clickable text — matching the page's existing operator gate. (2) **Admins can
+sign a session out.** The who's-online page now renders one row per session with
+a Sign-out button; `presence.request_logout(sid)` drops the session from the list
+immediately and flags it, and the target ends its own session via
+`st.logout()` on its next rerun (`should_logout` check in `_record_presence`,
+kept outside the swallow-everything try so the logout isn't eaten). We can't kill
+a remote auth cookie instantly, so it lands on the target's next interaction —
+stated plainly in the UI. Same-process registry is safe because Caddy's
+`lb_policy first` routes every session to Blue. Five new tests in
+`tests/test_presence.py`.
+
 ## V5.24.11.0.0 — 2026-08-05  ·  Login live + auth secrets template/doc fixed to the shape the code reads
 Real per-user login is now live on `https://workbench.eight-rock.com` — Auth0
 (Google / Microsoft / email), first-admin bootstrap, pending-approval gate. Two

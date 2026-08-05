@@ -27,6 +27,13 @@ ACTIVE_WINDOW_SECONDS = 300
 _LOCK = threading.Lock()
 _SESSIONS: dict[str, dict] = {}     # session_id -> {name, ip, last_seen}
 _GEO_CACHE: dict[str, str] = {}
+# Session ids an admin has asked to sign out (owner ask 2026-08-05). The target
+# session ends itself on its next rerun (`should_logout` → `st.logout()`); we
+# can't kill another browser's auth cookie remotely, so the sign-out lands when
+# that user next interacts. Same-process only, which holds: Caddy's
+# `lb_policy first` routes every session to the Blue instance, so the admin's
+# request and the target's session share this registry.
+_FORCE_LOGOUT: set[str] = set()
 
 
 def _is_private_ip(ip: str) -> bool:
@@ -111,7 +118,31 @@ def count(*, within: int = ACTIVE_WINDOW_SECONDS, now: float | None = None) -> i
     return len(active(within=within, now=now))
 
 
+def request_logout(session_id: str) -> None:
+    """Admin action: sign `session_id` out. Flags it for logout on its next
+    rerun and drops it from the online list immediately so it disappears from
+    the who's-online view without waiting for the target to act."""
+    if not session_id:
+        return
+    with _LOCK:
+        _FORCE_LOGOUT.add(session_id)
+        _SESSIONS.pop(session_id, None)
+
+
+def should_logout(session_id: str) -> bool:
+    """True (once) if an admin has requested this session be signed out. Pops
+    the flag so `st.logout()` fires a single time on the target's next rerun."""
+    if not session_id:
+        return False
+    with _LOCK:
+        if session_id in _FORCE_LOGOUT:
+            _FORCE_LOGOUT.discard(session_id)
+            return True
+    return False
+
+
 def _reset_for_tests() -> None:
     with _LOCK:
         _SESSIONS.clear()
+        _FORCE_LOGOUT.clear()
     _GEO_CACHE.clear()

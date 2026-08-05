@@ -999,17 +999,29 @@ def main() -> None:
 
 
 def _record_presence(user) -> None:
-    """Stamp this session into the who's-online registry (best-effort)."""
+    """Stamp this session into the who's-online registry (best-effort).
+
+    Also honors an admin's "sign out" from the Who's-online page: if this
+    session was flagged, end it here (before touching presence again). The
+    `st.logout()` call is kept OUT of the swallow-everything try below so its
+    rerun/redirect isn't silently eaten.
+    """
+    from core import presence
     try:
-        from core import presence
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        _ctx = get_script_run_ctx()
+        sid = getattr(_ctx, "session_id", "") if _ctx else ""
+    except Exception:
+        sid = ""
+    if not sid:
+        return
+    if user is not None and presence.should_logout(sid):
         try:
-            from streamlit.runtime.scriptrunner import get_script_run_ctx
-            _ctx = get_script_run_ctx()
-            sid = getattr(_ctx, "session_id", "") if _ctx else ""
+            st.logout()      # clears identity + reruns → back to the login gate
         except Exception:
-            sid = ""
-        if not sid:
-            return
+            pass
+        st.stop()
+    try:
         # Client IP from Caddy's forwarded headers (deploy Caddyfile sets
         # `header_up X-Real-IP {remote_host}`). Direct LAN hits lack these.
         ip = ""
@@ -1048,18 +1060,44 @@ def _render_who_online(st) -> None:
         return
     st.caption(f"{len(rows)} session(s) active in the last "
                f"{presence.ACTIVE_WINDOW_SECONDS // 60} minutes.")
-    table = []
+
+    # This session's own id, so we can label "(you)" and not offer to sign
+    # ourselves out by surprise.
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        _ctx = get_script_run_ctx()
+        _my_sid = getattr(_ctx, "session_id", "") if _ctx else ""
+    except Exception:
+        _my_sid = ""
+
+    # Owner ask 2026-08-05: admins can sign a session out from here. A header
+    # row + one row per session, each with a Sign-out button. The target ends
+    # its session on its next interaction (we can't kill a remote auth cookie
+    # instantly), but it drops off this list right away.
+    hc = st.columns([3, 2, 2, 1.4, 1.4])
+    for col, label in zip(hc, ("Logged in as", "IP address", "Locality",
+                               "Last active", "")):
+        col.markdown(f"**{label}**" if label else "")
     for r in rows:
         ip = r.get("ip") or ""
-        table.append({
-            "Logged in as": r.get("name") or "Unknown",
-            "IP address": ip or "—",
-            "Locality": presence.locality_for_ip(ip),
-            "Last active": _dt.datetime.fromtimestamp(r["last_seen"]).strftime("%H:%M:%S"),
-        })
-    st.dataframe(table, use_container_width=True, hide_index=True)
+        sid = r.get("session_id") or ""
+        is_me = sid and sid == _my_sid
+        c1, c2, c3, c4, c5 = st.columns([3, 2, 2, 1.4, 1.4])
+        name = r.get("name") or "Unknown"
+        c1.write(f"{name}" + ("  ·  _(you)_" if is_me else ""))
+        c2.write(ip or "—")
+        c3.write(presence.locality_for_ip(ip))
+        c4.write(_dt.datetime.fromtimestamp(r["last_seen"]).strftime("%H:%M:%S"))
+        if is_me:
+            c5.caption("this session")
+        elif sid:
+            if c5.button("Sign out", key=f"signout_{sid}", type="secondary"):
+                presence.request_logout(sid)
+                st.toast(f"Signing out {name} — takes effect on their next action.")
+                st.rerun()
     st.caption("Locality is looked up from the public IP; LAN and Tailscale "
-               "addresses show as “Local network.”")
+               "addresses show as “Local network.” Signing out a session ends "
+               "it on that person's next interaction and removes it here now.")
 
 
 def _render_backoffice(st, user, org_id, selected_property_id) -> None:

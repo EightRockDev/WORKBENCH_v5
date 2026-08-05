@@ -2283,21 +2283,36 @@ def render_v2_topbar(prop: dict | None = None) -> None:
         r_pills, r_avatar = st.columns([9.0, 1.0], vertical_alignment="center")
         with r_pills:
             # Owner ask 2026-08-04: the old "V1" switch pill is replaced by a
-            # live who's-online count. Clicking it opens the ?who=1 page
-            # (identity + IP + locality per active session).
+            # live who's-online count. Owner ask 2026-08-05: ONLY administrators
+            # can click through to the who's-online page (it exposes other
+            # users' identities + IPs). Everyone else sees the count as plain,
+            # non-clickable text. Operator = ungated/legacy (user is None) or an
+            # admin — mirrors app.py's `_is_operator` so the pill and the page
+            # agree on who gets in.
             try:
                 from core import presence as _presence
                 _online = _presence.count()
             except Exception:
                 _online = 0
+            _user = st.session_state.get("user")
+            _is_operator = (_user is None) or bool(getattr(_user, "is_admin", False))
+            if _is_operator:
+                _pill = (
+                    f'<a class="v2-switch-pill" href="?who=1" target="_self" '
+                    f'title="Who is on the site right now — click for identities, IPs, locality" '
+                    f'style="font-size:10px;padding:4px 10px;">'
+                    f'<span class="arrow">👤</span><span>{_online} online</span></a>')
+            else:
+                _pill = (
+                    f'<span class="v2-switch-pill" '
+                    f'title="People active on the site right now" '
+                    f'style="font-size:10px;padding:4px 10px;cursor:default;">'
+                    f'<span class="arrow">👤</span><span>{_online} online</span></span>')
             st.markdown(
                 f'<div class="v2-nav-inline v2-nav-right">'
                 f'<span class="v2-nav-tag"><span class="d"></span>Live · {when}</span>'
                 f'<span class="v2-version-pill" title="{version}">{get_v2_version_short()}</span>'
-                f'<a class="v2-switch-pill" href="?who=1" target="_self" '
-                f'title="Who is on the site right now — click for identities, IPs, locality" '
-                f'style="font-size:10px;padding:4px 10px;">'
-                f'<span class="arrow">👤</span><span>{_online} online</span></a>'
+                f'{_pill}'
                 f'</div>',
                 unsafe_allow_html=True,
             )

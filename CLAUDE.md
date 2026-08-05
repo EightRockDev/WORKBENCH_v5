@@ -498,6 +498,25 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — you can't kill a remote Streamlit session; flag it and let it self-logout (2026-08-05)
+
+Owner wanted admins to "sign people out" from the who's-online screen. There is
+no server-side session registry to revoke — Streamlit native auth lives in a
+signed cookie in each browser, and the only way to invalidate every cookie
+(rotating `cookie_secret`) logs *everyone* out. So "sign out user X" is done with
+a flag: `presence.request_logout(sid)` adds the id to a set and drops it from the
+online list now; the TARGET session checks `should_logout(sid)` on its next rerun
+and calls `st.logout()` itself. Honest consequence, stated in the UI: it lands on
+that person's next interaction, not instantly (we can't force another browser to
+rerun). This works only because the flag set and the target session share one
+process — true here since Caddy's `lb_policy first` pins all traffic to the Blue
+instance; if traffic ever fanned across instances this would need a shared store
+(Postgres/Redis). Rule: when asked to act on another live session, don't pretend
+to reach into it — leave a flag it reads and acts on itself, and tell the user
+when it takes effect. (Also this pass: a control that exposes other users' IPs is
+gated to operators at BOTH the page AND the entry point — the topbar pill is a
+plain span for non-admins, not just a link to a blocked page.)
+
 ## Lesson — st.login() reads the FLAT [auth] table; a config TEMPLATE that lies costs an hour (2026-08-05)
 
 Streamlit native auth has two shapes: a single **default** provider (all keys —
