@@ -1255,6 +1255,22 @@ General rule: when Streamlit "shows data from another tab", the mechanism is
 Fix it at the stale marker, and always exempt the element that is legitimately
 re-rendering in place — otherwise the cure strobes the thing the user is using.
 
+## Lesson — a second editor for the same field is one deal.json, not two (2026-08-05)
+
+First-user feedback asked for a new "Input" tab where users type the first
+numbers — but purchase price and NOI are already edited on the Underwriting dial
+board. Two independent editors for the same fields is how you get a deal that
+says one thing here and another there. The Input tab (`ui/input_tab.py`) avoids
+that by owning NO state of its own: it seeds new deals from the shared
+`build_default_deal` (extracted from `render_underwriting`), and it writes
+through the exact `save_deal(..., expected_version=deal.row_version, ...)` path
+the dial board uses, editing via `model_copy(update=...)` so the FR-9.3.1
+concurrency metadata survives. Rule: when you add a second surface that edits an
+existing record, route it through the existing load/default/save helpers — never
+let it grow a parallel copy of the state or the defaults. Also: it uses an
+explicit `st.form` submit rather than auto-save-on-change, so the new surface
+structurally cannot reproduce the dial board's old rerun/fade loop.
+
 ## Lesson — a keyed segmented_control ignores `default`; move the value, not the param (2026-08-05)
 
 First-user feedback: clicking the Purchase Price KPI should jump to the

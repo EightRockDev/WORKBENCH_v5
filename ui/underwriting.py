@@ -1720,6 +1720,37 @@ def _render_verdict(
 # Top-level renderer
 # ---------------------------------------------------------------------------
 
+def build_default_deal(prop: dict[str, Any]) -> DealState:
+    """Build a sensible default DealState from the property record.
+
+    Shared by the Underwriting tab (when a property has no saved deal.json yet)
+    and the Input tab's quick-start form, so the seeded first numbers are
+    identical no matter which surface creates the deal. Purchase price seeds off
+    a mid-range Class-C $/unit; NOI off the record's avg rent × class expense
+    ratio; everything else off the ratified config defaults.
+    """
+    units = prop.get("units")
+    ppu_default = 130_000  # mid-range Class C HR
+    default_pp = (units or 100) * ppu_default
+    avg_rent = prop.get("avg_rent") or 1500
+    gpr_est = (units or 100) * avg_rent * 12
+    er = config.EXPENSE_RATIOS.get(prop.get("asset_class") or "C", 0.45)
+    vac = config.VACANCY_DEFAULT
+    noi_est = gpr_est * (1 - vac) - gpr_est * er
+    return DealState.model_validate({
+        "s-pp": default_pp, "s-noi": int(noi_est),
+        "s-dp": int(config.DOWN_PAYMENT_DEFAULT * 100),
+        "s-ir": int(config.INTEREST_RATE_DEFAULT * 100 * 10) / 10,
+        "s-vac": int(config.VACANCY_DEFAULT * 100),
+        "s-rg": int(config.RENT_GROWTH_DEFAULT * 100),
+        "s-eg": int(config.EXPENSE_GROWTH_DEFAULT * 100),
+        "s-xc": int(config.EXIT_CAP_DEFAULT * 100 * 10) / 10,
+        "s-hp": config.HOLD_PERIOD_DEFAULT,
+        "s-am": config.AMORT_YEARS, "s-io": 0,
+        "s-amf": int(config.AM_FEE_PCT * 100),
+    })
+
+
 def render_underwriting(
     prop: dict[str, Any],
     folder: PropertyFolder | None,
@@ -1736,27 +1767,7 @@ def render_underwriting(
     if folder is not None:
         deal = load_deal(folder.path)
     if deal is None:
-        # Build a default DealState from property record data
-        ppu_default = 130_000  # mid-range Class C HR
-        default_pp = (units or 100) * ppu_default
-        # NOI: use class-based expense ratio + record avg rent
-        avg_rent = prop.get("avg_rent") or 1500
-        gpr_est = (units or 100) * avg_rent * 12
-        er = config.EXPENSE_RATIOS.get(prop.get("asset_class") or "C", 0.45)
-        vac = config.VACANCY_DEFAULT
-        noi_est = gpr_est * (1 - vac) - gpr_est * er
-        deal = DealState.model_validate({
-            "s-pp": default_pp, "s-noi": int(noi_est),
-            "s-dp": int(config.DOWN_PAYMENT_DEFAULT * 100),
-            "s-ir": int(config.INTEREST_RATE_DEFAULT * 100 * 10) / 10,
-            "s-vac": int(config.VACANCY_DEFAULT * 100),
-            "s-rg": int(config.RENT_GROWTH_DEFAULT * 100),
-            "s-eg": int(config.EXPENSE_GROWTH_DEFAULT * 100),
-            "s-xc": int(config.EXIT_CAP_DEFAULT * 100 * 10) / 10,
-            "s-hp": config.HOLD_PERIOD_DEFAULT,
-            "s-am": config.AMORT_YEARS, "s-io": 0,
-            "s-amf": int(config.AM_FEE_PCT * 100),
-        })
+        deal = build_default_deal(prop)
         st.warning("No saved dial yet — defaults derived from property record. Adjust sliders to save.")
 
     # Load sources for T-12 inputs (if available)

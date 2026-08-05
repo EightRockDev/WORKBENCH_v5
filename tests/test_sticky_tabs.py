@@ -36,10 +36,12 @@ def _active(at):
     return None
 
 
-def test_defaults_to_subject():
+def test_defaults_to_input():
+    # First-user feedback 2026-08: Input is the first/default section now — the
+    # quick-start "first numbers" front door leads the property sub-tabs.
     at = _app().run()
     assert not at.exception, at.exception
-    assert _active(at) == "subject"
+    assert _active(at) == "input"
 
 
 def test_selecting_a_section_sticks_across_a_rerun():
@@ -65,9 +67,33 @@ def test_query_param_seeds_the_opening_section():
     assert _active(at) == "underwriting"
 
 
+def test_goto_jumps_and_clears_itself():
+    # First-user feedback 2026-08: a clickable KPI links to ?goto=<key>. The
+    # helper must actually switch the keyed selector (not just the param) and
+    # then clear goto so it doesn't re-fire on the next rerun.
+    at = _app()
+    at.query_params["goto"] = "underwriting"
+    at = at.run()
+    assert _active(at) == "underwriting"
+    assert at.query_params.get("goto") in (None, "")
+
+
+def test_goto_overrides_a_stored_selection():
+    # The selector already holds a value from a prior interaction; ?goto must
+    # still move it (a keyed widget ignores `default` once it has a value).
+    at = _app().run()
+    at.segmented_control[0].set_value("Diligence")
+    at = at.run()
+    assert _active(at) == "diligence"
+    at.query_params["goto"] = "underwriting"
+    at = at.run()
+    assert _active(at) == "underwriting"
+
+
 def test_every_key_is_reachable():
     at = _app().run()
-    labels = {"Subject": "subject", "Underwriting": "underwriting",
+    labels = {"Input": "input", "Subject": "subject",
+              "Underwriting": "underwriting",
               "Returns": "returns", "Market": "market", "Summary": "summary",
               "Diligence": "diligence", "Investors": "investors"}
     for label, key in labels.items():

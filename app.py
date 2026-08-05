@@ -78,13 +78,16 @@ from ui.v2_theme_05292026 import (
 # NOT: its value lives in session_state and survives the rerun, so the user
 # stays put. It also mirrors to a `ptab` query param so a bookmarked/shared
 # property URL opens on the right section.
-_PTAB_KEYS = ("subject", "underwriting", "returns", "market",
+# "Input" leads (first-user feedback 2026-08): a quick-start "first numbers"
+# front door before the full Subject/Underwriting depth. It writes the same
+# deal.json — see ui/input_tab.py.
+_PTAB_KEYS = ("input", "subject", "underwriting", "returns", "market",
               "summary", "diligence", "investors")
-_PTAB_LABELS_V2 = ("Subject", "Underwriting", "Returns", "Market",
+_PTAB_LABELS_V2 = ("Input", "Subject", "Underwriting", "Returns", "Market",
                    "Summary", "Diligence", "Investors")
-_PTAB_LABELS_V1 = ("🏢 Subject", "📊 Underwriting", "💰 Returns & Waterfall",
-                   "📍 Performance & Market", "📄 Exec Summary",
-                   "📋 Due Diligence", "💼 Investors")
+_PTAB_LABELS_V1 = ("✏️ Input", "🏢 Subject", "📊 Underwriting",
+                   "💰 Returns & Waterfall", "📍 Performance & Market",
+                   "📄 Exec Summary", "📋 Due Diligence", "💼 Investors")
 
 
 def _sticky_property_tab(is_v2: bool) -> str:
@@ -1079,7 +1082,13 @@ def _render_backoffice(st, user, org_id, selected_property_id) -> None:
 
 def _render_active_section(active_tab, prop, folder) -> None:
         from ui import authz as _authz     # module-gating, same as the caller
-        if active_tab == "subject":
+        if active_tab == "input":
+            # Quick-start "first numbers" front door (first-user feedback).
+            # Same deal.json / save path as Underwriting — one source of truth.
+            if _authz.guard_module("underwriting", "Input"):
+                from ui.input_tab import render_input
+                render_input(prop, folder)
+        elif active_tab == "subject":
             # Property detail leads: the header card (photo, name, address,
             # Favorite, Open Folder) identifies the deal, so it holds the top.
             render_property_detail(prop, folder)

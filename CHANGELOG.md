@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.7.0.0 — 2026-08-05  ·  New "Input" tab — the quick-start first-numbers front door
+Fourth and final first-user feedback item: "the first tab should be called Input
+where they enter the first numbers." New `ui/input_tab.py` leads the property
+sub-tabs with a focused form — purchase price, NOI, hold, down payment, interest
+rate — plus a read-only property header and an instant "first look" (price/unit,
+going-in cap) with a one-click link to the full Underwriting model. It is a front
+door, not a second engine: it writes the SAME `deal.json` through the SAME
+`save_deal` version-checked path and seeds new deals from the SAME
+`build_default_deal` helper (extracted from `render_underwriting` so the two
+surfaces can't drift), so there's exactly one source of truth. Uses an explicit
+`st.form` submit — no auto-save — so this tab can't enter the rerun/fade loop.
+`build_default_deal` factored out; `app` tab list + dispatch updated (Input is
+now the default landing section). Tests: `tests/test_input_tab.py` (5) + updated
+`tests/test_sticky_tabs.py` (default→input, Input reachable, and two new `?goto`
+jump tests covering the clickable-KPI switch end-to-end).
+
 ## V5.24.6.0.0 — 2026-08-05  ·  Clickable KPI cards jump to where the input is edited
 Third first-user feedback item: "when they click a main input, show them where
 to change it." The Purchase Price stat card is now a link (`?goto=underwriting`)
