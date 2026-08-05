@@ -1,14 +1,13 @@
-autopilot phase0 @ 2026-08-05T10:30:45
+autopilot phase0 @ 2026-08-05T11:12:26
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,005,715
+Assessor records available: 4,004,999
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,129  .../Accela_base_map_pro/MapServer/0
   Chesapeake        116,302  .../Address_Points/MapServer/0
   Chesapeake         92,588  .../OpenData/MapServer/15
   Chesapeake         92,461  .../VA_Parcels/FeatureServer/0
-  Hampton               716  .../CZM_Hampton_Data/FeatureServer/42
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
   Hampton            51,803  .../VA_Parcels/FeatureServer/0
   Newport News       54,437  .../Parcel/MapServer/0
@@ -26,12 +25,12 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 17 success rows -> 5 properties, 3 with usable rents, 2 in crosswalk -> 2 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      1,271,265
-parcels normalized:        1,271,265
+muni records scanned:      1,270,549
+parcels normalized:        1,270,549
 multifamily (>= 10 units): 19,058
-written to properties_8r:  1,271,265
+written to properties_8r:  1,270,549
 provisional (no-APN) ids:  27,413
-units derived from address points: 4,178  (skipped non-residential: 34,807)
+units derived from address points: 4,178  (skipped non-residential: 34,806)
 coords backfilled by address (multifamily): 205
 rent estimates stamped (HUD FMR blend): 18,947
 rents from scraped listings: 2
@@ -78,7 +77,7 @@ P0-2 shadow parity: comparing against 13,657 legacy rows...
 legacy multifamily rows:  639
 matched to the 8R backbone: 594 (93.0%)  [106 by address, 446 by lat/lng, 42 by proximity]
 unit counts agree:        151/203
-year built agrees:        87/187
+year built agrees:        87/186
 
 comp-set replay subjects: 184  (+16 skipped - city has no 8R coordinates yet)
 avg comp-set overlap:     48.7%  (gate >= 90%)
