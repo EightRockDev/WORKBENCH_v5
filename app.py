@@ -1074,18 +1074,18 @@ def _render_active_section(active_tab, prop, folder) -> None:
             from ui.radar_panel import render_radar
             render_radar(prop)
         elif active_tab == "market":
-            # Owner ask 2026-08-04: Market tab reads top-to-bottom as
-            # Comparables -> Owner Intelligence -> Data Sources. Owner
-            # Intelligence + Outreach and the Rent Listing URLs panel moved
-            # here out of the Admin back-office. Each panel self-gates (module
-            # grant / Postgres / providers) and shows its own notice.
-            if _authz.guard_module("comps", "Performance & Market"):
-                render_comps(prop, folder)
-            st.divider()
+            # Owner ask 2026-08-05: Market tab reads top-to-bottom as
+            # Owner Intelligence -> Comparables -> Data Sources (owner intel
+            # promoted to the top of the page). All three moved here out of the
+            # Admin back-office; each self-gates (module grant / Postgres /
+            # providers) and shows its own notice.
             from ui.skiptrace_panel import render_owner_intel
             from ui.outreach_panel import render_outreach
             render_owner_intel(prop)
             render_outreach(prop)
+            st.divider()
+            if _authz.guard_module("comps", "Performance & Market"):
+                render_comps(prop, folder)
             st.divider()
             from ui.listings_panel import render_listing_urls_panel
             render_listing_urls_panel(prop)

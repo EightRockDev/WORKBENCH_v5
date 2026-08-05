@@ -26,13 +26,13 @@ def test_market_tab_hosts_comps_owner_intel_and_data_sources():
     assert "render_listing_urls_panel" in src         # data sources
 
 
-def test_market_tab_orders_comps_then_owner_then_data_sources():
+def test_market_tab_orders_owner_then_comps_then_data_sources():
     src = inspect.getsource(app._render_active_section)
-    i_comps = src.index("render_comps")
     i_owner = src.index("render_owner_intel")
+    i_comps = src.index("render_comps")
     i_data = src.index("render_listing_urls_panel")
-    assert i_comps < i_owner < i_data, (
-        "Market tab must read Comparables -> Owner Intelligence -> Data Sources")
+    assert i_owner < i_comps < i_data, (
+        "Market tab must read Owner Intelligence -> Comparables -> Data Sources")
 
 
 def test_backoffice_no_longer_hosts_the_property_panels():

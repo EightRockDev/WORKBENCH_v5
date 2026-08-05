@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.2.0.0 — 2026-08-05  ·  Market tab: Owner Intelligence to the top
+Owner ask: promote Owner Intelligence to the top of the Market tab. Order is now
+Owner Intelligence (+ Outreach) -> Comparables -> Data Sources (was
+Comparables -> Owner Intelligence -> Data Sources). Ordering test in
+`tests/test_backoffice_move.py` updated.
+
 ## V5.24.1.0.0 — 2026-08-05  ·  Coverage page: honest "feed incomplete" labels
 Owner ask: don't let "Hampton: 2" read as the real market. Hampton (2 confirmed
 MF vs ~52K parcels) and Suffolk (17) look empty because their VGIN feed publishes
