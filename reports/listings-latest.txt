@@ -1,3 +1,8 @@
-autopilot listings @ 2026-08-05T09:11:19
+autopilot listings @ 2026-08-05T10:30:34
 
-  [listings] fresh (pulled within 7 days, 14 favourites, generation 2) - skipping; 272 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: College Square at Harbour View -> not_found
+  [listings] zillow: College Square at Harbour View -> not_found
+  [listings] apartments_com: College Square at Harbour View -> not_found
+  [listings] property_site: College Square at Harbour View -> not_found
+  [listings] wrote 4 rows (0 successful scrapes)
