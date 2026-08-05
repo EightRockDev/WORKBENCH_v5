@@ -1,3 +1,8 @@
-autopilot listings @ 2026-08-05T16:12:07
+autopilot listings @ 2026-08-05T17:11:17
 
-  [listings] fresh (pulled within 7 days, 15 favourites, generation 2) - skipping; 276 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: 1 Scott's Addition -> not_found
+  [listings] zillow: 1 Scott's Addition -> not_found
+  [listings] apartments_com: 1 Scott's Addition -> not_found
+  [listings] property_site: 1 Scott's Addition -> not_found
+  [listings] wrote 4 rows (0 successful scrapes)
