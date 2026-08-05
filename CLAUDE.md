@@ -1255,6 +1255,20 @@ General rule: when Streamlit "shows data from another tab", the mechanism is
 Fix it at the stale marker, and always exempt the element that is legitimately
 re-rendering in place — otherwise the cure strobes the thing the user is using.
 
+## Lesson — a deterministic export reuses the computed data, it doesn't recompute (2026-08-05)
+
+First-user feedback: investors want the deal's *numbers* in a spreadsheet, not
+just the Artifact Engine's Word prose. The Excel export (`core/excel_export.py`)
+takes the exact `data` dict `ui.exec_summary._build_summary_data` already
+produced (DealState + `cf` cash-flow projection + verdict + metrics) and lays it
+into three sheets. It does **not** re-run `build_cashflow`/`run_waterfall` — a
+second computation path is a second place for the download to drift from the
+screen, and "the spreadsheet says X but the app says Y" is exactly the trust
+break we can't afford. Rule: an export is a *view* of already-computed state.
+Pass the data in; never let the export own a second copy of the math.
+Corollary: it's deterministic on purpose (unlike the LLM artifacts) — a
+spreadsheet is a model, and a model that changes between downloads is broken.
+
 ## Lesson — the installer knows the answer the operator is guessing (2026-08-02)
 
 - Version scheme **`V5.PHASE.FEATURE.PATCH.BUILD`** (5 marks the v5.0 line).

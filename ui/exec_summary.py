@@ -323,6 +323,35 @@ def render_exec_summary(
 
     _render_stress_panel(data)
 
+    # ---- Excel export (deterministic, no-API) ----
+    # Brian's first-user feedback (2026-08): investors want the *numbers* in a
+    # spreadsheet they can slice, not just the Artifact Engine's Word prose.
+    # Built straight from the same DealState + cash-flow projection shown above
+    # so the download always matches the screen. Bytes built lazily inside the
+    # section so a bad `sources` block can't blank the whole tab.
+    with section_card("Download to Excel", icon="⬇"):
+        try:
+            from core.excel_export import build_workbook_bytes
+            xlsx_bytes = build_workbook_bytes(prop, data, data.get("sources"))
+            safe_name = (prop.get("name") or "deal").replace(" ", "_")
+            st.download_button(
+                label="⬇ Download Excel (Summary · Returns · Rent Roll)",
+                data=xlsx_bytes,
+                file_name=f"{safe_name}_underwriting.xlsx",
+                mime=(
+                    "application/vnd.openxmlformats-"
+                    "officedocument.spreadsheetml.sheet"
+                ),
+                key="dl_excel_summary",
+                use_container_width=True,
+            )
+            st.caption(
+                "Three sheets — Summary, Returns (5-year cash flow + exit), "
+                "and Rent Roll — pulled from this deal's saved underwriting."
+            )
+        except Exception as e:  # noqa: BLE001
+            st.error(f"Excel export unavailable: {e}")
+
     # ---- Artifact Engine (LLM-powered analytical generators) ----
     # Per Brian 2026-05-08: the Exec Summary tab's only document-export
     # surface is the Artifact Engine. The previous "Quick deterministic

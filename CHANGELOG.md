@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.4.0.0 — 2026-08-05  ·  Download-to-Excel on the Exec Summary tab
+First of the four first-user feedback items. Investors said they already have
+the letters and memos (the Artifact Engine's Word docs) but want the *numbers*
+in a spreadsheet they can slice. New `core/excel_export.py` builds a
+deterministic three-sheet `.xlsx` — **Summary** (identity, headline metrics,
+verdict + rationale), **Returns** (the 5-year cash-flow table row-for-row, the
+exit block, IRR / equity multiple), and **Rent Roll** (parsed unit rows from
+`sources["rentRoll"]`, or a note when none has been ingested) — straight from
+the same DealState + cash-flow projection the Exec Summary already computes, so
+the download always matches the screen. A "⬇ Download to Excel" card sits on the
+Exec Summary tab below the stress panel. No new dependency (`openpyxl>=3.1` was
+already declared). Six tests in `tests/test_excel_export.py`.
+
 ## V5.24.3.0.0 — 2026-08-05  ·  a mock LLC pierce no longer masquerades as a real principal
 Owner flagged a pierced principal ("Robert Brg") with provenance `mock-va-scc`,
 no phone, no email — while the providers line said SOS was `live (cobalt)`. The
