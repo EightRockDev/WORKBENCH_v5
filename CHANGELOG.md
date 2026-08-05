@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.6.0.0 — 2026-08-05  ·  Clickable KPI cards jump to where the input is edited
+Third first-user feedback item: "when they click a main input, show them where
+to change it." The Purchase Price stat card is now a link (`?goto=underwriting`)
+that actually switches the section — `app._sticky_property_tab` consumes `goto`
+by writing the segmented-control's session value before it's instantiated, since
+a keyed control ignores `default` once it holds a value. Computed cards
+(Going-in cap, 5-yr IRR, DSCR) gained hover tooltips saying they're derived from
+the underwriting inputs, not typed. `_stat_card_html` grew optional `href`/
+`title`; a `.v2-stat-link` hover state (gold rail + soft fill) signals the card
+is clickable. Five tests in `tests/test_clickable_kpi.py`.
+
 ## V5.24.5.0.0 — 2026-08-05  ·  Click the owner under People → full-contact popover
 Second first-user feedback item. The People block in the right-rail inspector
 was static HTML; now a native "👤 {owner} — contact" popover sits directly

@@ -1640,6 +1640,9 @@ body.v2-on-diligence .v2-dd-inspector {{ display: block; }}
 .v2-stat-go    .v2-stat-value {{ color: #15803d; }}
 .v2-stat-watch .v2-stat-value {{ color: #b45309; }}
 .v2-stat-nogo  .v2-stat-value {{ color: #b91c1c; }}
+.v2-stat-a {{ display: block; }}
+.v2-stat-link {{ cursor: pointer; }}
+.v2-stat-link:hover {{ background: {v['gold_soft']}; box-shadow: inset 3px 0 0 {v['gold']}; }}
 .v2-stat-unit {{ font-size: 14px; font-weight: 500; color: {v['ink_4']}; margin-left: 4px; }}
 .v2-stat-foot {{ font-size: 12px; color: {v['ink_2']}; margin-top: 8px; font-family: 'JetBrains Mono', monospace; }}
 .v2-stat-foot.pos {{ color: {v['pos']}; }}
@@ -2493,18 +2496,31 @@ def render_v2_property_header(prop: dict) -> None:
 
 
 def _stat_card_html(label: str, value: str, unit: str | None, foot: str,
-                    foot_class: str = "", tone: str = "") -> str:
+                    foot_class: str = "", tone: str = "",
+                    href: str | None = None, title: str | None = None) -> str:
     """tone: '' neutral, 'go'/'watch'/'nogo' - grades the value against the
     ratified Eight Rock bars (config GO_*/WATCH_*) with a colored value +
-    left rail, so the stat bar reads as an instant verdict strip."""
+    left rail, so the stat bar reads as an instant verdict strip.
+
+    First-user feedback (2026-08): a card can be made *clickable* to jump to
+    where its value is edited. `href` wraps the card in an <a> (used for the
+    editable Purchase Price card → Underwriting tab); `title` sets the hover
+    tooltip (used on computed cards to say they're derived, not typed)."""
+    import html as _html
     unit_html = f'<span class="v2-stat-unit">{unit}</span>' if unit else ""
     tone_cls = f" v2-stat-{tone}" if tone else ""
-    return f"""
-<div class="v2-stat{tone_cls}">
+    link_cls = " v2-stat-link" if href else ""
+    title_attr = f' title="{_html.escape(title, quote=True)}"' if title else ""
+    card = f"""
+<div class="v2-stat{tone_cls}{link_cls}"{title_attr}>
   <div class="v2-stat-label">{label}</div>
   <div class="v2-stat-value">{value}{unit_html}</div>
   <div class="v2-stat-foot {foot_class}">{foot}</div>
 </div>"""
+    if href:
+        return (f'<a class="v2-stat-a" href="{href}" target="_self" '
+                f'style="text-decoration:none">{card}</a>')
+    return card
 
 
 def _tone(value: float | None, go: float, watch: float) -> str:
@@ -2545,17 +2561,29 @@ def render_v2_stats_bar(prop: dict, metrics: dict | None = None) -> None:
             v_str = f"${purchase_price/1_000:.0f}"
             unit = "K"
         foot = f"${int(ppu):,} / unit"
-        ask_card = _stat_card_html("Purchase Price", v_str, unit, foot)
+        # First-user feedback (2026-08): Purchase Price is an INPUT — clicking
+        # it jumps to the Underwriting tab where it's edited (?goto is consumed
+        # by _sticky_property_tab, which moves the section selector for real).
+        ask_card = _stat_card_html(
+            "Purchase Price", v_str, unit, "✏️ Click to edit",
+            href="?goto=underwriting",
+            title="This is an input — click to edit it in the Underwriting tab.")
     else:
-        ask_card = _stat_card_html("Purchase Price", "—", None, "Set in Underwriting tab")
+        ask_card = _stat_card_html(
+            "Purchase Price", "—", None, "✏️ Set in Underwriting",
+            href="?goto=underwriting",
+            title="This is an input — click to set it in the Underwriting tab.")
 
     # Cap card - graded against GO_CAP/WATCH_CAP (7.5%/7.0%)
+    _computed_tip = ("Computed from your underwriting inputs — change the "
+                     "inputs in the Underwriting tab.")
     if cap:
         cap_pct = cap * 100 if cap < 1 else cap
         ask_foot = "Computed from underwriting"
         cap_card = _stat_card_html(
             "Going-in cap", f"{cap_pct:.2f}", "%", ask_foot,
-            tone=_tone(cap_pct / 100, config.GO_CAP, config.WATCH_CAP))
+            tone=_tone(cap_pct / 100, config.GO_CAP, config.WATCH_CAP),
+            title=_computed_tip)
     else:
         cap_card = _stat_card_html("Going-in cap", "—", None, "Set in Underwriting tab")
 
@@ -2567,7 +2595,8 @@ def render_v2_stats_bar(prop: dict, metrics: dict | None = None) -> None:
         irr_card = _stat_card_html(
             "5-yr IRR", f"{irr_pct:.1f}", "%", em_str,
             tone=_tone(irr_pct / 100, config.LP_IRR_TARGET,
-                       config.LP_IRR_TARGET - 0.02))
+                       config.LP_IRR_TARGET - 0.02),
+            title=_computed_tip)
     else:
         irr_card = _stat_card_html("5-yr IRR", "—", None, "Set in Underwriting tab")
 
@@ -2575,7 +2604,8 @@ def render_v2_stats_bar(prop: dict, metrics: dict | None = None) -> None:
     if dscr_stab:
         dscr_card = _stat_card_html(
             "DSCR Stabilized", f"{dscr_stab:.2f}", "×", "Stabilized year",
-            tone=_tone(dscr_stab, config.GO_DSCR, config.WATCH_DSCR))
+            tone=_tone(dscr_stab, config.GO_DSCR, config.WATCH_DSCR),
+            title=_computed_tip)
     else:
         dscr_card = _stat_card_html("DSCR Stabilized", "—", None, "Set in Underwriting tab")
 

@@ -1255,6 +1255,21 @@ General rule: when Streamlit "shows data from another tab", the mechanism is
 Fix it at the stale marker, and always exempt the element that is legitimately
 re-rendering in place — otherwise the cure strobes the thing the user is using.
 
+## Lesson — a keyed segmented_control ignores `default`; move the value, not the param (2026-08-05)
+
+First-user feedback: clicking the Purchase Price KPI should jump to the
+Underwriting tab. The obvious wiring — an `<a href="?ptab=underwriting">` — does
+**not** move the section selector, because the property sub-tabs are a
+`st.segmented_control(key="ptab_sel")` and a keyed widget reads `default` only on
+its FIRST render; once session_state holds a value, changing the `ptab` query
+param is ignored. The fix that actually switches: the KPI links to a *separate*
+`?goto=<key>` param, and `app._sticky_property_tab` consumes it BEFORE the widget
+is instantiated — `st.session_state["ptab_sel"] = labels[idx]` then
+`del st.query_params["goto"]`. Writing the widget's own session key ahead of
+instantiation is the only reliable programmatic way to move a keyed Streamlit
+control. Rule: to drive a keyed widget from code, set its session_state value
+before the widget line runs — never rely on `default`/`index` after first paint.
+
 ## Lesson — an interactive control that reads Postgres must degrade, not crash (2026-08-05)
 
 The owner-contact popover (People block, `ui/v2_theme_05292026.py`) shows

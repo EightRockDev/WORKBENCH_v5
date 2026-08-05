@@ -94,6 +94,22 @@ def _sticky_property_tab(is_v2: bool) -> str:
     section keeps the section selected instead of resetting to Subject.
     """
     labels = _PTAB_LABELS_V2 if is_v2 else _PTAB_LABELS_V1
+
+    # First-user feedback (2026-08): a clickable KPI card (e.g. Purchase Price)
+    # links to `?goto=<key>` to jump to the tab where that input is edited.
+    # A keyed segmented_control ignores `default` once it has a stored value,
+    # so a bare `?ptab=` change can't move it. Consuming `goto` HERE — writing
+    # the widget's session_state value before it's instantiated, then clearing
+    # the param — is what actually switches the section.
+    try:
+        goto = st.query_params.get("goto")
+        if goto in _PTAB_KEYS:
+            st.session_state["ptab_sel"] = labels[_PTAB_KEYS.index(goto)]
+            st.query_params["ptab"] = goto
+            del st.query_params["goto"]
+    except Exception:
+        pass
+
     qp = None
     try:
         qp = st.query_params.get("ptab")
