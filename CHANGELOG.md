@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.10.0.0 — 2026-08-05  ·  setup-db.ps1 upserts .env instead of clobbering it (login setup)
+Caught while walking the owner through login setup: `setup-db.ps1`'s final step
+wrote a fresh 3-line `.env` with `Set-Content`, which would have **destroyed
+every other secret already there** — the Anthropic API key and the live skiptrace
+provider keys (Cobalt/BatchData/Trestle/Apollo) that the owner just got working.
+Now it backs the file up to `.env.bak` once, preserves every unmanaged line, and
+refreshes only its three managed keys (`DATABASE_URL`, `ER_STORAGE_BACKEND`,
+`APP_VERSION`). Idempotent and safe to re-run against a populated `.env`.
+
 ## V5.24.9.0.0 — 2026-08-05  ·  Fix: sale history was blank on EVERY property (wrong function name)
 Owner report: "Why no sale history on any properties?" Root cause: `_muni_db_path`
 called `phase0.workbench_db()`, which does not exist — the function is

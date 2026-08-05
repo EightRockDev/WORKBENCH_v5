@@ -498,6 +498,20 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` → http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — a setup script that WRITES a shared file must upsert, never clobber (2026-08-05)
+
+`setup-db.ps1` ended by writing a fresh 3-line `.env` via `Set-Content` — fine on
+a blank box, catastrophic on a live one: it would have wiped the owner's Anthropic
+key and all four live skiptrace provider keys (Cobalt/BatchData/Trestle/Apollo)
+the moment he ran it to finish login setup. `.env` is a SHARED file many features
+write into; any script that touches it must read-merge-write (back up, preserve
+unmanaged lines, refresh only its own keys), the same upsert pattern
+`_save_api_key_to_env` already uses for the API key. Rule: a provisioning/setup
+step that owns a few keys in a shared config file must never own the whole file —
+`Set-Content`/truncate-write on `.env`, `secrets.toml`, or any multi-writer file
+is a data-loss bug waiting for the second feature to need it. Upsert, and back up
+before you rewrite.
+
 ## Lesson — a broad `except` + an untested default path = a feature that never ran (2026-08-05)
 
 Sale history read "No sale history available" on EVERY property from day one.
