@@ -103,7 +103,15 @@ def sync_user_on_login(idp_sub: str, email: str, display_name: str | None = None
             _audit(cur, actor=row["id"], action="user.bootstrap" if is_first else "user.signup",
                    target=row["id"], after={"platform_role": role, "status": status})
             conn.commit()
-            return _row_to_user(row)
+            user = _row_to_user(row)
+
+    # Branded welcome for real signups (not the bootstrap admin — that's the
+    # owner installing). Outside the connection block; a mail failure is a
+    # notice inside mailer, never a lost signup.
+    if not is_first:
+        from core import mailer
+        mailer.send_signup_email(user.email, user.display_name)
+    return user
 
 
 # ---------------------------------------------------------------------------
@@ -139,12 +147,20 @@ def approve_user(actor_id: str, user_id: str) -> None:
             raise LookupError(f"user {user_id} not found")
         new_role = "internal" if before["platform_role"] == "trial" else before["platform_role"]
         cur.execute(
-            "UPDATE users SET platform_role = %s, status = 'active' WHERE id = %s",
+            """UPDATE users SET platform_role = %s, status = 'active' WHERE id = %s
+               RETURNING email, display_name""",
             (new_role, user_id),
         )
+        approved = cur.fetchone()
         _audit(cur, actor=actor_id, action="user.approve", target=user_id,
                before=dict(before), after={"platform_role": new_role, "status": "active"})
         conn.commit()
+
+    # Outside the connection block: a mail failure is a notice inside mailer,
+    # never a failed approval.
+    if approved and approved.get("email"):
+        from core import mailer
+        mailer.send_approved_email(approved["email"], approved.get("display_name"))
 
 
 def suspend_user(actor_id: str, user_id: str) -> None:

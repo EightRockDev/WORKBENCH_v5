@@ -42,7 +42,7 @@ REQUIRED_TABLES: list[str] = [
     "consent_records", "revocations", "internal_dnc", "dnc_scrubs",
     "outreach_touches", "campaigns", "relationship_edges",
     "inbox_messages", "deals", "term_sheets", "crm_contacts",
-    "mailbox_connections",
+    "mailbox_connections", "user_property_overrides",
 ]
 # Indexes that ENFORCE a correctness rule, not just speed one up. Missing ones
 # are real drift: `ux_term_sheets_message` is what stops a repeated Sync from

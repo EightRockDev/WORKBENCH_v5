@@ -173,6 +173,18 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    - cosmetic: inventory "matched to property records" counters + property_detail
      "db"->src_8r color read wrong after flip (dual-run only today)
 
+### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
+Property Card edits now save per-user (`user_property_overrides`, per-user RLS
+like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field
+tiers live in `core/field_policy.py` + `docs/DATA-DICTIONARY.md` — reference
+(locked) / org (empty v1) / user; the edit form derives its set from the
+policy, never re-enumerate. `core/mailer.py` sends branded signup/approval
+emails over SMTP from .env — AWAITING OWNER: SMTP credentials
+(SMTP_HOST/PORT/USER/PASS in .env) before any mail actually sends; until then
+every send is a clean "not configured" notice. Owner decisions still open:
+which fields (if any) promote to org tier; mail provider (M365 SMTP vs
+transactional vendor).
+
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
 Owner will ask for all 50 metro regions pulled + reconciled **in one turn,

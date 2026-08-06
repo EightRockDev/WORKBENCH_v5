@@ -15,6 +15,7 @@ import pandas as pd
 import streamlit as st
 
 import config
+from core import field_policy, property_overrides
 from data.parsers import ParseResult, combine_blocks, parse_uploaded_document
 from data.property_io import (
     PropertyFolder,
@@ -385,15 +386,11 @@ _PM_SOFTWARE_OPTIONS: list[str] = [
     "Other",
 ]
 
-# Fields the analyst can override via the Edit form. Excludes computed
-# fields (rent_per_sqft) and auto-derived fields (market, submarket) per
-# Brian 5/29 v2.0.22 — he doesn't want to manually choose those.
-_EDITABLE_FIELDS: set[str] = {
-    "units", "year_built", "last_remodel", "asset_class",
-    "property_type", "occupancy_pct", "avg_sqft", "avg_rent",
-    "owner", "manager", "management_company", "pm_software",
-    "asset_or_fee",
-}
+# Fields the analyst can override via the Edit form. Single-sourced from the
+# data dictionary (core/field_policy.py): user-tier fields are editable;
+# reference-tier (computed rent_per_sqft, auto-derived market/submarket per
+# Brian 5/29 v2.0.22) stay locked. Never re-enumerate the list here.
+_EDITABLE_FIELDS: set[str] = field_policy.user_editable_fields()
 
 # Field labels in display order. The "Status" row is intentionally gone.
 _PROPERTY_CARD_FIELDS: list[tuple[str, str]] = [
@@ -416,11 +413,30 @@ _PROPERTY_CARD_FIELDS: list[tuple[str, str]] = [
 ]
 
 
+def _override_identity() -> tuple[str | None, str | None]:
+    """(org_id, user_id) of the signed-in user, or (None, None) in ungated
+    dev/legacy mode — which routes overrides to the legacy shared folder file."""
+    try:
+        org_id = st.session_state.get("org_id")
+        user = st.session_state.get("user")
+        return org_id, getattr(user, "id", None)
+    except Exception:
+        return None, None
+
+
 def _load_property_card_overrides(folder: PropertyFolder | None) -> dict[str, Any]:
-    """Read the per-property card overrides from disk. Returns empty dict
-    when none exist."""
+    """This USER's card overrides for the property (owner ask 2026-08-07:
+    edits are personal — only the editor sees them). The user's saved row
+    wins; the legacy shared folder file is the base for anyone who has never
+    saved their own edits, so pre-multi-user entries stay visible. Returns
+    empty dict when none exist."""
     if folder is None or not hasattr(folder, "path") or not folder.path.exists():
         return {}
+    org_id, user_id = _override_identity()
+    mine = property_overrides.load_user_overrides(
+        org_id, user_id, folder.folder_name)
+    if mine is not None:            # {} is a real answer: "I cleared my edits"
+        return mine
     fp = folder.path / _PROPERTY_CARD_OVERRIDES_FILE
     if not fp.exists():
         return {}
@@ -436,8 +452,14 @@ def _save_property_card_overrides(
     folder: PropertyFolder,
     overrides: dict[str, Any],
 ) -> None:
-    """Persist Property Card overrides to the folder. Filters out empty
-    values so deleting a field means resorting to the auto-pulled value."""
+    """Persist Property Card overrides — to the signed-in user's profile
+    (per-user RLS row) when available, else to the legacy shared folder file
+    (ungated dev mode). Filters out empty values so deleting a field means
+    resorting to the auto-pulled value."""
+    org_id, user_id = _override_identity()
+    if property_overrides.save_user_overrides(
+            org_id, user_id, folder.folder_name, overrides):
+        return
     import json
     cleaned = {
         k: v for k, v in overrides.items()

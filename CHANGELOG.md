@@ -12,6 +12,38 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.25.0.0.0 — 2026-08-07  ·  Per-user property edits + field governance + branded signup email
+Three owner asks (2026-08-07) in one coherent layer:
+1. **Per-user property edits.** Property Card overrides now save to the
+   signed-in user's profile (`user_property_overrides`, Postgres, the same
+   strict per-user RLS as the Module D inbox — org AND user must match, fails
+   closed) and are visible ONLY to that user. The shared folder
+   `property_card_overrides.json` becomes the read-time base for users who
+   have never saved their own edits (pre-multi-user entries stay visible) and
+   the fallback store in ungated dev mode. A user's "Reset" is an explicit
+   empty (`{}`), distinct from never-saved.
+2. **Field governance / data dictionary.** `core/field_policy.py` (machine-
+   readable, single source — the edit form derives its editable set from it)
+   + `docs/DATA-DICTIONARY.md` (human-readable). Tiers: `reference`
+   (enterprise-locked: backbone, muni, computed fields — corrections flow
+   through the pipeline, never an edit box), `org` (org-shared; empty by
+   design in v1, promote fields deliberately), `user` (personal working
+   values). Unknown fields fail closed to reference; a locked field submitted
+   by a stale UI is dropped at save.
+3. **Branded signup email.** `core/mailer.py`: Eight Rock-framed HTML
+   (gold/dark, plain-text alternative) over SMTP from `.env`
+   (SMTP_HOST/PORT/USER/PASS, optional MAIL_FROM — module loads .env itself
+   per the 2026-07-31 lesson). Hooks: signup (welcome + "awaiting approval",
+   suppressed for the bootstrap admin) and approval ("you're in" +
+   sign-in URL). Unconfigured/failed mail is a notice with a reason, never a
+   lost signup or a crash.
+Schema: `user_property_overrides` + per-user RLS appended to
+`db/pilot_schema.sql` (idempotent, self-heals via `data/migrate.py` on app
+startup; table added to REQUIRED_TABLES). The generic AC-10.1 cross-org RLS
+sweep picks the new table up automatically. 11 new tests
+(field policy incl. UI single-sourcing, mailer branding/degradation,
+override routing + pg round-trip A-sees/B-doesn't).
+
 ## V5.24.15.0.0 — 2026-08-06  ·  Radar tenure self-wires from the assessor sale record
 The tenure signal read "No deed record on file — connect the deed feed" on
 every 8r property: `score_tenure` only saw the vendor `last_sold_year` column,

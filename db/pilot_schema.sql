@@ -621,3 +621,34 @@ ALTER TABLE inbox_messages DROP CONSTRAINT IF EXISTS inbox_messages_org_id_provi
 CREATE UNIQUE INDEX IF NOT EXISTS ux_inbox_owner_msg
     ON inbox_messages(org_id, owner_user_id, provider, external_id);
 COMMIT;
+
+-- ---------------------------------------------------------------------------
+-- Per-user property-card overrides (owner ask 2026-08-07): "if one user edits
+-- a property, only they should see their edits." Personal working values —
+-- an overlay per (user, property); the shared backbone/folder data is never
+-- mutated. Field tiers (which fields may land here at all) are governed by
+-- core/field_policy.py + docs/DATA-DICTIONARY.md.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_property_overrides (
+    id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id        uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    user_id       uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    property_key  text NOT NULL,           -- folder name (deal folders are the shared property identity)
+    overrides     jsonb NOT NULL DEFAULT '{}'::jsonb,
+    updated_at    timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (org_id, user_id, property_key)
+);
+CREATE INDEX IF NOT EXISTS ix_upo_user ON user_property_overrides(org_id, user_id);
+
+-- Same strict per-user RLS as inbox_messages: fails closed when the user
+-- context is unset; one analyst's draft never leaks to a colleague.
+DO $$
+BEGIN
+    EXECUTE 'ALTER TABLE user_property_overrides ENABLE ROW LEVEL SECURITY';
+    EXECUTE 'ALTER TABLE user_property_overrides FORCE ROW LEVEL SECURITY';
+    EXECUTE 'DROP POLICY IF EXISTS org_isolation ON user_property_overrides';
+    EXECUTE 'DROP POLICY IF EXISTS user_isolation ON user_property_overrides';
+    EXECUTE 'CREATE POLICY user_isolation ON user_property_overrides '
+            'USING (org_id = current_org_id() AND user_id = current_user_id()) '
+            'WITH CHECK (org_id = current_org_id() AND user_id = current_user_id())';
+END $$;
