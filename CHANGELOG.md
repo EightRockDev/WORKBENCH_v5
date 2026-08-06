@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.15.0.0 — 2026-08-06  ·  Radar tenure self-wires from the assessor sale record
+The tenure signal read "No deed record on file — connect the deed feed" on
+every 8r property: `score_tenure` only saw the vendor `last_sold_year` column,
+which exists solely on the legacy read path. The deed feed was already
+connected — V5.24.14 made the assessor last-sale date readable. New
+`core.sale_history.last_sale_year_for` feeds it into radar v2's `signals`
+(`ui/radar_panel.py`, only when the vendor column is absent; None keeps tenure
+*unknown*, never scored as 0). Because the Subject tab now scans muni rows
+twice per view (Sale History card + tenure) and Streamlit reruns on every
+widget tick, `sale_history_for` is memoized per property identity,
+invalidated on workbench.db mtime (the nightly pull rewrites it); returned
+lists are copied so callers can't poison the cache. Tests: tenure year from
+the live Wake row shape, undated-sale → None, cache hit / mutation-safety /
+mtime invalidation.
+
 ## V5.24.14.0.0 — 2026-08-06  ·  Sale history: the transfer data WAS in muni_records — three wiring defects fixed
 V5.24.13's conclusion ("the assessor feed carries assessment values, not
 deed/transfer records") was wrong: a live-DB diagnostic found **1,381,584

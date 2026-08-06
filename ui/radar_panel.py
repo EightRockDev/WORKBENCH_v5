@@ -16,6 +16,7 @@ import datetime as dt
 import streamlit as st
 
 from core import radar_v2 as rv
+from core import sale_history as sh
 from core.permissions import Permissions
 from core.skiptrace import pipeline as sk
 from data import pg
@@ -97,6 +98,19 @@ def render_radar(prop: dict | None) -> None:
         signals["listed_now"] = True
     if int(delisted):
         signals["delisted_within_days"] = int(delisted)
+
+    # Tenure wires itself from the assessor transfer record: the vendor
+    # last_sold_year column only exists on the legacy read path, so 8r
+    # properties otherwise read "No deed record on file" on every view even
+    # though the last-sale date sits in muni_records. Cached in
+    # core.sale_history, so this costs one scan per property per DB refresh.
+    if not prop.get("last_sold_year"):
+        try:
+            auto_year = sh.last_sale_year_for(prop)
+        except Exception:
+            auto_year = None
+        if auto_year:
+            signals["last_sale_year"] = auto_year
 
     score = rv.score_property(prop, pocs=pocs, signals=signals)
 

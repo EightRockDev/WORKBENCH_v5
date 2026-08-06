@@ -186,6 +186,27 @@ def _muni_db_path(db_path: Path | None) -> Path | None:
     return phase0.find_workbench_db()
 
 
+# One page view scans the market's muni rows twice (Sale History card + radar
+# tenure), and Streamlit reruns the whole script on every widget interaction —
+# memoize per property identity, invalidated when workbench.db changes (the
+# nightly pull rewrites it, bumping mtime).
+_HIST_CACHE: dict[tuple, list[dict]] = {}
+_HIST_CACHE_MAX = 512
+
+
+def _cache_key(prop: dict, db_path: Path | None) -> tuple | None:
+    path = _muni_db_path(db_path)
+    if path is None or not Path(path).exists():
+        return None
+    try:
+        stamp = Path(path).stat().st_mtime_ns
+    except OSError:
+        return None
+    return (_norm_apn(prop.get("apn")), _norm_addr(prop.get("address")),
+            (prop.get("city") or "").strip().lower(),
+            (prop.get("market") or "").strip().lower(), str(path), stamp)
+
+
 def sale_history_for(prop: dict, *, db_path: Path | None = None) -> list[dict]:
     """Sale-history records for one property, from its assessor muni record(s).
 
@@ -193,9 +214,36 @@ def sale_history_for(prop: dict, *, db_path: Path | None = None) -> list[dict]:
     source}`` newest-first, or ``[]`` if nothing matches / on any error.
     """
     try:
-        return _sale_history_for(prop, db_path)
+        key = _cache_key(prop, db_path)
+        if key is not None:
+            hit = _HIST_CACHE.get(key)
+            if hit is not None:
+                return [dict(r) for r in hit]
+        out = _sale_history_for(prop, db_path)
+        if key is not None:
+            if len(_HIST_CACHE) >= _HIST_CACHE_MAX:
+                _HIST_CACHE.clear()
+            _HIST_CACHE[key] = [dict(r) for r in out]
+        return out
     except Exception:
         return []
+
+
+def last_sale_year_for(prop: dict, *, db_path: Path | None = None) -> int | None:
+    """Year of the property's most recent assessor-recorded sale.
+
+    Feeds radar v2's tenure signal: the vendor ``last_sold_year`` column only
+    exists on the legacy read path, so 8r properties otherwise read "No deed
+    record on file" forever. Returns None when no dated sale is on record —
+    tenure stays *unknown*, never scored as 0.
+    """
+    for rec in sale_history_for(prop, db_path=db_path):
+        d = str(rec.get("date") or "")
+        if len(d) >= 4 and d[:4].isdigit():
+            year = int(d[:4])
+            if 1800 <= year <= dt.date.today().year + 1:
+                return year
+    return None
 
 
 def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:

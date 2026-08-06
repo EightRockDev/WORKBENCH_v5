@@ -216,3 +216,60 @@ def test_default_db_path_uses_the_real_phase0_locator(monkeypatch):
     # end-to-end: a None locator degrades to [] rather than crashing.
     prop = {"apn": "1", "city": "Norfolk", "state": "VA", "market": "Norfolk"}
     assert sh.sale_history_for(prop) == []
+
+
+# ------------------------------------------------------- tenure feed + cache
+
+def test_last_sale_year_for_reads_newest_dated_sale(tmp_path, monkeypatch):
+    """Radar tenure's auto-wire: year of the newest assessor sale, None when
+    undated (tenure must stay 'unknown', never scored as 0)."""
+    _stub_normalize(monkeypatch)
+    rec = json.dumps({"APN": "50-1", "TOTSALPRICE": 795000.0,
+                      "SALE_DATE": 1734307200000})
+    db = _muni_db(tmp_path, [("Norfolk", "VA", "Norfolk", "assessor+sales",
+                              "u", "t", rec)])
+    prop = {"apn": "50-1", "city": "Norfolk", "state": "VA", "market": "Norfolk"}
+    assert sh.last_sale_year_for(prop, db_path=db) == 2024
+
+    undated = json.dumps({"APN": "50-2", "TOTSALPRICE": 100000, "SALE_DATE": 0})
+    (tmp_path / "b").mkdir()
+    db2 = _muni_db(tmp_path / "b", [("Norfolk", "VA", "Norfolk",
+                                     "assessor+sales", "u", "t", undated)])
+    prop2 = {"apn": "50-2", "city": "Norfolk", "state": "VA", "market": "Norfolk"}
+    assert sh.last_sale_year_for(prop2, db_path=db2) is None
+
+
+def test_sale_history_is_memoized_per_db_mtime(tmp_path, monkeypatch):
+    """One page view hits the muni scan twice (card + radar tenure) and every
+    Streamlit widget interaction reruns the script — the second lookup must
+    come from cache, and a rewritten DB (nightly pull) must invalidate it."""
+    _stub_normalize(monkeypatch)
+    import os
+    rec = json.dumps({"APN": "60-1", "saleprice": 500000,
+                      "saledate": "2015-03-03"})
+    db = _muni_db(tmp_path, [("Norfolk", "VA", "Norfolk", "assessor",
+                              "u", "t", rec)])
+    prop = {"apn": "60-1", "city": "Norfolk", "state": "VA", "market": "Norfolk"}
+
+    calls = {"n": 0}
+    real = sh._sale_history_for
+
+    def counting(p, d):
+        calls["n"] += 1
+        return real(p, d)
+
+    monkeypatch.setattr(sh, "_sale_history_for", counting)
+    first = sh.sale_history_for(prop, db_path=db)
+    second = sh.sale_history_for(prop, db_path=db)
+    assert first == second and first[0]["price"] == 500000.0
+    assert calls["n"] == 1, "second identical lookup must be served from cache"
+
+    # Mutating the returned list must not poison the cache.
+    second[0]["price"] = -1
+    assert sh.sale_history_for(prop, db_path=db)[0]["price"] == 500000.0
+
+    # A rewritten DB (new mtime) re-scans.
+    stat = os.stat(db)
+    os.utime(db, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000))
+    sh.sale_history_for(prop, db_path=db)
+    assert calls["n"] == 2, "DB mtime bump must invalidate the memo"
