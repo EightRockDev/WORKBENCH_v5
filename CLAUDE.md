@@ -182,8 +182,13 @@ policy, never re-enumerate. `core/mailer.py` sends branded signup/approval
 emails over SMTP from .env — AWAITING OWNER: SMTP credentials
 (SMTP_HOST/PORT/USER/PASS in .env) before any mail actually sends; until then
 every send is a clean "not configured" notice. Owner decisions still open:
-which fields (if any) promote to org tier; mail provider (M365 SMTP vs
-transactional vendor).
+which fields (if any) promote to org tier. Mail: owner chose an M365 ALIAS
+sender — SMTP_USER = the real licensed mailbox, MAIL_FROM = the alias
+(welcome@eight-rock.com added as an alias on that mailbox; tenant needs
+"send from aliases" on). `docs/DATA-DICTIONARY.pdf` is the owner-facing doc,
+GENERATED from field_policy by scripts/build_data_dictionary_pdf.py — never
+hand-edit the PDF; any field-policy change requires the rebuild command in
+that script's docstring (test_data_dictionary_pdf goes red otherwise).
 
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 

@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.25.1.0.0 — 2026-08-07  ·  Owner-facing Data Dictionary PDF (self-enforcing freshness)
+Owner ask: the field-governance rules — including a plain-English explanation
+of per-user property editing — as a PDF in the workbench folder, kept current
+whenever the dictionary changes. `scripts/build_data_dictionary_pdf.py`
+GENERATES `docs/DATA-DICTIONARY.pdf` from `core/field_policy.py` (the same
+policy the app enforces — the doc cannot drift from the product): branded
+Eight Rock frame, the editing explainer, tier table, per-field table, locked
+reference layer, resolution order. Freshness is mechanical, not a promise:
+the generator embeds a policy+prose hash in the PDF metadata and
+`tests/test_data_dictionary_pdf.py` fails with the exact rebuild command if
+either changes without a rebuild. Rebuild:
+`uv run --with reportlab python scripts/build_data_dictionary_pdf.py`
+(reportlab is build-time only, not an app dependency).
+
 ## V5.25.0.0.0 — 2026-08-07  ·  Per-user property edits + field governance + branded signup email
 Three owner asks (2026-08-07) in one coherent layer:
 1. **Per-user property edits.** Property Card overrides now save to the
