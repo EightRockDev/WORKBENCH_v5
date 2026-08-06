@@ -55,6 +55,43 @@ def test_zero_price_is_dropped_not_reported_as_free():
     assert r["price"] is None and r["date"] == "2021-06-01"
 
 
+def test_wake_style_totsalprice_uppercase_arcgis_keys():
+    """Regression (2026-08-06): the live DB's 1.38M kind='assessor+sales' rows
+    (Wake et al.) carry TOTSALPRICE/SALE_DATE/DEED_BOOK — TOTSALPRICE was
+    missing from _PRICE_KEYS, so every one extracted price=None and the
+    diagnose script concluded the feed 'has NO transfer/sale fields'."""
+    raw = {"TOTSALPRICE": 795000.0, "SALE_DATE": 1734307200000,
+           "DEED_BOOK": "019788", "DEED_PAGE": "00619", "DEED_ACRES": 4.81}
+    r = sh.extract_sale_records(raw)[0]
+    assert r["price"] == 795000.0
+    assert r["date"] == "2024-12-16"          # epoch-ms -> ISO
+    assert "019788/00619" in r["notes"]
+
+
+def test_forsyth_and_nashville_registry_key_spellings():
+    # Forsyth: LASTQUALIFIEDSALEPRICE/-DATE; Nashville: SalePrice + OwnDate.
+    r = sh.extract_sale_records({"LASTQUALIFIEDSALEPRICE": 2_400_000,
+                                 "LASTQUALIFIEDSALEDATE": "2023-11-01"})[0]
+    assert r["price"] == 2_400_000.0 and r["date"] == "2023-11-01"
+    r = sh.extract_sale_records({"SalePrice": 650000, "OwnDate": 1600000000000})[0]
+    assert r["price"] == 650000.0 and r["date"] == "2020-09-13"
+
+
+def test_sale_date_zero_sentinel_is_not_a_phantom_date():
+    # Assessors stamp 0 for "never sold"; it must not surface as date "0".
+    assert sh.extract_sale_records({"SALE_DATE": 0}) == []
+    r = sh.extract_sale_records({"TOTSALPRICE": 100000, "SALE_DATE": 0})[0]
+    assert r["date"] is None and r["price"] == 100000.0
+
+
+def test_yyyymmdd_integer_reads_as_calendar_not_epoch_seconds():
+    # 20190315 sits in the epoch-seconds band (would decode as Aug 1970).
+    r = sh.extract_sale_records({"saleprice": 1000, "saledate": 20190315})[0]
+    assert r["date"] == "2019-03-15"
+    r = sh.extract_sale_records({"saleprice": 1000, "saledate": "20190315"})[0]
+    assert r["date"] == "2019-03-15"
+
+
 # ------------------------------------------------------- matching
 
 def _muni_db(tmp_path, rows):
@@ -101,6 +138,34 @@ def test_matches_on_address_when_apn_absent(tmp_path, monkeypatch):
             "market": "Norfolk"}                 # differing case/spacing
     out = sh.sale_history_for(prop, db_path=db)
     assert len(out) == 1 and out[0]["price"] == 900000.0
+
+
+def test_matches_across_street_abbreviation(tmp_path, monkeypatch):
+    """'2110 Richmond Street' (assessor situs) must match '2110 Richmond St'
+    (property record): _norm_addr now rides parity's abbreviation-collapsing
+    normalize_address instead of raw string equality."""
+    _stub_normalize(monkeypatch)
+    rec = json.dumps({"ADDR": "2110 Richmond Street", "saleprice": 750000,
+                      "saledate": "2022-04-01"})
+    db = _muni_db(tmp_path, [("Norfolk", "VA", "Norfolk", "assessor",
+                              "u", "t", rec)])
+    prop = {"address": "2110 Richmond St", "city": "Norfolk", "state": "VA",
+            "market": "Norfolk"}
+    out = sh.sale_history_for(prop, db_path=db)
+    assert len(out) == 1 and out[0]["price"] == 750000.0
+
+
+def test_market_scope_is_case_insensitive(tmp_path, monkeypatch):
+    # Feed filed under "NORFOLK" must still be scanned for city "Norfolk".
+    _stub_normalize(monkeypatch)
+    rec = json.dumps({"APN": "77-1", "saleprice": 320000,
+                      "saledate": "2019-09-09"})
+    db = _muni_db(tmp_path, [("NORFOLK", "VA", "Norfolk", "assessor+sales",
+                              "u", "t", rec)])
+    prop = {"apn": "77-1", "city": "Norfolk", "state": "VA",
+            "market": "Hampton Roads"}     # the 8r shape: market never matches
+    out = sh.sale_history_for(prop, db_path=db)
+    assert len(out) == 1 and out[0]["price"] == 320000.0
 
 
 def test_no_match_returns_empty(tmp_path, monkeypatch):

@@ -12,6 +12,31 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.24.14.0.0 — 2026-08-06  ·  Sale history: the transfer data WAS in muni_records — three wiring defects fixed
+V5.24.13's conclusion ("the assessor feed carries assessment values, not
+deed/transfer records") was wrong: a live-DB diagnostic found **1,381,584
+`kind='assessor+sales'` rows carrying TOTSALPRICE / SALE_DATE / DEED_BOOK /
+DEED_PAGE** (Wake-style ArcGIS keys), plus Norfolk (74K, consideration +
+transfer_date) and Newport News (54K) for Hampton Roads. Three defects kept it
+off the card, all in `core/sale_history.py`:
+1. **`totsalprice` missing from `_PRICE_KEYS`** — every assessor+sales row
+   extracted price=None. Added, plus registry spellings
+   `lastqualifiedsaleprice`/`-date` (Forsyth) and `owndate` (Nashville).
+2. **Exact-equality address fallback** — "2110 Richmond Street" (assessor
+   situs) never matched "2110 Richmond St" (property record). `_norm_addr` now
+   rides `phase0_parity.normalize_address` (abbreviation collapse, unit-
+   designator drop, range→first-number), the matcher P0-2 already proved.
+3. **Case-sensitive market scope** — the locality filter is now
+   `COLLATE NOCASE` (and the dead `market="Hampton Roads"` leg is documented).
+Also: `SALE_DATE=0` ("never sold" sentinel) no longer surfaces as a phantom
+date "0", and YYYYMMDD integers now read as calendar dates instead of being
+eaten by the epoch-seconds band (20190315 previously decoded as Aug 1970).
+Seven new tests pin all of it (incl. the exact live-DB Wake row shape, which no
+test covered). `scripts/diagnose_sale_history.py` inherits the fixes through
+`extract_sale_records`. Note: rows remain latest-sale-per-parcel snapshots
+(the ETL DELETE+INSERTs each feed's slice), so the card shows the most recent
+transfer, not a full chain — full history needs a deed/clerk source.
+
 ## V5.24.13.0.0 — 2026-08-05  ·  Sale-history diagnostic (why it reads empty)
 Owner: "I don't see sale history." The V5.24.9 fix corrected the function-name
 bug, but the card can still be empty for a *data* reason, and there are three

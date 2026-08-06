@@ -514,6 +514,22 @@ can't, and stops you from building a fancier reader over a source that has
 nothing to read. Assessment value ≠ sale price; don't conflate the feed you have
 with the feed the feature needs.
 
+**CORRECTION (2026-08-06): the conclusion above was wrong — and the way it went
+wrong is its own lesson.** A live-DB diagnostic (run by the owner on the box)
+found 1.38M `kind='assessor+sales'` rows carrying TOTSALPRICE / SALE_DATE /
+DEED_BOOK / DEED_PAGE. The transfer data was there all along; the reader
+couldn't see it because `_PRICE_KEYS` lacked `totsalprice`, the address
+fallback demanded exact equality ("Street" vs "St" failed), and the market
+scope was case-sensitive. The trap: `diagnose_sale_history.py` **shared the
+reader's alias table**, so it "confirmed" the no-data theory by testing the
+data through the very gap that hid it. Rules: (1) a diagnostic must not reuse
+the suspect code path's parsing — sample the RAW keys and eyeball them (the
+owner's raw-key dump is what broke the case); (2) before concluding "the feed
+lacks X", grep the feed REGISTRY notes — `etl_munidata.py` line 82 literally
+said "TOTSALPRICE+SALE_DATE" the whole time; (3) when a key alias table meets
+a new feed, diff the feed's actual field list against the table up front
+(same rule as the 50-metro alias sweep). Fixed in V5.24.14.
+
 ## Lesson — you can't kill a remote Streamlit session; flag it and let it self-logout (2026-08-05)
 
 Owner wanted admins to "sign people out" from the who's-online screen. There is

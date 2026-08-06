@@ -28,12 +28,18 @@ from typing import Any
 
 # Raw-key spellings seen across VA assessor feeds (Chesapeake ArcGIS uses
 # last_sale_*; Socrata/VGIN rolls use saleprice/saledate; deeds carry bk/pg).
+# The 'assessor+sales' registry feeds add: Wake TOTSALPRICE, Forsyth
+# LASTQUALIFIEDSALEPRICE/-DATE, Nashville OwnDate (etl_munidata.MUNI_FEEDS
+# notes; TOTSALPRICE confirmed against the live DB 2026-08-06 — its absence
+# here made 1.38M assessor+sales rows extract price=None).
 _PRICE_KEYS = ("lastsaleprice", "last_sale_price", "saleprice", "sale_price",
                "saleamount", "sale_amount", "saleamt", "salesprice",
-               "saleprice1", "price", "considerationamount", "consideration")
+               "saleprice1", "price", "considerationamount", "consideration",
+               "totsalprice", "lastqualifiedsaleprice")
 _DATE_KEYS = ("lastsaledate", "last_sale_date", "saledate", "sale_date",
               "salesdate", "transferdate", "transfer_date", "deeddate",
-              "recordeddate", "recorddate", "saledate1")
+              "recordeddate", "recorddate", "saledate1", "owndate",
+              "lastqualifiedsaledate")
 _BUYER_KEYS = ("last_sale_buyer", "lastsalebuyer", "grantee", "buyer",
                "buyername", "granteename", "newowner")
 _SELLER_KEYS = ("grantor", "seller", "sellername", "grantorname", "prevowner",
@@ -83,6 +89,19 @@ def _coerce_date(v: Any) -> str | None:
             n = int(v)
         except (TypeError, ValueError):
             n = None
+        if n is not None and n <= 0:
+            # 0 is the assessors' "never sold / unknown" sentinel; without this
+            # it fell through the epoch bands and came back as the phantom
+            # date string "0".
+            return None
+        if n and 19000101 <= n <= 21991231:
+            # YYYYMMDD integers sit inside the epoch-seconds band (they'd parse
+            # as an August-1970 timestamp) — try the calendar reading first.
+            # Real epoch-seconds sale dates are ~1.7e9, far above this range.
+            try:
+                return dt.datetime.strptime(str(n), "%Y%m%d").date().isoformat()
+            except ValueError:
+                pass
         if n and n > 10_000_000_000:          # ms since epoch
             try:
                 return dt.datetime.fromtimestamp(n / 1000, dt.timezone.utc).date().isoformat()
@@ -140,8 +159,15 @@ _WS = re.compile(r"\s+")
 
 
 def _norm_addr(s: Any) -> str:
-    t = _ADDR_JUNK.sub(" ", str(s or "").lower())
-    return _WS.sub(" ", t).strip()
+    # Prefer parity's matcher (collapses Street→St, drops unit designators,
+    # keys ranges on the first number): the exact-equality fallback here dies
+    # on "2110 Richmond Street" vs "2110 Richmond St" without it.
+    try:
+        from core.phase0_parity import normalize_address
+        return normalize_address(str(s) if s is not None else "")
+    except Exception:
+        t = _ADDR_JUNK.sub(" ", str(s or "").lower())
+        return _WS.sub(" ", t).strip()
 
 
 def _norm_apn(s: Any) -> str:
@@ -194,10 +220,13 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
         conn.row_factory = sqlite3.Row
         # Scope to the property's market/city assessor rows so we scan a few
         # thousand records, not a million. `market` on muni_records is the
-        # locality name the feed was filed under.
+        # locality name the feed was filed under (e.g. "Norfolk") — note
+        # prop["market"] is "Hampton Roads" on the 8r read path, so only the
+        # city leg can realistically hit; NOCASE so "NORFOLK" still matches.
         rows = conn.execute(
             "SELECT state, record FROM muni_records "
-            "WHERE kind LIKE 'assessor%' AND (market = ? OR market = ?)",
+            "WHERE kind LIKE 'assessor%' AND "
+            "(market = ? COLLATE NOCASE OR market = ? COLLATE NOCASE)",
             (market, city)).fetchall()
     except sqlite3.Error:
         return []
