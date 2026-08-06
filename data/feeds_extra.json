@@ -98,9 +98,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "UPPER(LOCALITY) LIKE 'HAMPTON%'",
+    "where": "FIPS = '51650'",
     "record_count": 51803,
-    "note": "VGIN statewide fallback: UPPER(LOCALITY) LIKE 'HAMPTON%'; 51,803 records; fields ['apn']"
+    "note": "VGIN statewide fallback: FIPS = '51650'; 51,803 records; fields ['apn']"
   },
   {
     "market": "Hampton",
@@ -187,9 +187,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "UPPER(LOCALITY) = 'SUFFOLK CITY'",
+    "where": "FIPS = '51800'",
     "record_count": 45160,
-    "note": "VGIN statewide fallback: UPPER(LOCALITY) = 'SUFFOLK CITY'; 45,160 records; fields ['apn']"
+    "note": "VGIN statewide fallback: FIPS = '51800'; 45,160 records; fields ['apn']"
   },
   {
     "market": "Norfolk",
