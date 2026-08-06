@@ -12,6 +12,12 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.25.2.0.0 — 2026-08-07  ·  One-command SMTP test for the host
+`scripts/send_test_email.py`: prints configured/host/user/From, sends the
+branded signup template to SMTP_USER (or an explicit recipient), prints the
+result with the reason on failure. For the owner's .env credential test —
+the creds live only on the host, so the test must run there.
+
 ## V5.25.1.0.0 — 2026-08-07  ·  Owner-facing Data Dictionary PDF (self-enforcing freshness)
 Owner ask: the field-governance rules — including a plain-English explanation
 of per-user property editing — as a PDF in the workbench folder, kept current
