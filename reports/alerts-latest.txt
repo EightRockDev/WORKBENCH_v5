@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-08-06T15:43:55
+autopilot alerts @ 2026-08-06T16:11:39
 
-alert sweep, NEW this cycle: 1 multifamily, 0 unit-count moves, 0 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 307 - new_mf 307
   showing the 25 most recent of 307
   [new_mf] New multifamily on the backbone: 840 GREENBRIER CIR  (203 units · Chesapeake)
