@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.26.0.0.0 — 2026-08-07  ·  Data API v1: metered read-only access to the reference layer
+Owner ask ("an API that allows users to connect and pull data, for a fee");
+spec §6.5 Module G. `api_server.py` (FastAPI, port 8600 via `run-api.bat`):
+`GET /v1/properties` (city/zip/min_units filters, paged), `/v1/properties/{id}`,
+`/v1/properties/{id}/sales` (assessor sale history), `/v1/health`, plus
+`/v1/docs` (OpenAPI). Serves ONLY the shared reference layer (spec §10.1) —
+no org-private deal data is reachable, so a leaked key can never expose an
+underwrite. Auth: per-org Bearer keys (`8rk_…`), SHA-256-hashed at rest,
+minted/revoked in the new admin **Data API** tab (secret shown exactly once);
+every request writes one `api_usage` row — the meter Stripe billing will read
+— with a per-key daily cap (`ER_API_DAILY_CAP`, default 10k → 429). Bootstrap
+note: `api_keys` is deliberately NOT under RLS (verifying a key is what
+discovers the org — same rationale as `organizations`); the admin UI filters
+by org in SQL. Schema idempotent + self-healing (REQUIRED_TABLES). New deps:
+fastapi/uvicorn/httpx. 8 endpoint tests (stubbed keys, temp backbone) + a
+pg-gated key-lifecycle/metering round-trip. NOT publicly exposed until a
+Caddy route is added at go-live; billing (Stripe) is a later phase on top of
+the `api_usage` meter.
+
 ## V5.25.2.0.0 — 2026-08-07  ·  One-command SMTP test for the host
 `scripts/send_test_email.py`: prints configured/host/user/From, sends the
 branded signup template to SMTP_USER (or an explicit recipient), prints the

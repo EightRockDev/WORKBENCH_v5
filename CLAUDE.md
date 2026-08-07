@@ -190,6 +190,13 @@ GENERATED from field_policy by scripts/build_data_dictionary_pdf.py — never
 hand-edit the PDF; any field-policy change requires the rebuild command in
 that script's docstring (test_data_dictionary_pdf goes red otherwise).
 
+### Data API v1 — SHIPPED V5.26.0.0.0 (2026-08-07)
+`api_server.py` + admin "Data API" tab: per-org hashed Bearer keys, metered
+usage (api_usage = the future Stripe meter), reference-layer-only endpoints.
+Run: `run-api.bat` (port 8600, localhost). NOT public until a Caddy route is
+added; billing awaits owner pricing + Stripe. api_keys/api_usage are
+deliberately non-RLS bootstrap tables (key lookup discovers the org).
+
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
 Owner will ask for all 50 metro regions pulled + reconciled **in one turn,

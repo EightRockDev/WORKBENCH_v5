@@ -652,3 +652,35 @@ BEGIN
             'USING (org_id = current_org_id() AND user_id = current_user_id()) '
             'WITH CHECK (org_id = current_org_id() AND user_id = current_user_id())';
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- Data API (owner ask 2026-08-07; spec 6.5 Module G usage meters).
+-- api_keys is deliberately NOT RLS-protected: verifying a key is what
+-- DISCOVERS the org (same bootstrap rationale as `organizations`). Only
+-- SHA-256 hashes are stored; the secret is shown once and never persisted.
+-- api_usage is the raw meter billing will read; written pre-org-context by
+-- the API server. The admin UI filters both by org_id in SQL.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_keys (
+    id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id       uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    key_hash     text NOT NULL UNIQUE,
+    prefix_hint  text NOT NULL DEFAULT '',
+    label        text NOT NULL DEFAULT 'unnamed',
+    status       text NOT NULL DEFAULT 'active' CHECK (status IN ('active','revoked')),
+    created_by   uuid,
+    created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_api_keys_org ON api_keys(org_id);
+
+CREATE TABLE IF NOT EXISTS api_usage (
+    id        bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    org_id    uuid NOT NULL,
+    key_id    uuid NOT NULL REFERENCES api_keys(id) ON DELETE CASCADE,
+    endpoint  text NOT NULL,
+    units     integer NOT NULL DEFAULT 1,
+    over_cap  boolean NOT NULL DEFAULT false,
+    ts        timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_api_usage_key_day ON api_usage(key_id, ts);
+CREATE INDEX IF NOT EXISTS ix_api_usage_org_day ON api_usage(org_id, ts);

@@ -43,6 +43,11 @@ dependencies = [
     "psycopg[binary]>=3.2",
     # --- Module D: encrypt per-user mailbox OAuth tokens at rest (§8.1 SR-2.4).
     "cryptography>=43.0",
+    # --- Module G: metered read-only Data API (owner ask 2026-08-07).
+    #     fastapi serves api_server.py; httpx backs its test client.
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "httpx>=0.27",
 ]
 
 [dependency-groups]

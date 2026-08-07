@@ -24,11 +24,56 @@ def render_admin_page(st, current_user: AdminUser, org_id: str | None = None) ->
         st.stop()
         return
 
-    tab_users, tab_org = st.tabs(["👤 Users", "🏢 Organization & roles"])
+    tab_users, tab_org, tab_api = st.tabs(
+        ["👤 Users", "🏢 Organization & roles", "🔑 Data API"])
     with tab_users:
         _render_users(st, current_user)
     with tab_org:
         _render_org(st, current_user, org_id)
+    with tab_api:
+        _render_api_keys(st, current_user, org_id)
+
+
+def _render_api_keys(st, current_user: AdminUser, org_id: str | None) -> None:
+    """Per-org Data API keys + usage (spec §6.5 Module G; owner ask
+    2026-08-07). The key secret is displayed ONCE at creation."""
+    from core import data_api_keys as dak
+
+    st.header("Data API keys")
+    st.caption("Read-only access to the shared reference layer (backbone "
+               "properties + municipal sale history). Every request is "
+               "metered per key; no deal data is reachable with these keys.")
+    if org_id is None:
+        st.info("No organization context — create or join an org first.")
+        return
+
+    with st.form("create_api_key", clear_on_submit=True):
+        label = st.text_input("New key label", placeholder="e.g. partner-feed")
+        if st.form_submit_button("Create key") :
+            rec, secret = dak.create_key(org_id, label, current_user.id)
+            st.success(f"Key created: **{rec.label}**")
+            st.code(secret)
+            st.warning("Copy it NOW — this is the only time the full key is "
+                       "shown. Only a hash is stored.")
+
+    rows = dak.list_keys(org_id)
+    if not rows:
+        st.caption("No keys yet.")
+        return
+    for k in rows:
+        c1, c2, c3, c4 = st.columns([3, 2, 2, 1])
+        c1.markdown(f"**{k.label}**  \n`{k.prefix_hint}…`")
+        c2.caption(f"status: {k.status}")
+        c3.caption(f"today: {k.requests_today:,} req "
+                   f"(cap {dak.DAILY_CAP:,}/day)")
+        if k.status == "active" and c4.button("Revoke", key=f"rk-{k.id}"):
+            dak.revoke_key(org_id, k.id)
+            st.rerun()
+
+    usage = dak.usage_summary(org_id)
+    if usage:
+        st.subheader("Usage (30 days)")
+        st.dataframe(usage, use_container_width=True, hide_index=True)
 
 
 def _render_users(st, current_user: AdminUser) -> None:
