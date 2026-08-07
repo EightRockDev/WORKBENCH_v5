@@ -1,3 +1,4 @@
-autopilot listings @ 2026-08-07T13:11:18
+autopilot listings @ 2026-08-07T14:11:44
 
+python-dotenv could not parse statement starting at line 29
   [listings] fresh (pulled within 7 days, 17 favourites, generation 2) - skipping; 285 rent_listings rows on hand
