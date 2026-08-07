@@ -1,10 +1,7 @@
-autopilot phase0 @ 2026-08-07T08:11:46
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-08-07T09:31:28
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,005,005
+Assessor records available: 4,081,744
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,132  .../Accela_base_map_pro/MapServer/0
@@ -28,10 +25,10 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 17 success rows -> 5 properties, 3 with usable rents, 2 in crosswalk -> 2 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      1,270,555
-parcels normalized:        1,270,555
+muni records scanned:      1,347,294
+parcels normalized:        1,347,294
 multifamily (>= 10 units): 19,059
-written to properties_8r:  1,270,555
+written to properties_8r:  1,347,294
 provisional (no-APN) ids:  27,403
 units derived from address points: 4,178  (skipped non-residential: 34,808)
 coords backfilled by address (multifamily): 205
