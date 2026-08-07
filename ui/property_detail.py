@@ -413,6 +413,32 @@ _PROPERTY_CARD_FIELDS: list[tuple[str, str]] = [
 ]
 
 
+def _activity_key(prop: dict[str, Any] | None,
+                  folder: PropertyFolder | None) -> str:
+    """Same identity the overrides use: folder name first, else property id."""
+    if folder is not None and getattr(folder, "folder_name", None):
+        return folder.folder_name
+    return str((prop or {}).get("property_id") or (prop or {}).get("address")
+               or "")
+
+
+def _log_property_view(prop: dict[str, Any],
+                       folder: PropertyFolder | None) -> None:
+    key = _activity_key(prop, folder)
+    if not key:
+        return
+    try:
+        seen = st.session_state.setdefault("_activity_viewed", set())
+        if key in seen:
+            return
+        org_id, user_id = _override_identity()
+        from core import property_activity
+        if property_activity.log_view(org_id, user_id, key):
+            seen.add(key)
+    except Exception:
+        pass                     # the trail must never break the page
+
+
 def _override_identity() -> tuple[str | None, str | None]:
     """(org_id, user_id) of the signed-in user, or (None, None) in ungated
     dev/legacy mode — which routes overrides to the legacy shared folder file."""
@@ -459,6 +485,14 @@ def _save_property_card_overrides(
     org_id, user_id = _override_identity()
     if property_overrides.save_user_overrides(
             org_id, user_id, folder.folder_name, overrides):
+        try:
+            from core import property_activity
+            changed = [k for k, v in overrides.items()
+                       if v not in (None, "", "—")]
+            property_activity.log_edit(org_id, user_id, folder.folder_name,
+                                       changed)
+        except Exception:
+            pass
         return
     import json
     cleaned = {
@@ -1429,6 +1463,12 @@ def render_property_detail(
     Rent roll moved to Performance & Market tab (Brian 2026-05-07 reorg —
     rent roll, comps, and market context all live together for pristine flow).
     """
+    # Activity trail (owner 2026-08-09): record the VIEW once per session per
+    # property — Streamlit reruns this function on every widget tick, so the
+    # session-state guard is what makes a row mean "a person opened this",
+    # not "a person clicked seven checkboxes".
+    _log_property_view(prop, folder)
+
     # 1. Header card (photo + address)
     _render_header(prop, folder)
 

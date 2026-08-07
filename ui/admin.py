@@ -24,14 +24,51 @@ def render_admin_page(st, current_user: AdminUser, org_id: str | None = None) ->
         st.stop()
         return
 
-    tab_users, tab_org, tab_api = st.tabs(
-        ["👤 Users", "🏢 Organization & roles", "🔑 Data API"])
+    tab_users, tab_org, tab_api, tab_act = st.tabs(
+        ["👤 Users", "🏢 Organization & roles", "🔑 Data API", "📋 Activity"])
     with tab_users:
         _render_users(st, current_user)
     with tab_org:
         _render_org(st, current_user, org_id)
     with tab_api:
         _render_api_keys(st, current_user, org_id)
+    with tab_act:
+        _render_activity(st, org_id)
+
+
+def _render_activity(st, org_id: str | None) -> None:
+    """Who viewed / edited which properties (owner ask 2026-08-09). Views are
+    logged once per session per property; edits carry the changed fields."""
+    from core import property_activity as pa
+
+    st.header("Property activity")
+    if org_id is None:
+        st.info("No organization context — create or join an org first.")
+        return
+
+    st.subheader("By property (90 days)")
+    rollup = pa.by_property(org_id)
+    if rollup:
+        st.dataframe(rollup, use_container_width=True, hide_index=True)
+    else:
+        st.caption("No activity recorded yet — rows appear as people open "
+                   "and edit properties from now on.")
+
+    st.subheader("Recent activity (30 days)")
+    rows = pa.recent(org_id)
+    if rows:
+        st.dataframe(rows, use_container_width=True, hide_index=True)
+    else:
+        st.caption("Nothing yet.")
+
+    st.subheader("Personal card edits on file")
+    st.caption("Each user's current Property Card overrides — includes edits "
+               "made before the activity trail existed.")
+    ov = pa.current_overrides_summary(org_id)
+    if ov:
+        st.dataframe(ov, use_container_width=True, hide_index=True)
+    else:
+        st.caption("No personal overrides saved yet.")
 
 
 def _render_api_keys(st, current_user: AdminUser, org_id: str | None) -> None:

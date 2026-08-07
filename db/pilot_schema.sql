@@ -684,3 +684,31 @@ CREATE TABLE IF NOT EXISTS api_usage (
 );
 CREATE INDEX IF NOT EXISTS ix_api_usage_key_day ON api_usage(key_id, ts);
 CREATE INDEX IF NOT EXISTS ix_api_usage_org_day ON api_usage(org_id, ts);
+
+-- ---------------------------------------------------------------------------
+-- Property activity trail (owner ask 2026-08-09: "which users have accessed
+-- and updated which properties"). One row per view (throttled to once per
+-- session per property) and per edit-save (detail = changed field names).
+-- Org-level RLS: activity is org-private; the Admin > Activity tab reads it.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS property_activity (
+    id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    org_id        uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    user_id       uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    property_key  text NOT NULL,
+    action        text NOT NULL CHECK (action IN ('viewed','edited')),
+    detail        jsonb NOT NULL DEFAULT '{}'::jsonb,
+    ts            timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_pact_org_ts ON property_activity(org_id, ts DESC);
+CREATE INDEX IF NOT EXISTS ix_pact_prop ON property_activity(org_id, property_key, ts DESC);
+
+DO $$
+BEGIN
+    EXECUTE 'ALTER TABLE property_activity ENABLE ROW LEVEL SECURITY';
+    EXECUTE 'ALTER TABLE property_activity FORCE ROW LEVEL SECURITY';
+    EXECUTE 'DROP POLICY IF EXISTS org_isolation ON property_activity';
+    EXECUTE 'CREATE POLICY org_isolation ON property_activity '
+            'USING (org_id = current_org_id()) '
+            'WITH CHECK (org_id = current_org_id())';
+END $$;

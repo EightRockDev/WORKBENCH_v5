@@ -206,6 +206,13 @@ Run: `run-api.bat` (port 8600, localhost). NOT public until a Caddy route is
 added; billing awaits owner pricing + Stripe. api_keys/api_usage are
 deliberately non-RLS bootstrap tables (key lookup discovers the org).
 
+### Property activity trail — SHIPPED V5.27.0.0.0 (2026-08-09)
+Admin → Activity: who viewed/edited which properties (org-scoped
+property_activity + per-user overrides summary). Views throttled once per
+session per property via st.session_state guard in
+ui/property_detail._log_property_view; edits logged with changed field
+names at the per-user save. Fail-silent everywhere.
+
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
 Owner will ask for all 50 metro regions pulled + reconciled **in one turn,

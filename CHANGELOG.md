@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.0.0.0 — 2026-08-09  ·  Property activity trail: who viewed and edited what
+Owner: "I need to know which users have accessed and updated which
+properties." New `property_activity` table (org-scoped RLS) + Admin →
+**Activity** tab with three views: per-property rollup (views/edits/people/
+who/last activity, 90d), recent activity feed (30d, with changed fields per
+edit), and each user's current personal card overrides (covers edits made
+before the trail existed, via `user_property_overrides.updated_at`). Views
+are logged ONCE per session per property (Streamlit reruns per widget tick —
+unthrottled logging would count clicks, not visits); edit rows carry the
+changed field names. The trail is fail-silent by design: no Postgres or no
+identity → no-op, never a broken page. Schema self-heals on startup.
+Tests: degradation everywhere + pg-gated round-trip into both views; the
+generic AC-10.1 cross-org RLS sweep picks the table up automatically.
+
 ## V5.26.7.0.0 — 2026-08-08  ·  Mailer app scoped to welcome@ only (doc-only)
 Owner ran the ApplicationAccessPolicy hardening: the Workbench Mailer app
 can now send ONLY as welcome@eight-rock.com (RestrictAccess via security
