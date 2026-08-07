@@ -263,6 +263,16 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
     if path is None or not Path(path).exists():
         return []
 
+    # Indexed path first (owner report 2026-08-09 "too slow"): the autopilot
+    # pre-extracts every sale into sale_records, so this is a millisecond
+    # lookup instead of a ~355K-row scan on big markets. None = index not
+    # built yet on this box -> fall through to the live scan below.
+    from core import sale_index
+    indexed = sale_index.lookup(Path(path), apn_norm=want_apn,
+                                addr_norm=want_addr)
+    if indexed is not None:
+        return indexed
+
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
         conn.row_factory = sqlite3.Row

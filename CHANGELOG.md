@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.2.0.0 — 2026-08-09  ·  Sale history answers from an offline index — the "too slow" fix
+Owner: "Streamlit is running too slow." Root cause: `sale_history_for`
+scanned every muni row for the property's market AT RENDER TIME — Virginia
+Beach carries ~355K rows (address points + solar layers), so first-open of
+any VB property meant seconds of json.loads + normalize per page; the
+in-process memo only helped the SECOND view of the SAME property. New
+`core/sale_index.py`: an autopilot step (`saleindex`, runs right before
+phase0) extracts every sale once per data refresh into an indexed
+`sale_records` table (normalized APN + address keys, atomic swap, gated on
+a muni row-count+max-id stamp so unchanged data skips). The card and radar
+tenure now answer from a millisecond indexed lookup; the live scan remains
+only as a fallback until the first index build lands (next cycle). Tests
+include the drop-the-source proof: with `muni_records` deleted after the
+build, sale history still answers — the render path needs only the index.
+
 ## V5.27.1.0.0 — 2026-08-09  ·  Create/switch organizations + Add-property on the V2 landing
 Two owner asks in one pass:
 1. **Organizations.** Admin → Organization & roles gains "➕ Create a new

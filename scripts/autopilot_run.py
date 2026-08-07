@@ -26,6 +26,9 @@ STEPS = (
     ("pull", ["etl_munidata.py", "--hr"], "pull-latest.txt"),
     ("publicdata", ["scripts/run_public_data.py"], "public-data-latest.txt"),
     ("listings", ["scripts/run_listings.py"], "listings-latest.txt"),
+    # Sale-history index: render-time answers come from this table, not a
+    # per-page muni scan (owner "too slow" report 2026-08-09).
+    ("saleindex", ["scripts/run_sale_index.py"], "sale-index-latest.txt"),
     ("phase0", ["scripts/run_phase0.py"], "phase0-latest.txt"),
     ("validate", ["scripts/run_validate.py"], "validate-latest.txt"),
     ("alerts", ["scripts/run_alerts.py"], "alerts-latest.txt"),
