@@ -20,8 +20,8 @@ from core import mailer  # noqa: E402  (loads .env itself)
 
 
 def main() -> int:
-    to = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("SMTP_USER", "")
-    print(f"configured : {mailer.is_configured()}")
+    to = sys.argv[1] if len(sys.argv) > 1 else (os.environ.get("SMTP_USER") or os.environ.get("GRAPH_SENDER", ""))
+    print(f"configured : {mailer.is_configured()}  (transport: {mailer.transport()})")
     print(f"smtp host  : {os.environ.get('SMTP_HOST', '(unset)')}")
     print(f"smtp user  : {os.environ.get('SMTP_USER', '(unset)')}")
     print(f"mail from  : {mailer._from_addr() or '(unset)'}")

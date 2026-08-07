@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.26.5.0.0 — 2026-08-08  ·  Mailer: Microsoft Graph transport (Basic SMTP is dead on this tenant)
+Two freshly-generated app passwords 535'd with SMTP AUTH explicitly enabled
+— the tenant hard-blocks Basic SMTP sign-in (which Microsoft is retiring
+through 2026 regardless). `core/mailer.py` now prefers **Microsoft Graph
+sendMail** (MSAL client-credentials, application permission Mail.Send +
+admin consent): sends VIA the real mailbox (`GRAPH_SENDER`), FROM the
+`welcome@` alias in `MAIL_FROM` (honored because SendFromAliasEnabled is
+on). `.env`: GRAPH_TENANT_ID / GRAPH_CLIENT_ID / GRAPH_CLIENT_SECRET /
+GRAPH_SENDER. SMTP remains the fallback transport for non-M365 providers;
+no keys → notice, never a crash. `send_test_email.py` prints the active
+transport. 3 new tests (Graph preferred over SMTP + alias/HTML payload
+shape, auth-failure reason, API-error surfacing). msal/requests were
+already dependencies — no new installs.
+
 ## V5.26.4.0.0 — 2026-08-08  ·  VB sale-chain probe (temporary autopilot step)
 Owner: Virginia Beach's public property portal
 (propertysearch.virginiabeach.gov, no login) shows FULL deed chains — sale
