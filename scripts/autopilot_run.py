@@ -30,6 +30,10 @@ STEPS = (
     ("validate", ["scripts/run_validate.py"], "validate-latest.txt"),
     ("alerts", ["scripts/run_alerts.py"], "alerts-latest.txt"),
     ("preflight", ["scripts/preflight_cutover.py"], "cutover-preflight.txt"),
+    # Nightly Postgres dump, self-gated to one per day (CLAUDE.md lesson 9b:
+    # ride the loop that already runs — the schtasks registration this
+    # replaced was documented for weeks and never actually performed).
+    ("backup", ["scripts/run_backup.py"], "backup-latest.txt"),
 )
 
 

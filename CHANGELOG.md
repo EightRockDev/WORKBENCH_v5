@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.26.2.0.0 — 2026-08-08  ·  Backups ride the autopilot — no registration to forget
+Completes V5.26.1: instead of a schtasks registration the owner must perform
+(the step that sat undone for weeks), a new autopilot step
+`scripts/run_backup.py` dumps the pilot Postgres every cycle, self-gated to
+one dump per day. Freshness is keyed to the newest DUMP FILE, so a failed
+attempt can never mark itself fresh (2026-08-02 lesson) and a partial dump
+is deleted on failure. pg_dump gets the DATABASE_URL URI directly — no
+credential parsing, no PGPASSWORD in the environment. Local dir D:\Backup\8rw
+(C:\ fallback), 30-day retention, optional off-site copy via one .env line
+(`ER_BACKUP_ONEDRIVE_DIR=...` — no schtasks quoting). Report:
+`reports/backup-latest.txt` states what happened and WHY on every skip.
+5 tests (gating, partial-dump cleanup, URI contract, retention, no-URL
+notice). backup.ps1 remains for manual/one-off use.
+
 ## V5.26.1.0.0 — 2026-08-08  ·  Backup script made schedulable — it had never actually run
 Server audit (owner-run task listing) found NO "Workbench Backup" scheduled
 task: deploy step 4 ("schedule backup.ps1 nightly") was documented but never
