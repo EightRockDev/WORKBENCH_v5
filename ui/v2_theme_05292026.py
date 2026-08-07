@@ -2586,18 +2586,16 @@ def render_v2_stats_bar(prop: dict, metrics: dict | None = None) -> None:
             v_str = f"${purchase_price/1_000:.0f}"
             unit = "K"
         foot = f"${int(ppu):,} / unit"
-        # First-user feedback (2026-08): Purchase Price is an INPUT — clicking
-        # it jumps to the Underwriting tab where it's edited (?goto is consumed
-        # by _sticky_property_tab, which moves the section selector for real).
+        # Owner 2026-08-08: the click-to-edit ?goto link misbehaved and is
+        # REMOVED — the card is informational; the price is edited in the
+        # Underwriting tab (tooltip still says so, nothing is clickable).
         ask_card = _stat_card_html(
-            "Purchase Price", v_str, unit, "✏️ Click to edit",
-            href="?goto=underwriting",
-            title="This is an input — click to edit it in the Underwriting tab.")
+            "Purchase Price", v_str, unit, foot,
+            title="This is an input — edit it in the Underwriting tab.")
     else:
         ask_card = _stat_card_html(
-            "Purchase Price", "—", None, "✏️ Set in Underwriting",
-            href="?goto=underwriting",
-            title="This is an input — click to set it in the Underwriting tab.")
+            "Purchase Price", "—", None, "Set in the Underwriting tab",
+            title="This is an input — set it in the Underwriting tab.")
 
     # Cap card - graded against GO_CAP/WATCH_CAP (7.5%/7.0%)
     _computed_tip = ("Computed from your underwriting inputs — change the "

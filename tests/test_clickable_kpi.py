@@ -1,9 +1,9 @@
-"""Tests for the clickable-KPI feature (first-user feedback 2026-08).
+"""Tests for the KPI stat cards.
 
-"When they click a main input, show them where to change it." Editable cards
-(Purchase Price) become links to `?goto=underwriting`; computed cards get a
-tooltip saying they're derived. The card HTML builder is pure, so we assert on
-its output directly.
+History: the 2026-08 clickable-KPI feature made Purchase Price a
+`?goto=underwriting` link; the owner reported it misbehaving and had it
+REMOVED (2026-08-08). The generic `_stat_card_html` builder keeps its href
+capability; the stats bar must simply never use it for Purchase Price.
 """
 
 from __future__ import annotations
@@ -11,15 +11,21 @@ from __future__ import annotations
 from ui.v2_theme_05292026 import _stat_card_html
 
 
-def test_editable_card_is_a_link_to_the_underwriting_tab():
+def test_builder_still_supports_href_generically():
     html = _stat_card_html(
-        "Purchase Price", "$5.00", "M", "✏️ Click to edit",
-        href="?goto=underwriting",
-        title="This is an input — click to edit it in the Underwriting tab.")
-    assert '<a ' in html
-    assert 'href="?goto=underwriting"' in html
-    assert 'v2-stat-link' in html
-    assert 'target="_self"' in html
+        "Anything", "$5.00", "M", "foot", href="?goto=x", title="t")
+    assert '<a ' in html and 'href="?goto=x"' in html
+
+
+def test_purchase_price_card_is_not_a_link():
+    """Owner 2026-08-08: the 'Click to edit' link misbehaved — removed. The
+    stats bar must render Purchase Price as a plain card (per-unit footer,
+    tooltip only)."""
+    import inspect
+    from ui import v2_theme_05292026 as v2
+    src = inspect.getsource(v2.render_v2_stats_bar)
+    assert "goto=underwriting" not in src
+    assert "Click to edit" not in src and "Set in Underwriting\"" not in src
 
 
 def test_computed_card_has_a_tooltip_but_no_link():

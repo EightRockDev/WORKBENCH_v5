@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.26.3.0.0 — 2026-08-08  ·  Purchase Price card: click-to-edit link removed
+Owner: "Remove the click to edit link — it doesn't work properly." The
+`?goto=underwriting` anchor on the Purchase Price stat card (added from
+first-user feedback, 2026-08) is gone; the card is a plain stat again with
+its per-unit price restored as the footer and a tooltip naming the
+Underwriting tab as where the input lives. The generic `_stat_card_html`
+href capability remains; a source-pinned test now asserts the stats bar
+never links Purchase Price. (Pre-existing, data-dependent G1/H4 failures in
+test_v2_exhaustive verified identical before/after this change.)
+
 ## V5.26.2.0.0 — 2026-08-08  ·  Backups ride the autopilot — no registration to forget
 Completes V5.26.1: instead of a schtasks registration the owner must perform
 (the step that sat undone for weeks), a new autopilot step
