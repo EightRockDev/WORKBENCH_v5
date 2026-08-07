@@ -86,9 +86,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "UPPER(LOCALITY) = 'CHESAPEAKE CITY'",
+    "where": "FIPS = '51550'",
     "record_count": 92461,
-    "note": "geometry supplement; VGIN statewide fallback: UPPER(LOCALITY) = 'CHESAPEAKE CITY'; 92,461 records; fields ['apn']"
+    "note": "geometry supplement; VGIN statewide fallback: FIPS = '51550'; 92,461 records; fields ['apn']"
   },
   {
     "market": "Hampton",
@@ -180,6 +180,18 @@
     "note": "geometry supplement; VGIN statewide fallback: FIPS = '51740'; 36,615 records; fields ['apn']"
   },
   {
+    "market": "Suffolk",
+    "state": "VA",
+    "county": "Suffolk",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "status": "live",
+    "where": "FIPS = '51800'",
+    "record_count": 45160,
+    "note": "VGIN statewide fallback: FIPS = '51800'; 45,160 records; fields ['apn']"
+  },
+  {
     "market": "Norfolk",
     "state": "VA",
     "county": "Norfolk",
@@ -205,7 +217,7 @@
     "county": "Richmond",
     "kind": "assessor",
     "platform": "arcgis",
-    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/MapServer/0",
+    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
     "where": "FIPS = '51760'",
     "record_count": 76739,
