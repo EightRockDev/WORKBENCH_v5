@@ -1,0 +1,29 @@
+VB sales-API probe, parcel 14552807310000
+PROBE COMPLETE - no marker hit; endpoints above need a human/next-round look
+full detail -> vb-sales-probe.txt
+pe=
+
+== GET /api/parcel/14552807310000
+   status=0 type=
+
+== GET /api/parcels/14552807310000
+   status=0 type=
+
+== GET /api/property/14552807310000/sales
+   status=0 type=
+
+== GET /api/sales/14552807310000
+   status=0 type=
+
+== GET /api/property?parcel=14552807310000
+   status=0 type=
+
+== GET /api/search?q=14552807310000
+   status=0 type=
+
+== GET /   status=0
+   js bundles: []
+
+== endpoint fragments mined from bundles (0):
+
+PROBE COMPLETE - no marker hit; endpoints above need a human/next-round look
