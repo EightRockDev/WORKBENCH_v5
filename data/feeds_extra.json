@@ -46,7 +46,7 @@
     "platform": "arcgis",
     "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0",
     "status": "live",
-    "record_count": 110288,
+    "record_count": 110289,
     "fields_mapped": [
       "address",
       "apn",
@@ -56,7 +56,7 @@
       "zip"
     ],
     "is_subset": false,
-    "note": "auto-discovered: Accela_base_map_pro/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 110,288 records"
+    "note": "auto-discovered: Accela_base_map_pro/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 110,289 records"
   },
   {
     "market": "Chesapeake",
