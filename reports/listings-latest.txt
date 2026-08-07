@@ -1,3 +1,8 @@
-autopilot listings @ 2026-08-07T11:15:52
+autopilot listings @ 2026-08-07T12:13:29
 
-  [listings] fresh (pulled within 7 days, 16 favourites, generation 2) - skipping; 280 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: Eastwyck Village -> not_found
+  [listings] zillow: Eastwyck Village -> not_found
+  [listings] apartments_com: Eastwyck Village -> not_found
+  [listings] property_site: Eastwyck Village -> not_found
+  [listings] wrote 4 rows (0 successful scrapes)
