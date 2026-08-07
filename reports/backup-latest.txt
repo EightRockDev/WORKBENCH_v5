@@ -1,7 +1,6 @@
-autopilot backup @ 2026-08-07T14:12:26
+autopilot backup @ 2026-08-07T16:17:02
 
-python-dotenv could not parse statement starting at line 29
-[backup] dumping to D:\Backup\8rw\workbench-20260807-141226.dump
+[backup] dumping to D:\Backup\8rw\workbench-20260807-161703.dump
 pg_dump: error: query failed: ERROR:  query would be affected by row-level security policy for table "campaigns"
 HINT:  To disable the policy for the table's owner, use ALTER TABLE NO FORCE ROW LEVEL SECURITY.
 pg_dump: detail: Query was: COPY public.campaigns (id, org_id, name, cadence, status, created_at) TO stdout;
