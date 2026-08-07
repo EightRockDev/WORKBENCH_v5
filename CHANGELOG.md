@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.26.7.0.0 — 2026-08-08  ·  Mailer app scoped to welcome@ only (doc-only)
+Owner ran the ApplicationAccessPolicy hardening: the Workbench Mailer app
+can now send ONLY as welcome@eight-rock.com (RestrictAccess via security
+group "Workbench Mailer Scope"; verified Granted/Denied both ways). A
+leaked client secret can no longer impersonate any other tenant mailbox.
+CLAUDE.md status updated; no code change.
+
 ## V5.26.6.0.0 — 2026-08-08  ·  Email LIVE (Graph + shared mailbox); docs pinned to what actually worked
 First successful branded send 2026-08-08: Graph sendMail via the free
 SHARED mailbox welcome@eight-rock.com (created after Graph rejected

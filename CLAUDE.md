@@ -191,9 +191,10 @@ no app password will ever work; (2) Graph refuses to send FROM an alias
 (ErrorSendAsDenied) even with SendFromAliasEnabled — the sender must be a
 real mailbox, and a license-free shared mailbox is the pattern; (3) angle
 brackets in .env examples get copied literally by a non-technical owner —
-show fake-but-real-shaped values instead. Optional hardening, owner-gated:
-ApplicationAccessPolicy to scope Mail.Send to just welcome@ (today the app
-could send as any tenant mailbox). `docs/DATA-DICTIONARY.pdf` is the owner-facing doc,
+show fake-but-real-shaped values instead. Hardening DONE 2026-08-08:
+ApplicationAccessPolicy scopes Mail.Send to welcome@ only (mail-enabled
+security group "Workbench Mailer Scope"; Test-ApplicationAccessPolicy
+verified Granted for welcome@, Denied for Brian@). `docs/DATA-DICTIONARY.pdf` is the owner-facing doc,
 GENERATED from field_policy by scripts/build_data_dictionary_pdf.py — never
 hand-edit the PDF; any field-policy change requires the rebuild command in
 that script's docstring (test_data_dictionary_pdf goes red otherwise).
