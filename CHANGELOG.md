@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.1.0.0 — 2026-08-09  ·  Create/switch organizations + Add-property on the V2 landing
+Two owner asks in one pass:
+1. **Organizations.** Admin → Organization & roles gains "➕ Create a new
+   organization" (name + type; creator becomes Principal/Owner per §10.5)
+   and, once a user belongs to more than one org, an **Active organization**
+   switcher. `core/session.resolve_org_context` now honors the switcher's
+   choice — but only when the user is an ACTIVE member of the chosen org; a
+   stale or forged session preference silently falls back and never grants
+   access (test-pinned).
+2. **Add property in V2.** The V2 theme hides the V1 sidebar, which held the
+   only "➕ Add custom property" button — so the current product had NO way
+   to create a property. The V2 landing now carries "➕ Add property" beside
+   the search box, reusing the existing dialog (source-pinned test so the
+   entry point can't silently vanish again). Lesson honored the hard way:
+   the owner was told sidebar/Inventory paths that don't exist in V2 —
+   verify the RENDERED theme before giving UI directions.
+
 ## V5.27.0.0.0 — 2026-08-09  ·  Property activity trail: who viewed and edited what
 Owner: "I need to know which users have accessed and updated which
 properties." New `property_activity` table (org-scoped RLS) + Admin →

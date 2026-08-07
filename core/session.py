@@ -169,12 +169,18 @@ def resolve_user(st) -> AdminUser | None:
     return None  # Postgres present but sign-in not configured; admin hidden
 
 
-def resolve_org_context(user: AdminUser | None) -> tuple[str | None, object | None]:
+def resolve_org_context(user: AdminUser | None,
+                        preferred_org_id: str | None = None,
+                        ) -> tuple[str | None, object | None]:
     """Resolve the user's active org + effective permissions (Section 10).
 
     For the single-org pilot, an admin with no org yet gets a default one
     auto-created (they become Principal), so the org/role model is live without
-    any setup. Returns (org_id, Permissions) or (None, None) in ungated mode.
+    any setup. ``preferred_org_id`` (the admin-tab org switcher's choice,
+    2026-08-09) wins when — and only when — the user is an ACTIVE member of
+    that org; an invalid or stale preference silently falls back to the
+    default and never grants access. Returns (org_id, Permissions) or
+    (None, None) in ungated mode.
     """
     if user is None:
         return None, None
@@ -187,6 +193,11 @@ def resolve_org_context(user: AdminUser | None) -> tuple[str | None, object | No
         else:
             user_org_list = orgs.user_orgs(user.id, active_only=True)
             org_id = user_org_list[0]["org_id"] if user_org_list else None
+        if preferred_org_id and preferred_org_id != org_id:
+            memberships = {o["org_id"]
+                           for o in orgs.user_orgs(user.id, active_only=True)}
+            if preferred_org_id in memberships:
+                org_id = preferred_org_id
         if org_id is None:
             return None, None
         return org_id, orgs.get_permissions(user.id, org_id)

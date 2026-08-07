@@ -3811,17 +3811,28 @@ def render_v2_inventory_landing() -> None:
         unsafe_allow_html=True,
     )
 
-    # Search box — placed AT THE TOP per Brian's markup.
+    # Search box — placed AT THE TOP per Brian's markup. "➕ Add property"
+    # sits beside it (owner 2026-08-09: V2 hides the V1 sidebar, so the
+    # landing had NO way to create a property — the button reuses the same
+    # dialog flag the sidebar sets; app.py opens the modal in main flow).
     st.markdown(
         '<div class="v2-landing-search-wrap"></div>',
         unsafe_allow_html=True,
     )
-    search = st.text_input(
-        "Find a property by name, address, or city",
-        placeholder="Search properties…",
-        label_visibility="collapsed",
-        key="v2_landing_search",
-    )
+    col_search, col_add = st.columns([5, 1])
+    with col_search:
+        search = st.text_input(
+            "Find a property by name, address, or city",
+            placeholder="Search properties…",
+            label_visibility="collapsed",
+            key="v2_landing_search",
+        )
+    with col_add:
+        if st.button("➕ Add property", key="v2-landing-add-property",
+                     use_container_width=True,
+                     help="Create a property we don't have on record yet"):
+            st.session_state["_show_add_property_dialog"] = True
+            st.rerun()
     search_clean = (search or "").strip()
 
     # Fetch — DB-side filtering when searching, otherwise top-N.

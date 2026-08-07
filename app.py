@@ -758,7 +758,8 @@ def main() -> None:
 
     # v5.0 multi-tenancy (Section 10): resolve the active org + effective
     # permissions (module grants / field masks / action grants / scope).
-    org_id, perms = core_session.resolve_org_context(user)
+    org_id, perms = core_session.resolve_org_context(
+        user, preferred_org_id=st.session_state.get("active_org_id"))
     # Detect a schema-drift signal (DB not migrated after a git pull) and show a
     # soft hint instead of crashing the page.
     if isinstance(perms, tuple) and perms and perms[0] == "__schema_error__":

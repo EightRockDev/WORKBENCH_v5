@@ -54,3 +54,14 @@ def test_goto_keys_line_up_with_tab_labels():
     import app
     assert "underwriting" in app._PTAB_KEYS
     assert len(app._PTAB_KEYS) == len(app._PTAB_LABELS_V2)
+
+
+def test_v2_landing_offers_add_property():
+    """Owner 2026-08-09: V2 hides the V1 sidebar, so the landing page must
+    carry its own Add-property entry point (same dialog flag the sidebar
+    uses; app.py opens the modal in main flow)."""
+    import inspect
+    from ui import v2_theme_05292026 as v2
+    src = inspect.getsource(v2.render_v2_inventory_landing)
+    assert "_show_add_property_dialog" in src
+    assert "Add property" in src

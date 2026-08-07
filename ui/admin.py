@@ -172,6 +172,43 @@ def _render_org(st, current_user: AdminUser, org_id: str | None) -> None:
     """
     from core import orgs
 
+    # ---- Switch / create organization (owner ask 2026-08-09) --------------
+    my_orgs = []
+    try:
+        my_orgs = orgs.user_orgs(current_user.id)
+    except Exception:
+        pass
+    if len(my_orgs) > 1:
+        names = {o["org_id"]: o["name"] for o in my_orgs}
+        ids = list(names)
+        idx = ids.index(org_id) if org_id in ids else 0
+        picked = st.selectbox("Active organization", ids, index=idx,
+                              format_func=lambda i: names[i],
+                              key="org-switcher")
+        if picked != org_id:
+            st.session_state["active_org_id"] = picked
+            st.rerun()
+
+    with st.expander("➕ Create a new organization"):
+        st.caption("A new org is a sealed workspace: its own members, deals, "
+                   "activity and API keys. You'll be its Principal/Owner and "
+                   "can switch between orgs right here afterwards.")
+        with st.form("create_org_form", clear_on_submit=True):
+            new_name = st.text_input("Organization name *")
+            new_type = st.selectbox(
+                "Type", orgs.ORG_TYPES, index=0,
+                help="sponsor = GP/investment org; pm_arm / construction_arm "
+                     "= affiliated operating entities (spec §10.1)")
+            if st.form_submit_button("Create organization") and new_name.strip():
+                try:
+                    new_id = orgs.create_org(current_user.id, new_name.strip(),
+                                             org_type=new_type)
+                    st.session_state["active_org_id"] = new_id
+                    st.success(f"Created **{new_name.strip()}** — switching…")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"Could not create organization: {exc}")
+
     if not org_id:
         st.info("No organization context yet. It is created automatically on "
                 "first admin login.")
