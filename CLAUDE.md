@@ -182,10 +182,18 @@ policy, never re-enumerate. `core/mailer.py` sends branded signup/approval
 emails over SMTP from .env — AWAITING OWNER: SMTP credentials
 (SMTP_HOST/PORT/USER/PASS in .env) before any mail actually sends; until then
 every send is a clean "not configured" notice. Owner decisions still open:
-which fields (if any) promote to org tier. Mail: owner chose an M365 ALIAS
-sender — SMTP_USER = the real licensed mailbox, MAIL_FROM = the alias
-(welcome@eight-rock.com added as an alias on that mailbox; tenant needs
-"send from aliases" on). `docs/DATA-DICTIONARY.pdf` is the owner-facing doc,
+which fields (if any) promote to org tier. Mail: LIVE 2026-08-08 via
+Microsoft Graph (core/mailer.py) — sender = the FREE SHARED MAILBOX
+welcome@eight-rock.com, app "Workbench Mailer" (Mail.Send application
+permission + admin consent), creds in .env GRAPH_*. Paid-for lessons, do
+not re-fight: (1) the tenant's Security Defaults HARD-BLOCK Basic SMTP —
+no app password will ever work; (2) Graph refuses to send FROM an alias
+(ErrorSendAsDenied) even with SendFromAliasEnabled — the sender must be a
+real mailbox, and a license-free shared mailbox is the pattern; (3) angle
+brackets in .env examples get copied literally by a non-technical owner —
+show fake-but-real-shaped values instead. Optional hardening, owner-gated:
+ApplicationAccessPolicy to scope Mail.Send to just welcome@ (today the app
+could send as any tenant mailbox). `docs/DATA-DICTIONARY.pdf` is the owner-facing doc,
 GENERATED from field_policy by scripts/build_data_dictionary_pdf.py — never
 hand-edit the PDF; any field-policy change requires the rebuild command in
 that script's docstring (test_data_dictionary_pdf goes red otherwise).

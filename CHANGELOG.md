@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.26.6.0.0 — 2026-08-08  ·  Email LIVE (Graph + shared mailbox); docs pinned to what actually worked
+First successful branded send 2026-08-08: Graph sendMail via the free
+SHARED mailbox welcome@eight-rock.com (created after Graph rejected
+alias-From with ErrorSendAsDenied). Journey recorded in CLAUDE.md so it is
+never re-fought: Security Defaults hard-block Basic SMTP (two fresh app
+passwords 535'd); alias-From dies under Graph; shared-mailbox sender is the
+supported pattern. Signup + approval emails now flow automatically. Doc-only
+release (mailer docstring + CLAUDE.md status).
+
 ## V5.26.5.0.0 — 2026-08-08  ·  Mailer: Microsoft Graph transport (Basic SMTP is dead on this tenant)
 Two freshly-generated app passwords 535'd with SMTP AUTH explicitly enabled
 — the tenant hard-blocks Basic SMTP sign-in (which Microsoft is retiring

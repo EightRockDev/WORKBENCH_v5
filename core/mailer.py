@@ -10,9 +10,11 @@ Two transports, tried in this order:
        GRAPH_TENANT_ID=<Directory (tenant) ID>
        GRAPH_CLIENT_ID=<Application (client) ID>
        GRAPH_CLIENT_SECRET=<client secret VALUE>
-       GRAPH_SENDER=Brian@eight-rock.com     # the real mailbox to send via
-       MAIL_FROM=Eight Rock Workbench <welcome@eight-rock.com>   # alias shown
-                 # as From — honored because SendFromAliasEnabled is on
+       GRAPH_SENDER=welcome@eight-rock.com   # a REAL mailbox (the free
+                 # SHARED mailbox created 2026-08-08). Graph refuses to send
+                 # from a mere alias (ErrorSendAsDenied) even with
+                 # SendFromAliasEnabled — the sender must be a real mailbox.
+       MAIL_FROM=Eight Rock Workbench <welcome@eight-rock.com>
 
 2. **SMTP** fallback (kept for non-M365 providers):
    SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS.
