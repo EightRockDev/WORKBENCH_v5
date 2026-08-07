@@ -338,6 +338,15 @@ scale this is intolerable. Non-negotiable rules:
    run -> publish -> read), with zero data. Only then does data work
    begin, because from that moment every fix flows without a human. Never
    again tune a pipeline through an unproven operator loop.
+9b. **A documented-but-manual setup step is a step that never happened.**
+   The nightly DB backup was "scheduled via Task Scheduler" in the deploy
+   README from day one; a server task audit (2026-08-08) found it was never
+   registered - the pilot Postgres had NO backups, ever. And as written it
+   would have hung on a password prompt under SYSTEM. Corollary to lesson 9:
+   for every scheduled dependency, verify the task EXISTS on the host (task
+   listing in hand), make the script runnable non-interactively, and prefer
+   wiring it into the one loop that already runs (autopilot) over a second
+   human-registered schedule.
 9. **Never assume always-on.** The "always-on" pilot host slept through
    the first 3 AM run and Windows skipped the task without a trace — a
    schedule alone is not execution. Every scheduled dependency must be

@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.26.1.0.0 — 2026-08-08  ·  Backup script made schedulable — it had never actually run
+Server audit (owner-run task listing) found NO "Workbench Backup" scheduled
+task: deploy step 4 ("schedule backup.ps1 nightly") was documented but never
+executed, so the pilot Postgres (users, orgs, deals, POC, audit log) has
+never been dumped. Worse, had it been registered as written it would have
+hung: `pg_dump -U postgres` prompts for a password no 02:15 SYSTEM run can
+type. `backup.ps1` now reads DATABASE_URL from the app's `.env` (PGPASSWORD
+set non-interactively, user/host/port/db derived), fails loudly on a nonzero
+pg_dump exit instead of reporting success, and its local dir no longer
+assumes a D: drive exists (falls back to C:\Backup\8rw). Guard tests pin
+all three in tests/test_deploy_scripts.py. Registration is one owner command
+(see deploy/windows/backup.ps1 header); OneDrive copy stays an explicit
+`-OneDriveBackupDir` choice.
+
 ## V5.26.0.0.0 — 2026-08-07  ·  Data API v1: metered read-only access to the reference layer
 Owner ask ("an API that allows users to connect and pull data, for a fee");
 spec §6.5 Module G. `api_server.py` (FastAPI, port 8600 via `run-api.bat`):

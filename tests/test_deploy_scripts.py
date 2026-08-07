@@ -255,3 +255,23 @@ def test_caddy_reports_the_port_forward_target():
     assert "DHCP" in src, "does not warn that an unreserved lease can move"
     assert "ipify" in src or "public IP" in src, "does not report the public IP"
     assert "MISMATCH" in src, "does not compare DNS against the real public IP"
+
+
+def test_backup_never_prompts_for_a_password():
+    """The backup task runs as SYSTEM at 02:15 — a password prompt hangs it
+    forever, invisibly (found 2026-08-08: the task was never registered, and
+    if it had been, `pg_dump -U postgres` would have prompted and hung).
+    The script must take credentials from the app's .env non-interactively
+    and fail loudly when pg_dump fails."""
+    src = _src("backup.ps1")
+    assert "DATABASE_URL" in src and "PGPASSWORD" in src
+    assert re.search(r"-U \$dbUser", src), "pg_dump must use .env-derived user"
+    assert not re.search(r"&\s*\$pgDump[^\n]*-U postgres\b", src), (
+        "the pg_dump INVOCATION must never hardcode -U postgres")
+    assert "LASTEXITCODE" in src, "a failed dump must throw, not report success"
+
+
+def test_backup_local_dir_does_not_assume_a_second_disk():
+    # The old D:\ default silently required hardware the host may not have.
+    src = _src("backup.ps1")
+    assert 'Test-Path "D:\\"' in src and "C:\\Backup\\8rw" in src
