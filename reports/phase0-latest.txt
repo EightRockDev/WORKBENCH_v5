@@ -1,7 +1,4 @@
-autopilot phase0 @ 2026-08-07T04:11:53
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-08-07T05:15:10
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 4,005,005
@@ -49,8 +46,8 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Newport News: A x237, C x4, (units only) x2, R x1
   Richmond: (units only) x108, Multi-Family x3
   Virginia Beach: Multi Family x15682, (units only) x176
-  Suffolk: (units only) x17
   Hampton: (units only) x2
+  Suffolk: (units only) x17
 
 Cities with parcels but NO multifamily found - their top use codes:
   Portsmouth: (blank) x36617, 9 x314, 18 x181, 7 x139, 5 x80, 3 x27, 2 x23, 29 x19
@@ -61,8 +58,8 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Newport News: units>=10: 244
   Richmond: units>=10: 108, code only (no units): 3
   Virginia Beach: code only (no units): 15,470, units>=10: 388
-  Suffolk: units>=10: 17
   Hampton: units>=10: 2
+  Suffolk: units>=10: 17
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Norfolk: property_name, number_of_buildings, national_median_site_energy, national_median_site_energy_1, national_median_source_energy, national_median_source_energy_1, percent_difference_from
