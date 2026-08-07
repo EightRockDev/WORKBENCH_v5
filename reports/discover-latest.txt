@@ -1,4 +1,4 @@
-autopilot discover @ 2026-08-07T08:00:03
+autopilot discover @ 2026-08-07T09:00:03
 
 Probing city GIS portals for unit-bearing parcel layers...
 (a few minutes - each city's services are walked layer by layer)
@@ -65,7 +65,7 @@ Chesapeake: 3 candidate layer(s)
    https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
       auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,461 records
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      geometry supplement; VGIN statewide fallback: FIPS = '51550'; 92,461 records; fields ['apn']
+      geometry supplement; VGIN statewide fallback: UPPER(LOCALITY) = 'CHESAPEAKE CITY'; 92,461 records; fields ['apn']
 
 Hampton: 2 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
@@ -81,9 +81,7 @@ Portsmouth: 3 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
       geometry supplement; VGIN statewide fallback: FIPS = '51740'; 36,615 records; fields ['apn']
 
-Suffolk: 1 candidate layer(s)
-   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      VGIN statewide fallback: FIPS = '51800'; 45,160 records; fields ['apn']
+Suffolk: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
 
 Norfolk: 2 candidate layer(s)
    https://data.norfolk.gov/resource/ykcq-76im.json
@@ -92,10 +90,10 @@ Norfolk: 2 candidate layer(s)
       auto-discovered (socrata): Property Assessment and Sales - FY23; score 12; fields ['apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'year_built', 'zip']; geo-verify inconclusive
 
 Richmond: 2 candidate layer(s)
-   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
+   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/MapServer/0
       VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']
    https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
       auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records; NAMED as a subset - demoted
 
-Wrote 15 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
+Wrote 14 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
 NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.
