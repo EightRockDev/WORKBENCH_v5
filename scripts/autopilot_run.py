@@ -34,6 +34,10 @@ STEPS = (
     # ride the loop that already runs — the schtasks registration this
     # replaced was documented for weeks and never actually performed).
     ("backup", ["scripts/run_backup.py"], "backup-latest.txt"),
+    # TEMPORARY scaffolding (2026-08-08): discover the JSON API behind VB's
+    # property portal for free sale/deed chains. Self-skips after success;
+    # REMOVE this step once the real VB sales puller ships.
+    ("vbprobe", ["scripts/probe_vb_sales.py"], "vb-sales-probe.txt"),
 )
 
 

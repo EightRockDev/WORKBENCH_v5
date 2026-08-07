@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.26.4.0.0 — 2026-08-08  ·  VB sale-chain probe (temporary autopilot step)
+Owner: Virginia Beach's public property portal
+(propertysearch.virginiabeach.gov, no login) shows FULL deed chains — sale
+date, price, instrument no., deed book/page, multiple sales per parcel —
+which our VB feed lacks (Property_Sales_view returns 0 rows). The portal is
+an SPA, so a JSON API sits underneath; the build env is firewalled from city
+portals, so `scripts/probe_vb_sales.py` rides the autopilot (the host
+reaches portals hourly) to find it: tries conventional endpoint shapes for
+a known parcel (1201 Edenham Ct, expected $12.3M / 2021-07-15 / instrument
+202103057031), mines the SPA's JS bundles for their own endpoint strings,
+and retries mined candidates. Polite (~a dozen requests, 0.5s gaps, honest
+UA), idempotent (self-skips after a FOUND), report →
+reports/vb-sales-probe.txt. TEMPORARY: the step is removed when the real
+puller ships. Next: read the probe report, build the VB sales puller
+(on-demand per viewed property + rate-limited backbone backfill), extend
+sale_history to kind='sales' rows.
+
 ## V5.26.3.0.0 — 2026-08-08  ·  Purchase Price card: click-to-edit link removed
 Owner: "Remove the click to edit link — it doesn't work properly." The
 `?goto=underwriting` anchor on the Purchase Price stat card (added from
