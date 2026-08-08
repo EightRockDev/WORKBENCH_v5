@@ -1,0 +1,11 @@
+autopilot backbonestats @ 2026-08-08T09:11:56
+
+Multifamily unit stats (units >= 10), per city:
+city                count   min  median    max
+Chesapeake           1831    10     162  10101
+Virginia Beach        388    10      40    988
+Newport News          244    10     103    553
+Richmond              108    10      19    217
+Suffolk                17    12      44     81
+Norfolk                 5    10      10     18
+Hampton                 2    10      11     12
