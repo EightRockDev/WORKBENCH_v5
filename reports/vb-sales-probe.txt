@@ -1,27 +1,40 @@
 VB sales-API probe, parcel 14552807310000
 PROBE COMPLETE - no marker hit; endpoints above need a human/next-round look
 full detail -> vb-sales-probe.txt
-pe=
+earch.virginiabeach.gov', port=443): Max retries exceeded with url: /api/property/14552807310000 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_s
+
+== GET /api/properties/14552807310000
+   status=0 type=
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: /api/properties/14552807310000 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (
 
 == GET /api/parcel/14552807310000
    status=0 type=
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: /api/parcel/14552807310000 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl
 
 == GET /api/parcels/14552807310000
    status=0 type=
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: /api/parcels/14552807310000 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ss
 
 == GET /api/property/14552807310000/sales
    status=0 type=
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: /api/property/14552807310000/sales (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certifica
 
 == GET /api/sales/14552807310000
    status=0 type=
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: /api/sales/14552807310000 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.
 
 == GET /api/property?parcel=14552807310000
    status=0 type=
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: /api/property?parcel=14552807310000 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certific
 
 == GET /api/search?q=14552807310000
    status=0 type=
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: /api/search?q=14552807310000 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_s
 
 == GET /   status=0
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'))))
+== GET / (browser UA)   status=0
+   (request failed: HTTPSConnectionPool(host='propertysearch.virginiabeach.gov', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)'))))
    js bundles: []
 
 == endpoint fragments mined from bundles (0):
