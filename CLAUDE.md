@@ -213,6 +213,14 @@ session per property via st.session_state guard in
 ui/property_detail._log_property_view; edits logged with changed field
 names at the per-user save. Fail-silent everywhere.
 
+### Morning report: ALWAYS include the pending-approval queue (owner directive 2026-08-09)
+Report new users waiting for approval every morning. Source:
+reports/pending-users-latest.txt (autopilot `pendingusers` step). If that
+file shows 0 or is stale/absent, say so explicitly. Also standing owner Qs
+answered 2026-08-09: Richmond pulls ~83.3K raw parcels/night (76,739 VGIN
+VA_Parcels + 6,570 Undeveloped subset), 111 qualify MF — VGIN has no unit
+counts/sales, hence thin.
+
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
 Owner will ask for all 50 metro regions pulled + reconciled **in one turn,

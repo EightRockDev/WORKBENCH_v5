@@ -12,6 +12,13 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.5.0.0 — 2026-08-09  ·  Pending-approval queue in the nightly report stream
+Owner directive: "tell me every morning if there are new users waiting for
+approval." New autopilot step `run_pending_users.py` writes
+`reports/pending-users-latest.txt` each cycle — the count + each pending
+user's name/email/status — so it rides the report stream the morning
+analysis already reads. Fail-silent when Postgres is unreachable.
+
 ## V5.27.4.0.0 — 2026-08-09  ·  Backups WORK: one double-click, proven against a real PG16
 The backup dead-end is closed. `setup-backup.bat` (self-elevating) +
 `deploy/windows/setup-backup.ps1` create the read-only `backup_reader` role

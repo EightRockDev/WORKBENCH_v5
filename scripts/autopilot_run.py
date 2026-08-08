@@ -31,6 +31,9 @@ STEPS = (
     ("saleindex", ["scripts/run_sale_index.py"], "sale-index-latest.txt"),
     ("phase0", ["scripts/run_phase0.py"], "phase0-latest.txt"),
     ("validate", ["scripts/run_validate.py"], "validate-latest.txt"),
+    # Pending-approval queue -> report stream (owner directive 2026-08-09:
+    # surface new users waiting for approval every morning).
+    ("pendingusers", ["scripts/run_pending_users.py"], "pending-users-latest.txt"),
     ("alerts", ["scripts/run_alerts.py"], "alerts-latest.txt"),
     ("preflight", ["scripts/preflight_cutover.py"], "cutover-preflight.txt"),
     # Nightly Postgres dump, self-gated to one per day (CLAUDE.md lesson 9b:
