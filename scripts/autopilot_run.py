@@ -34,6 +34,9 @@ STEPS = (
     # Pending-approval queue -> report stream (owner directive 2026-08-09:
     # surface new users waiting for approval every morning).
     ("pendingusers", ["scripts/run_pending_users.py"], "pending-users-latest.txt"),
+    # Per-city MF unit distribution (min/median/max) from the backbone -
+    # answers unit-count questions in the morning stream (owner 2026-08-09).
+    ("backbonestats", ["scripts/run_backbone_stats.py"], "backbone-stats-latest.txt"),
     ("alerts", ["scripts/run_alerts.py"], "alerts-latest.txt"),
     ("preflight", ["scripts/preflight_cutover.py"], "cutover-preflight.txt"),
     # Nightly Postgres dump, self-gated to one per day (CLAUDE.md lesson 9b:

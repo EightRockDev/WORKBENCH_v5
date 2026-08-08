@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.6.0.0 — 2026-08-09  ·  Per-city MF unit stats in the report stream
+Owner asked the smallest unit count among Richmond's 111 MF — unanswerable
+from here (the 8GB backbone lives only on the host; pushed reports carried
+only city totals). New autopilot step `run_backbone_stats.py` reads
+properties_8r READ-ONLY each cycle (independent of phase0 rebuild gating) and
+writes per-city min/median/max/count of units (>= MIN_MF_UNITS) to
+reports/backbone-stats-latest.txt, so unit-distribution questions are
+answered from the morning stream without a manual host query.
+
 ## V5.27.5.0.0 — 2026-08-09  ·  Pending-approval queue in the nightly report stream
 Owner directive: "tell me every morning if there are new users waiting for
 approval." New autopilot step `run_pending_users.py` writes
