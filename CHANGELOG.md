@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.4.0.0 — 2026-08-09  ·  Backups WORK: one double-click, proven against a real PG16
+The backup dead-end is closed. `setup-backup.bat` (self-elevating) +
+`deploy/windows/setup-backup.ps1` create the read-only `backup_reader` role
+(BYPASSRLS + pg_read_all_data) using the SAME trust-flip setup-db.ps1 uses —
+so the owner types NO postgres password — write ER_BACKUP_DATABASE_URL into
+.env (upsert, other keys preserved), then RUN one dump to prove the path
+before declaring success. Owner's entire part: right-click setup-backup.bat →
+Run as administrator, once.
+
+Verified, not asserted: reproduced the exact production error against a real
+PostgreSQL 16 cluster — pg_dump as the app's `workbench` role under FORCE RLS
+fails with "query would be affected by row-level security policy for table
+campaigns" — then confirmed `backup_reader` dumps ALL rows (restored dump
+contained both seeded deals, not an empty RLS-filtered view), and that
+`scripts/run_backup.py` itself writes the dump and then correctly skips as
+fresh. Structural test in test_deploy_scripts pins the script's shape.
+
 ## V5.27.3.0.0 — 2026-08-09  ·  Backup vs RLS; probe now shows why it failed
 Two first-run findings from overnight reports:
 1. **The first-ever dump attempt failed on RLS**: pg_dump as the app's own

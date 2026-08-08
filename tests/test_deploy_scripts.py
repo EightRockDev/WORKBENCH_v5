@@ -275,3 +275,18 @@ def test_backup_local_dir_does_not_assume_a_second_disk():
     # The old D:\ default silently required hardware the host may not have.
     src = _src("backup.ps1")
     assert 'Test-Path "D:\\"' in src and "C:\\Backup\\8rw" in src
+
+
+def test_backup_role_setup_uses_the_trust_flip_and_bypassrls():
+    """setup-backup.ps1 must create a read-only BYPASSRLS role without needing
+    the postgres password (same trust-flip setup-db.ps1 uses), restore the
+    auth config in a finally, upsert .env, and PROVE the path by running a
+    dump (owner directive 2026-08-09: make it happen, no manual psql)."""
+    src = _src("setup-backup.ps1")
+    assert "BYPASSRLS" in src and "pg_read_all_data" in src
+    assert "trust" in src and "finally" in src.lower()
+    assert "Restoring original authentication config" in src   # restore path
+    assert "ER_BACKUP_DATABASE_URL" in src
+    assert "run_backup.py" in src        # proves the path end to end
+    # Upsert, never clobber .env (the shared-file lesson).
+    assert "-ne $managedKey" in src and ".bak" in src
