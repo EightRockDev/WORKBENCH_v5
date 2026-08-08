@@ -74,7 +74,10 @@ def main() -> int:
         hit = any(m in body.replace(",", "") or m in body for m in MARKERS)
         lines.append(f"\n== GET {path}\n   status={code} type={ctype[:40]}"
                      f"{'   <<< MARKER HIT' if hit else ''}")
-        if code == 200 and ("json" in ctype or body.lstrip()[:1] in "[{"):
+        if code == 0:
+            lines.append("   " + body[:300])      # the exception text - a
+            # probe that hides WHY it failed wastes its whole cycle
+        elif code == 200 and ("json" in ctype or body.lstrip()[:1] in "[{"):
             lines.append("   " + body[:600].replace("\n", " "))
         if hit:
             found.append(path)
@@ -83,6 +86,17 @@ def main() -> int:
     # --- 2. read the SPA bundle for its own endpoint strings -------------
     code, ctype, index = fetch("/")
     lines.append(f"\n== GET /   status={code}")
+    if code == 0:
+        lines.append("   " + index[:300])
+        # WAFs often block non-browser agents outright - one retry with a
+        # real browser UA tells us whether UA is the gate.
+        UA["User-Agent"] = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                            "AppleWebKit/537.36 (KHTML, like Gecko) "
+                            "Chrome/126.0 Safari/537.36")
+        code, ctype, index = fetch("/")
+        lines.append(f"== GET / (browser UA)   status={code}")
+        if code == 0:
+            lines.append("   " + index[:300])
     bundles = re.findall(r'src="([^"]+\.js[^"]*)"', index)
     lines.append(f"   js bundles: {bundles[:6]}")
     api_frags: set[str] = set()

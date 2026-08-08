@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.3.0.0 — 2026-08-09  ·  Backup vs RLS; probe now shows why it failed
+Two first-run findings from overnight reports:
+1. **The first-ever dump attempt failed on RLS**: pg_dump as the app's own
+   `workbench` role hits "query would be affected by row-level security
+   policy" — FORCE RLS applies to the owner too, by design. Fix: dumps use a
+   dedicated read-only BYPASSRLS role. `run_backup.py` now prefers
+   `ER_BACKUP_DATABASE_URL` and prints an actionable note while it's absent.
+   One-time owner command (as postgres) creates the role — in CLAUDE.md.
+2. **The VB probe swallowed its own failure reasons**: every request returned
+   status=0 (connection-level exception) and the report omitted the
+   exception text, wasting the cycle. The probe now prints the reason for
+   every failed request and retries the root with a browser User-Agent to
+   test whether a WAF gates on UA. Next cycle's report will say WHY.
+Also confirmed from reports: the sale-history index built overnight and
+render-time lookups are live (saleindex step: "fresh - skipping").
+
 ## V5.27.2.0.0 — 2026-08-09  ·  Sale history answers from an offline index — the "too slow" fix
 Owner: "Streamlit is running too slow." Root cause: `sale_history_for`
 scanned every muni row for the property's market AT RENDER TIME — Virginia

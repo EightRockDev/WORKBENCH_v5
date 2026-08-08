@@ -96,7 +96,17 @@ def run_dump(pg_dump: str, url: str, out: Path) -> int:
 
 
 def main() -> int:
-    url = os.environ.get("DATABASE_URL", "").strip()
+    # FORCE ROW LEVEL SECURITY blocks pg_dump for the app's own role (found
+    # on the first-ever dump attempt, 2026-08-08: "query would be affected by
+    # row-level security policy for table campaigns"). Dumps need the
+    # dedicated read-only BYPASSRLS role — see CLAUDE.md for the one-time
+    # psql command that creates it.
+    url = (os.environ.get("ER_BACKUP_DATABASE_URL", "").strip()
+           or os.environ.get("DATABASE_URL", "").strip())
+    if os.environ.get("DATABASE_URL") and not os.environ.get("ER_BACKUP_DATABASE_URL"):
+        print("[backup] NOTE: using the app's DATABASE_URL - this FAILS under "
+              "row-level security; set ER_BACKUP_DATABASE_URL to the "
+              "backup_reader role (see CLAUDE.md)")
     if not url:
         print("[backup] no DATABASE_URL visible - nothing to back up "
               "(set it in .env; on dev boxes without Postgres this is normal)")

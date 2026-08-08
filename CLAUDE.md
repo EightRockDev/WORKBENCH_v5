@@ -634,6 +634,30 @@ step that owns a few keys in a shared config file must never own the whole file 
 is a data-loss bug waiting for the second feature to need it. Upsert, and back up
 before you rewrite.
 
+## Lesson — FORCE RLS blocks the owner's own pg_dump; back up with a BYPASSRLS reader (2026-08-09)
+
+The first-ever nightly dump failed: pg_dump connected as the app's
+`workbench` role and Postgres refused COPY on RLS-protected tables ("query
+would be affected by row-level security policy") — FORCE ROW LEVEL SECURITY
+applies to the table owner too, which is exactly why tenant isolation holds
+and exactly why the app's credentials can never take a full backup. Never
+"fix" this by granting BYPASSRLS to the app role (that would kill isolation)
+or by `--enable-row-security` (dumps only the empty no-context view). The
+pattern: a dedicated read-only backup role. One-time, on the host (prompts
+for the postgres superuser password; generate any long password for the
+role):
+
+    & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d workbench -c "CREATE ROLE backup_reader LOGIN PASSWORD '<long-random>' BYPASSRLS; GRANT pg_read_all_data TO backup_reader;"
+
+then in .env:
+    ER_BACKUP_DATABASE_URL=postgresql://backup_reader:<long-random>@localhost:5432/workbench
+
+Related probe lesson, same cycle: a diagnostic that hides WHY it failed
+wastes its whole cycle — the VB probe reported status=0 twelve times with
+the exception text discarded. Every failed request in a probe must carry
+its reason; and when everything fails at connection level, retry once with
+a browser User-Agent before concluding anything (WAFs gate on UA).
+
 ## Lesson — a broad `except` + an untested default path = a feature that never ran (2026-08-05)
 
 Sale history read "No sale history available" on EVERY property from day one.
