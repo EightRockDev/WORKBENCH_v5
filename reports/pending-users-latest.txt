@@ -1,0 +1,3 @@
+autopilot pendingusers @ 2026-08-08T09:11:50
+
+pending-users: Postgres not reachable - cannot read the queue
