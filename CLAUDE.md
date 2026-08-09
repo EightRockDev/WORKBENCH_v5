@@ -221,6 +221,13 @@ answered 2026-08-09: Richmond pulls ~83.3K raw parcels/night (76,739 VGIN
 VA_Parcels + 6,570 Undeveloped subset), 111 qualify MF — VGIN has no unit
 counts/sales, hence thin.
 
+### Headless .env is now CENTRAL - do not re-solve per script (2026-08-09)
+`data/pg.database_url()` lazily loads .env when DATABASE_URL is unset, so any
+autopilot/cron script importing `data.pg` gets Postgres creds automatically.
+The old per-script dotenv dance is no longer required for pg access (run_backup
+still loads it for pg_dump's own env). This closes the third recurrence of the
+2026-07-31 "headless steps must load .env" lesson.
+
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
 Owner will ask for all 50 metro regions pulled + reconciled **in one turn,

@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.7.0.0 — 2026-08-09  ·  Headless steps read .env centrally (pending-users false "unreachable")
+This morning's pending-users report said "Postgres not reachable" while the
+backup step in the SAME cycle reached Postgres fine — because bare autopilot
+scripts never load .env, so DATABASE_URL was invisible to
+`run_pending_users` (the 2026-07-31 headless-.env lesson, third recurrence).
+Fixed at the source: `data/pg.database_url()` now lazily loads .env when
+DATABASE_URL is absent from the environment, so EVERY pg consumer — current
+and future — inherits it instead of each script remembering. dotenv never
+overrides an already-set var, so the app and tests are unaffected. Regression
+test in test_pg_env. Next cycle the approval queue reports for real.
+
 ## V5.27.6.0.0 — 2026-08-09  ·  Per-city MF unit stats in the report stream
 Owner asked the smallest unit count among Richmond's 111 MF — unanswerable
 from here (the 8GB backbone lives only on the host; pushed reports carried

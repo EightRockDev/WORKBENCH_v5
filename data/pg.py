@@ -29,6 +29,31 @@ except ModuleNotFoundError:  # pragma: no cover - import guard for SQLite-only d
     dict_row = None  # type: ignore
 
 
+_ENV_LOADED = False
+
+
+def _ensure_env_loaded() -> None:
+    """Load .env once for headless callers (autopilot steps, cron scripts).
+
+    The app process loads .env at startup, but bare scripts that import this
+    module do NOT — so DATABASE_URL was invisible to them and Postgres read as
+    "not reachable" (2026-08-09: run_pending_users reported an empty approval
+    queue for exactly this reason; the same 2026-07-31 lesson, third time).
+    Fixing it HERE means every current and future pg consumer inherits it,
+    instead of each script having to remember. dotenv never overrides a var
+    already set, so the app/tests are unaffected.
+    """
+    global _ENV_LOADED
+    if _ENV_LOADED:
+        return
+    _ENV_LOADED = True
+    with contextlib.suppress(Exception):
+        from pathlib import Path
+
+        from dotenv import load_dotenv
+        load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+
 def database_url() -> str | None:
     """Resolve the Postgres URL from Streamlit secrets or the environment."""
     with contextlib.suppress(Exception):
@@ -36,6 +61,9 @@ def database_url() -> str | None:
 
         if "postgres" in st.secrets and st.secrets["postgres"].get("url"):
             return str(st.secrets["postgres"]["url"])
+    if os.environ.get("DATABASE_URL"):
+        return os.environ["DATABASE_URL"]
+    _ensure_env_loaded()                       # headless fallback
     return os.environ.get("DATABASE_URL")
 
 
