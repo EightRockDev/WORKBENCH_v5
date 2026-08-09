@@ -1,4 +1,4 @@
-autopilot backbonestats @ 2026-08-09T06:12:24
+autopilot backbonestats @ 2026-08-09T07:12:05
 
 Multifamily unit stats (units >= 10), per city:
 city                count   min  median    max
