@@ -1,0 +1,25 @@
+autopilot salespull @ 2026-08-09T17:20:30
+
+[sales] 20 localities tracked
+[sales] Alexandria: no parcels to probe - skip
+[sales] Arlington: no parcels to probe - skip
+[sales] Athens: no Spatialest sales endpoint (needs vendor discovery) - skip
+[sales] Atlanta: no Spatialest sales endpoint (needs vendor discovery) - skip
+[sales] Augusta: no Spatialest sales endpoint (needs vendor discovery) - skip
+[sales] Chesapeake: no Spatialest sales endpoint (needs vendor discovery) - skip
+[sales] Decatur: no Spatialest sales endpoint (needs vendor discovery) - skip
+[sales] Durham: no Spatialest sales endpoint (needs vendor discovery) - skip
+[sales] Greensboro: no Spatialest sales endpoint (needs vendor discovery) - skip
+[sales] Greenville: no Spatialest sales endpoint (needs vendor discovery) - skip
+[sales] Hampton: no Spatialest sales endpoint (needs vendor discovery) - skip
+Traceback (most recent call last):
+  File "C:\WORKBENCH_V5\scripts\pull_sales.py", line 256, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\WORKBENCH_V5\scripts\pull_sales.py", line 234, in main
+    probes = sample_gpins(conn, market, state, 5)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKBENCH_V5\scripts\pull_sales.py", line 145, in sample_gpins
+    apn = (phase0.normalize_record(market, state, raw).get("apn") or "").strip()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'strip'
