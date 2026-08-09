@@ -6622,3 +6622,5 @@ Checked 111 packages in 34ms
 [preflight] exit 0 -> cutover-preflight.txt
 [publish] pushed to GitHub
 [backup] exit 1 -> backup-latest.txt
+[publish] pushed to GitHub
+[vbprobe] exit 0 -> vb-sales-probe.txt
