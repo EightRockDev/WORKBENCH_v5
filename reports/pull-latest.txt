@@ -1,6 +1,6 @@
-autopilot pull @ 2026-08-08T23:07:20
+autopilot pull @ 2026-08-09T00:07:29
 
-QUARRIE muni-data ETL — 2026-08-08
+QUARRIE muni-data ETL — 2026-08-09
   discovered feeds loaded from data/feeds_extra.json: 15
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Residential_Address_Points_w_Housing_Structure/FeatureServer/0
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/SolarVector_PubLayers/FeatureServer/2
