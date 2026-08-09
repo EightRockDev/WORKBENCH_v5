@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.28.0.0.0 — 2026-08-09  ·  VB sale history: vendor identified (Spatialest), puller built
+Owner grabbed the portal's Network tab: Virginia Beach's property site is a
+**Spatialest** front end, API pattern
+`https://api.spatialest.com/v1/va/virginiabeach/<resource>/<GPIN>` (siblings
+annual-taxes / annual-assessment / buildings / schools confirmed 200). Two
+pieces shipped:
+- `scripts/probe_vb_sales.py` rewritten to hit the real vendor and confirm the
+  exact SALES resource name for the known parcel (markers $12.3M / instrument
+  202103057031). Retries past VB's incomplete TLS chain (discovery-only).
+- `scripts/pull_vb_sales.py` — the real puller: fetches sale/deed history for
+  the VB GPINs we already track into muni_records as kind='sales' (which
+  core.sale_index already indexes), rate-limited, resumable, per-GPIN
+  freshness. SELF-GATES: it does nothing until the sales resource is confirmed
+  (ER_VB_SALES_RESOURCE override, or parsed from the probe's FOUND line) — no
+  blind pulls (the Apollo-adapter lesson). Wired into autopilot before
+  saleindex so pulled sales index the same cycle.
+Once the probe reports FOUND (or owner clicks the Sales tab and pastes the
+URL), the puller activates automatically and VB Sale History fills. The sale-
+field extraction map may need a one-line tweak once the real payload shape is
+seen — will confirm from the probe body, not guess.
+
 ## V5.27.8.0.0 — 2026-08-09  ·  VB probe: the block is an incomplete TLS chain, not a WAF
 The fixed probe surfaced the real reason it came back blind: every request
 died with SSLError "unable to get local issuer certificate" — the VB portal

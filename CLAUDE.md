@@ -228,6 +228,15 @@ The old per-script dotenv dance is no longer required for pg access (run_backup
 still loads it for pg_dump's own env). This closes the third recurrence of the
 2026-07-31 "headless steps must load .env" lesson.
 
+### VB sale history = Spatialest API (2026-08-09)
+VB property portal is Spatialest: api.spatialest.com/v1/va/virginiabeach/
+<resource>/<GPIN>. scripts/pull_vb_sales.py pulls kind='sales' into
+muni_records (auto-indexed by sale_index); self-gates on ER_VB_SALES_RESOURCE
+or the probe's FOUND line. Confirm the sales resource name + payload shape from
+reports/vb-sales-probe.txt before finalizing extract_sale_records field map.
+The same api.spatialest.com/v1/<state>/<locality>/ pattern likely unlocks
+OTHER localities' sales too - check before hunting ArcGIS.
+
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
 Owner will ask for all 50 metro regions pulled + reconciled **in one turn,

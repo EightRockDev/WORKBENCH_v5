@@ -26,8 +26,12 @@ STEPS = (
     ("pull", ["etl_munidata.py", "--hr"], "pull-latest.txt"),
     ("publicdata", ["scripts/run_public_data.py"], "public-data-latest.txt"),
     ("listings", ["scripts/run_listings.py"], "listings-latest.txt"),
+    # Pull VB sale/deed history from Spatialest into muni_records (kind=sales);
+    # self-skips until the endpoint is confirmed (owner ask 2026-08-08).
+    ("vbsales", ["scripts/pull_vb_sales.py"], "vb-sales-latest.txt"),
     # Sale-history index: render-time answers come from this table, not a
-    # per-page muni scan (owner "too slow" report 2026-08-09).
+    # per-page muni scan (owner "too slow" report 2026-08-09). Runs AFTER
+    # vbsales so freshly pulled sales are indexed the same cycle.
     ("saleindex", ["scripts/run_sale_index.py"], "sale-index-latest.txt"),
     ("phase0", ["scripts/run_phase0.py"], "phase0-latest.txt"),
     ("validate", ["scripts/run_validate.py"], "validate-latest.txt"),
