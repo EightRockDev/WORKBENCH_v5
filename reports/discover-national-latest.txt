@@ -1,0 +1,157 @@
+autopilot discover_national @ 2026-08-09T16:08:09
+
+[national-discovery] probing top-50 metros for free parcel feeds...
+Probing GIS portals for unit-bearing parcel layers (50 national metros)...
+(a few minutes - each city's services are walked layer by layer)
+
+   [rejected - wrong city] Riverside: Vision_Plan_260727_WFL1: only 189 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Riverside: Vision_Plan_260727_WFL1: only 229 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Riverside: Vision_Plan_260727_WFL1: only 419 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Riverside: Vision_Plan_test_WFL1: only 189 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Riverside: Vision_Plan_test_WFL1: only 229 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Riverside: Vision_Plan_test_WFL1: only 419 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Atlanta: Virginia Highland Focus Area: only 244 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 224 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 76 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 244 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 310 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 182 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: Raleigh County 830 Dilapidated Structures: only 830 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 53 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 205 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 172 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 683 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 236 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 1,107 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 163 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Raleigh: Raleigh County Dilapidated Structures_WFL1: only 830 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
+   [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
+   [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
+   [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
+   [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
+   [rejected - wrong city] Richmond: RichmondCountyWellRecords_PDCPriorto2000: records are NOT in Richmond
+   [rejected - wrong city] Houston: North Houston REPI 2_0_WFL1: only 304 records - kept but demoted, a citywide roll should have >= 5,000
+Chicago: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Fort Lauderdale: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Miami: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Santa Ana: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+West Palm Beach: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+San Jose: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Seattle: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+New York: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Boston: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+San Diego: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Los Angeles: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Washington: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Riverside: 2 candidate layer(s)
+   https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
+      auto-discovered: Vision_Plan_260727_WFL1; score 13; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; geo-verify inconclusive; 62,781 records
+   https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/0
+      auto-discovered: Vision_Plan_260727_WFL1; score 1; fields ['address', 'apn', 'owner_name']; geo-verify inconclusive; ONLY 189 records - too small to be a full parcel roll, probably a subset or study extract
+
+Oakland: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Philadelphia: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Newark: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Sacramento: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Portland: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Baltimore: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Minneapolis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Atlanta: 2 candidate layer(s)
+   https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Virginia_Highland_Focus_Area/FeatureServer/1
+      auto-discovered: Virginia Highland Focus Area; score 15; fields ['address', 'apn', 'owner_name', 'sqft', 'units', 'use_code', 'year_built', 'zip']; geo-verify inconclusive; ONLY 244 records - too small to be a full parcel roll, probably a subset or study extract
+   https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Atlanta_Main_Street_District_Boundaries/FeatureServer/1
+      auto-discovered: Atlanta Main Street District Boundaries; score 15; fields ['address', 'apn', 'owner_name', 'sqft', 'units', 'use_code', 'year_built', 'zip']; geo-verify inconclusive; ONLY 224 records - too small to be a full parcel roll, probably a subset or study extract
+
+Orlando: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Tampa: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Charlotte: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Raleigh: 2 candidate layer(s)
+   https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/RaleighWV_Service/FeatureServer/0
+      auto-discovered: RaleighWV_Service; score 13; fields ['address', 'apn', 'use_code']; geo-verify inconclusive; 61,217 records
+   https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/Raleigh_Precinct_Data/FeatureServer/6
+      auto-discovered: Raleigh_Precinct_Data; score 13; fields ['address', 'apn', 'use_code']; geo-verify inconclusive; 61,157 records
+
+Richmond: 2 candidate layer(s)
+   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
+      VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']
+   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
+      auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records; NAMED as a subset - demoted
+
+Las Vegas: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Phoenix: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Denver: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Salt Lake City: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Columbus: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Indianapolis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Cincinnati: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Cleveland: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Detroit: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Kansas City: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Milwaukee: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+St. Louis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Pittsburgh: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Louisville: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Dallas: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Fort Worth: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Houston: 2 candidate layer(s)
+   https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/5
+      auto-discovered: North Houston REPI 2_0_WFL1; score 11; fields ['apn', 'lat', 'lng', 'use_code', 'zip']; geo-verify inconclusive; 68,166 records
+   https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3
+      auto-discovered: North Houston REPI 2_0_WFL1; score 3; fields ['address', 'apn', 'lat', 'lng', 'use_code', 'zip']; geo-verify inconclusive; ONLY 304 records - too small to be a full parcel roll, probably a subset or study extract
+
+Austin: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+San Antonio: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Nashville: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Jacksonville: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+San Francisco: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+New Haven: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Memphis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+
+Wrote 10 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
+NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.
