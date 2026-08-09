@@ -1,0 +1,3 @@
+autopilot vbsales @ 2026-08-09T13:11:25
+
+[vbsales] sales endpoint not confirmed yet - skipping (set ER_VB_SALES_RESOURCE, or wait for the probe to report FOUND in reports/vb-sales-probe.txt)
