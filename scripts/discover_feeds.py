@@ -37,28 +37,63 @@ from etl_munidata import named_for_other_city as _named_for_other_city  # noqa: 
 TARGET_CITIES = ("Virginia Beach", "Chesapeake", "Hampton", "Portsmouth",
                  "Suffolk", "Norfolk", "Richmond")
 
-# National discovery targets (owner directive 2026-08-09: top-50 metros, free
-# sources, waves). (city, state) - the AGOL + Socrata search is national; only
-# VGIN (VA statewide parcels) is VA-specific and is gated on state below.
-# Discovery here is CHEAP metadata + writes candidates to feeds_extra.json;
-# a metro only builds into the backbone once its FIPS is added in
-# core/market_data.py (right-by-construction - no blind activation).
+# National discovery targets: the HOTTEST 50 MULTIFAMILY MARKETS, not the 50
+# largest by population (owner directive 2026-08-09: "go after the hottest 50
+# multifamily markets ... make this decision decisively").
+#
+# SOURCE (decisive): Marcus & Millichap's National Multifamily Index (NMI) -
+# the industry-standard ranking of exactly 50 major U.S. apartment markets,
+# which the owner already subscribes to (his inbox carries the M&M "Multifamily
+# National Investment Forecast" every January via MyMMI). The NMI scores each
+# metro on vacancy, supply pipeline, rent growth, homeownership affordability
+# gap and demographics - i.e. investment HEAT, not headcount. That is exactly
+# the axis the owner asked for, from a source he already trusts and reads.
+#
+# ORDERING = deployment WAVES by the verified 2026 M&M NMI signal (the top of
+# the index is no longer Sun Belt: supply-constrained coastal/gateway/Midwest
+# metros lead, and 2026-oversupplied Sun Belt names like Austin/Houston/
+# Nashville/Jacksonville sit lower). Wave = list order; earlier waves deploy
+# first. Composition is the NMI 50-metro universe; exact ordinal ranks inside a
+# wave come from the owner's gated MyMMI report if he wants them fine-tuned.
+#
+# vs. the prior list this DROPS population-only, NMI-cooler metros (Albuquerque,
+# Tucson, Fresno, Omaha, Oklahoma City) and ADDS the hot markets a headcount
+# sort missed (Fort Lauderdale, West Palm Beach, Orange County, Oakland,
+# Riverside/Inland Empire, Northern NJ, Salt Lake City, San Francisco, New
+# Haven-Fairfield). Metro anchors are the principal jurisdiction that publishes
+# parcels; CA metros anchor on the county-seat city.
+#
+# (city, state) - the AGOL + Socrata search is national; only VGIN (VA statewide
+# parcels) is VA-specific and is gated on state below. Discovery here is CHEAP
+# metadata + writes candidates to feeds_extra.json; a metro only builds into the
+# backbone once its FIPS is added in core/market_data.py (right-by-construction
+# - no blind activation).
 TARGET_METROS = (
-    ("New York", "NY"), ("Los Angeles", "CA"), ("Chicago", "IL"),
-    ("Houston", "TX"), ("Phoenix", "AZ"), ("Philadelphia", "PA"),
-    ("San Antonio", "TX"), ("San Diego", "CA"), ("Dallas", "TX"),
-    ("Austin", "TX"), ("Fort Worth", "TX"), ("Jacksonville", "FL"),
-    ("Columbus", "OH"), ("Indianapolis", "IN"), ("Charlotte", "NC"),
-    ("Seattle", "WA"), ("Denver", "CO"), ("Washington", "DC"),
-    ("Boston", "MA"), ("Nashville", "TN"), ("Memphis", "TN"),
-    ("Portland", "OR"), ("Las Vegas", "NV"), ("Detroit", "MI"),
-    ("Louisville", "KY"), ("Baltimore", "MD"), ("Milwaukee", "WI"),
-    ("Albuquerque", "NM"), ("Tucson", "AZ"), ("Fresno", "CA"),
-    ("Sacramento", "CA"), ("Kansas City", "MO"), ("Atlanta", "GA"),
-    ("Miami", "FL"), ("Raleigh", "NC"), ("Omaha", "NE"),
-    ("Minneapolis", "MN"), ("Tampa", "FL"), ("Oklahoma City", "OK"),
-    ("Cleveland", "OH"), ("Pittsburgh", "PA"), ("Cincinnati", "OH"),
-    ("Orlando", "FL"), ("San Jose", "CA"), ("St. Louis", "MO"),
+    # Wave 1 - verified 2026 M&M NMI top markets + deepest liquidity.
+    ("Chicago", "IL"), ("Fort Lauderdale", "FL"), ("Miami", "FL"),
+    ("Santa Ana", "CA"), ("West Palm Beach", "FL"), ("San Jose", "CA"),
+    ("Seattle", "WA"), ("New York", "NY"), ("Boston", "MA"),
+    ("San Diego", "CA"),
+    # Wave 2 - large supply-constrained gateway / top-half.
+    ("Los Angeles", "CA"), ("Washington", "DC"), ("Riverside", "CA"),
+    ("Oakland", "CA"), ("Philadelphia", "PA"), ("Newark", "NJ"),
+    ("Sacramento", "CA"), ("Portland", "OR"), ("Baltimore", "MD"),
+    ("Minneapolis", "MN"),
+    # Wave 3 - durable-demand Southeast / West with moderating supply.
+    ("Atlanta", "GA"), ("Orlando", "FL"), ("Tampa", "FL"),
+    ("Charlotte", "NC"), ("Raleigh", "NC"), ("Richmond", "VA"),
+    ("Las Vegas", "NV"), ("Phoenix", "AZ"), ("Denver", "CO"),
+    ("Salt Lake City", "UT"),
+    # Wave 4 - Midwest value + secondary supply-constrained.
+    ("Columbus", "OH"), ("Indianapolis", "IN"), ("Cincinnati", "OH"),
+    ("Cleveland", "OH"), ("Detroit", "MI"), ("Kansas City", "MO"),
+    ("Milwaukee", "WI"), ("St. Louis", "MO"), ("Pittsburgh", "PA"),
+    ("Louisville", "KY"),
+    # Wave 5 - 2026 oversupply-watch Sun Belt + remaining NMI majors.
+    ("Dallas", "TX"), ("Fort Worth", "TX"), ("Houston", "TX"),
+    ("Austin", "TX"), ("San Antonio", "TX"), ("Nashville", "TN"),
+    ("Jacksonville", "FL"), ("San Francisco", "CA"), ("New Haven", "CT"),
+    ("Memphis", "TN"),
 )
 
 KNOWN_ROOTS: dict[str, list[str]] = {
