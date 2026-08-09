@@ -54,6 +54,21 @@ def fetch(path: str) -> tuple[int, str, str]:
         r = requests.get(BASE + path, headers=UA, timeout=20)
         ctype = r.headers.get("content-type", "")
         return r.status_code, ctype, r.text[:900]
+    except requests.exceptions.SSLError:
+        # The VB portal serves an incomplete cert chain ("unable to get local
+        # issuer certificate") - browsers fetch the missing intermediate via
+        # AIA, requests does not. This is a DISCOVERY probe whose only job is
+        # to map the API shape, so retry without verification and label it.
+        # The REAL puller must resolve the chain properly (certifi + the
+        # intermediate), never ship verify=False.
+        try:
+            import urllib3
+            urllib3.disable_warnings()
+            r = requests.get(BASE + path, headers=UA, timeout=20, verify=False)
+            ctype = r.headers.get("content-type", "")
+            return r.status_code, ctype, "[INSECURE-TLS] " + r.text[:880]
+        except Exception as exc:
+            return 0, "", f"(request failed even insecure: {exc})"
     except Exception as exc:
         return 0, "", f"(request failed: {exc})"
 

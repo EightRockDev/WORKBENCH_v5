@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.27.8.0.0 — 2026-08-09  ·  VB probe: the block is an incomplete TLS chain, not a WAF
+The fixed probe surfaced the real reason it came back blind: every request
+died with SSLError "unable to get local issuer certificate" — the VB portal
+serves an incomplete certificate chain (missing intermediate), which browsers
+paper over via AIA fetching but Python's requests does not. Not a WAF, not
+down. The DISCOVERY probe now retries such requests without verification
+(clearly labeled [INSECURE-TLS], discovery-only) so next cycle finally reveals
+whether the sale API exists and its shape. The eventual production puller must
+resolve the chain properly (certifi + the intermediate) and never ship
+verify=False.
+
 ## V5.27.7.0.0 — 2026-08-09  ·  Headless steps read .env centrally (pending-users false "unreachable")
 This morning's pending-users report said "Postgres not reachable" while the
 backup step in the SAME cycle reached Postgres fine — because bare autopilot
