@@ -22,7 +22,10 @@ ROOT = Path(__file__).resolve().parent.parent
 REPORTS = ROOT / "reports"
 
 STEPS = (
-    ("discover", ["scripts/discover_feeds.py"], "discover-latest.txt"),
+    ("discover", ["scripts/discover_feeds.py", "--va"], "discover-latest.txt"),
+    # National top-50 metro discovery, self-gated to weekly (owner 2026-08-09).
+    ("discover_national", ["scripts/run_national_discovery.py"],
+     "discover-national-latest.txt"),
     ("pull", ["etl_munidata.py", "--hr"], "pull-latest.txt"),
     ("publicdata", ["scripts/run_public_data.py"], "public-data-latest.txt"),
     ("listings", ["scripts/run_listings.py"], "listings-latest.txt"),

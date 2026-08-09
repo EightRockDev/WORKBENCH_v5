@@ -223,7 +223,7 @@ def _inject_branding() -> None:
 
     Layout mirrors Workbench.html line 157, with the real SVG logo replacing
     the legacy CSS-text wordmark:
-      [SVG logo]  |  [Virginia Property Workbench]  ...  [version]
+      [SVG logo]  |  [Multifamily Property Workbench]  ...  [version]
 
     Theme (per Brian 2026-05-08): Yardi-Matrix-inspired — dark chrome (top
     bar + sidebar with light Eight Rock logo + gold accents) + light content
@@ -689,7 +689,7 @@ small {{
 <div class="er-topbar">
   {logo_markup}
   <div class="er-sep"></div>
-  <div class="er-title">Virginia Property Workbench</div>
+  <div class="er-title">Multifamily Property Workbench</div>
   <span class="er-version">{config.WORKBENCH_VERSION}</span>
 </div>
 """

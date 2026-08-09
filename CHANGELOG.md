@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.32.0.0.0 — 2026-08-09  ·  National feed discovery turned on (aggressive) + "Virginia"->"Multifamily"
+Owner: go attack the top-50 metro data, and stop calling the app "Virginia".
+- **National discovery live**: `discover_feeds` was VA-shaped (7 cities,
+  hardcoded state=VA, VA-only VGIN fallback). Now it takes (city, state),
+  stamps the correct state on every found feed, and runs VGIN only for VA. New
+  `TARGET_METROS` (44 major metros). The AGOL + Socrata search was already
+  national. New autopilot step `discover_national` runs it EVERY cycle by
+  default (owner directive: attack, don't throttle; ER_DISCOVERY_EVERY_DAYS>0
+  only if AGOL rate-limits). Hourly VA discovery unchanged (`--va`). Discovered
+  feeds write to feeds_extra.json and get pulled; a metro only BUILDS into the
+  backbone once its FIPS is added (right-by-construction, no blind activation).
+- **Relabel**: the topbar "Virginia Property Workbench" -> "Multifamily
+  Property Workbench" (we're national now).
+Full suite green. Host starts probing 44 metros for free parcel feeds next
+cycle; I activate each metro's backbone build from verified discovery results.
+
 ## V5.31.0.0.0 — 2026-08-09  ·  Market-data ETL folded in from GRANITE (so GRANITE can be archived)
 Owner is archiving GRANITE; its `hampton-roads-etl/` was a LIVE dependency of
 this app (comps, seller-floor, distress radar read hampton_roads.db as a

@@ -37,6 +37,30 @@ from etl_munidata import named_for_other_city as _named_for_other_city  # noqa: 
 TARGET_CITIES = ("Virginia Beach", "Chesapeake", "Hampton", "Portsmouth",
                  "Suffolk", "Norfolk", "Richmond")
 
+# National discovery targets (owner directive 2026-08-09: top-50 metros, free
+# sources, waves). (city, state) - the AGOL + Socrata search is national; only
+# VGIN (VA statewide parcels) is VA-specific and is gated on state below.
+# Discovery here is CHEAP metadata + writes candidates to feeds_extra.json;
+# a metro only builds into the backbone once its FIPS is added in
+# core/market_data.py (right-by-construction - no blind activation).
+TARGET_METROS = (
+    ("New York", "NY"), ("Los Angeles", "CA"), ("Chicago", "IL"),
+    ("Houston", "TX"), ("Phoenix", "AZ"), ("Philadelphia", "PA"),
+    ("San Antonio", "TX"), ("San Diego", "CA"), ("Dallas", "TX"),
+    ("Austin", "TX"), ("Fort Worth", "TX"), ("Jacksonville", "FL"),
+    ("Columbus", "OH"), ("Indianapolis", "IN"), ("Charlotte", "NC"),
+    ("Seattle", "WA"), ("Denver", "CO"), ("Washington", "DC"),
+    ("Boston", "MA"), ("Nashville", "TN"), ("Memphis", "TN"),
+    ("Portland", "OR"), ("Las Vegas", "NV"), ("Detroit", "MI"),
+    ("Louisville", "KY"), ("Baltimore", "MD"), ("Milwaukee", "WI"),
+    ("Albuquerque", "NM"), ("Tucson", "AZ"), ("Fresno", "CA"),
+    ("Sacramento", "CA"), ("Kansas City", "MO"), ("Atlanta", "GA"),
+    ("Miami", "FL"), ("Raleigh", "NC"), ("Omaha", "NE"),
+    ("Minneapolis", "MN"), ("Tampa", "FL"), ("Oklahoma City", "OK"),
+    ("Cleveland", "OH"), ("Pittsburgh", "PA"), ("Cincinnati", "OH"),
+    ("Orlando", "FL"), ("San Jose", "CA"), ("St. Louis", "MO"),
+)
+
 KNOWN_ROOTS: dict[str, list[str]] = {
     "Virginia Beach": [
         "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services",
@@ -448,9 +472,14 @@ def socrata_sample_in_city(resource_url: str, city: str, soda=_soda_get) -> bool
 
 def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
              soda=_soda_get) -> dict[str, list[dict]]:
-    """{city: [candidate FeedSpec dicts, best first]}"""
+    """{city: [candidate FeedSpec dicts, best first]}.
+
+    ``cities`` may be bare city strings (assumed VA, back-compat) or
+    ``(city, state)`` tuples for national discovery.
+    """
     out: dict[str, list[dict]] = {}
-    for city in cities:
+    for entry in cities:
+        city, state = (entry if isinstance(entry, tuple) else (entry, "VA"))
         candidates: list[tuple[int, dict]] = []
         roots = KNOWN_ROOTS.get(city, []) + list(extra_roots)
         sources = []
@@ -492,7 +521,7 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                         f"{name}: layer name declares a subset - demoted, "
                         f"does not count as the city roll")
                 candidates.append((score, {
-                    "market": city, "state": "VA", "county": city,
+                    "market": city, "state": state, "county": city,
                     "kind": "assessor", "platform": "arcgis",
                     "url": layer_url, "status": "live",
                     "record_count": count,
@@ -523,7 +552,7 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
             if "units" in mapped:
                 score += 3
             candidates.append((score, {
-                "market": city, "state": "VA", "county": city,
+                "market": city, "state": state, "county": city,
                 "kind": "assessor", "platform": "socrata",
                 "url": res_url, "status": "live",
                 "note": f"auto-discovered (socrata): {name}; score {score}; "
@@ -533,7 +562,7 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
         real_rolls = [c for _s, c in candidates
                       if (c.get("record_count") or 0) >= PLAUSIBLE_ROLL_MIN
                       and not c.get("is_subset")]
-        if not real_rolls:
+        if not real_rolls and state == "VA":
             vgin = vgin_fallback(city, fetch)
             if vgin is not None:
                 # Below any real city roll, above every subset/extract.
@@ -558,15 +587,22 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--roots", nargs="*", default=[],
                     help="Extra ArcGIS service-directory roots to probe")
+    ap.add_argument("--va", action="store_true",
+                    help="Restrict to the original Virginia cities "
+                         "(default: national top-50 metro discovery)")
     args = ap.parse_args(argv)
 
-    print("Probing city GIS portals for unit-bearing parcel layers...")
+    targets = TARGET_CITIES if args.va else TARGET_METROS
+    label_of = (lambda t: t) if args.va else (lambda t: t[0])
+    scope = "Virginia cities" if args.va else f"{len(targets)} national metros"
+    print(f"Probing GIS portals for unit-bearing parcel layers ({scope})...")
     print("(a few minutes - each city's services are walked layer by layer)")
     print()
-    found = discover(extra_roots=args.roots)
+    found = discover(cities=targets, extra_roots=args.roots)
 
     specs = [spec for lst in found.values() for spec in lst]
-    for city in TARGET_CITIES:
+    for _t in targets:
+        city = label_of(_t)
         lst = found.get(city) or []
         if lst:
             print(f"{city}: {len(lst)} candidate layer(s)")

@@ -249,6 +249,14 @@ reports/vb-sales-probe.txt before finalizing extract_sale_records field map.
 The same api.spatialest.com/v1/<state>/<locality>/ pattern likely unlocks
 OTHER localities' sales too - check before hunting ArcGIS.
 
+### National discovery is ON and AGGRESSIVE (owner directive 2026-08-09)
+discover_feeds is national: (city,state) tuples, correct state stamped, VGIN
+gated to VA. TARGET_METROS = 44 metros. Autopilot `discover_national` runs
+EVERY cycle (ER_DISCOVERY_EVERY_DAYS default 0). Discovered feeds -> feeds_extra
+-> pulled; activate a metro's backbone build only after adding its FIPS +
+metro label (verified from the discover report). App is "Multifamily Property
+Workbench" now, not "Virginia" - do not reintroduce state-specific branding.
+
 ### National expansion is LIVE, wave-based (owner directive 2026-08-09)
 r8_market no longer hardcoded - market_data.metro_for(city) self-labels
 (never mislabels). Add a metro by: (1) county FIPS in EXPANSION_CITY_TO_FIPS_5,
