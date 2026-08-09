@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-09T17:29:33
+autopilot phase0 @ 2026-08-09T18:14:53
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,388,532
@@ -13,28 +13,29 @@ Assessor feeds present (Hampton Roads):
   Suffolk            45,160  .../VA_Parcels/FeatureServer/0
 
 Building the Eight Rock property backbone (properties_8r)...
-  [rent-signal] listings ingest: 22 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 2 stamped
+  [rent-signal] listings ingest: 22 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
 muni records scanned:      2,445,725
 parcels normalized:        2,445,725
-multifamily (>= 10 units): 5,853
+multifamily (>= 10 units): 5,915
 written to properties_8r:  2,445,725
 provisional (no-APN) ids:  3,049
 units derived from address points: 1,457  (skipped non-residential: 2,513)
 coords backfilled by address (multifamily): 204
 rent estimates stamped (HUD FMR blend): 1,123
-rents from scraped listings: 2
+rents from scraped listings: 3
 unusable (no parcel/latlng): 0
 pruned from backbone (known < 10 units): 732,263  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 2,091, Raleigh 1,613, Greensboro 900, Norfolk 860, Newport News 244, Richmond 111, Suffolk 17, Durham 15, Hampton 2
+Multifamily by city: Atlanta 2,091, Raleigh 1,613, Greensboro 900, Norfolk 860, Newport News 244, Richmond 111, Chesapeake 62, Suffolk 17, Durham 15, Hampton 2
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Norfolk: Apartment x860
   Greensboro: MULTI-FAMILY<4 x734, MULTI-FAMILY5> x166
   Atlanta: C3 x809, C4 x645, C5 x278, R-4 x109, C1 x62
+  Chesapeake: 3352 x62
   Newport News: A x237, C x4, (units only) x2, R x1
   Raleigh: (units only) x1613
   Richmond: (units only) x108, Multi-Family x3
@@ -43,7 +44,6 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Suffolk: (units only) x17
 
 Cities with parcels but NO multifamily found - their top use codes:
-  Chesapeake: 1010 x50485, 1060 x7877, 2010 x7305, 7918 x6297, 1050 x5884, 2000 x3444, 1061 x1942, 1000 x1078
   Winston-Salem: (blank) x167343
   Nashville: RS10 x38978, R10 x31901, SP x19255, RS7.5 x18928, RS15 x16444, R6 x14258, RS20 x12129, R8 x11608
   Portsmouth: (blank) x36602
@@ -52,6 +52,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Norfolk: code only (no units): 857, units>=10: 3
   Greensboro: code only (no units): 900
   Atlanta: units>=10: 1,982, code only (no units): 109
+  Chesapeake: learned code (no units): 62
   Newport News: units>=10: 244
   Raleigh: units>=10: 1,613
   Richmond: units>=10: 108, code only (no units): 3
@@ -83,7 +84,7 @@ year built agrees:        0/2
 
 comp-set replay subjects: 152  (+48 skipped - city has no 8R coordinates yet)
 avg comp-set overlap:     36.6%  (gate >= 90%)
-avg-rent delta:           32.4%  (gate <= 5%)
+avg-rent delta:           32.2%  (gate <= 5%)
 
 P0-2 GATE: not met yet
 crosswalk persisted:      417 legacy->8R mappings (property_crosswalk)
