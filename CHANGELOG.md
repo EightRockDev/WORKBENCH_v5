@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.31.0.0.0 — 2026-08-09  ·  Market-data ETL folded in from GRANITE (so GRANITE can be archived)
+Owner is archiving GRANITE; its `hampton-roads-etl/` was a LIVE dependency of
+this app (comps, seller-floor, distress radar read hampton_roads.db as a
+sibling folder). Folded the ETL CODE into this repo at `hampton-roads-etl/`
+(33 files: FRED/BLS/HUD/Census/HMDA/LIHTC/BAH/VA-assessor pullers + the
+market pipeline; NO generated DB, NO .env). New `core/etl_location.py`
+resolves the ETL dir and hampton_roads.db across every real layout — in-repo
+(new) -> data/ (host public-data ETL) -> legacy sibling — so the host keeps
+working during transition; comps, seller_floor_panel and pull_chesapeake now
+go through it. Generated `hampton_roads.db` is gitignored. The vendored ETL's
+listings parser makes the same reviewed LLM calls as etl_listings/ — added to
+the zero-training allowlist (SR-2.2) after review, so the guard still catches
+any OTHER new call site. Full suite green. GRANITE is now safe to archive with
+zero loss of a live dependency.
+
 ## V5.30.0.0.0 — 2026-08-09  ·  National expansion Wave 1 (free sources) + per-metro property counts
 Owner directive: top-50 parcel coverage, free sources by all means, prioritized
 waves; and a per-metro property listing. Shipped:

@@ -1,0 +1,6 @@
+pandas>=2.2
+requests>=2.32
+python-dotenv>=1.0
+# Rent listings scraper (added 2026-05-26)
+beautifulsoup4>=4.12
+lxml>=5.0

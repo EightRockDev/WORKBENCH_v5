@@ -767,8 +767,8 @@ def _run_etl_refresh(only: str | None = None) -> None:
     import sys as _sys
     from pathlib import Path as _P
 
-    wb_root = _P(__file__).resolve().parent.parent.parent
-    etl_dir = wb_root / "hampton-roads-etl"
+    from core.etl_location import etl_dir as _resolve_etl_dir
+    etl_dir = _resolve_etl_dir()          # in-repo -> legacy sibling (2026-08-09)
     etl_script = etl_dir / "hampton_roads_etl.py"
 
     if not etl_script.exists():
@@ -1227,8 +1227,8 @@ def _lookup_mystery_shop(c: Comp) -> tuple[str, str]:
 def _get_listings_for_property(property_id: str) -> list[dict]:
     """Cached lookup of rent_listings rows for a property."""
     import sqlite3
-    from pathlib import Path
-    db = Path(__file__).resolve().parent.parent.parent / "hampton-roads-etl" / "hampton_roads.db"
+    from core.etl_location import etl_db
+    db = etl_db()          # in-repo -> data/ -> legacy sibling (2026-08-09)
     if not db.is_file():
         return []
     try:

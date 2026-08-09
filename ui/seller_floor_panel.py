@@ -24,8 +24,8 @@ from core import seller_floor as sf
 from ui.components import section_card
 
 
-_WB_ROOT = Path(__file__).resolve().parent.parent.parent
-_ETL_DB = _WB_ROOT / "hampton-roads-etl" / "hampton_roads.db"
+from core.etl_location import etl_db as _resolve_etl_db
+_ETL_DB = _resolve_etl_db()   # in-repo -> data/ -> legacy sibling (2026-08-09)
 
 
 def _parse_sale_date_to_year(value: Any) -> int | None:

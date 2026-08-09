@@ -31,6 +31,12 @@ ALLOWED_CALL_SITES = {
     "core/ic_memo_validator.py",    # memo audit
     "etl_listings/concessions.py",  # concession text parsing
     "etl_listings/property_site.py",  # listing page parsing
+    # Market-data ETL folded in from GRANITE 2026-08-09 (so GRANITE can be
+    # archived). Its listings parser makes the SAME reviewed LLM calls as the
+    # etl_listings pair above (public listing-page text -> structured fields,
+    # no customer data). Reviewed and approved as a deliberate data path.
+    "hampton-roads-etl/pullers/listings/concessions.py",
+    "hampton-roads-etl/pullers/listings/property_site.py",
 }
 
 # Vendors whose presence would mean customer data leaves the approved path.

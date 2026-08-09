@@ -260,6 +260,15 @@ Discovery (discover_feeds) is still VA-scoped (VGIN/TARGET_CITIES) - generalize
 it for metros whose feeds aren't yet in the registry. Free sources only unless
 owner says otherwise; get creative on non-free.
 
+### hampton-roads-etl now lives IN THIS REPO (2026-08-09)
+Folded in from GRANITE (which is being archived). Resolve its dir/db ONLY via
+core/etl_location.py (in-repo -> data/ -> legacy sibling) - never hardcode the
+sibling path again. Generated hampton_roads.db is gitignored; the ETL is run
+standalone (python hampton-roads-etl/hampton_roads_etl.py) to produce it. Its
+listings parser is a duplicate of etl_listings/ (the app uses etl_listings via
+core.listings_pull); the vendored copy exists because the market ETL imports
+pullers.listings for its own pipeline.
+
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
 Owner will ask for all 50 metro regions pulled + reconciled **in one turn,

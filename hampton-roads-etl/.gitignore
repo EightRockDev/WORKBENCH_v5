@@ -1,0 +1,6 @@
+.env
+hampton_roads.db
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/

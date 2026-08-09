@@ -35,7 +35,9 @@ from pathlib import Path
 _HERE = Path(__file__).resolve()
 WB_ROOT = _HERE.parent.parent.parent
 WORKBENCH_DB = WB_ROOT / "python_workbench" / "data" / "workbench.db"
-ETL_DB = WB_ROOT / "hampton-roads-etl" / "hampton_roads.db"
+sys.path.insert(0, str(_HERE.parent.parent))
+from core.etl_location import etl_db as _resolve_etl_db  # noqa: E402
+ETL_DB = _resolve_etl_db()   # in-repo -> data/ -> legacy sibling (2026-08-09)
 PROPERTIES_DIR = WB_ROOT / "Properties"
 
 TODAY = dt.date.today()

@@ -30,3 +30,10 @@ reports/autopilot.log
 
 # NSSM downloaded by install-lan-service.ps1
 tools/
+
+# --- Folded-in market ETL (from GRANITE, 2026-08-09) generated data ---
+hampton-roads-etl/hampton_roads.db
+hampton-roads-etl/**/*.db
+hampton_roads.db
+data/hampton_roads.db
+hampton-roads-etl/.env
