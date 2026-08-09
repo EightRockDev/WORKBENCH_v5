@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-08-09T17:43:41
+autopilot alerts @ 2026-08-09T18:28:41
 
-alert sweep, NEW this cycle: 4621 multifamily, 0 unit-count moves, 0 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 4928 - new_mf 4928
   showing the 25 most recent of 4928
   [new_mf] New multifamily on the backbone: 8R-37063-f7346106c01d  (? units · Durham)
