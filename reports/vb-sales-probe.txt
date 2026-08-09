@@ -1,30 +1,58 @@
-VB sales-API probe, parcel 14552807310000
-PROBE COMPLETE - no marker hit; endpoints above need a human/next-round look
-full detail -> vb-sales-probe.txt
-2807310000
-   status=404 type=text/html; charset=UTF-8
+VB Spatialest sales probe, GPIN 14552807310PROBE COMPLETE - reached the API but no sales marker; the sales resource name is still unconfirmed (owner can click the Sales tab with Network open and paste that one URL).
+les/14552807310000 could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "file": "/home/forge
 
-== GET /api/parcel/14552807310000
-   status=404 type=text/html; charset=UTF-8
+== GET https://api.spatialest.com/v1/va/virginiabeach/sales-history/14552807310000
+   status=404 type=application/json
+   {
+    "message": "The route v1/va/virginiabeach/sales-history/14552807310000 could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "file": "/ho
 
-== GET /api/parcels/14552807310000
-   status=404 type=text/html; charset=UTF-8
+== GET https://api.spatialest.com/v1/va/virginiabeach/saleshistory/14552807310000
+   status=404 type=application/json
+   {
+    "message": "The route v1/va/virginiabeach/saleshistory/14552807310000 could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "file": "/hom
 
-== GET /api/property/14552807310000/sales
-   status=404 type=text/html; charset=UTF-8
+== GET https://api.spatialest.com/v1/va/virginiabeach/deeds/14552807310000
+   status=404 type=application/json
+   {
+    "message": "The route v1/va/virginiabeach/deeds/14552807310000 could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "file": "/home/forge
 
-== GET /api/sales/14552807310000
-   status=404 type=text/html; charset=UTF-8
+== GET https://api.spatialest.com/v1/va/virginiabeach/transfers/14552807310000
+   status=404 type=application/json
+   {
+    "message": "The route v1/va/virginiabeach/transfers/14552807310000 could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "file": "/home/f
 
-== GET /api/property?parcel=14552807310000
-   status=404 type=text/html; charset=UTF-8
+== GET https://api.spatialest.com/v1/va/virginiabeach/sales-information/14552807310000
+   status=404 type=application/json
+   {
+    "message": "The route v1/va/virginiabeach/sales-information/14552807310000 could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "file": 
 
-== GET /api/search?q=14552807310000
-   status=404 type=text/html; charset=UTF-8
+== GET https://propertysearch.virginiabeach.gov/api/v1/recordcard/14552807310000
+   status=403 type=application/json
+   [INSECURE-TLS] {
+    "message": "Direct API access is not permitted."
+}
 
-== GET /   status=200
-   js bundles: []
+== GET https://api.spatialest.com/v1/va/virginiabeach/recordcard/14552807310000
+   status=404 type=application/json
+   {
+    "message": "The route v1/va/virginiabeach/recordcard/14552807310000 could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "file": "/home/
 
-== endpoint fragments mined from bundles (0):
+== GET https://api.spatialest.com/v1/va/virginiabeach/annual-assessment/14552807310000
+   status=200 type=application/json
+   {"payload":{"assessment":[["Year","Annual Assessment"],["2008",7056300],["2009",7178400],["2010",6944800],["2011",5861400],["2012",6330100],["2013",7194000],["2014",6742900],["2015",7485300],["2016",7560900],["2017",7702600],["2018",7864700],["2019",6898600],["2020",7985000],["2021",8774200],["2022",7609700],["2023",8183200],["2024",9031300],["2025",10161800],["2026",12493200]]}}
 
-PROBE COMPLETE - no marker hit; endpoints above need a human/next-round look
+PROBE COMPLETE - reached the API but no sales marker; the sales resource name is still unconfirmed (owner can click the Sales tab with Network open and paste that one URL).
