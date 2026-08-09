@@ -228,6 +228,18 @@ The old per-script dotenv dance is no longer required for pg access (run_backup
 still loads it for pg_dump's own env). This closes the third recurrence of the
 2026-07-31 "headless steps must load .env" lesson.
 
+### Municipal API discovery via browser DevTools — the standing technique (owner directive 2026-08-09)
+To find any municipality's property data source: open a known property on its
+public portal, F12 -> Network -> XHR, reload, read the API URL (that is how VB
+= Spatialest was found). Claude should drive this itself with the pre-installed
+Chromium/Playwright FOR SITES THE PROXY ALLOWS; NOTE the build container is
+firewalled from city/gov portals (proxy 403), so for those the discovery runs
+on the HOST autopilot or via the self-discovering puller (scripts/pull_sales.py
+does the "Network tab" job programmatically: probes vendor endpoints, keeps the
+one returning real sale data). Never pull blind against an unverified endpoint
+(Apollo lesson). Copy-as-PowerShell from DevTools also reveals required headers
+(VB needed Origin/Referer) - fold those into the puller.
+
 ### VB sale history = Spatialest API (2026-08-09)
 VB property portal is Spatialest: api.spatialest.com/v1/va/virginiabeach/
 <resource>/<GPIN>. scripts/pull_vb_sales.py pulls kind='sales' into

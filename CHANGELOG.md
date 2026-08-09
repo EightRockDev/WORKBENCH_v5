@@ -12,6 +12,28 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.29.0.0.0 — 2026-08-09  ·  Sales pull generalized to all localities (top-50 direction)
+Owner directive: pull sales + required data for multifamily across the top-50
+metros, using the browser-DevTools discovery technique we used for VB. Shipped
+the generalization: `scripts/pull_sales.py` (autopilot step `salespull`,
+replaces the VB-specific `vbsales`) iterates EVERY locality already tracked in
+muni_records and, per locality:
+  1. Auto-discovers the Spatialest endpoint — tries slug variants x candidate
+     sales resources against sample parcels and keeps only the combo whose
+     payload actually yields a sale via extract_sale_records (RUNTIME-VERIFIED,
+     never assumed — the Apollo lesson), using the browser-confirmed
+     Origin/Referer headers.
+  2. Caches the discovered (base, resource) per locality in
+     data/spatialest_endpoints.json so later runs skip discovery.
+  3. Pulls sales into muni_records kind='sales' (auto-indexed by sale_index).
+Localities not on Spatialest don't discover and are logged "needs vendor
+discovery" — backlog, not a silent gap. Rate-limited, resumable, self-
+diagnosing per the 50-metro playbook. VB-specific pull_vb_sales.py retired.
+IMPORTANT scope honesty: the build env is firewalled from these hosts, so the
+PULLING happens on the host autopilot; and this pulls SALES for localities we
+already have parcels for — expanding the PARCEL backbone to all 50 metros is
+the separate metros.json/discover work, not done here.
+
 ## V5.28.0.0.0 — 2026-08-09  ·  VB sale history: vendor identified (Spatialest), puller built
 Owner grabbed the portal's Network tab: Virginia Beach's property site is a
 **Spatialest** front end, API pattern
