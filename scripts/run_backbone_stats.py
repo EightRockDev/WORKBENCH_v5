@@ -32,6 +32,9 @@ def main() -> int:
             "SELECT city, units FROM properties_8r "
             "WHERE units IS NOT NULL AND units >= ?", (phase0.MIN_MF_UNITS,)
         ).fetchall()
+        totals = conn.execute(
+            "SELECT COALESCE(r8_market, city) AS m, COUNT(*) AS n "
+            "FROM properties_8r GROUP BY m ORDER BY n DESC").fetchall()
     except sqlite3.Error as exc:
         print(f"backbone-stats: query failed ({exc})")
         return 0
@@ -41,6 +44,14 @@ def main() -> int:
     by_city: dict[str, list[int]] = {}
     for r in rows:
         by_city.setdefault((r["city"] or "?"), []).append(int(r["units"]))
+
+    print("Properties on the backbone, per metro/market:")
+    print(f"{'market':<20} {'properties':>11}")
+    grand = 0
+    for r in totals:
+        grand += r["n"]
+        print(f"{(r['m'] or '?'):<20} {r['n']:>11,}")
+    print(f"{'TOTAL':<20} {grand:>11,}\n")
 
     print(f"Multifamily unit stats (units >= {phase0.MIN_MF_UNITS}), per city:")
     print(f"{'city':<18} {'count':>6} {'min':>5} {'median':>7} {'max':>6}")

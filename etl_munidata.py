@@ -550,8 +550,13 @@ HR_MARKETS = ("Norfolk", "Virginia Beach", "Chesapeake", "Hampton",
               "Newport News", "Portsmouth", "Suffolk")
 
 # 50-metro rollout (spec 15): expansion markets whose feeds ride the same
-# nightly --hr pull and stale-row sweep as Hampton Roads. Wave 1 starts here.
-EXPANSION_MARKETS = ("Richmond",)
+# nightly --hr pull and stale-row sweep as Hampton Roads.
+#   Wave 1 (2026-08-09, owner directive - free sources, prioritized waves):
+#   major metros whose free ArcGIS/Socrata assessor feeds are ALREADY in the
+#   MUNI_FEEDS registry, so activating them pulls existing feeds, not new
+#   scraping. Their FIPS + metro labels are wired in core/market_data.py.
+EXPANSION_MARKETS = ("Richmond", "Raleigh", "Charlotte", "Winston-Salem",
+                     "Greensboro", "Durham", "Nashville", "Atlanta")
 ACTIVE_MARKETS = HR_MARKETS + EXPANSION_MARKETS
 
 

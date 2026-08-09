@@ -249,6 +249,17 @@ reports/vb-sales-probe.txt before finalizing extract_sale_records field map.
 The same api.spatialest.com/v1/<state>/<locality>/ pattern likely unlocks
 OTHER localities' sales too - check before hunting ArcGIS.
 
+### National expansion is LIVE, wave-based (owner directive 2026-08-09)
+r8_market no longer hardcoded - market_data.metro_for(city) self-labels
+(never mislabels). Add a metro by: (1) county FIPS in EXPANSION_CITY_TO_FIPS_5,
+(2) metro label in CITY_TO_METRO, (3) market in etl_munidata.EXPANSION_MARKETS,
+(4) ensure its feed is in MUNI_FEEDS (or discover it). Wave 1 = Raleigh,
+Charlotte, Winston-Salem, Greensboro, Durham, Nashville, Atlanta (registry
+feeds already existed). Per-metro counts: reports/backbone-stats-latest.txt.
+Discovery (discover_feeds) is still VA-scoped (VGIN/TARGET_CITIES) - generalize
+it for metros whose feeds aren't yet in the registry. Free sources only unless
+owner says otherwise; get creative on non-free.
+
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 
 Owner will ask for all 50 metro regions pulled + reconciled **in one turn,

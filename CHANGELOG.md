@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.30.0.0.0 — 2026-08-09  ·  National expansion Wave 1 (free sources) + per-metro property counts
+Owner directive: top-50 parcel coverage, free sources by all means, prioritized
+waves; and a per-metro property listing. Shipped:
+- **The core national unblock**: `r8_market` was HARDCODED to "Hampton Roads"
+  for every parcel — it now uses `market_data.metro_for(city)`, which
+  self-labels any unmapped city instead of mislabeling it. This is what let
+  other metros exist on the backbone at all.
+- **Wave 1 activated (zero new scraping)**: Raleigh, Charlotte, Winston-Salem,
+  Greensboro, Durham, Nashville, Atlanta — major metros whose free
+  ArcGIS/Socrata assessor feeds are ALREADY in the MUNI_FEEDS registry. Added
+  their (Census-verified) county FIPS + metro labels and put them in
+  ACTIVE_MARKETS so the nightly pull + backbone build include them. Feeds still
+  marked status!='live' (e.g. Charlotte 'verify') simply wait — honest partial,
+  not a fake.
+- **Per-metro property counts** in `run_backbone_stats` (reports/
+  backbone-stats-latest.txt): total properties_8r per metro + grand total, so
+  the "how many properties per metro" listing refreshes every morning.
+Runs on the host (build env firewalled). Next waves + discovering feeds for
+metros NOT already in the registry (national AGOL/Socrata discovery, currently
+VA-scoped) is the follow-on increment.
+
 ## V5.29.0.0.0 — 2026-08-09  ·  Sales pull generalized to all localities (top-50 direction)
 Owner directive: pull sales + required data for multifamily across the top-50
 metros, using the browser-DevTools discovery technique we used for VB. Shipped

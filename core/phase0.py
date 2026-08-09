@@ -37,7 +37,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from core import spine
-from core.market_data import CITY_TO_COUNTY_FIPS_5
+from core.market_data import CITY_TO_COUNTY_FIPS_5, metro_for
 
 MIN_MF_UNITS = 10          # the coverage gate counts parcels >= this
 GATE_COVERAGE = 0.95       # P0-1 gate from spec 7.3
@@ -508,7 +508,7 @@ def build_row(city: str, state: str, raw: dict,
         # recomputes r8_form from the merged row after all feeds land.
         r8_form=spine.derive_8r_form(use_code, int(units) if units else None,
                                      None),
-        r8_market="Hampton Roads",
+        r8_market=metro_for(city),
         r8_submarket=city,
         assessed_value=_num(mapped.get("assessed_value")),
         owner_name=str(mapped.get("owner_name") or "") or None,

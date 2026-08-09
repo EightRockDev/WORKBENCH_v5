@@ -50,11 +50,45 @@ HR_CITY_TO_COUNTY_FIPS_5 = {
 # 50-metro rollout (spec 15) - expansion cities join here as their wave
 # starts. The spine builder and the verified badge both key on this map;
 # a city absent from it cannot mint 8R ids.
+#
+# Wave 1 (2026-08-09, owner directive: free sources, prioritized waves):
+# major metros whose free ArcGIS/Socrata assessor feeds are ALREADY in the
+# etl_munidata registry - activating them is data, not new scraping. County
+# FIPS are public facts (verified against Census), not guesses.
 EXPANSION_CITY_TO_FIPS_5 = {
-    "Richmond": "51760",
+    "Richmond":       "51760",   # Richmond city, VA
+    "Raleigh":        "37183",   # Wake, NC
+    "Charlotte":      "37119",   # Mecklenburg, NC
+    "Winston-Salem":  "37067",   # Forsyth, NC
+    "Greensboro":     "37081",   # Guilford, NC
+    "Durham":         "37063",   # Durham, NC
+    "Nashville":      "47037",   # Davidson, TN
+    "Atlanta":        "13121",   # Fulton, GA
 }
 CITY_TO_COUNTY_FIPS_5 = {**HR_CITY_TO_COUNTY_FIPS_5,
                          **EXPANSION_CITY_TO_FIPS_5}
+
+# City -> metro label for backbone stamping (r8_market). Defaults to the city
+# itself for anything unmapped, so a newly-pulled locality self-labels rather
+# than inheriting the wrong metro (the old code hardcoded "Hampton Roads",
+# which would have mislabeled every non-HR parcel).
+_HR_METRO = {c: "Hampton Roads" for c in HR_CITY_TO_COUNTY_FIPS_5}
+CITY_TO_METRO = {
+    **_HR_METRO,
+    "Richmond":       "Richmond",
+    "Raleigh":        "Raleigh",
+    "Charlotte":      "Charlotte",
+    "Winston-Salem":  "Winston-Salem",
+    "Greensboro":     "Greensboro",
+    "Durham":         "Durham-Chapel Hill",
+    "Nashville":      "Nashville",
+    "Atlanta":        "Atlanta",
+}
+
+
+def metro_for(city: str) -> str:
+    """Metro label for a city; self-labels unmapped cities (never mislabels)."""
+    return CITY_TO_METRO.get((city or "").strip(), (city or "").strip())
 
 
 def is_etl_available() -> bool:
