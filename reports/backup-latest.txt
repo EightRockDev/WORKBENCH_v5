@@ -1,7 +1,7 @@
-autopilot backup @ 2026-08-10T02:52:35
+autopilot backup @ 2026-08-10T10:19:17
 
 [backup] NOTE: using the app's DATABASE_URL - this FAILS under row-level security; set ER_BACKUP_DATABASE_URL to the backup_reader role (see CLAUDE.md)
-[backup] dumping to D:\Backup\8rw\workbench-20260810-025235.dump
+[backup] dumping to D:\Backup\8rw\workbench-20260810-101917.dump
 pg_dump: error: query failed: ERROR:  query would be affected by row-level security policy for table "campaigns"
 HINT:  To disable the policy for the table's owner, use ALTER TABLE NO FORCE ROW LEVEL SECURITY.
 pg_dump: detail: Query was: COPY public.campaigns (id, org_id, name, cadence, status, created_at) TO stdout;
