@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-10T18:04:28
+autopilot pull @ 2026-08-10T19:11:48
 
 QUARRIE muni-data ETL — 2026-08-10
   discovered feeds loaded from data/feeds_extra.json: 10
