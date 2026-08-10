@@ -20,7 +20,20 @@
 workbench.eight-rock.com {
 
 	# --- Streamlit backend (localhost only; the proxy owns the public side) ---
-	reverse_proxy 127.0.0.1:8501 {
+	# Blue-green pair (8501/8502) for zero-downtime deploys, in parity with the
+	# Windows Caddyfile. SESSION AFFINITY (lb_policy cookie) is REQUIRED, not
+	# optional: without it a client's OIDC login redirect and its
+	# /oauth2callback can hit different colours, and the OAuth `state` set on
+	# the first instance fails Authlib's CSRF check on the second
+	# (MismatchingStateError -> "Internal Server Error" on sign-in that a
+	# refresh clears; fixed on Windows 2026-08-10). Streamlit's WebSocket
+	# channel wants client affinity too. lb_try_duration retries the next
+	# colour within the request; a failed colour is benched for fail_duration.
+	# Single-instance deploy? Drop the 8502 upstream - affinity is then a no-op.
+	reverse_proxy 127.0.0.1:8501 127.0.0.1:8502 {
+		lb_policy cookie er_upstream
+		lb_try_duration 5s
+		fail_duration 30s
 		# Streamlit uses WebSockets for its live session channel; Caddy proxies
 		# them transparently, but keep the upstream headers correct.
 		header_up Host {host}

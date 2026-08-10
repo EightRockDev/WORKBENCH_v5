@@ -307,6 +307,11 @@ WebSocket wants it too). Applying it needs the host to re-run install-caddy.ps1
 (regenerates Caddyfile.active) or `caddy reload`. Lesson: any per-instance
 in-memory/session state (OAuth state, Streamlit session) breaks under a
 load balancer without affinity - the traceback names the layer; read it first.
+Follow-ups (V5.33.0.3.0): (1) deploy/Caddyfile (Linux) now mirrors the same
+blue-green pair + lb_policy cookie for parity; (2) install-caddy.ps1 hot-reloads
+via `caddy reload` when the service already exists (zero downtime) instead of
+stop/remove/reinstall, so future Caddyfile edits just need install-caddy re-run
+(or a bare `caddy reload --config deploy\windows\Caddyfile.active`).
 
 ### salespull: coerce record-derived APN with str() before .strip() (2026-08-10)
 pull_sales.sample_gpins crashed the WHOLE sales pull mid-locality with

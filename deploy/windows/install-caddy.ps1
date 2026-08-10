@@ -154,16 +154,42 @@ function Invoke-Nssm {
 }
 
 
-Invoke-Nssm -Quiet @("stop", "Caddy") | Out-Null
-Invoke-Nssm -Quiet @("remove", "Caddy", "confirm") | Out-Null
-$rc = Invoke-Nssm @("install", "Caddy", $caddy, "run", "--config", $act, "--adapter", "caddyfile")
-if ($rc -ne 0) { throw ("nssm install failed (exit " + $rc + ") - see the message above.") }
-Invoke-Nssm @("set", "Caddy", "AppDirectory", $AppDir) | Out-Null
-Invoke-Nssm @("set", "Caddy", "DisplayName", "Caddy (Eight Rock Workbench HTTPS)") | Out-Null
-Invoke-Nssm @("set", "Caddy", "Start", "SERVICE_AUTO_START") | Out-Null
-Invoke-Nssm @("set", "Caddy", "AppStdout", (Join-Path $AppDir "logs\caddy-out.log")) | Out-Null
-Invoke-Nssm @("set", "Caddy", "AppStderr", (Join-Path $AppDir "logs\caddy-err.log")) | Out-Null
-Invoke-Nssm @("start", "Caddy") | Out-Null
+# If Caddy is ALREADY installed and running, hot-reload the new config through
+# its admin API instead of stop/remove/reinstall (owner ask 2026-08-10: "future
+# template changes don't need a full re-run"). `caddy reload` swaps config with
+# zero dropped connections - the whole point of running Caddy in front. Only a
+# clean box (or a failed reload) falls through to the full service install.
+$svcExists = $null -ne (Get-Service -Name "Caddy" -ErrorAction SilentlyContinue)
+$reloaded = $false
+if ($svcExists) {
+    Step "Caddy already installed - hot-reloading config (zero downtime)"
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $out = & $caddy reload --config $act --adapter caddyfile 2>&1
+    $rc = $LASTEXITCODE
+    $ErrorActionPreference = $prev
+    if ($rc -eq 0) {
+        Write-Host "   Reloaded. New config live; no connections dropped." -ForegroundColor Green
+        # Keep it auto-starting at boot in case that was ever changed.
+        Invoke-Nssm @("set", "Caddy", "Start", "SERVICE_AUTO_START") | Out-Null
+        $reloaded = $true
+    } else {
+        Write-Host "   Reload failed (Caddy not running?); reinstalling the service." -ForegroundColor Yellow
+        $out | ForEach-Object { Write-Host ("   " + $_) -ForegroundColor Yellow }
+    }
+}
+if (-not $reloaded) {
+    Invoke-Nssm -Quiet @("stop", "Caddy") | Out-Null
+    Invoke-Nssm -Quiet @("remove", "Caddy", "confirm") | Out-Null
+    $rc = Invoke-Nssm @("install", "Caddy", $caddy, "run", "--config", $act, "--adapter", "caddyfile")
+    if ($rc -ne 0) { throw ("nssm install failed (exit " + $rc + ") - see the message above.") }
+    Invoke-Nssm @("set", "Caddy", "AppDirectory", $AppDir) | Out-Null
+    Invoke-Nssm @("set", "Caddy", "DisplayName", "Caddy (Eight Rock Workbench HTTPS)") | Out-Null
+    Invoke-Nssm @("set", "Caddy", "Start", "SERVICE_AUTO_START") | Out-Null
+    Invoke-Nssm @("set", "Caddy", "AppStdout", (Join-Path $AppDir "logs\caddy-out.log")) | Out-Null
+    Invoke-Nssm @("set", "Caddy", "AppStderr", (Join-Path $AppDir "logs\caddy-err.log")) | Out-Null
+    Invoke-Nssm @("start", "Caddy") | Out-Null
+}
 
 # --- 6. Firewall ---------------------------------------------------------
 Step "Opening firewall TCP 80/443"
