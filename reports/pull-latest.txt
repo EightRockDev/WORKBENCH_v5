@@ -1,6 +1,6 @@
-autopilot pull @ 2026-08-09T20:11:53
+autopilot pull @ 2026-08-10T09:42:49
 
-QUARRIE muni-data ETL — 2026-08-09
+QUARRIE muni-data ETL — 2026-08-10
   discovered feeds loaded from data/feeds_extra.json: 10
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/0
@@ -50,7 +50,6 @@ QUARRIE muni-data ETL — 2026-08-09
   [OK] Raleigh/assessor                         61217 records
   [fresh] Raleigh/assessor: pulled within 3 days - keeping 61,157 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor                         61157 records
-  [fresh] Richmond/assessor: pulled within 3 days - keeping 76,739 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                        76739 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
