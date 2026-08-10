@@ -240,14 +240,31 @@ one returning real sale data). Never pull blind against an unverified endpoint
 (Apollo lesson). Copy-as-PowerShell from DevTools also reveals required headers
 (VB needed Origin/Referer) - fold those into the puller.
 
-### VB sale history = Spatialest API (2026-08-09)
-VB property portal is Spatialest: api.spatialest.com/v1/va/virginiabeach/
-<resource>/<GPIN>. scripts/pull_vb_sales.py pulls kind='sales' into
-muni_records (auto-indexed by sale_index); self-gates on ER_VB_SALES_RESOURCE
-or the probe's FOUND line. Confirm the sales resource name + payload shape from
-reports/vb-sales-probe.txt before finalizing extract_sale_records field map.
-The same api.spatialest.com/v1/<state>/<locality>/ pattern likely unlocks
-OTHER localities' sales too - check before hunting ArcGIS.
+### VB sale history = ArcGIS Property_Sales_ FeatureServer, NOT Spatialest (CONFIRMED 2026-08-10)
+DECISIVE, owner-verified. This was solved in an earlier chat and lost because it
+was never written here - hence the wasted Spatialest chase. RECORD cross-session
+findings the moment they land.
+  * Source: VB Real Estate Assessor "Property Sales" dataset on the city's
+    ArcGIS Hub - SAME AGOL org as VB parcels:
+    https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0
+    Standard Esri FeatureServer: no key/auth, 2000 rows/page via resultOffset.
+    ~594k total records; 47,631 arm's-length (Sale_Price>0) since 2021.
+  * Schema: GPIN, Street_Address, City, Zip_Code, Neighborhood, Land_Value,
+    Improvement_Value, Total_Value, Sale_Price, Document_Number, Deed_Book,
+    Deed_Page, Sales_Date (epoch ms).
+  * Puller: scripts/pull_arcgis_sales.py (autopilot step `arcgissales`).
+    SIZE FIRST (returnCountOnly) then paginate; WHERE Sale_Price>0 AND
+    Sales_Date>=DATE 'YYYY-01-01'. Writes attributes VERBATIM as kind='sales'
+    into muni_records - extract_sale_records already maps Sale_Price/Sales_Date/
+    Deed_Book/Deed_Page and phase0.normalize_record maps GPIN->apn, so NO
+    field map needed; sale_index picks it up next cycle.
+  * Registry ARCGIS_SALES_FEEDS: add Norfolk/Chesapeake (same ArcGIS Hub
+    pattern) once their layer URLs are verified - never pull blind.
+  * Spatialest is a DEAD END for VB deeds: api.spatialest.com serves
+    annual-assessment/buildings/taxes (200) but 404s EVERY sales route, and the
+    portal recordcard 403s "Direct API access not permitted". The `vbprobe`
+    step and scripts/probe_vb_sales.py are RETIRED. Do not re-chase Spatialest
+    for VB sales.
 
 ### National discovery is ON and AGGRESSIVE (owner directive 2026-08-09)
 discover_feeds is national: (city,state) tuples, correct state stamped, VGIN

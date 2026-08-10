@@ -33,9 +33,15 @@ STEPS = (
     # muni_records (kind=sales); auto-discovers each locality's endpoint,
     # self-skips those not on Spatialest (owner directive 2026-08-09).
     ("salespull", ["scripts/pull_sales.py"], "sales-latest.txt"),
+    # Property Sales from ArcGIS Hub FeatureServers (Virginia Beach confirmed;
+    # Norfolk/Chesapeake same pattern). VB deeds are NOT on Spatialest - they
+    # live on the city's own ArcGIS org, sized-then-paginated into muni_records
+    # (kind=sales). Owner-confirmed source 2026-08-10 (replaces the vbprobe
+    # dead end below).
+    ("arcgissales", ["scripts/pull_arcgis_sales.py"], "arcgis-sales-latest.txt"),
     # Sale-history index: render-time answers come from this table, not a
-    # per-page muni scan (owner "too slow" report 2026-08-09). Runs AFTER
-    # vbsales so freshly pulled sales are indexed the same cycle.
+    # per-page muni scan (owner "too slow" report 2026-08-09). Runs AFTER the
+    # sales pullers so freshly pulled sales are indexed the same cycle.
     ("saleindex", ["scripts/run_sale_index.py"], "sale-index-latest.txt"),
     ("phase0", ["scripts/run_phase0.py"], "phase0-latest.txt"),
     ("validate", ["scripts/run_validate.py"], "validate-latest.txt"),
@@ -51,10 +57,8 @@ STEPS = (
     # ride the loop that already runs — the schtasks registration this
     # replaced was documented for weeks and never actually performed).
     ("backup", ["scripts/run_backup.py"], "backup-latest.txt"),
-    # TEMPORARY scaffolding (2026-08-08): discover the JSON API behind VB's
-    # property portal for free sale/deed chains. Self-skips after success;
-    # REMOVE this step once the real VB sales puller ships.
-    ("vbprobe", ["scripts/probe_vb_sales.py"], "vb-sales-probe.txt"),
+    # (vbprobe RETIRED 2026-08-10: the VB sales API is NOT Spatialest - every
+    # sales route 404'd. Real source is the ArcGIS `arcgissales` step above.)
 )
 
 
