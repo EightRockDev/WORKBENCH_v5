@@ -7477,3 +7477,5 @@ Checked 111 packages in 10ms
 [validate] exit 0 -> validate-latest.txt
 [publish] pushed to GitHub
 [pendingusers] exit 0 -> pending-users-latest.txt
+[publish] pushed to GitHub
+[backbonestats] exit 0 -> backbone-stats-latest.txt
