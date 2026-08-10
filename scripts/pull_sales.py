@@ -142,7 +142,10 @@ def sample_gpins(conn, market: str, state: str, n: int) -> list[str]:
             continue
         if not isinstance(raw, dict):
             continue
-        apn = (phase0.normalize_record(market, state, raw).get("apn") or "").strip()
+        # str() FIRST: some rolls store APN/GPIN as a bare integer, and
+        # `int or ""` stays an int -> `.strip()` raises AttributeError and
+        # crashes the whole sales pull mid-locality (autopilot 2026-08-10).
+        apn = str(phase0.normalize_record(market, state, raw).get("apn") or "").strip()
         if apn:
             out.append(apn)
             if len(out) >= n:

@@ -251,11 +251,24 @@ OTHER localities' sales too - check before hunting ArcGIS.
 
 ### National discovery is ON and AGGRESSIVE (owner directive 2026-08-09)
 discover_feeds is national: (city,state) tuples, correct state stamped, VGIN
-gated to VA. TARGET_METROS = 44 metros. Autopilot `discover_national` runs
-EVERY cycle (ER_DISCOVERY_EVERY_DAYS default 0). Discovered feeds -> feeds_extra
+gated to VA. Autopilot `discover_national` runs EVERY cycle
+(ER_DISCOVERY_EVERY_DAYS default 0). Discovered feeds -> feeds_extra
 -> pulled; activate a metro's backbone build only after adding its FIPS +
 metro label (verified from the discover report). App is "Multifamily Property
 Workbench" now, not "Virginia" - do not reintroduce state-specific branding.
+
+### TARGET_METROS = the HOTTEST 50, not the biggest 50 (owner directive 2026-08-09, V5.33.0)
+Owner ruled OUT a population sort: "go after the hottest 50 multifamily markets."
+TARGET_METROS is now the 50-metro universe of Marcus & Millichap's National
+Multifamily Index (the ranking the owner already subscribes to via MyMMI - his
+inbox carries the M&M Multifamily National Investment Forecast every January),
+ordered into 5 deployment WAVES by the verified 2026 NMI signal (supply-
+constrained coastal/gateway/Midwest lead; 2026-oversupplied Sun Belt -
+Austin/Houston/Nashville/Jacksonville - sit in later waves). List order = wave
+order. Berkadia's quarterly national report is aggregates + an alphabetical
+coverage roster, NOT a ranked list - use it as a set cross-check, not the
+ranking basis. If the owner wants exact intra-wave ordinals, they come from his
+gated MyMMI PDF.
 
 ### National expansion is LIVE, wave-based (owner directive 2026-08-09)
 r8_market no longer hardcoded - market_data.metro_for(city) self-labels
@@ -276,6 +289,14 @@ standalone (python hampton-roads-etl/hampton_roads_etl.py) to produce it. Its
 listings parser is a duplicate of etl_listings/ (the app uses etl_listings via
 core.listings_pull); the vendored copy exists because the market ETL imports
 pullers.listings for its own pipeline.
+
+### salespull: coerce record-derived APN with str() before .strip() (2026-08-10)
+pull_sales.sample_gpins crashed the WHOLE sales pull mid-locality with
+`'int' object has no attribute 'strip'`: some rolls store APN/GPIN as a bare
+integer, and `record.get("apn") or ""` keeps the int, so `.strip()` raised.
+Fix: `str(... or "").strip()`. Rule for any value that flows out of a muni
+`record` JSON blob: it may be int/float/None, never assume str - coerce before
+string ops. Regression: tests/test_pull_sales.py::test_sample_gpins_handles_numeric_apn.
 
 ## Scaling playbook — top-50 US metros (owner directive 2026-07-29)
 

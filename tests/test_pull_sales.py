@@ -41,6 +41,25 @@ def test_discover_keeps_only_sale_bearing_combo(monkeypatch):
                   "resource": "deeds"}
 
 
+def test_sample_gpins_handles_numeric_apn(monkeypatch):
+    """Some rolls store APN/GPIN as a bare int; `int or ""` stays an int and
+    `.strip()` used to crash the whole pull mid-locality (autopilot 2026-08-10)."""
+    import sqlite3
+    import json
+    import scripts.pull_sales as ps
+    importlib.reload(ps)
+    # normalize_record echoes an integer apn straight through.
+    monkeypatch.setattr(ps.phase0, "normalize_record",
+                        lambda m, s, raw: {"apn": raw.get("gpin")})
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE muni_records (market TEXT, state TEXT, "
+                 "kind TEXT, record TEXT)")
+    conn.execute("INSERT INTO muni_records VALUES (?,?,?,?)",
+                 ("Norfolk", "VA", "assessor", json.dumps({"gpin": 14552807310000})))
+    out = ps.sample_gpins(conn, "Norfolk", "VA", 5)
+    assert out == ["14552807310000"]
+
+
 def test_discover_returns_none_when_not_on_spatialest(monkeypatch):
     import scripts.pull_sales as ps
     importlib.reload(ps)
