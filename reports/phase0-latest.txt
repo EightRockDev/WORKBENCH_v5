@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-10T15:15:34
+autopilot phase0 @ 2026-08-10T16:15:30
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,388,532
@@ -75,7 +75,7 @@ Attribute keys with NO mapping yet (add aliases in core/phase0.py):
 
 P0-1 GATE PASSED.
 
-P0-2 shadow parity: comparing against 13,657 legacy rows...
+P0-2 shadow parity: comparing against 13,658 legacy rows...
 
 legacy multifamily rows:  639
 matched to the 8R backbone: 417 (65.3%)  [101 by address, 279 by lat/lng, 37 by proximity]
