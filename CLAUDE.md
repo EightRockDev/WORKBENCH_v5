@@ -290,6 +290,24 @@ listings parser is a duplicate of etl_listings/ (the app uses etl_listings via
 core.listings_pull); the vendored copy exists because the market ETL imports
 pullers.listings for its own pipeline.
 
+### Sign-in "Internal Server Error" = OIDC state split across the blue-green pair (2026-08-10)
+Symptom: clicking Log in threw "Internal Server Error"; a refresh usually
+worked. Service err log showed Authlib `MismatchingStateError: CSRF Warning!
+State not equal` in Streamlit's `/oauth2callback` - a FRAMEWORK-layer failure,
+so a try/except in core/oidc.gate would NOT have caught it (diagnose the log
+before patching the app). Root cause: install-lan-service sets AUTO_START on
+BOTH WorkbenchBlue (8501) and WorkbenchGreen (8502), so both run, but the
+Caddyfile load-balanced them with `lb_policy first` and NO session affinity. A
+transient blip on 8501 served the login redirect on one colour and the callback
+on the other; the OAuth `state` set on the first instance failed the CSRF check
+on the second. Fix: Caddy `lb_policy cookie er_upstream` (sticky sessions) in
+deploy/windows/Caddyfile - pins each client's whole login handshake to one
+colour. A blue-green Streamlit pair should ALWAYS have client affinity (its
+WebSocket wants it too). Applying it needs the host to re-run install-caddy.ps1
+(regenerates Caddyfile.active) or `caddy reload`. Lesson: any per-instance
+in-memory/session state (OAuth state, Streamlit session) breaks under a
+load balancer without affinity - the traceback names the layer; read it first.
+
 ### salespull: coerce record-derived APN with str() before .strip() (2026-08-10)
 pull_sales.sample_gpins crashed the WHOLE sales pull mid-locality with
 `'int' object has no attribute 'strip'`: some rolls store APN/GPIN as a bare

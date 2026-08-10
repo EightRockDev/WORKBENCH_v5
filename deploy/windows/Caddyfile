@@ -22,14 +22,25 @@ workbench.eight-rock.com {
 	# (health_uri/health_interval/health_timeout) was removed 2026-08-04: the
 	# green slot (8502) is normally not running, so polling it every 3s filled
 	# caddy-err.log with "connection refused" lines that buried the certificate
-	# and error logs during go-live. `lb_policy first` keeps all traffic on
-	# 8501 while it answers; `lb_try_duration` retries the next upstream within
-	# the request, and a failed upstream is benched for `fail_duration`. So
-	# failover to 8502 still works when green is up — without the idle polling
-	# noise. (X-Forwarded-For / -Proto dropped: Caddy sets them by default and
-	# warned they were redundant.)
+	# and error logs during go-live. `lb_try_duration` retries the next
+	# upstream within the request, and a failed upstream is benched for
+	# `fail_duration`. (X-Forwarded-For / -Proto dropped: Caddy sets them by
+	# default and warned they were redundant.)
+	#
+	# SESSION AFFINITY (lb_policy cookie) — added 2026-08-10 to fix intermittent
+	# "Internal Server Error" on sign-in (refresh cleared it). Both colours run
+	# (install-lan-service sets AUTO_START on each), so with the old
+	# `lb_policy first` a transient blip on 8501 could serve the OIDC login
+	# redirect on one colour and route the /oauth2callback to the OTHER; the
+	# OAuth `state` set on the first instance then failed Authlib's CSRF check
+	# on the second (MismatchingStateError). Pinning each client to one colour
+	# for the whole login handshake removes the split. Streamlit's own
+	# WebSocket channel also wants client affinity, so this is correct for a
+	# blue-green Streamlit pair regardless of auth. Failover still works (a
+	# down colour re-pins to the healthy one) and one-at-a-time blue-green
+	# swaps still work (clients on the restarted colour re-pin to the other).
 	reverse_proxy 127.0.0.1:8501 127.0.0.1:8502 {
-		lb_policy first
+		lb_policy cookie er_upstream
 		lb_try_duration 5s
 		fail_duration 30s
 		header_up Host {host}
