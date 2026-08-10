@@ -1,4 +1,4 @@
-autopilot backbonestats @ 2026-08-09T19:34:01
+autopilot backbonestats @ 2026-08-10T02:50:20
 
 Properties on the backbone, per metro/market:
 market                properties
