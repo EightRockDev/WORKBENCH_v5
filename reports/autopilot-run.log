@@ -7383,3 +7383,5 @@ Checked 111 packages in 11ms
 [pull] exit 0 -> pull-latest.txt
 [publish] pushed to GitHub
 [publicdata] exit 0 -> public-data-latest.txt
+[publish] pushed to GitHub
+[listings] exit 0 -> listings-latest.txt
