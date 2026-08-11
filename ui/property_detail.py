@@ -439,6 +439,49 @@ def _log_property_view(prop: dict[str, Any],
         pass                     # the trail must never break the page
 
 
+def _render_inbox_intel(prop: dict[str, Any],
+                        folder: PropertyFolder | None) -> None:
+    """Facts about this property extracted from inbound mail (Module D),
+    org-visible with provenance. Conditional: nothing renders when no mail
+    has mentioned the property. Never breaks the page."""
+    try:
+        org_id, _user_id = _override_identity()
+        if not org_id:
+            return
+        from core.inbox import property_link
+        keys = [str((prop or {}).get("property_id") or ""),
+                _activity_key(prop, folder),
+                property_link.norm_key((prop or {}).get("address"),
+                                       (prop or {}).get("city"))]
+        rows = property_link.load_intel(org_id, keys)
+    except Exception:
+        return
+    if not rows:
+        return
+    with section_card("Inbox Intel", icon="📬", accent="ac"):
+        st.caption("Extracted from inbound mail by Module D — confidence-"
+                   "gated, shown with provenance. Deal facts, not verified "
+                   "assessor data.")
+        for r in rows[:5]:
+            f = r.get("fields") or {}
+            bits = []
+            if f.get("units"):
+                bits.append(f"**{_fmt_int(f['units'])} units**")
+            if f.get("asking_price"):
+                bits.append(f"asking **{_fmt_money(f['asking_price'])}**")
+            if f.get("cap_rate"):
+                bits.append(f"**{f['cap_rate']}% cap**")
+            if f.get("name"):
+                bits.append(f"_{f['name']}_")
+            who = r.get("from_name") or r.get("from_email") or "unknown sender"
+            when = str(r.get("received_at") or "")[:10]
+            st.markdown((" · ".join(bits) or "_no headline facts_")
+                        + f"  \n📧 {who} — “{(r.get('subject') or '')[:80]}”"
+                        + (f" · {when}" if when else "")
+                        + (f" · confidence {r.get('confidence'):.2f}"
+                           if r.get("confidence") is not None else ""))
+
+
 def _override_identity() -> tuple[str | None, str | None]:
     """(org_id, user_id) of the signed-in user, or (None, None) in ungated
     dev/legacy mode — which routes overrides to the legacy shared folder file."""
@@ -1525,6 +1568,12 @@ def render_property_detail(
     with col_notes:
         with section_card("Notes"):
             _render_notes(prop, folder)
+
+    # 3b. Inbox Intel (owner 2026-08-11: "reading emails from O365 ...
+    # populating property details") — org-visible facts extracted from
+    # gate-clearing inbound mail about THIS property, with provenance.
+    # Conditional like Tax Assessment History: renders only when rows exist.
+    _render_inbox_intel(prop, folder)
 
     # 4. Documents (no subtitle — Brian removed the upload preamble copy)
     with section_card("Documents", icon="📤"):

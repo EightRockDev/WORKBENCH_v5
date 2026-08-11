@@ -712,3 +712,52 @@ BEGIN
             'USING (org_id = current_org_id()) '
             'WITH CHECK (org_id = current_org_id())';
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- Inbox -> property details (owner ask 2026-08-11: "reading emails from O365
+-- ... populating property details from them"). One org-visible row per
+-- gate-clearing message, keyed to the backbone property it describes (or the
+-- normalized address when no property matches yet). Rendered as "Inbox
+-- Intel" on the property detail page. Raw mail stays per-user private; this
+-- carries only the same extract that already flows into deals.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS property_email_intel (
+    id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    org_id        uuid NOT NULL,
+    property_key  text NOT NULL,
+    matched       boolean NOT NULL DEFAULT false,
+    message_id    text NOT NULL,
+    from_email    text,
+    from_name     text,
+    subject       text,
+    received_at   timestamptz,
+    status        text,
+    fields        jsonb NOT NULL DEFAULT '{}'::jsonb,
+    confidence    real,
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (org_id, message_id)
+);
+CREATE INDEX IF NOT EXISTS ix_pei_prop
+    ON property_email_intel(org_id, property_key, received_at DESC);
+
+DO $$
+BEGIN
+    EXECUTE 'ALTER TABLE property_email_intel ENABLE ROW LEVEL SECURITY';
+    EXECUTE 'ALTER TABLE property_email_intel FORCE ROW LEVEL SECURITY';
+    EXECUTE 'DROP POLICY IF EXISTS org_isolation ON property_email_intel';
+    EXECUTE 'CREATE POLICY org_isolation ON property_email_intel '
+            'USING (org_id = current_org_id()) '
+            'WITH CHECK (org_id = current_org_id())';
+END $$;
+
+-- Metadata-only enumeration for the background O365 sync job: which
+-- (org, user) pairs have a connected mailbox. SECURITY DEFINER because
+-- mailbox_connections is strict per-user RLS (fails closed with no user
+-- context) and the hourly job has none - it then syncs each pair through
+-- the SAME user-scoped path the UI button uses. No tokens leave the table.
+CREATE OR REPLACE FUNCTION connected_mailboxes()
+RETURNS TABLE (org_id uuid, user_id uuid, provider text, last_sync_at timestamptz)
+LANGUAGE sql SECURITY DEFINER STABLE AS $$
+    SELECT org_id, user_id, provider, last_sync_at
+      FROM mailbox_connections WHERE status = 'connected'
+$$;

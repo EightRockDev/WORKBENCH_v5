@@ -55,6 +55,11 @@ STEPS = (
     # Pending-approval queue -> report stream (owner directive 2026-08-09:
     # surface new users waiting for approval every morning).
     ("pendingusers", ["scripts/run_pending_users.py"], "pending-users-latest.txt"),
+    # O365/Gmail mailbox sync every cycle (owner 2026-08-11: "reading emails
+    # from O365 ... populating property details") - each connected mailbox
+    # polls through its own user-scoped OAuth path; extracted deal facts land
+    # in deals AND as property_email_intel on the matching property card.
+    ("inboxsync", ["scripts/run_inbox_sync.py"], "inbox-sync-latest.txt"),
     # Per-city MF unit distribution (min/median/max) from the backbone -
     # answers unit-count questions in the morning stream (owner 2026-08-09).
     ("backbonestats", ["scripts/run_backbone_stats.py"], "backbone-stats-latest.txt"),

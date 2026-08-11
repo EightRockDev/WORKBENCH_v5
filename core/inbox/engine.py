@@ -139,7 +139,21 @@ def _apply(org_id, message_id, msg, c, e) -> tuple[str | None, str | None]:
     deal_id = _upsert_deal(org_id, msg, e.fields)
     if deal_id:
         _record_edge(org_id, msg.get("from_email"), deal_id, c.category)
+    # Populate PROPERTY DETAILS from the same extract (owner 2026-08-11):
+    # match the address against the backbone and store org-visible intel the
+    # property page renders. Only gate-clearing mail reaches _apply, so the
+    # §6.2 confidence gate covers this write too. Additive - never blocks.
+    _link_property(org_id, message_id, msg, e)
     return deal_id, None
+
+
+def _link_property(org_id, message_id, msg, e) -> None:
+    try:
+        from core.inbox import property_link
+        property_link.link_message(org_id, str(message_id), msg, e,
+                                   status="applied")
+    except Exception:
+        pass
 
 
 def _upsert_message(org_id, msg, c, e, status, owner_user_id=None) -> str:
