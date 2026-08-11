@@ -1,8 +1,16 @@
-autopilot alerts @ 2026-08-10T21:34:44
+autopilot alerts @ 2026-08-10T22:38:55
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 4928 - new_mf 4928
-  showing the 25 most recent of 4928
+alert sweep, NEW this cycle: 8 multifamily, 0 unit-count moves, 81 ownership changes
+OPEN alerts (carried forward): 4936 - new_mf 4936
+  showing the 25 most recent of 4936
+  [new_mf] New multifamily on the backbone: 500 E Plume ST  (? units · Norfolk)
+  [new_mf] New multifamily on the backbone: 555 E Liberty ST  (? units · Norfolk)
+  [new_mf] New multifamily on the backbone: 725 Guy AV  (? units · Norfolk)
+  [new_mf] New multifamily on the backbone: 130 W Plume ST  (? units · Norfolk)
+  [new_mf] New multifamily on the backbone: 113 W 39th ST  (? units · Norfolk)
+  [new_mf] New multifamily on the backbone: 1 E Plume ST  (? units · Norfolk)
+  [new_mf] New multifamily on the backbone: 9613 1st Bay ST  (? units · Norfolk)
+  [new_mf] New multifamily on the backbone: 9609 1st Bay ST  (? units · Norfolk)
   [new_mf] New multifamily on the backbone: 8R-37063-f7346106c01d  (? units · Durham)
   [new_mf] New multifamily on the backbone: 8R-37063-3394afb1b126  (? units · Durham)
   [new_mf] New multifamily on the backbone: 8R-37063-123df9283f72  (? units · Durham)
@@ -20,11 +28,3 @@ OPEN alerts (carried forward): 4928 - new_mf 4928
   [new_mf] New multifamily on the backbone: 8R-37063-266e84b15a30  (? units · Durham)
   [new_mf] New multifamily on the backbone: 3000 CASCATA LN  (251 units · Raleigh)
   [new_mf] New multifamily on the backbone: 1151 CANNONBALL RUN  (192 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 4100 MAIN AT NORTH HILLS ST  (229 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 1000 ALEXAN DR  (288 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 4108 VIRTUOUS ST  (110 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 320 CHESWICK PL  (76 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 9400 PRINCE GEORGE LN  (158 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 2400 CLUETTE DR  (120 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 2000 SORREL PARK DR  (198 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 215 BRIGHTMORE DR  (316 units · Raleigh)
