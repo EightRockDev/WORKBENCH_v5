@@ -1,30 +1,31 @@
-autopilot alerts @ 2026-08-11T03:48:33
+autopilot alerts @ 2026-08-11T04:44:52
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 20425 - new_mf 20425
-  showing the 25 most recent of 20425
-  [new_mf] New multifamily on the backbone: 8R-51760-92da1e8365d0  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-574db36ce105  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-5cd72c66df37  (? units · Richmond)
+alert sweep, NEW this cycle: 3 multifamily, 0 unit-count moves, 0 ownership changes
+  closed 9315 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 11113 - new_mf 11113
+  showing the 25 most recent of 11113
+  [new_mf] New multifamily on the backbone: 8R-37067-279b652c1925  (22 units · Winston-Salem)
+  [new_mf] New multifamily on the backbone: 8R-51760-27ea7550d881  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-12c30547aee1  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-4baa46395248  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-4f506a09f200  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-2b7dd49f3b97  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-9e8d1f8ead1b  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-0a02f549e0d5  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-04fb4aa2a218  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-4248f4f6df31  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-e70817c095de  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-b9be5c9ab4f2  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-524887b2e86c  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-7dbf49128610  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-5d51312ca354  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-f6dcaaabd202  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-6aff95b0588b  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-4abf6ba8b4c1  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-7136c604619c  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-f739677b1b69  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-0282096280c0  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-a6dc75ecde4c  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-8b21f278beb4  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-f4cb0ac44701  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-7ffb3944461f  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-217dc50e7ff1  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-fbc115bb7544  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-59cf6bbd509c  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-53c0c3db2060  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-6a8450affd72  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-8755ffdb0168  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-d35f240d79da  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-032d5c3342b1  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-c53c48add5cd  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-9975b131d8ab  (? units · Richmond)
