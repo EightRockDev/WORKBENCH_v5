@@ -534,19 +534,12 @@ def _file_kind(url: str, label: str = "") -> str:
     return "sales" if ("transfer" in hay or "sale" in hay) else "assessor"
 
 
-def _download_table(url: str):
-    """DataFrame from a remote spreadsheet, or None (logged by caller).
-    Format sniffed from magic bytes, NOT the URL - /media/<id> links have no
-    extension (PK.. = xlsx zip, D0 CF = legacy xls, else try CSV)."""
+def _read_workbook(content: bytes):
+    """All tabs of a spreadsheet as ONE DataFrame (rva.gov puts each year on
+    its own tab), or None. Format sniffed from magic bytes, NOT the URL -
+    /media/<id> links have no extension (PK.. = xlsx, D0 CF = legacy xls,
+    else try CSV)."""
     import pandas as pd
-    try:
-        r = requests.get(url, headers=_headers(), timeout=180,
-                         allow_redirects=True)
-        if r.status_code != 200 or not r.content:
-            return None
-    except requests.RequestException:
-        return None
-    content = r.content
     if content[:4] == b"PK\x03\x04":
         engines = ("openpyxl",)
     elif content[:4] == b"\xd0\xcf\x11\xe0":
@@ -558,10 +551,46 @@ def _download_table(url: str):
             engines = ("openpyxl", "xlrd")   # last resort: header lied
     for engine in engines:
         try:
-            return pd.read_excel(io.BytesIO(content), engine=engine)
+            sheets = pd.read_excel(io.BytesIO(content), engine=engine,
+                                   sheet_name=None)
+            frames = [df for df in sheets.values() if len(df)]
+            if not frames:
+                return None
+            return pd.concat(frames, ignore_index=True) if len(frames) > 1 \
+                else frames[0]
         except Exception:
             continue
     return None
+
+
+def _download_table(url: str, _depth: int = 0):
+    """(DataFrame|None, final_url) for a remote spreadsheet. Drupal
+    /media/<id> URLs (2 AM ET first contact) return an HTML LANDING PAGE,
+    not the file - when the body is HTML, follow its first spreadsheet-ish
+    link one level down. final_url is the real file, whose name carries the
+    transfer/assessor classification signal the /media/ URL lacks."""
+    import pandas as pd  # noqa: F401  (re-exported for the helpers)
+    try:
+        r = requests.get(url, headers=_headers(), timeout=180,
+                         allow_redirects=True)
+        if r.status_code != 200 or not r.content:
+            return None, url
+    except requests.RequestException:
+        return None, url
+    content = r.content
+    head = content[:512].lstrip().lower()
+    if head.startswith((b"<!doctype", b"<html")) or b"<html" in head:
+        if _depth >= 1:
+            return None, url
+        for u, _label in _list_file_links(
+                content.decode("utf-8", "replace"), str(r.url)):
+            if u.rstrip("/") == url.rstrip("/"):
+                continue                       # self-link, avoid a loop
+            df, final = _download_table(u, _depth + 1)
+            if df is not None:
+                return df, final
+        return None, url
+    return _read_workbook(content), str(r.url)
 
 
 def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
@@ -587,13 +616,15 @@ def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
     rows: list[tuple] = []
     per_kind = {"sales": 0, "assessor": 0}
     for url, label in links[:12]:        # sanity cap on a scraped page
-        df = _download_table(url)
+        df, final_url = _download_table(url)
         name = label or url.rsplit("/", 1)[-1]
         if df is None:
             print(f"[sales:{market}]   {name[:60]}: download/parse FAILED "
                   f"({url})")
             continue
-        kind = _file_kind(url, label)
+        # Classify on the RESOLVED filename + anchor text - the /media/<id>
+        # link itself says nothing, the file it lands on does.
+        kind = _file_kind(final_url, label)
         kept = 0
         for rec in df.to_dict(orient="records"):
             clean = {}
@@ -603,7 +634,7 @@ def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
                     clean[str(k).strip()] = cv
             if not clean:
                 continue
-            clean["_file"] = url
+            clean["_file"] = final_url
             rows.append((market, cfg["state"], cfg["county"], kind, tag,
                          now_iso, json.dumps(clean, default=str)))
             kept += 1

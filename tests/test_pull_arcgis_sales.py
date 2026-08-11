@@ -264,7 +264,7 @@ def test_html_files_scrapes_classifies_and_writes(monkeypatch):
     }
     monkeypatch.setattr(
         m, "_download_table",
-        lambda url: frames.get(url.rsplit("/", 1)[-1]))
+        lambda url: (frames.get(url.rsplit("/", 1)[-1]), url))
     conn = _mk_db()
     n = m.pull_market(conn, "Richmond-files", cfg)
     assert n == 2
@@ -295,17 +295,31 @@ def test_html_files_media_links_classified_by_anchor_text(monkeypatch):
     assert m._file_kind(*[links[0][0], links[0][1]]) == "sales"
     assert m._file_kind(links[1][0], links[1][1]) == "assessor"
 
-    # magic-byte sniffing: an xlsx body parses even with no extension
+    # /media/<id> serves an HTML LANDING PAGE (2 AM ET first contact:
+    # download/parse FAILED on both files) - _download_table must follow it
+    # one level to the real file, then sniff xlsx from magic bytes. The
+    # resolved filename ("...Transfers...") is what classifies the file.
     buf = io.BytesIO()
     pd.DataFrame([{"PIN": "W1", "Consideration": 5}]).to_excel(
         buf, index=False)
+    landing = ('<html><body><a href="/sites/default/files/2026-07/'
+               'Assessor_Transfers_2015-2025.xlsx">Download</a>'
+               '</body></html>')
 
-    class R:
-        status_code = 200
-        content = buf.getvalue()
-    monkeypatch.setattr(m.requests, "get", lambda *a, **k: R())
-    df = m._download_table("https://www.rva.gov/media/50901")
+    def fake_get(url, **kw):
+        class R:
+            status_code = 200
+        R.url = url
+        if "/media/" in url:
+            R.content = landing.encode()
+        else:
+            R.content = buf.getvalue()
+        return R()
+    monkeypatch.setattr(m.requests, "get", fake_get)
+    df, final = m._download_table("https://www.rva.gov/media/50901")
     assert df is not None and df.iloc[0]["PIN"] == "W1"
+    assert final.endswith("Assessor_Transfers_2015-2025.xlsx")
+    assert m._file_kind(final, "2015-2025") == "sales"
 
 
 def test_html_files_no_links_touches_nothing(monkeypatch):
