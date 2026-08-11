@@ -1,0 +1,651 @@
+{
+  "generated_at": "2026-08-11T10:57:55",
+  "localities": {
+    "Alexandria": [],
+    "Arlington": [],
+    "Athens": [],
+    "Atlanta": [],
+    "Augusta": [],
+    "Chesapeake": [
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Transfer Development Rights and Purchase Development Rights",
+        "domain": "opendata.maryland.gov",
+        "resource_id": "8ccz-b8qi",
+        "base": "https://opendata.maryland.gov/resource/",
+        "updated": "2026-06-09T01:55:56.000Z",
+        "columns_hit": {},
+        "score": 5
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Transfer Development Rights and Purchase Development Rights",
+        "domain": "opendata.maryland.gov",
+        "resource_id": "rijg-dmbs",
+        "base": "https://opendata.maryland.gov/resource/",
+        "updated": "2026-06-09T01:55:45.000Z",
+        "columns_hit": {},
+        "score": 5
+      }
+    ],
+    "Decatur": [],
+    "Durham": [],
+    "Greensboro": [],
+    "Greenville": [],
+    "Hampton": [],
+    "Nashville": [],
+    "Newport News": [],
+    "Norfolk": [
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY23",
+        "domain": "data.norfolk.gov",
+        "resource_id": "yvpm-8aid",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2026-03-17T19:09:51.000Z",
+        "columns_hit": {
+          "date": "transfer_date",
+          "price": "consideration",
+          "parcel": "gpin"
+        },
+        "score": 95
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY24",
+        "domain": "data.norfolk.gov",
+        "resource_id": "9gmp-9x4c",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2026-03-17T19:00:35.000Z",
+        "columns_hit": {
+          "date": "transfer_date",
+          "price": "consideration",
+          "parcel": "parcel_id"
+        },
+        "score": 95
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY25",
+        "domain": "data.norfolk.gov",
+        "resource_id": "g7sg-tivf",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2026-05-13T20:32:14.000Z",
+        "columns_hit": {
+          "parcel": "gpin",
+          "price": "consideration",
+          "date": "transfer_date"
+        },
+        "score": 95
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY26",
+        "domain": "data.norfolk.gov",
+        "resource_id": "m5ya-5grb",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2026-05-13T20:33:53.000Z",
+        "columns_hit": {
+          "date": "transfer_date",
+          "parcel": "parcel_id",
+          "price": "consideration"
+        },
+        "score": 95
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY20",
+        "domain": "data.norfolk.gov",
+        "resource_id": "pdf2-gh9c",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2023-04-03T19:11:38.000Z",
+        "columns_hit": {
+          "parcel": "gpin",
+          "price": "consideration",
+          "date": "transfer_date"
+        },
+        "score": 85
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY19",
+        "domain": "data.norfolk.gov",
+        "resource_id": "th3n-jr9u",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2023-04-03T19:11:00.000Z",
+        "columns_hit": {
+          "price": "consideration",
+          "date": "transfer_date",
+          "parcel": "parcel_id"
+        },
+        "score": 85
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY21",
+        "domain": "data.norfolk.gov",
+        "resource_id": "8bfx-a5g8",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2021-03-01T13:38:08.000Z",
+        "columns_hit": {
+          "parcel": "parcel_id",
+          "price": "consideration",
+          "date": "transfer_date"
+        },
+        "score": 85
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY22",
+        "domain": "data.norfolk.gov",
+        "resource_id": "7tu9-2ytx",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2023-04-03T19:11:17.000Z",
+        "columns_hit": {
+          "price": "consideration",
+          "date": "transfer_date",
+          "parcel": "gpin"
+        },
+        "score": 85
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY22 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/7tu9-2ytx/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:17:53.158054",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY22 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/7tu9-2ytx/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:17:53.158054",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY20 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/pdf2-gh9c/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:31:46.551687",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY20 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/pdf2-gh9c/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:31:46.551687",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY21 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/8bfx-a5g8/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:18:44.025861",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY21 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/8bfx-a5g8/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:18:44.025861",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY24 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/9gmp-9x4c/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T02:31:32.591446",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY24 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/9gmp-9x4c/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T02:31:32.591446",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY23 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/yvpm-8aid/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:42:50.459268",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY23 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/yvpm-8aid/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:42:50.459268",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY19 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/th3n-jr9u/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T02:05:56.266722",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY19 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/th3n-jr9u/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T02:05:56.266722",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY25 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/g7sg-tivf/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T02:34:12.591706",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY25 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/g7sg-tivf/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T02:34:12.591706",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY26 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/m5ya-5grb/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:32:07.264476",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY26 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/m5ya-5grb/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T01:32:07.264476",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY27 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/qva7-tzrf/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-08-07T02:52:14.240352",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY27 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/qva7-tzrf/query.json?accessType=DOWNLOAD",
+        "updated": "2026-08-07T02:52:14.240352",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Norfolk Flood Risk Assessment",
+        "org": "rachellemme@gmail.com",
+        "url": "https://storymaps.arcgis.com/briefings/ce8618e23c0946c4822ad6f6eef7d8a3",
+        "record_count": null,
+        "updated": 1731464465000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "hrgeo",
+        "adapter": "arcgis",
+        "title": "Norfolk Flood Risk Assessment",
+        "org": "rachellemme@gmail.com",
+        "url": "https://storymaps.arcgis.com/briefings/ce8618e23c0946c4822ad6f6eef7d8a3",
+        "record_count": null,
+        "updated": 1731464465000,
+        "columns_hit": {},
+        "score": 0
+      }
+    ],
+    "Portsmouth": [],
+    "Raleigh": [],
+    "Richmond": [
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Property Transfers (2012 to 2016)",
+        "org": "City of Richmond, VA",
+        "url": "https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Property_Transfers_(2012_to_2016)/FeatureServer/0",
+        "record_count": 17391,
+        "updated": 1531401353327,
+        "columns_hit": {
+          "parcel": "PIN",
+          "price": "AvgSaleAmt",
+          "date": "SaleDate1"
+        },
+        "score": 100
+      },
+      {
+        "method": "hrgeo",
+        "adapter": "arcgis",
+        "title": "Property Transfers (2012 to 2016)",
+        "org": "City of Richmond, VA",
+        "url": "https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Property_Transfers_(2012_to_2016)/FeatureServer/0",
+        "record_count": 17391,
+        "updated": 1531401353327,
+        "columns_hit": {
+          "parcel": "PIN",
+          "price": "AvgSaleAmt",
+          "date": "SaleDate1"
+        },
+        "score": 100
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Property Transfers (2012 to 2016)",
+        "org": "City of Richmond, VA",
+        "url": "",
+        "record_count": null,
+        "updated": 1638286021000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Transfers Since 2018 - Downtown Area",
+        "org": "City of Richmond, VA",
+        "url": "",
+        "record_count": null,
+        "updated": 1611256568000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "hrgeo",
+        "adapter": "arcgis",
+        "title": "Property Transfers (2012 to 2016)",
+        "org": "City of Richmond, VA",
+        "url": "",
+        "record_count": null,
+        "updated": 1638286021000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "hrgeo",
+        "adapter": "arcgis",
+        "title": "Transfers Since 2018 - Downtown Area",
+        "org": "City of Richmond, VA",
+        "url": "",
+        "record_count": null,
+        "updated": 1611256568000,
+        "columns_hit": {},
+        "score": 0
+      }
+    ],
+    "Savannah": [],
+    "Suffolk": [],
+    "Virginia Beach": [
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Property Sales ",
+        "org": "City of Virginia Beach - Online Mapping",
+        "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0",
+        "record_count": 594149,
+        "updated": 1786339818935,
+        "columns_hit": {
+          "parcel": "GPIN",
+          "price": "Sale_Price",
+          "date": "Sales_Date"
+        },
+        "score": 100
+      },
+      {
+        "method": "hrgeo",
+        "adapter": "arcgis",
+        "title": "Property Sales ",
+        "org": "City of Virginia Beach - Online Mapping",
+        "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0",
+        "record_count": 594149,
+        "updated": 1786339818935,
+        "columns_hit": {
+          "parcel": "GPIN",
+          "price": "Sale_Price",
+          "date": "Sales_Date"
+        },
+        "score": 100
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Sales [CSV]",
+        "org": "Virginia Beach",
+        "url": "https://data.virginiabeach.gov/api/download/v1/items/948bc15e637c4bd6a65fb94ae633e052/csv?layers=0",
+        "updated": "2026-08-09T15:00:08.691152",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "License Sales Data [XLSX]",
+        "org": "Virginia Marine Resources Commission ",
+        "url": "https://data.virginia.gov/dataset/7f3500b2-46e5-4e74-872c-fa5d9deafe6c/resource/b3df3517-f2e6-4705-93d0-5fa05d674286/download/license-sales-data.xlsx",
+        "updated": "2024-10-30T14:04:25.464814",
+        "columns_hit": {},
+        "score": 25,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "License Sales Data [XLSX]",
+        "org": "Virginia Marine Resources Commission ",
+        "url": "https://data.virginia.gov/dataset/7f3500b2-46e5-4e74-872c-fa5d9deafe6c/resource/aee32eca-aedd-46f5-8ce2-df7d9d3e61d3/download/data-dictionary.xlsx",
+        "updated": "2024-10-30T14:05:44.148907",
+        "columns_hit": {},
+        "score": 25,
+        "note": "state mirror - fields sniff on first sized pull"
+      }
+    ],
+    "Winston-Salem": [
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Parking Availability in Winston-Salem ",
+        "org": "whitnc22@wfu.edu",
+        "url": "",
+        "record_count": null,
+        "updated": 1732079909000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston Salem CR",
+        "org": "National Trust for Historic Preservation",
+        "url": "",
+        "record_count": null,
+        "updated": 1554315022000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston Salem Major Roads",
+        "org": "National Trust for Historic Preservation",
+        "url": "https://services3.arcgis.com/8mRVhBBtAu5eqZUu/arcgis/rest/services/Winston_Salem_Major_Roads/FeatureServer/0",
+        "record_count": null,
+        "updated": 1554133357078,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston-Salem Area Greenways",
+        "org": null,
+        "url": "https://storymaps.arcgis.com/stories/335637fd39a7495bb8173f6b33b364b5",
+        "record_count": null,
+        "updated": 1785246615000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston-Salem Spatial Data",
+        "org": "IESA",
+        "url": "",
+        "record_count": null,
+        "updated": 1741478806000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston-Salem Northern Beltway",
+        "org": null,
+        "url": "https://experience.arcgis.com/experience/9b930808369e4defba9346fec19d28e1",
+        "record_count": null,
+        "updated": 1777586488000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston-Salem Commute and Roads",
+        "org": "itaylor02",
+        "url": "https://www.arcgis.com/apps/MapSeries/index.html?appid=ed2badd794014b4ab43bc7bb9f396971",
+        "record_count": null,
+        "updated": 1570234970000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Food Deserts in Winston-Salem",
+        "org": "isanchezgazga118",
+        "url": "https://storymaps.arcgis.com/stories/a11022a37ad642c39f75cfde16f48b51",
+        "record_count": null,
+        "updated": 1713294170000,
+        "columns_hit": {},
+        "score": 0
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston Salem Northern Beltway West",
+        "org": "carlye@CITYOFWS.ORG_CoWS",
+        "url": "https://services.arcgis.com/XAnuVx6VEMybNvyd/arcgis/rest/services/WSNB_West/FeatureServer/0",
+        "record_count": 1,
+        "updated": 1628606536078,
+        "columns_hit": {},
+        "score": -10
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston Salem Northern Beltway East",
+        "org": "carlye@CITYOFWS.ORG_CoWS",
+        "url": "https://services.arcgis.com/XAnuVx6VEMybNvyd/arcgis/rest/services/Winston_Salem_Northern_Beltway_East/FeatureServer/0",
+        "record_count": 2,
+        "updated": 1628606449219,
+        "columns_hit": {},
+        "score": -10
+      },
+      {
+        "method": "arcgis-hub",
+        "adapter": "arcgis",
+        "title": "Winston-Salem",
+        "org": "                  The Site To Do Business",
+        "url": "https://services2.arcgis.com/82iS1Pc7dgs3LFZv/arcgis/rest/services/ben_ccimtech_com_CCIM__7afd496733314858/FeatureServer/0",
+        "record_count": 1,
+        "updated": 1745448353307,
+        "columns_hit": {},
+        "score": -10
+      }
+    ]
+  }
+}
