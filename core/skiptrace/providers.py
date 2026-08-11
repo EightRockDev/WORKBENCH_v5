@@ -379,17 +379,25 @@ def get_registry() -> ProviderRegistry:
     # keyed, try VA SCC first for a VA entity and fall back to Cobalt - keeps
     # Virginia free without losing the other 49 states. Neither keyed => mock,
     # and the pipeline marks a mock-pierced contact non-callable (AC-A3).
+    # SEC EDGAR rides in every live waterfall: free, keyless, and the ONLY
+    # source that names real people behind institutional single-purpose LLCs
+    # (state records show just a commercial agent; the Reg D Form D lists the
+    # sponsor's related persons). Cost-ordered: free registries first, EDGAR,
+    # then paid Cobalt last (owner 2026-08-11: "use alternative approaches").
     va_token = os.environ.get("VA_SCC_API_TOKEN")
     cobalt_key = os.environ.get("COBALT_API_KEY")
-    if cobalt_key and va_token:
-        sos = _SOSWaterfall([live.VaSccSOS(va_token), live.CobaltSOS(cobalt_key)])
-        status["sos"] = "live (va-scc + cobalt)"
-    elif cobalt_key:
-        sos, status["sos"] = live.CobaltSOS(cobalt_key), "live (cobalt)"
-    elif va_token:
-        sos, status["sos"] = live.VaSccSOS(va_token), "live (va-scc)"
-    else:
-        sos, status["sos"] = MockSOS(), "mock"
+    chain: list = []
+    names: list[str] = []
+    if va_token:
+        chain.append(live.VaSccSOS(va_token))
+        names.append("va-scc")
+    chain.append(live.EdgarSOS())
+    names.append("edgar")
+    if cobalt_key:
+        chain.append(live.CobaltSOS(cobalt_key))
+        names.append("cobalt")
+    sos = _SOSWaterfall(chain) if len(chain) > 1 else chain[0]
+    status["sos"] = f"live ({' + '.join(names)})"
 
     # Skip trace waterfall: BatchData live if keyed, else the mock waterfall.
     bd_key = os.environ.get("BATCHDATA_API_KEY")

@@ -87,9 +87,21 @@ def test_registry_goes_live_per_key(monkeypatch):
     monkeypatch.setenv("BATCHDATA_API_KEY", "bd")
     reg = prov.get_registry()
     assert "live" in reg.status["skiptrace"]        # BatchData live
-    assert reg.status["sos"] == "mock"              # no VA token → mock piercing
+    # SOS is never mock in live mode anymore: SEC EDGAR (free, keyless)
+    # always rides the waterfall; keyed registries join around it.
+    assert reg.status["sos"] == "live (edgar)"
     assert reg.status["validation"] == "mock"       # no Trestle key → mock
     assert isinstance(reg.trace_waterfall[0], live.BatchDataSkipTrace)
+
+
+def test_registry_orders_sos_free_before_paid(monkeypatch):
+    monkeypatch.setenv("ER_SKIPTRACE_PROVIDERS", "live")
+    monkeypatch.setenv("VA_SCC_API_TOKEN", "va")
+    monkeypatch.setenv("COBALT_API_KEY", "cb")
+    reg = prov.get_registry()
+    assert reg.status["sos"] == "live (va-scc + edgar + cobalt)"
+    kinds = [type(x).__name__ for x in reg.sos._providers]
+    assert kinds == ["VaSccSOS", "EdgarSOS", "CobaltSOS"]   # cost-ordered
 
 
 def test_pipeline_runs_with_live_batchdata(monkeypatch):
@@ -250,3 +262,41 @@ def test_validation_outage_keeps_phone_but_never_callable(monkeypatch):
     assert phones and phones[0]["e164"] == "+17575550142"
     assert phones[0]["callable"] is False
     assert "validation unavailable" in phones[0]["reason"]
+
+
+def test_edgar_pierces_form_d_related_persons(monkeypatch):
+    """The institutional-LLC path: full-text hit -> newest Form D ->
+    relatedPersonsList names. Free, keyless, SEC-sworn."""
+    def fake_get(url, *, headers, params):
+        if "search-index" in url:
+            assert params["forms"] == "D"
+            return {"hits": {"hits": [{"_source": {"display_names":
+                ["GD RICHMOND TWO LLC  (CIK 0001987654)"]}}]}}
+        assert url.endswith("/CIK0001987654.json")
+        return {"filings": {"recent": {
+            "form": ["D/A", "D"],
+            "accessionNumber": ["0001-23-000111", "0001-23-000100"],
+            "primaryDocument": ["primary_doc.xml", "primary_doc.xml"]}}}
+
+    class _Doc:
+        status_code = 200
+        text = ("<edgarSubmission><relatedPersonsList><relatedPersonInfo>"
+                "<relatedPersonName><firstName>Robert</firstName>"
+                "<lastName>Gilbane</lastName></relatedPersonName>"
+                "</relatedPersonInfo><relatedPersonInfo>"
+                "<relatedPersonName><firstName>Edward</firstName>"
+                "<lastName>Broderick</lastName></relatedPersonName>"
+                "</relatedPersonInfo></relatedPersonsList></edgarSubmission>")
+
+    monkeypatch.setattr(live, "_get", fake_get)
+    monkeypatch.setattr(live.requests, "get", lambda *a, **k: _Doc())
+    r = live.EdgarSOS().resolve_entity("GD Richmond Two LLC", "VA")
+    assert r is not None
+    assert r.officers == ["Robert Gilbane", "Edward Broderick"]
+    assert r.cost_usd == 0.0 and r.filing_id.startswith("CIK-")
+
+
+def test_edgar_no_filings_is_a_clean_miss(monkeypatch):
+    monkeypatch.setattr(live, "_get",
+                        lambda url, **k: {"hits": {"hits": []}})
+    assert live.EdgarSOS().resolve_entity("Corner Store LLC", "VA") is None

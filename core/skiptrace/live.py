@@ -20,6 +20,7 @@ No LLM anywhere (Section 11).
 from __future__ import annotations
 
 import os
+import re
 import time
 
 import requests
@@ -393,6 +394,105 @@ class CobaltSOS:
             query_id=str(_first(biz, "sosId", "entityId", default="cobalt")),
             cost_usd=self.COST_PER_LOOKUP,
         )
+
+
+# ---------------------------------------------------------------------------
+# SEC EDGAR full-text search — FREE institutional-LLC piercing (§4.2 S3).
+# Single-purpose apartment LLCs ("GD Richmond Two LLC") register with a
+# commercial agent and NO members on the state record, so registry piercing
+# dead-ends. But institutional sponsors raise under Reg D, and the Form D
+# names the issuer's RELATED PERSONS (executives of the sponsor) with the
+# sponsor's own address. No auth, no key - SEC fair-access just wants a real
+# UA with contact info. (Owner 2026-08-11: "use alternative approaches".)
+# ---------------------------------------------------------------------------
+
+class EdgarSOS:
+    name = "edgar"
+    SEARCH = os.environ.get(
+        "EDGAR_FTS_BASE", "https://efts.sec.gov/LATEST/search-index")
+    ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
+    SUBMISSIONS = "https://data.sec.gov/submissions"
+    UA = {"User-Agent": os.environ.get(
+        "EDGAR_UA", "EightRock Workbench bmccune@gmail.com"),
+        "Accept": "application/json"}
+
+    def resolve_entity(self, entity_name: str, state: str) -> SOSResult | None:
+        if not entity_name:
+            return None
+        try:
+            hits = self._search(entity_name)
+            if not hits:
+                trace.record(self.name, f"pierce {entity_name!r}", "miss",
+                             "no SEC filings mention this entity")
+                return None
+            cik, matched_name = hits[0]
+            officers, agent = self._related_persons(cik)
+        except ProviderError as e:
+            trace.record(self.name, f"pierce {entity_name!r}", "error", str(e))
+            return None
+        if not officers:
+            trace.record(self.name, f"pierce {entity_name!r}", "miss",
+                         f"CIK {cik} found but no related persons parsed")
+            return None
+        trace.record(self.name, f"pierce {entity_name!r}", "hit",
+                     f"CIK {cik}: {len(officers)} related person(s)")
+        return SOSResult(
+            entity_name=matched_name or entity_name,
+            jurisdiction=(state or "").strip().upper()[:2] or "US",
+            filing_id=f"CIK-{cik}",
+            officers=officers,
+            registered_agent=agent,
+            confidence=0.9,          # SEC-sworn related persons
+            vendor=self.name, query_id=f"edgar-{cik}", cost_usd=0.0)
+
+    def _search(self, entity_name: str) -> list[tuple[str, str]]:
+        """Full-text search, exact-phrase, Form D first. Returns
+        [(cik, display_name)]."""
+        data = _get(self.SEARCH, headers=self.UA,
+                    params={"q": f'"{entity_name}"', "forms": "D"})
+        out = []
+        for h in ((data.get("hits") or {}).get("hits") or []):
+            src = h.get("_source") or {}
+            for dn in (src.get("display_names") or []):
+                # "GD RICHMOND TWO LLC  (CIK 0001234567)"
+                m = re.search(r"\(CIK\s+(\d+)\)", dn)
+                if m and entity_name.split()[0].lower() in dn.lower():
+                    out.append((m.group(1).lstrip("0"), dn.split("(")[0].strip()))
+        return out
+
+    def _related_persons(self, cik: str) -> tuple[list[str], str]:
+        """Names from the newest Form D's relatedPersonsList."""
+        subs = _get(f"{self.SUBMISSIONS}/CIK{int(cik):010d}.json",
+                    headers=self.UA, params={})
+        recent = (subs.get("filings") or {}).get("recent") or {}
+        forms = recent.get("form") or []
+        accs = recent.get("accessionNumber") or []
+        docs = recent.get("primaryDocument") or []
+        acc = doc = None
+        for i, f in enumerate(forms):
+            if f in ("D", "D/A") and i < len(accs):
+                acc = accs[i].replace("-", "")
+                doc = docs[i] if i < len(docs) else "primary_doc.xml"
+                break
+        if not acc:
+            return [], ""
+        url = f"{self.ARCHIVES}/{int(cik)}/{acc}/{doc or 'primary_doc.xml'}"
+        try:
+            r = requests.get(url, headers={**self.UA, "Accept": "*/*"},
+                             timeout=_TIMEOUT)
+            if r.status_code >= 400:
+                raise ProviderError(f"GET {url} -> {_err_detail(r)}")
+            xml_text = r.text
+        except requests.RequestException as e:
+            raise ProviderError(f"GET {url} failed: {e}") from e
+        officers = []
+        for m in re.finditer(
+                r"<relatedPersonInfo>.*?<firstName>([^<]*)</firstName>"
+                r".*?<lastName>([^<]*)</lastName>", xml_text, re.DOTALL):
+            nm = f"{m.group(1).strip()} {m.group(2).strip()}".strip()
+            if nm and nm not in officers:
+                officers.append(nm)
+        return officers, ""
 
 
 _COMMERCIAL_AGENTS = (
