@@ -1,4 +1,4 @@
-autopilot arcgissales @ 2026-08-11T01:20:03
+autopilot arcgissales @ 2026-08-11T02:19:31
 
 [sales:Virginia Beach] 47631 sales rows to pull (where: Sale_Price > 0 AND Sales_Date >= DATE '2021-01-01')
 [sales:Virginia Beach] wrote 47631 rows (expected 47631)
@@ -24,8 +24,8 @@ autopilot arcgissales @ 2026-08-11T01:20:03
 [sales:Richmond] 32907 assessor rows to pull (where: 1=1)
 [sales:Richmond] wrote 32907 rows (expected 32907)
 [sales:Richmond] https://www.rva.gov/assessor-real-estate/data-request -> HTTP 200, 2 spreadsheet link(s)
-[sales:Richmond]   Public Data Set: download/parse FAILED (https://www.rva.gov/media/51756)
-[sales:Richmond]   2015-2025: download/parse FAILED (https://www.rva.gov/media/51616)
-[sales:Richmond] every file failed to parse - NOT deleting existing rows (transient?)
+[sales:Richmond]   Public Data Set: 76976 rows -> kind=assessor
+[sales:Richmond]   2015-2025: 84148 rows -> kind=sales
+[sales:Richmond] wrote 161124 rows (sales=84148, assessor=76976)
 [sales:Chicago] fresh (<7d) - skip
-[sales] done: 315793 rows across 7 source(s)
+[sales] done: 476917 rows across 7 source(s)
