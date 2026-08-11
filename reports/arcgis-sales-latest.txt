@@ -1,6 +1,6 @@
-autopilot arcgissales @ 2026-08-10T22:15:22
+autopilot arcgissales @ 2026-08-10T23:17:00
 
-[sales:Virginia Beach] 47631 arm's-length sales since 2021 to pull
+[sales:Virginia Beach] 47631 sales to pull (where: Sale_Price > 0 AND Sales_Date >= DATE '2021-01-01')
 [sales:Virginia Beach] wrote 47631 rows (expected 47631)
 [sales:Norfolk] FY stack sizes: FY19=74835, FY20=74898, FY21=74767, FY22=74659, FY23=74637, FY24=74520, FY25=74253, FY26=74311, FY27=74359 (total 671239)
 [sales:Norfolk] FY19: 72322 dated transfers (70615 unique so far)
@@ -18,5 +18,10 @@ autopilot arcgissales @ 2026-08-10T22:15:22
 [sales:Chesapeake] residential LandBook: 90285 rows parsed
 [sales:Chesapeake] residential: kept 90285 date-bearing rows
 [sales:Chesapeake] wrote 120557 LandBook sale rows
-[sales:Richmond] every FY count query failed - skip, no rows touched
-[sales] done: 282886 rows across 4 source(s)
+[sales:Richmond] history (uxre-by3i) count failed: HTTP 403
+[sales:Richmond] current (k9h9-y482) count failed: HTTP 403
+[sales:Richmond] every count query failed (see per-resource detail above; HTTP 403 = domain wants an app token - set ER_SOCRATA_APP_TOKEN, free at evergreen.data.socrata.com) - skip, no rows touched
+[sales:Chicago] FY stack sizes: sales=449180 (total 449180)
+[sales:Chicago] sales: 400000 dated transfers (399907 unique so far)
+[sales:Chicago] wrote 399907 unique (gpin,date) sale rows
+[sales] done: 682793 rows across 5 source(s)
