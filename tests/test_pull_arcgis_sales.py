@@ -147,6 +147,28 @@ def test_stack_id_and_date_key_flexibility_for_richmond(monkeypatch):
     assert m.pull_market(conn, "Richmond", cfg) == 1
 
 
+def test_chicago_passes_soql_where_and_pulls(monkeypatch):
+    m = _mod()
+    cfg = m.SALES_SOURCES["Chicago"]
+    seen = {"where": None}
+
+    def fake_get_json(url, params=None):
+        if params and "$where" in params:
+            seen["where"] = params["$where"]
+        if params and "$select" in params:
+            return [{"count": "1"}]
+        if params and params.get("$offset", 0) >= 1:
+            return []
+        return [{"pin": "14-05-403-021-0000",
+                 "sale_date": "2024-09-12T00:00:00",
+                 "sale_price": "1250000"}]
+
+    monkeypatch.setattr(m, "_get_json", fake_get_json)
+    conn = _mk_db()
+    assert m.pull_market(conn, "Chicago", cfg) == 1
+    assert "sale_price > 0" in seen["where"]
+
+
 def test_stack_all_counts_failing_touches_nothing(monkeypatch):
     m = _mod()
     cfg = dict(m.SALES_SOURCES["Norfolk"])

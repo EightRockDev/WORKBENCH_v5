@@ -143,6 +143,21 @@ SALES_SOURCES: dict[str, dict] = {
         "source_tag": "socrata-stack:data.richmondgov.com/property-transfers",
         "refresh_d": 7,
     },
+    # Hottest-50 Wave 1 begins (owner "do all of them" 2026-08-11). Chicago =
+    # Cook County Assessor "Parcel Sales" (wvhk-k5uv) - TRANSACTION-level full
+    # sale history per PIN, the dataset the Assessor's own models publish.
+    # County-wide it's ~1.5M rows, so the SoQL filter mirrors VB's
+    # arm's-length-since-2021 stance to fit the per-market safety cap.
+    "Chicago": {
+        "type": "socrata_stack",
+        "base": "https://datacatalog.cookcountyil.gov/resource/",
+        "resources": (("sales", "wvhk-k5uv"),),
+        "soql_where": ("sale_price > 0 AND "
+                       f"sale_date >= '{SINCE_YEAR}-01-01T00:00:00'"),
+        "state": "IL", "county": "Cook",
+        "source_tag": "socrata:datacatalog.cookcountyil.gov/wvhk-k5uv",
+        "refresh_d": 7,
+    },
 }
 
 # Socrata column names vary per city (Norfolk: gpin/transfer_date; Richmond:
@@ -283,8 +298,11 @@ def _pull_arcgis(conn, market: str, cfg: dict) -> int:
     return len(rows)
 
 
-def _socrata_count(base: str, rid: str) -> int | None:
-    js = _get_json(f"{base}{rid}.json", {"$select": "count(*)"})
+def _socrata_count(base: str, rid: str, where: str = "") -> int | None:
+    params = {"$select": "count(*)"}
+    if where:
+        params["$where"] = where
+    js = _get_json(f"{base}{rid}.json", params)
     if isinstance(js, list) and js:
         for v in js[0].values():
             try:
@@ -294,11 +312,13 @@ def _socrata_count(base: str, rid: str) -> int | None:
     return None
 
 
-def _socrata_rows(base: str, rid: str):
+def _socrata_rows(base: str, rid: str, where: str = ""):
     offset = 0
     while offset < MAX_RECORDS:
-        js = _get_json(f"{base}{rid}.json",
-                       {"$limit": SOCRATA_PAGE, "$offset": offset})
+        params = {"$limit": SOCRATA_PAGE, "$offset": offset}
+        if where:
+            params["$where"] = where
+        js = _get_json(f"{base}{rid}.json", params)
         if not isinstance(js, list) or not js:
             break
         yield from js
@@ -313,10 +333,11 @@ def _pull_socrata_stack(conn, market: str, cfg: dict) -> int:
     Stack every FY file, dedupe on (gpin, transfer_date) - later FY wins -
     to recover multi-sale history (~last 3 sales per parcel)."""
     base = cfg["base"]
+    soql_where = cfg.get("soql_where", "")
     # SIZE FIRST across the whole stack.
     sized = []
     for fy, rid in cfg["resources"]:
-        n = _socrata_count(base, rid)
+        n = _socrata_count(base, rid, soql_where)
         if n is None:
             print(f"[sales:{market}] {fy} ({rid}) count failed: "
                   f"{_LAST_ERR or 'no response'}")
@@ -339,7 +360,7 @@ def _pull_socrata_stack(conn, market: str, cfg: dict) -> int:
                   f"that year")
             continue
         got = 0
-        for raw in _socrata_rows(base, rid):
+        for raw in _socrata_rows(base, rid, soql_where):
             if not isinstance(raw, dict):
                 continue
             # Strip Socrata meta keys and geometry dicts - not sale data.

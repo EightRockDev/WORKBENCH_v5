@@ -334,6 +334,18 @@ Status per remaining jurisdiction after the source hunt:
     (default = the VB arm's-length WHERE) so future Esri sales layers with
     different field names can join the registry cleanly.
 
+### Hottest-50 metro sales rollout has begun (2026-08-11)
+Chicago (Wave 1 #1) is in SALES_SOURCES: Cook County Assessor "Parcel Sales"
+wvhk-k5uv on datacatalog.cookcountyil.gov - TRANSACTION-level full history per
+PIN (the Assessor's own published dataset). County-wide ~1.5M rows, so
+cfg["soql_where"] applies the arm's-length-since-2021 stance ($where support
+added to the socrata adapter). pin/sale_date/sale_price are all already in
+the id/date/price key sets. Pattern for the rest of Wave 1: find each metro's
+county-assessor sales dataset (Socrata or Esri), add with verified resource
+id + appropriate soql_where/where filter, let the sized first host run prove
+it. Sales rows index by APN now and join the backbone when each metro's FIPS
+activates - history is pre-positioned, not blocked on activation.
+
 ### Richmond MF completeness (owner commitment 2026-08-11: "all Richmond MF
 ### in the DB by morning")
 Backbone had 71,590 Richmond properties but only 111 MF - VGIN parcels carry
