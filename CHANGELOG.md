@@ -12,6 +12,14 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.38.2.2.0 — 2026-08-11  ·  Richmond join: alias-candidate evidence in section 2b
+The workbook still joins only 6,173/76,976 (its PINs look like C0010124002;
+the COR feed's mapped apn is 405010001 - different id scheme). When the join
+is unhealthy, richmondreview now scores every raw API attribute by actual
+overlap with the workbook apn set and prints the top candidates - the next
+cycle names the exact attribute to alias in core/phase0.py (or proves a
+crosswalk feed is needed).
+
 ## V5.38.2.1.0 — 2026-08-11  ·  Preflight kills ORPHANS only
 The 11:00 scheduled fire's preflight killed the owner's healthy 10:45
 manual cycle (any matching process died). Now a process is killed only when

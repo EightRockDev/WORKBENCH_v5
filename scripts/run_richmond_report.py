@@ -173,11 +173,46 @@ def main() -> int:
             print(f"  rva.gov-files join health: {overlap:,} of "
                   f"{len(fset):,} workbook parcels match an API-feed parcel")
             if fset and overlap < len(fset) * 0.5:
+                # WHICH raw attribute carries the workbook's parcel key?
+                # (2026-08-11: workbook PINs look like C0010124002 while the
+                # COR feed's mapped apn is 405010001 - a different id scheme.
+                # Score every raw key on the API sources by how many of its
+                # values land in the workbook apn set; the winning key is the
+                # alias to add in core/phase0.py. Evidence, not format
+                # guessing.)
+                hits: dict[tuple[str, str], int] = {}
+                scanned: dict[str, int] = {}
+                for src2, rec2 in conn.execute(
+                        "SELECT source_url, record FROM muni_records "
+                        "WHERE market='Richmond' AND kind LIKE 'assessor%'"):
+                    s2 = src2 or "?"
+                    if s2 == files_src or scanned.get(s2, 0) >= 4000:
+                        continue
+                    raw2 = phase0._decode_muni_record(rec2)
+                    if not raw2:
+                        continue
+                    scanned[s2] = scanned.get(s2, 0) + 1
+                    for k, v in raw2.items():
+                        if v is None or isinstance(v, (dict, list)):
+                            continue
+                        nv = spine.normalize_apn(str(v))
+                        if nv and nv in fset:
+                            hits[(s2, k)] = hits.get((s2, k), 0) + 1
+                if hits:
+                    print("  alias candidates (API attribute -> workbook apn "
+                          "overlap, first 4,000 rows per source):")
+                    for (s2, k), n in sorted(hits.items(),
+                                             key=lambda kv: -kv[1])[:6]:
+                        print(f"    {n:>6,}  {k}  @ {s2[:52]}")
+                else:
+                    print("  alias candidates: NONE - no API attribute value "
+                          "appears in the workbook apn set (a crosswalk "
+                          "feed is needed, not an alias)")
                 gaps.append(
                     f"rva.gov workbook rows do NOT join the parcel "
                     f"backbone ({overlap:,}/{len(fset):,} apn matches) - "
-                    "their units/values enrich nothing. Compare the apn "
-                    "samples in section 2b and add the right alias in "
+                    "their units/values enrich nothing. The alias-candidate "
+                    "lines above name the raw attribute to alias in "
                     "core/phase0.py.")
             if per[files_src]["units"] == 0:
                 gaps.append(
