@@ -103,14 +103,23 @@ KNOWN_ROOTS: dict[str, list[str]] = {
     "Chesapeake": [
         "https://gis.cityofchesapeake.net/mapping/rest/services",
     ],
+    # geo.hrsd.com hosts HRGEO (the HRPDC regional exchange) - its
+    # regionalgis/HRGeo_Parcels_Public merges every member locality's live
+    # parcel service under one standardized schema ("most highly requested
+    # fields", per-locality gaps possible). Walking it lets the host
+    # field-score what each gap city actually shares; the per-city bbox check
+    # keeps wrong-locality rows out (added 2026-08-11, owner "do all of them").
     "Hampton": [
         "https://gis.hampton.gov/arcgis/rest/services",
+        "https://geo.hrsd.com/hrgeo/rest/services",
     ],
     "Portsmouth": [
         "https://gis.portsmouthva.gov/arcgis/rest/services",
+        "https://geo.hrsd.com/hrgeo/rest/services",
     ],
     "Suffolk": [
         "https://services2.arcgis.com/roiGKZTZbeqAsCZi/arcgis/rest/services",
+        "https://geo.hrsd.com/hrgeo/rest/services",
     ],
     # Norfolk's GIS lives on its own server (the Socrata roll has no
     # coordinates); AGOL search is the fallback if this root is offline.

@@ -312,6 +312,28 @@ sizes the pull FIRST and never deletes on a transient empty.
     LandBook rows (30,272 commercial + 90,285 residential). 282,886 sale
     rows total, indexed same cycle. Richmond 0 (above).
 
+### All-seven Hampton Roads sales push (owner "do all of them" 2026-08-11)
+Status per remaining jurisdiction after the source hunt:
+  * Newport News: COVERED (most-recent sale) - its parcel layer already
+    carries last-sale fields (assessor+sales, live).
+  * Suffolk: portal CONFIRMED Spatialest WITH a Sales tab
+    (community.spatialest.com/va/suffolk) but api.spatialest.com never
+    answered - pull_sales.py now probes BOTH hosts (SPATIALEST_HOSTS) and only
+    settles for "no sales feed" after all hosts strike out. Runtime
+    sale-verification still gates every combo.
+  * Hampton + Portsmouth: no city-published sales dataset found. The HRPDC
+    regional exchange (HRGEO, geo.hrsd.com/hrgeo/rest/services -
+    regionalgis/HRGeo_Parcels_Public merges every member locality under one
+    standardized schema) is now a KNOWN_ROOT for Hampton/Portsmouth/Suffolk
+    discovery: the host field-scores whatever each city actually shares, and
+    if the regional schema carries sale fields they flow to sale_index via
+    assessor rows automatically. Portsmouth's own data is otherwise
+    portal-only (data.portsmouthva.gov ASP.NET search) - scrape is the
+    last-resort follow-up.
+  * pull_arcgis_sales arcgis adapter now takes per-source cfg["where"]
+    (default = the VB arm's-length WHERE) so future Esri sales layers with
+    different field names can join the registry cleanly.
+
 ### Richmond MF completeness (owner commitment 2026-08-11: "all Richmond MF
 ### in the DB by morning")
 Backbone had 71,590 Richmond properties but only 111 MF - VGIN parcels carry

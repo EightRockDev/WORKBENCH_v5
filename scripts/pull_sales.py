@@ -42,6 +42,11 @@ import requests
 from core import phase0, sale_history
 
 SPATIALEST = "https://api.spatialest.com/v1"
+# Some localities front Spatialest on the community host instead of api.
+# (Suffolk's portal is community.spatialest.com/va/suffolk with a live Sales
+# tab, yet api.spatialest.com never answered for it - 2026-08-11). Probe both;
+# runtime sale-verification keeps this from ever pulling a wrong endpoint.
+SPATIALEST_HOSTS = (SPATIALEST, "https://community.spatialest.com/api/v1")
 CACHE = ROOT / "data" / "spatialest_endpoints.json"
 LIMIT = int(os.environ.get("ER_SALES_LIMIT", "400"))
 REFRESH_D = int(os.environ.get("ER_SALES_REFRESH_D", "30"))
@@ -157,24 +162,27 @@ def discover(market: str, state: str, probe_gpins: list[str]) -> dict | None:
     """Find (slug, resource) whose payload yields a real sale, using up to a
     few sample parcels (some parcels have no sale on record)."""
     st = state.strip().lower()
-    for slug in slug_variants(market):
-        # cheap reachability check: does this slug exist at all?
-        base = f"{SPATIALEST}/{st}/{slug}"
-        reachable = False
-        for res in CANDIDATE_RESOURCES:
-            for gpin in probe_gpins:
-                code, payload = _get(f"{base}/{res}/{gpin}")
-                if code == 200:
-                    reachable = True
-                    if _has_sale(payload):
-                        return {"base": base, "resource": res}
-                time.sleep(0.3)
-        # All resources tried. A slug that answered at all is the right
-        # locality; report it with no sales resource (sampled parcels had no
-        # sale, or the vendor has no sales feed) rather than breaking early.
-        if reachable:
-            return {"base": base, "resource": None}
-    return None
+    fallback: dict | None = None
+    for host in SPATIALEST_HOSTS:
+        for slug in slug_variants(market):
+            # cheap reachability check: does this slug exist at all?
+            base = f"{host}/{st}/{slug}"
+            reachable = False
+            for res in CANDIDATE_RESOURCES:
+                for gpin in probe_gpins:
+                    code, payload = _get(f"{base}/{res}/{gpin}")
+                    if code == 200:
+                        reachable = True
+                        if _has_sale(payload):
+                            return {"base": base, "resource": res}
+                    time.sleep(0.3)
+            # All resources tried on this host. A slug that answered at all
+            # is the right locality - remember it, but keep probing the NEXT
+            # host for a real sales resource before settling for "no sales
+            # feed" (Suffolk answers on community., not api., 2026-08-11).
+            if reachable and fallback is None:
+                fallback = {"base": base, "resource": None}
+    return fallback
 
 
 def _fresh(conn, source_url, gpin, cutoff) -> bool:

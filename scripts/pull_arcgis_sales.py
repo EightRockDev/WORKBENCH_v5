@@ -230,19 +230,21 @@ def _clean_value(v):
 
 # ---------------------------------------------------------------- adapters
 
-def count_sales(url: str) -> int | None:
-    """VB/Esri: size the pull BEFORE paginating (owner directive)."""
-    js = _query(url, {"where": WHERE, "returnCountOnly": "true", "f": "json"})
+def count_sales(url: str, where: str = "") -> int | None:
+    """Esri: size the pull BEFORE paginating (owner directive)."""
+    js = _query(url, {"where": where or WHERE, "returnCountOnly": "true",
+                      "f": "json"})
     if js is None or "count" not in js:
         return None
     return int(js["count"])
 
 
-def iter_features(url: str, expected: int):
+def iter_features(url: str, expected: int, where: str = ""):
     offset = 0
     while offset < min(expected, MAX_RECORDS):
         js = _query(url, {
-            "where": WHERE, "outFields": "*", "returnGeometry": "false",
+            "where": where or WHERE, "outFields": "*",
+            "returnGeometry": "false",
             "resultOffset": offset, "resultRecordCount": PAGE, "f": "json"})
         feats = (js or {}).get("features") or []
         if not feats:
@@ -259,18 +261,19 @@ def iter_features(url: str, expected: int):
 
 def _pull_arcgis(conn, market: str, cfg: dict) -> int:
     url = cfg["url"]
-    total = count_sales(url)
+    where = cfg.get("where", "")         # per-source filter; default = WHERE
+    total = count_sales(url, where)
     if total is None:
-        print(f"[sales:{market}] count query FAILED (endpoint/where?) - "
-              f"skip, no rows touched")
+        print(f"[sales:{market}] count query FAILED "
+              f"({_LAST_ERR or 'endpoint/where?'}) - skip, no rows touched")
         return 0
-    print(f"[sales:{market}] {total} arm's-length sales since {SINCE_YEAR} "
-          f"to pull")
+    print(f"[sales:{market}] {total} sales to pull "
+          f"(where: {where or WHERE})")
     if total == 0:
         return 0
     now_iso = dt.datetime.now().isoformat(timespec="seconds")
     rows = [(market, cfg["state"], cfg["county"], "sales", url, now_iso,
-             json.dumps(attrs)) for attrs in iter_features(url, total)]
+             json.dumps(attrs)) for attrs in iter_features(url, total, where)]
     if not rows:
         print(f"[sales:{market}] expected {total} but paginated 0 - NOT "
               f"deleting existing rows (transient?)")
