@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-10T22:12:10
+autopilot pull @ 2026-08-10T23:14:02
 
 QUARRIE muni-data ETL — 2026-08-10
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -12,9 +12,10 @@ QUARRIE muni-data ETL — 2026-08-10
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/5
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3
-  [swept] Norfolk: 74,253 stale rows from retired feed https://data.norfolk.gov/resource/g7sg-tivf.json
+  [swept] Norfolk: 114,698 stale rows from retired feed socrata-stack:data.norfolk.gov/property-assessment-and-sales
   [swept] Virginia Beach: 47,631 stale rows from retired feed https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0
-  stale rows removed: 121,884
+  [swept] Chesapeake: 120,557 stale rows from retired feed landbook:gis.cityofchesapeake.net FY26-27
+  stale rows removed: 282,886
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 437,507 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  437507 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 183,456 rows (ER_MUNI_FORCE=1 to re-pull)
@@ -34,6 +35,7 @@ QUARRIE muni-data ETL — 2026-08-10
   [OK] Nashville/assessor+sales                286864 records
   [fresh] Nashville/permits: pulled within 3 days - keeping 28,579 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/permits                        28579 records
+  [fresh] Norfolk/assessor+sales: pulled within 3 days - keeping 74,359 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor+sales                   74359 records
   [fresh] Norfolk/permits: pulled within 3 days - keeping 125,198 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/permits                         125198 records
