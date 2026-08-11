@@ -714,41 +714,11 @@ BEGIN
 END $$;
 
 -- ---------------------------------------------------------------------------
--- Inbox -> property details (owner ask 2026-08-11: "reading emails from O365
--- ... populating property details from them"). One org-visible row per
--- gate-clearing message, keyed to the backbone property it describes (or the
--- normalized address when no property matches yet). Rendered as "Inbox
--- Intel" on the property detail page. Raw mail stays per-user private; this
--- carries only the same extract that already flows into deals.
+-- (2026-08-11) property_email_intel briefly lived here - an org-visible
+-- per-message intel card store. Owner corrected the same day: ingest email
+-- facts as DATA (muni_records kind='assessor-email', merged by the spine),
+-- do not display individual emails. The table was never deployed.
 -- ---------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS property_email_intel (
-    id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    org_id        uuid NOT NULL,
-    property_key  text NOT NULL,
-    matched       boolean NOT NULL DEFAULT false,
-    message_id    text NOT NULL,
-    from_email    text,
-    from_name     text,
-    subject       text,
-    received_at   timestamptz,
-    status        text,
-    fields        jsonb NOT NULL DEFAULT '{}'::jsonb,
-    confidence    real,
-    created_at    timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (org_id, message_id)
-);
-CREATE INDEX IF NOT EXISTS ix_pei_prop
-    ON property_email_intel(org_id, property_key, received_at DESC);
-
-DO $$
-BEGIN
-    EXECUTE 'ALTER TABLE property_email_intel ENABLE ROW LEVEL SECURITY';
-    EXECUTE 'ALTER TABLE property_email_intel FORCE ROW LEVEL SECURITY';
-    EXECUTE 'DROP POLICY IF EXISTS org_isolation ON property_email_intel';
-    EXECUTE 'CREATE POLICY org_isolation ON property_email_intel '
-            'USING (org_id = current_org_id()) '
-            'WITH CHECK (org_id = current_org_id())';
-END $$;
 
 -- Metadata-only enumeration for the background O365 sync job: which
 -- (org, user) pairs have a connected mailbox. SECURITY DEFINER because
