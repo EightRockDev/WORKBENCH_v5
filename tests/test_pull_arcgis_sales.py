@@ -129,10 +129,19 @@ def test_norfolk_stack_dedupes_latest_fy_wins(monkeypatch):
     assert all("location" not in r for r in recs)    # geometry stripped
 
 
-def test_stack_id_and_date_key_flexibility_for_richmond(monkeypatch):
+def test_stack_id_and_date_key_flexibility(monkeypatch):
+    # Richmond's Socrata source is retired (rva.gov files won), but the
+    # stack adapter's id/date-key probing must keep working for any future
+    # socrata_stack promotion out of discover_sales_feeds candidates.
     m = _mod()
-    cfg = dict(m.SALES_SOURCES["Richmond"])
-    cfg["resources"] = (("history", "cccc-cccc"),)
+    cfg = {
+        "type": "socrata_stack",
+        "base": "https://example.socrata.test/resource/",
+        "resources": (("history", "cccc-cccc"),),
+        "state": "VA", "county": "Richmond",
+        "source_tag": "socrata-stack:test/property-transfers",
+        "refresh_d": 7,
+    }
     rows = [{"pin": "W0001", "transfer_date": "2024-03-01T00:00:00",
              "consideration_amount": "750000"}]
 

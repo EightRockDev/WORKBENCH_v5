@@ -86,14 +86,15 @@ def main() -> int:
         if total and with_units < total * 0.01:
             gaps.append(f"Unit coverage is thin: {with_units:,} of {total:,} "
                         "parcels carry unit counts - the COR ownership layer "
-                        "has none, so units depend on vm9j-9f88 (Socrata "
-                        "403 -> token) or the rva.gov Public Data Set files.")
+                        "has none, so units depend on the rva.gov Public "
+                        "Data Set files or a discover-sales-latest candidate "
+                        "(no token chases - owner 2026-08-11).")
         if units:
             print(f"  units:          {_stats([float(u) for u in units])}")
         else:
             gaps.append("Unit counts: no Richmond MF rows carry units - "
                         "unit data must come from a richer assessor layer "
-                        "(COR GeoHub walk / vm9j-9f88).")
+                        "(rva.gov files / discover-sales-latest candidates).")
         if yrs:
             print(f"  year built:     {min(yrs)}-{max(yrs)}")
         if vals:
@@ -115,11 +116,11 @@ def main() -> int:
                    or ("rva.gov" in (r["source_url"] or ""))
                    or ("il6vO1TutlF580Ku" in (r["source_url"] or ""))
                    for r in srcs):
-            gaps.append("Assessments have NOT landed by ANY path (Socrata "
-                        "vm9j-9f88, the COR parcels Esri API, or the rva.gov "
-                        "monthly files) - if the pull report shows HTTP 403 "
-                        "on richmondgov, set ER_SOCRATA_APP_TOKEN (free: "
-                        "evergreen.data.socrata.com) in .env.")
+            gaps.append("Assessments have NOT landed by ANY path (the COR "
+                        "parcels Esri API or the rva.gov monthly files) - "
+                        "check arcgis-sales-latest.txt for the failing "
+                        "fetch, and discover-sales-latest.txt for ranked "
+                        "alternate sources.")
 
         # ---- 2b. field-mapping health per assessor source ---------------
         # The 3AM 2026-08-11 review looked complete (76,976 rva.gov rows
@@ -182,8 +183,8 @@ def main() -> int:
                 gaps.append(
                     "The rva.gov Public Data Set maps NO unit counts - "
                     "check section 2b and the phase0 unmapped-keys list "
-                    "for the workbook's unit column, or units stay "
-                    "dependent on vm9j-9f88 (Socrata 403 -> token).")
+                    "for the workbook's unit column, or promote a units-"
+                    "bearing candidate from discover-sales-latest.txt.")
 
         # ---- 3. sales ---------------------------------------------------
         print("\n-- 3. Richmond sales (muni_records kind='sales') --")
@@ -211,11 +212,10 @@ def main() -> int:
                 print(f"    {r.get('date')}  ${(r.get('price') or 0):,.0f}  "
                       f"-> {(r.get('grantee') or '?')[:40]}")
         else:
-            gaps.append("NO Richmond sales rows - the transfer stack "
-                        "(uxre-by3i/k9h9-y482) has not landed. Check "
-                        "arcgis-sales-latest.txt: HTTP 403 means set "
-                        "ER_SOCRATA_APP_TOKEN in .env; anything else, "
-                        "send the report line to Claude.")
+            gaps.append("NO Richmond sales rows - the rva.gov transfers "
+                        "workbook has not landed. Check "
+                        "arcgis-sales-latest.txt [sales:Richmond-files] "
+                        "and send the report line to Claude.")
 
         # ---- 4. taxes ---------------------------------------------------
         print("\n-- 4. Estimated real-estate tax (rate "

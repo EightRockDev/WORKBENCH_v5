@@ -130,20 +130,13 @@ SALES_SOURCES: dict[str, dict] = {
         "source_tag": "landbook:gis.cityofchesapeake.net FY26-27",
         "refresh_d": 30,                 # annual export
     },
-    # Richmond (owner directive 2026-08-11 "don't stop until data on server"):
-    # data.richmondgov.com Socrata. "Property Transfer History" (uxre-by3i,
-    # quarterly, full history) + "Property Transfers" (k9h9-y482, recent) -
-    # same stack+dedupe treatment as Norfolk; the "current" file lists later
-    # so its fresher rows win collisions. Field spellings self-verify on the
-    # first sized host run (the adapter probes id/date key candidates).
-    "Richmond": {
-        "type": "socrata_stack",
-        "base": "https://data.richmondgov.com/resource/",
-        "resources": (("history", "uxre-by3i"), ("current", "k9h9-y482")),
-        "state": "VA", "county": "Richmond",
-        "source_tag": "socrata-stack:data.richmondgov.com/property-transfers",
-        "refresh_d": 7,
-    },
+    # Richmond Socrata (uxre-by3i/k9h9-y482) RETIRED 2026-08-11: the domain
+    # 403s API reads, and the rva.gov files path below already delivers the
+    # same transfers (84k sale rows through 2026-05, verified in
+    # richmond-review). Owner directive: research easier methods instead of
+    # making a difficult source work - so no token chase; if Socrata is ever
+    # wanted again, discover_sales_feeds.py scores it from the central
+    # catalog without touching the gated domain.
     # Richmond PATH 2 (owner 2026-08-11 "Not review. I want it done."): the
     # Assessor's OWN monthly files on rva.gov - a different domain than the
     # 403-risk data.richmondgov.com, so the two paths fail independently.

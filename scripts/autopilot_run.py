@@ -26,6 +26,12 @@ STEPS = (
     # National top-50 metro discovery, self-gated to weekly (owner 2026-08-09).
     ("discover_national", ["scripts/run_national_discovery.py"],
      "discover-national-latest.txt"),
+    # Research pass (owner 2026-08-11 "research the methods to pull data"):
+    # rank per-locality sales sources from the central catalogs (Socrata
+    # Discovery / ArcGIS Hub / CKAN-VA / HRGEO) instead of fighting gated
+    # city domains. Writes candidates; never activates. Weekly self-gate.
+    ("salesdiscovery", ["scripts/discover_sales_feeds.py"],
+     "discover-sales-latest.txt"),
     ("pull", ["etl_munidata.py", "--hr"], "pull-latest.txt"),
     ("publicdata", ["scripts/run_public_data.py"], "public-data-latest.txt"),
     ("listings", ["scripts/run_listings.py"], "listings-latest.txt"),
@@ -34,9 +40,9 @@ STEPS = (
     # self-skips those not on Spatialest (owner directive 2026-08-09).
     ("salespull", ["scripts/pull_sales.py"], "sales-latest.txt"),
     # Municipal SALES, three adapter types (owner-verified 2026-08-11):
-    # VB = esri_history (Property_Sales_), Norfolk + Richmond =
-    # socrata snapshot-stack (FY files / transfer history, deduped on
-    # (parcel, date)), Chesapeake = assessor LandBook XLS join. All land in
+    # VB = esri_history (Property_Sales_), Norfolk = socrata snapshot-stack
+    # (FY files, deduped on (parcel, date)), Chesapeake = assessor LandBook
+    # XLS join, Richmond = rva.gov monthly files + COR Esri roll. All land in
     # muni_records kind=sales; every adapter sizes the pull BEFORE writing
     # and never deletes on a transient empty ([OK] 0 records = break).
     ("arcgissales", ["scripts/pull_arcgis_sales.py"], "arcgis-sales-latest.txt"),
@@ -193,6 +199,7 @@ def main() -> int:
 
     def extras_now() -> list[Path]:
         files = [ROOT / "data" / "feeds_extra.json",
+                 ROOT / "data" / "sales_feeds_candidates.json",
                  REPORTS / "phase0-gates.json"]
         live = REPORTS / "autopilot.log"
         pub = REPORTS / "autopilot-run.log"
