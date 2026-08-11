@@ -42,6 +42,9 @@ _OVERRIDES: tuple[tuple[str, str], ...] = (
     # Spatialest API bases -> the locality's public portal.
     ("api.spatialest.com/v1/va/virginiabeach",
      "https://propertysearch.virginiabeach.gov/"),
+    # Richmond assessor monthly files -> the Data Request page they live on.
+    ("files:rva.gov/assessor-real-estate",
+     "https://www.rva.gov/assessor-real-estate/data-request"),
 )
 
 _SOCRATA_RESOURCE = re.compile(

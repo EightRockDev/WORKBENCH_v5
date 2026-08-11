@@ -215,6 +215,61 @@ def test_landbook_empty_parse_touches_nothing(monkeypatch):
     assert conn.execute("SELECT count(*) FROM muni_records").fetchone()[0] == 1
 
 
+# -------------------------------------------- Richmond / rva.gov files
+
+def test_html_files_scrapes_classifies_and_writes(monkeypatch):
+    import pandas as pd
+    m = _mod()
+    cfg = m.SALES_SOURCES["Richmond-files"]
+
+    html = ('<a href="/files/PublicDataSet_Parcels_0726.xlsx">parcels</a>'
+            '<a href="/files/Transfers_July2026.xlsx">transfers</a>'
+            '<a href="/files/notes.pdf">ignore</a>')
+
+    class R:
+        status_code = 200
+        text = html
+    monkeypatch.setattr(m.requests, "get", lambda *a, **k: R())
+
+    frames = {
+        "PublicDataSet_Parcels_0726.xlsx": pd.DataFrame(
+            [{"PIN": "W0001", "PropertyClass": "R41 Apartment",
+              "TotalValue": 2_500_000}]),
+        "Transfers_July2026.xlsx": pd.DataFrame(
+            [{"PIN": "W0001", "TransferDate": pd.Timestamp("2026-05-04"),
+              "Consideration": 1_800_000, "Qualified": "Q"}]),
+    }
+    monkeypatch.setattr(
+        m, "_download_table",
+        lambda url: frames.get(url.rsplit("/", 1)[-1]))
+    conn = _mk_db()
+    n = m.pull_market(conn, "Richmond-files", cfg)
+    assert n == 2
+    rows = conn.execute(
+        "SELECT market, kind, record FROM muni_records").fetchall()
+    kinds = sorted(r[1] for r in rows)
+    assert kinds == ["assessor", "sales"]
+    assert all(r[0] == "Richmond" for r in rows)
+    sale = json.loads(next(r[2] for r in rows if r[1] == "sales"))
+    assert sale["TransferDate"] == "2026-05-04"      # Timestamp -> ISO
+    assert sale["_file"].endswith("Transfers_July2026.xlsx")
+
+
+def test_html_files_no_links_touches_nothing(monkeypatch):
+    m = _mod()
+    cfg = m.SALES_SOURCES["Richmond-files"]
+
+    class R:
+        status_code = 403
+        text = ""
+    monkeypatch.setattr(m.requests, "get", lambda *a, **k: R())
+    conn = _mk_db()
+    conn.execute("INSERT INTO muni_records VALUES ('Richmond','VA','Richmond',"
+                 "'sales',?, '2000-01-01', '{}')", (cfg["source_tag"],))
+    assert m.pull_market(conn, "Richmond-files", cfg) == 0
+    assert conn.execute("SELECT count(*) FROM muni_records").fetchone()[0] == 1
+
+
 # ------------------------------------- rows are readable by sale_history
 
 def test_extractor_reads_all_three_jurisdictions_rows():

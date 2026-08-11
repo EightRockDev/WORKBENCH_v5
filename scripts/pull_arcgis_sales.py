@@ -49,6 +49,7 @@ import datetime as dt
 import io
 import json
 import os
+import re
 import sqlite3
 import sys
 import time
@@ -141,6 +142,21 @@ SALES_SOURCES: dict[str, dict] = {
         "resources": (("history", "uxre-by3i"), ("current", "k9h9-y482")),
         "state": "VA", "county": "Richmond",
         "source_tag": "socrata-stack:data.richmondgov.com/property-transfers",
+        "refresh_d": 7,
+    },
+    # Richmond PATH 2 (owner 2026-08-11 "Not review. I want it done."): the
+    # Assessor's OWN monthly files on rva.gov - a different domain than the
+    # 403-risk data.richmondgov.com, so the two paths fail independently.
+    # The page hosts a 3-file Public Data Set (parcel/land+building/ownership
+    # + assessment history) and a market-transfers workbook, refreshed ~15th
+    # monthly with changing URLs - so the adapter scrapes the page for
+    # spreadsheet links each run instead of hardcoding any.
+    "Richmond-files": {
+        "type": "html_files",
+        "page": "https://www.rva.gov/assessor-real-estate/data-request",
+        "market": "Richmond",
+        "state": "VA", "county": "Richmond",
+        "source_tag": "files:rva.gov/assessor-real-estate",
         "refresh_d": 7,
     },
     # Hottest-50 Wave 1 begins (owner "do all of them" 2026-08-11). Chicago =
@@ -461,10 +477,121 @@ def _pull_landbook(conn, market: str, cfg: dict) -> int:
     return len(all_rows)
 
 
+_SHEET_LINK = re.compile(
+    r"""href\s*=\s*["']([^"']+\.(?:xlsx|xls|csv)(?:\?[^"']*)?)["']""",
+    re.IGNORECASE)
+
+
+def _list_file_links(html: str, page_url: str) -> list[str]:
+    """Spreadsheet links on an assessor download page, absolutized."""
+    from urllib.parse import urljoin
+    out, seen = [], set()
+    for m in _SHEET_LINK.finditer(html or ""):
+        u = urljoin(page_url, m.group(1))
+        if u not in seen:
+            seen.add(u)
+            out.append(u)
+    return out
+
+
+def _file_kind(url: str) -> str:
+    """transfers/sales workbooks -> kind='sales'; everything else on an
+    assessor page is parcel data -> kind='assessor'."""
+    name = url.rsplit("/", 1)[-1].lower()
+    return "sales" if ("transfer" in name or "sale" in name) else "assessor"
+
+
+def _download_table(url: str):
+    """DataFrame from a remote xlsx/xls/csv, or None (logged by caller)."""
+    import pandas as pd
+    try:
+        r = requests.get(url, headers=_headers(), timeout=180)
+        if r.status_code != 200 or not r.content:
+            return None
+    except requests.RequestException:
+        return None
+    buf = io.BytesIO(r.content)
+    if url.lower().split("?")[0].endswith(".csv"):
+        try:
+            return pd.read_csv(io.BytesIO(r.content))
+        except Exception:
+            return None
+    for engine in ("openpyxl", "xlrd"):
+        buf.seek(0)
+        try:
+            return pd.read_excel(buf, engine=engine)
+        except Exception:
+            continue
+    return None
+
+
+def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
+    """Scrape an assessor downloads page for spreadsheet links and load each:
+    transfers -> kind='sales', parcel data -> kind='assessor'. Links change
+    monthly, so nothing is hardcoded; the sized per-file log is the proof."""
+    market = cfg.get("market", market_key)
+    tag = cfg["source_tag"]
+    try:
+        r = requests.get(cfg["page"], headers=_headers(), timeout=60)
+        html = r.text if r.status_code == 200 else ""
+        status = r.status_code
+    except requests.RequestException as exc:
+        html, status = "", repr(exc)
+    links = _list_file_links(html, cfg["page"])
+    print(f"[sales:{market}] {cfg['page']} -> HTTP {status}, "
+          f"{len(links)} spreadsheet link(s)")
+    if not links:
+        print(f"[sales:{market}] no file links found - skip, no rows touched")
+        return 0
+
+    now_iso = dt.datetime.now().isoformat(timespec="seconds")
+    rows: list[tuple] = []
+    per_kind = {"sales": 0, "assessor": 0}
+    for url in links[:12]:               # sanity cap on a scraped page
+        df = _download_table(url)
+        if df is None:
+            print(f"[sales:{market}]   {url.rsplit('/', 1)[-1][:60]}: "
+                  f"download/parse FAILED")
+            continue
+        kind = _file_kind(url)
+        kept = 0
+        for rec in df.to_dict(orient="records"):
+            clean = {}
+            for k, v in rec.items():
+                cv = _clean_value(v)
+                if cv not in (None, ""):
+                    clean[str(k).strip()] = cv
+            if not clean:
+                continue
+            clean["_file"] = url
+            rows.append((market, cfg["state"], cfg["county"], kind, tag,
+                         now_iso, json.dumps(clean, default=str)))
+            kept += 1
+            if len(rows) >= MAX_RECORDS:
+                break
+        per_kind[kind] = per_kind.get(kind, 0) + kept
+        print(f"[sales:{market}]   {url.rsplit('/', 1)[-1][:60]}: "
+              f"{kept} rows -> kind={kind}")
+    if not rows:
+        print(f"[sales:{market}] every file failed to parse - NOT deleting "
+              f"existing rows (transient?)")
+        return 0
+    with conn:
+        conn.execute("DELETE FROM muni_records WHERE source_url=?", (tag,))
+        conn.executemany(
+            "INSERT INTO muni_records (market,state,county,kind,source_url,"
+            "pulled_at,record) VALUES (?,?,?,?,?,?,?)", rows)
+    print(f"[sales:{market}] wrote {len(rows)} rows "
+          f"(sales={per_kind.get('sales', 0)}, "
+          f"assessor={per_kind.get('assessor', 0)})")
+    return len(rows)
+
+
 _ADAPTERS = {
     "arcgis": _pull_arcgis,
     "socrata_stack": _pull_socrata_stack,
     "landbook_xlsx": _pull_landbook,
+    "html_files": _pull_html_files,
 }
 
 

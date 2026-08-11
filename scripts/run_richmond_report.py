@@ -97,11 +97,14 @@ def main() -> int:
         for r in srcs:
             print(f"  {r['n']:>8,}  {r['at'][:19] if r['at'] else '?':<19}  "
                   f"{r['source_url'][:80]}")
-        if not any("richmondgov" in (r["source_url"] or "") for r in srcs):
-            gaps.append("Assessments feed (vm9j-9f88, property class/values "
-                        "for MF classification) has NOT landed - if the pull "
-                        "report shows HTTP 403, set ER_SOCRATA_APP_TOKEN "
-                        "(free: evergreen.data.socrata.com) in .env.")
+        if not any(("richmondgov" in (r["source_url"] or ""))
+                   or ("rva.gov" in (r["source_url"] or ""))
+                   for r in srcs):
+            gaps.append("Assessments have NOT landed by EITHER path "
+                        "(Socrata vm9j-9f88 or the rva.gov monthly files) - "
+                        "if the pull report shows HTTP 403 on richmondgov, "
+                        "set ER_SOCRATA_APP_TOKEN (free: "
+                        "evergreen.data.socrata.com) in .env.")
 
         # ---- 3. sales ---------------------------------------------------
         print("\n-- 3. Richmond sales (muni_records kind='sales') --")
