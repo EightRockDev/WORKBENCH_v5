@@ -788,3 +788,46 @@ def test_richmond_public_data_set_pid_joins_the_parcel_backbone():
     # An explicit parcel column always beats an internal PID.
     both = normalize_record("Richmond", "VA", {"ParcelID": "A1", "PID": "9"})
     assert both["apn"] == "A1"
+
+
+def test_richmond_pin_format_beats_apn_column_priority():
+    """2026-08-11 4:44 review: join health stayed 0/76,976 with the PID
+    alias in place - the COR layer carries a column literally named APN
+    (alias priority 0) holding a numeric id that matches nothing, while the
+    real PIN sits in ParcelID. For cities with a known PIN shape, format
+    wins over column priority."""
+    from core.phase0 import normalize_record
+
+    cor = normalize_record("Richmond", "VA",
+                           {"APN": "405010001", "ParcelID": "N0001721039"})
+    assert cor["apn"] == "N0001721039"
+    # No PIN-shaped value anywhere -> keep the priority winner unchanged.
+    numeric = normalize_record("Richmond", "VA",
+                               {"APN": "405010001", "GPIN": "74807"})
+    assert numeric["apn"] == "405010001"
+    # Other cities keep pure column priority (no format table entry).
+    nn = normalize_record("Newport News", "VA",
+                          {"APN": "123456", "ParcelID": "NN-9"})
+    assert nn["apn"] == "123456"
+
+
+def test_richmond_workbook_assessment_columns_map_and_declutter():
+    """The workbook's ASSSESS_TOTAL_VALUE_1 (sic - the file's own triple-S
+    spelling) is the current assessment and must reach assessed_value; the
+    LAND_ADJ_*/history columns saturated all 24 unmapped-report slots and
+    hid whether a units column exists, so they stay out of the report."""
+    from core.phase0 import normalize_record
+
+    rep = phase0.CoverageReport()
+    m = normalize_record("Richmond", "VA", {
+        "PID": "C0010124002", "ASSSESS_TOTAL_VALUE_1": 412000,
+        "ASSSESS_TOTAL_VALUE_2": 398000, "ASSSESS_LAND_VALUE_1": 90000,
+        "ASSSESS_IMP_VALUE_1": 322000, "LAND_ADJ_1_CODE": "A",
+        "LAND_ADJ_1_VAL": 5000, "LAND_ADJ_8_VAL": 1}, rep)
+    assert m["apn"] == "C0010124002"
+    assert m["assessed_value"] == 412000
+    assert not rep.unmapped_keys.get("Richmond")
+    # An explicit total-value column still beats the workbook spelling.
+    both = normalize_record("Richmond", "VA",
+                            {"TOTAL_VALUE": 1, "ASSSESS_TOTAL_VALUE_1": 2})
+    assert both["assessed_value"] == 1

@@ -108,7 +108,11 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                        "totalassessed",
                        "assessedtotal", "totalval", "currenttotal",
                        "currenttotalvalue", "totalcurrentvalue", "assessment",
-                       "totalassessment", "appraisedvalue"),
+                       "totalassessment", "appraisedvalue",
+                       # Richmond rva.gov workbook: _1 is the current-year
+                       # assessment (triple-S spelling is the file's own);
+                       # _2/_3 are history and stay ignored.
+                       "asssesstotalvalue1", "assesstotalvalue1"),
     "owner_name": ("owner", "ownername", "ownernme1", "owner1",
                    "primaryowner", "ownersname", "currentowner"),
     # geolat/geolng come first: the ETL writes them from the layer's actual
@@ -122,6 +126,15 @@ _ALIAS_LOOKUP: dict[str, tuple[str, int]] = {
     alias: (fieldname, priority)
     for fieldname, aliases in _FIELD_ALIASES.items()
     for priority, alias in enumerate(aliases)
+}
+
+# Cities whose parcel-id SHAPE is known: when the alias-priority winner for
+# apn does not match, any apn-aliased column whose value DOES match takes
+# over (see normalize_record). Patterns run over spine.normalize_apn output
+# (uppercase, alnum only). Richmond: district letter + 10 digits
+# (N0001721039, C0010124002), optional condo suffix.
+_APN_FORMAT_BY_CITY: dict[str, re.Pattern] = {
+    "Richmond": re.compile(r"[A-Z]\d{10}[A-Z0-9]{0,3}"),
 }
 
 # Feed bookkeeping/geometry columns that carry no property data - kept out of
@@ -162,7 +175,13 @@ _IGNORED_KEYS = re.compile(
     r"uniqueidz|rbldgfactr|rphysdprc1|rfuncdprc1|recondprc3|requalfctr|"
     r"firmdate|ecfloodz|issuedate|expdate|firmstatu|pstladdres|bf|"
     r"newfldzo|newstatic|newsfhat|femasourc|"
-    r"siteenergyuse.*|sourceenergyuse.*|energycost.*|rollingyearenddate)$")
+    r"siteenergyuse.*|sourceenergyuse.*|energycost.*|rollingyearenddate|"
+    # Richmond rva.gov workbook bookkeeping: per-parcel land adjustments and
+    # assessment history. These 22 dense columns saturated the widened
+    # unmapped-keys report (24 slots of LAND_ADJ/ASSSESS) and hid whether
+    # the workbook carries a units column at all. ASSSESS_TOTAL_VALUE_1 is
+    # aliased to assessed_value above, so it never reaches this filter.
+    r"landadj\d+(code|val)|as{2,3}sess(land|imp|total)value\d+)$")
 
 # Use-code text that identifies multifamily in municipal rolls. Two tiers:
 #   * SUBSTRINGS - long unambiguous words, safe to match anywhere in the code.
@@ -415,6 +434,23 @@ def normalize_record(city: str, state: str, raw: dict,
         if fieldname not in out or priority < prio[fieldname]:
             out[fieldname] = value
             prio[fieldname] = priority
+    # Format beats column priority for the parcel id in cities whose PIN
+    # shape is known. Richmond's COR layer carries a field literally named
+    # APN (alias priority 0) holding a numeric id that matches nothing,
+    # while the real PIN (letter district prefix + 10 digits, the shape the
+    # rva.gov workbook's PID uses) sits in ParcelID - so the 4:44 review
+    # showed 0 of 76,976 workbook parcels joining any API feed.
+    fmt = _APN_FORMAT_BY_CITY.get(city)
+    if fmt is not None and not fmt.fullmatch(
+            spine.normalize_apn(str(out.get("apn") or ""))):
+        for key, value in (raw or {}).items():
+            if value in (None, "", " ") or isinstance(value, (dict, list)):
+                continue
+            hit = _ALIAS_LOOKUP.get(_norm_key(key))
+            if (hit and hit[0] == "apn"
+                    and fmt.fullmatch(spine.normalize_apn(str(value)))):
+                out["apn"] = value
+                break
     # Norfolk-style split address: assemble number + name + type when the
     # feed carries the pieces separately - without this no Norfolk address
     # ever matches the legacy spine.

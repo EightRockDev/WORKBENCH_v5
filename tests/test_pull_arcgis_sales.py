@@ -237,6 +237,51 @@ def test_arcgis_kind_and_market_override(monkeypatch):
     assert rows == [("Richmond", "assessor")]
 
 
+def test_arcgis_assessor_repull_replaces_and_then_skips(monkeypatch):
+    """2026-08-11 4:20 cycle: the COR roll doubled (32,907 -> 65,814) and
+    re-downloaded every cycle because both the freshness stamp and the
+    delete-before-insert filtered kind='sales' while this feed writes
+    kind='assessor'. A repeat pull must REPLACE, and once stamped the next
+    cycle must skip."""
+    m = _mod()
+    cfg = m.SALES_SOURCES["Richmond-parcels"]
+    monkeypatch.setattr(m, "count_sales", lambda url, where="": 2)
+    monkeypatch.setattr(
+        m, "iter_features",
+        lambda url, total, where="": iter(
+            [{"PIN": "W0001"}, {"PIN": "W0002"}]))
+    conn = _mk_db()
+    m._ADAPTERS["arcgis"](conn, "Richmond-parcels", cfg)  # bypass freshness:
+    m._ADAPTERS["arcgis"](conn, "Richmond-parcels", cfg)  # two forced pulls
+    n = conn.execute("SELECT count(*) FROM muni_records").fetchone()[0]
+    assert n == 2, "second pull appended instead of replacing"
+    assert m.pull_market(conn, "Richmond-parcels", cfg) == 0   # fresh - skip
+    assert conn.execute(
+        "SELECT count(*) FROM muni_records").fetchone()[0] == 2
+
+
+def test_stale_generation_sweep_drains_prior_duplicates():
+    """Duplicate rows a prior buggy cycle left behind (older pulled_at, same
+    source and kind) must drain on the next cycle even when the source is
+    fresh enough to skip - otherwise the doubled COR roll would sit for the
+    whole refresh window."""
+    import datetime as dt
+    m = _mod()
+    cfg = m.SALES_SOURCES["Richmond-parcels"]
+    conn = _mk_db()
+    now = dt.datetime.now().isoformat(timespec="seconds")
+    for stamp, pin in (("2026-08-10T04:20:00", "W0001"),
+                       ("2026-08-10T04:20:00", "W0002"),
+                       (now, "W0001"), (now, "W0002")):
+        conn.execute(
+            "INSERT INTO muni_records (market,state,county,kind,source_url,"
+            "pulled_at,record) VALUES ('Richmond','VA','Richmond','assessor',"
+            "?,?,?)", (cfg["url"], stamp, json.dumps({"PIN": pin})))
+    assert m.pull_market(conn, "Richmond-parcels", cfg) == 0   # fresh - skip
+    rows = conn.execute("SELECT pulled_at FROM muni_records").fetchall()
+    assert len(rows) == 2 and all(r[0] == now for r in rows)
+
+
 # -------------------------------------------- Richmond / rva.gov files
 
 def test_html_files_scrapes_classifies_and_writes(monkeypatch):

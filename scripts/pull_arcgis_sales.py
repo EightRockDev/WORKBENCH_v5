@@ -231,9 +231,12 @@ def _query(url: str, params: dict) -> dict | None:
 
 
 def _source_fresh(conn, source_url: str, cutoff_iso: str) -> bool:
+    # No kind filter: assessor-kind feeds (the Richmond COR roll) stamp
+    # their rows kind='assessor', and a kind='sales' lookup never saw them -
+    # the roll re-downloaded all its rows every cycle (2026-08-11).
     row = conn.execute(
-        "SELECT max(pulled_at) FROM muni_records "
-        "WHERE kind='sales' AND source_url=?", (source_url,)).fetchone()
+        "SELECT max(pulled_at) FROM muni_records WHERE source_url=?",
+        (source_url,)).fetchone()
     return bool(row and row[0] and row[0] >= cutoff_iso)
 
 
@@ -243,10 +246,14 @@ def _refresh_cutoff(cfg: dict) -> str:
     return (dt.datetime.now() - dt.timedelta(days=days)).isoformat()
 
 
-def _replace_rows(conn, source_tag: str, rows: list[tuple]) -> None:
+def _replace_rows(conn, source_tag: str, rows: list[tuple],
+                  kind: str = "sales") -> None:
+    # kind must match what the rows carry: deleting kind='sales' before
+    # inserting kind='assessor' rows removes nothing, so every pull APPENDED
+    # a full copy of the feed (COR roll: 32,907 -> 65,814 in one day).
     with conn:
-        conn.execute("DELETE FROM muni_records WHERE kind='sales' AND "
-                     "source_url=?", (source_tag,))
+        conn.execute("DELETE FROM muni_records WHERE kind=? AND "
+                     "source_url=?", (kind, source_tag))
         conn.executemany(
             "INSERT INTO muni_records (market,state,county,kind,source_url,"
             "pulled_at,record) VALUES (?,?,?,?,?,?,?)", rows)
@@ -327,7 +334,7 @@ def _pull_arcgis(conn, market: str, cfg: dict) -> int:
         print(f"[sales:{market}] expected {total} but paginated 0 - NOT "
               f"deleting existing rows (transient?)")
         return 0
-    _replace_rows(conn, url, rows)
+    _replace_rows(conn, url, rows, kind)
     print(f"[sales:{market}] wrote {len(rows)} rows (expected {total})")
     return len(rows)
 
@@ -665,8 +672,26 @@ _ADAPTERS = {
 }
 
 
+def _sweep_stale_generations(conn, tag: str) -> None:
+    """Drop rows older than a source's newest write, per kind.
+
+    One `_replace_rows` write is one generation (a single pulled_at stamp).
+    The kind='sales' delete bug left older generations behind for
+    assessor-kind feeds (the COR roll doubled to 65,814 rows); this runs
+    even on fresh-skip cycles so those copies drain without waiting out
+    the refresh window.
+    """
+    with conn:
+        conn.execute(
+            "DELETE FROM muni_records WHERE source_url=? AND pulled_at < "
+            "(SELECT max(pulled_at) FROM muni_records m2 "
+            " WHERE m2.source_url = muni_records.source_url "
+            " AND m2.kind = muni_records.kind)", (tag,))
+
+
 def pull_market(conn: sqlite3.Connection, market: str, cfg: dict) -> int:
     tag = cfg.get("source_tag") or cfg.get("url")
+    _sweep_stale_generations(conn, tag)
     if _source_fresh(conn, tag, _refresh_cutoff(cfg)):
         print(f"[sales:{market}] fresh (<{cfg.get('refresh_d', 7)}d) - skip")
         return 0
