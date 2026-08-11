@@ -134,9 +134,41 @@
 
 ---
 
+## Deadlines and deliverables (2026-08-11)
+
+- **An outcome deadline gets a deliverable artifact, not a status promise.**
+  "Review it all at 3AM" -> a dedicated published report
+  (reports/richmond-review.txt) that answers the review in one read, exits
+  non-zero while ANY gap remains, and prints each gap's exact unblock. Plus a
+  self-check armed to fire BEFORE the owner's deadline so fixable gaps get
+  fixed first. Reuse this pattern for every future "by <time>" commitment.
+- **Numbers he'll act on should be env-tunable, not hardcoded** (tax rate ->
+  ER_RICHMOND_TAX_RATE), so a rate change never needs a code change.
+
+## UI provenance (2026-08-11)
+
+- **Data shown in the UI should link back to where it came from** - a HUMAN
+  page (dataset page, portal), never a raw API endpoint. Owner asked for it
+  on sales ("click a sale -> the website that reported it"); assume the same
+  preference for future surfaced data. Mapping lives in core/sale_links.py -
+  add an override whenever a new source's machine URL isn't human-readable.
+
+## Directive handling (2026-08-11)
+
+- **When Brian re-pastes a standing directive verbatim, execute its cycle
+  immediately** - it's a trigger, not a reminder to acknowledge. (This
+  Feedback.md contract re-paste = run the wrapup cycle now.)
+- A repeated instruction ("Load the Richmond Data now" sent twice) means
+  confirm what is already running in one line and spend the turn on the NEW
+  part of the message (the sale-links ask), not on re-explaining the old.
+
 ## Session log (append-only, date-stamped)
 
 - **2026-08-11:** File created (owner directive). Seeded with the standing
   corrections above, consolidated from CLAUDE.md history, the owner's global
   directives, and this session's corrections (do-work-twice ×2, Richmond 403
   dismissal, VB 0-records silent break, "answer the question first").
+- **2026-08-11 (wrapup):** Appended deadline-deliverable pattern,
+  UI-provenance preference, directive-handling rules. Cross-checked: no
+  duplicates against existing sections. Pushed to workbench_v5 main (the
+  persistence step - done by Claude, never pending on the owner).
