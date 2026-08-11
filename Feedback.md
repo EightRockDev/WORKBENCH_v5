@@ -171,6 +171,19 @@
   Socrata domain + the assessor's own rva.gov monthly files) so "done" does
   not hinge on a single unblock.
 
+## First-contact iteration (2026-08-11 overnight)
+
+- **First contact with a new source almost always fails on shape, not
+  availability** - tonight: Drupal /media/<id> links (no extension, then an
+  HTML landing page, THEN the file), year-per-tab workbooks, a form-derive
+  default that made every parcel "MF". Budget at least two fix-push cycles
+  between first pull and a deadline, and verify each cycle's actual output -
+  the sized log lines are what make each failure diagnosable in one read.
+- **Never let a derived default masquerade as evidence**: derive_8r_form
+  returns "garden" for everything, so "form IS NOT NULL" = the whole city.
+  Counts shown to the owner must be filtered on primary evidence (units),
+  with coverage printed next to them.
+
 ## Session log (append-only, date-stamped)
 
 - **2026-08-11:** File created (owner directive). Seeded with the standing
