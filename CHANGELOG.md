@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.38.2.1.0 — 2026-08-11  ·  Preflight kills ORPHANS only
+The 11:00 scheduled fire's preflight killed the owner's healthy 10:45
+manual cycle (any matching process died). Now a process is killed only when
+its parent PID is dead (the orphan signature - Task Scheduler killed the
+launcher, children survived), taking its subtree with it (taskkill /T). A
+healthy concurrent cycle is left alone; the launcher's log-append check
+then reports "another autopilot is running" visibly instead. Stale
+.git\index.lock is cleared only when no live cycle survives.
+
 ## V5.38.2.0.0 — 2026-08-11  ·  Autopilot self-healing: no more silent flash-and-die
 Root cause of "autopilot.bat flashes too fast": the 6:00 AM cycle (old code)
 hung in arcgissales; Task Scheduler's 3h limit killed the launcher cmd but
