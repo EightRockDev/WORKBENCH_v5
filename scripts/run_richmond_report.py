@@ -121,6 +121,70 @@ def main() -> int:
                         "on richmondgov, set ER_SOCRATA_APP_TOKEN (free: "
                         "evergreen.data.socrata.com) in .env.")
 
+        # ---- 2b. field-mapping health per assessor source ---------------
+        # The 3AM 2026-08-11 review looked complete (76,976 rva.gov rows
+        # "on hand") while every one of them sat orphaned: the workbook's
+        # parcel key (PID) had no alias, so nothing merged onto the
+        # COR/VDEM parcels and units/values never reached the backbone.
+        # This section makes that failure mode visible in one read: per
+        # source, how many rows map an apn/units/assessed value, plus the
+        # apn overlap between the rva.gov files and the API feeds - the
+        # join is HEALTHY only when that overlap is large.
+        print("\n-- 2b. Field mapping per source (spine-visible attributes) --")
+        from core import spine
+        per: dict[str, dict] = {}
+        for src, rec in conn.execute(
+                "SELECT source_url, record FROM muni_records "
+                "WHERE market='Richmond' AND kind LIKE 'assessor%'"):
+            raw = phase0._decode_muni_record(rec)
+            if not raw:
+                continue
+            m = phase0.normalize_record("Richmond", "VA", raw)
+            d = per.setdefault(src or "?", {
+                "n": 0, "apn": 0, "units": 0, "val": 0, "use": 0,
+                "sample": None, "apns": set()})
+            d["n"] += 1
+            apn_norm = spine.normalize_apn(str(m.get("apn") or ""))
+            if apn_norm:
+                d["apn"] += 1
+                d["apns"].add(apn_norm)
+                if d["sample"] is None:
+                    d["sample"] = str(m.get("apn"))
+            if m.get("units"):
+                d["units"] += 1
+            if m.get("assessed_value"):
+                d["val"] += 1
+            if m.get("use_code"):
+                d["use"] += 1
+        for src, d in sorted(per.items(), key=lambda kv: -kv[1]["n"]):
+            print(f"  {src[:60]}")
+            print(f"    rows={d['n']:,}  apn={d['apn']:,} "
+                  f"(sample: {d['sample'] or 'NONE'})  units={d['units']:,}  "
+                  f"assessed_value={d['val']:,}  use_code={d['use']:,}")
+        files_src = next((s for s in per if s.startswith("files:")), None)
+        if files_src:
+            fset = per[files_src]["apns"]
+            others: set = set()
+            for s, d in per.items():
+                if s != files_src:
+                    others |= d["apns"]
+            overlap = len(fset & others)
+            print(f"  rva.gov-files join health: {overlap:,} of "
+                  f"{len(fset):,} workbook parcels match an API-feed parcel")
+            if fset and overlap < len(fset) * 0.5:
+                gaps.append(
+                    f"rva.gov workbook rows do NOT join the parcel "
+                    f"backbone ({overlap:,}/{len(fset):,} apn matches) - "
+                    "their units/values enrich nothing. Compare the apn "
+                    "samples in section 2b and add the right alias in "
+                    "core/phase0.py.")
+            if per[files_src]["units"] == 0:
+                gaps.append(
+                    "The rva.gov Public Data Set maps NO unit counts - "
+                    "check section 2b and the phase0 unmapped-keys list "
+                    "for the workbook's unit column, or units stay "
+                    "dependent on vm9j-9f88 (Socrata 403 -> token).")
+
         # ---- 3. sales ---------------------------------------------------
         print("\n-- 3. Richmond sales (muni_records kind='sales') --")
         sales = conn.execute(

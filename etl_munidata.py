@@ -576,6 +576,23 @@ EXPANSION_MARKETS = ("Richmond", "Raleigh", "Charlotte", "Winston-Salem",
 ACTIVE_MARKETS = HR_MARKETS + EXPANSION_MARKETS
 
 
+def _sales_source_tags() -> set[str]:
+    """source_url tags owned by the sales/transfer puller
+    (scripts/pull_arcgis_sales.py). Its rows live in the same muni_records
+    table but its feeds are registered THERE, not in MUNI_FEEDS - so the
+    reconciliation sweep must treat them as current, not retired."""
+    try:
+        scripts_dir = str(Path(__file__).resolve().parent / "scripts")
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        from pull_arcgis_sales import SALES_SOURCES
+        return {cfg.get("source_tag") or cfg.get("url")
+                for cfg in SALES_SOURCES.values()
+                if cfg.get("source_tag") or cfg.get("url")}
+    except Exception:
+        return set()   # sweep still runs; worst case is the old churn
+
+
 def run_all(app_token: str | None = None, market: str | None = None,
             limit: int | None = None, hr_only: bool = False) -> dict[str, int]:
     conn = sqlite3.connect(DB_PATH, timeout=60)
@@ -602,6 +619,11 @@ def run_all(app_token: str | None = None, market: str | None = None,
     # from before the wrong-city guard existed. Swept per HR market so
     # national pulls are untouched.
     current_urls = {f.url for f in feeds(status=None)}
+    # The sales puller's tags are CURRENT feeds too - without this union the
+    # sweep deleted all ~477K of its rows as "retired" every cycle
+    # (2026-08-11 pull log), forcing a nightly full re-download and leaving
+    # a data hole whenever a source host was down that night.
+    current_urls |= _sales_source_tags()
     swept = 0
     for m in ACTIVE_MARKETS:
         rows = conn.execute(

@@ -194,3 +194,13 @@
   UI-provenance preference, directive-handling rules. Cross-checked: no
   duplicates against existing sections. Pushed to workbench_v5 main (the
   persistence step - done by Claude, never pending on the owner).
+- **2026-08-11 (post-3AM verify):** "Rows on hand" is not "data usable": the
+  76,976 rva.gov Public Data Set rows all landed as ORPHAN properties - their
+  parcel key column (PID) had no alias, so zero merged onto the COR/VDEM
+  parcels and the unit/tax gaps stayed open while section 2 looked complete.
+  A count next to a source URL proves ingestion, not the join. The Richmond
+  review now prints per-source field-mapping health and cross-source apn
+  overlap (section 2b) so a dead join names itself. Also fixed: the muni
+  sweep deleted all ~477K sales-puller rows as "retired" every cycle
+  (nightly full re-download; a one-night host outage would have made the
+  review run with silent holes).

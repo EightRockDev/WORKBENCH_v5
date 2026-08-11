@@ -89,3 +89,24 @@ def test_sale_history_uses_index_and_skips_the_scan(tmp_path, monkeypatch):
             "state": "VA", "market": "Norfolk"}
     out = sh.sale_history_for(prop, db_path=db)
     assert len(out) == 1 and out[0]["price"] == 500000.0
+
+
+def test_scraped_file_rows_index_with_their_resolved_url(tmp_path):
+    """rva.gov workbook rows store the muni source_url as a "files:..." TAG;
+    the real (clickable) workbook URL rides in the record's _file field and
+    must win in sale_records.source_url."""
+    rec = json.dumps({"PID": "N0001", "Address": "1 Main St",
+                      "saledate": "2025-01-02", "saleprice": 100000,
+                      "Grantee": "SMITH",
+                      "_file": "https://www.rva.gov/files/Transfers.xlsx"})
+    db = _muni_db(tmp_path, [("Richmond", "VA", "Richmond", "sales",
+                              "files:rva.gov/assessor-real-estate", "t", rec)])
+    sale_index.build(db)
+    conn = sqlite3.connect(db)
+    apn, src = conn.execute(
+        "SELECT apn_norm, source_url FROM sale_records").fetchone()
+    conn.close()
+    assert src == "https://www.rva.gov/files/Transfers.xlsx"
+    # PID is the Richmond parcel key (2026-08-11) - the sale row must be
+    # findable by parcel, not only by address.
+    assert apn == "n0001"

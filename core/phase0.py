@@ -51,10 +51,17 @@ GATE_COVERAGE = 0.95       # P0-1 gate from spec 7.3
 _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     # Within each field, earlier aliases WIN over later ones when a record
     # carries several (e.g. yearbuilt beats effectiveyear).
+    # pid sits between the explicit parcel spellings and the account-style
+    # ids: Richmond's rva.gov Public Data Set carries the parcel id as PID
+    # (2026-08-11 cycle: 76,976 rows landed as orphans because PID had no
+    # alias, so none merged onto the COR/VDEM parcels). propid, not
+    # "prop_id": lookups go through _norm_key, which strips punctuation -
+    # an alias with an underscore can never match.
     "apn": ("apn", "gpin", "parcelid", "parcel", "mapparcel", "parcelnumber",
-            "parcelno", "pin", "mappin", "acct", "account", "accountnumber",
-            "taxparcelid", "parid", "parno", "prop_id", "propertyid",
-            "realestateid", "reid", "lrsn", "mastergpin", "recordedgpin"),
+            "parcelno", "pin", "pid", "mappin", "acct", "account",
+            "accountnumber", "taxparcelid", "parid", "parno", "propid",
+            "propertyid", "realestateid", "reid", "lrsn", "mastergpin",
+            "recordedgpin"),
     "address": ("address", "situsaddress", "situs", "propertyaddress",
                 "siteaddress", "locationaddress", "location", "fulladdress",
                 "fulladdr", "propaddress", "propertystreet", "streetaddress",
@@ -91,7 +98,8 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                  # typebldg BEFORE zoning: Portsmouth's feed carries both, and
                  # its zoning strings (UR-M, T4...) hid the real building type.
                  "typebldg",
-                 "zoning", "propertyusecode", "usedesc", "usedescription",
+                 "zoning", "propertyusecode", "primaryuse", "usedesc",
+                 "usedescription",
                  "landusedescription", "propertyclassdescription", "usecd",
                  "classdscrp", "usedscrp", "prprtydscrp", "proptype",
                  "propertytype", "statecode", "luc", "bldguse", "resstrtyp",
@@ -144,6 +152,8 @@ _IGNORED_KEYS = re.compile(
     r"femazonebldg|watershed|edasite|pstladdress2|frontage|depth|culdesac|"
     r"lglstartdt|ffh|lowfloor99|highwater9|lengthuni|fips|impvalue|"
     r"lndvalue|srcagency|currentda|convm|convft|map|wf|mail1|mail2|"
+    r"mailaddr|mailcity|bedcount|bathcount|halfbathcount|legalac|propsf|"
+    r"nbhd|condition|model|file|"
     r"prevdate|neighborhd|heattype|ac|basement|legaldescr|soildesc|"
     r"soiltype|propaddresssearch|censusblkgrp|votingdistrict|"
     r"votingdistrictname|recyclingweek|platinstr|lotnumber|deedinstr|"
@@ -350,7 +360,11 @@ class CoverageReport:
             lines.append("")
             lines.append("Attribute keys with NO mapping yet (add aliases in core/phase0.py):")
             for city, keys in pending.items():
-                top = ", ".join(k for k, _n in keys.most_common(12))
+                # 24, not 12: Richmond's rva.gov workbook alone contributes
+                # 12+ dense unmapped columns, which crowded every other
+                # Richmond feed's keys (VGIN_QPID et al) out of the report
+                # and hid whether the workbook carries a units column.
+                top = ", ".join(k for k, _n in keys.most_common(24))
                 lines.append(f"  {city}: {top}")
         return "\n".join(lines)
 

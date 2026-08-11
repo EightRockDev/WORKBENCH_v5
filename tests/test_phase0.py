@@ -748,3 +748,29 @@ def test_the_badge_still_refutes_against_a_pruned_backbone(tmp_path):
     res = up.validate_property(row["user_property_id"], db)
     assert res.status == up.FAILED
     assert "4" in res.reason and "48" in res.reason
+
+
+def test_richmond_public_data_set_pid_joins_the_parcel_backbone():
+    """2026-08-11 3AM review: 76,976 rva.gov Public Data Set rows landed as
+    orphan properties because their parcel key (PID) had no alias - units
+    and assessed values never reached the radar-visible parcels. PID must
+    map to apn, PRIMARY_USE to use_code; an explicit ParcelID still wins."""
+    from core.phase0 import normalize_record, build_row
+
+    wb = {"PID": "N0001721039", "PRIMARY_USE": "Multi-Family",
+          "TOTAL_VALUE": 512000, "YEAR_BUILT": 1955, "MAIL_ADDR": "x",
+          "_file": "https://www.rva.gov/f/PublicDataSet.xlsx"}
+    rep = phase0.CoverageReport()
+    m = normalize_record("Richmond", "VA", wb, rep)
+    assert m["apn"] == "N0001721039"
+    assert m["use_code"] == "Multi-Family"
+    assert m["assessed_value"] == 512000
+    # Bookkeeping columns must not clutter the unmapped-keys report.
+    assert not rep.unmapped_keys.get("Richmond")
+
+    # Same PID as the COR/VDEM row -> same 8R id -> COALESCE merge.
+    api = build_row("Richmond", "VA", {"ParcelID": "N0001721039"})
+    assert build_row("Richmond", "VA", wb).property_id == api.property_id
+    # An explicit parcel column always beats an internal PID.
+    both = normalize_record("Richmond", "VA", {"ParcelID": "A1", "PID": "9"})
+    assert both["apn"] == "A1"

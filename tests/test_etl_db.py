@@ -89,3 +89,18 @@ def test_no_ui_panel_tells_the_operator_to_run_the_undeployed_etl_script():
             if "hampton_roads_etl.py" in line and "Run " in line:
                 offenders.append(f"{path.name}:{i}")
     assert offenders == [], f"dead-end instructions remain: {offenders}"
+
+
+def test_sweep_spares_the_sales_pullers_feeds():
+    """The reconciliation sweep deleted all ~477K sales-puller rows as
+    "retired" every cycle (2026-08-11 pull log) because their source tags
+    are registered in scripts/pull_arcgis_sales.py, not MUNI_FEEDS. The
+    sweep's current-feed set must include them."""
+    import etl_munidata
+
+    tags = etl_munidata._sales_source_tags()
+    assert "files:rva.gov/assessor-real-estate" in tags
+    assert "socrata-stack:data.norfolk.gov/property-assessment-and-sales" in tags
+    assert "landbook:gis.cityofchesapeake.net FY26-27" in tags
+    # ArcGIS sales feeds key on their URL (no source_tag).
+    assert any(t.startswith("https://services2.arcgis.com") for t in tags)

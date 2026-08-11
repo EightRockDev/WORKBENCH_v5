@@ -45,7 +45,11 @@ def _muni_stamp(conn: sqlite3.Connection) -> str:
     row = conn.execute(
         "SELECT count(*), COALESCE(max(id),0) FROM muni_records "
         "WHERE kind LIKE 'assessor%' OR kind LIKE 'sales%'").fetchone()
-    return f"{row[0]}:{row[1]}"
+    # v2 suffix (2026-08-11): rows from scraped-file feeds now store the
+    # resolved workbook URL (record's _file) instead of the "files:..."
+    # tag. Bumping the stamp forces ONE rebuild so existing rows get real
+    # links even when muni_records itself is unchanged.
+    return f"{row[0]}:{row[1]}:v2"
 
 
 def index_present(db_path: Path) -> bool:
@@ -102,6 +106,12 @@ def build(db_path: Path, *, force: bool = False) -> dict:
             recs = sale_history.extract_sale_records(raw)
             if not recs:
                 continue
+            # Scraped-file rows (rva.gov workbooks) carry the resolved file
+            # URL in _file; the muni source_url is only the "files:..."
+            # tag, which is not clickable in the sale-history card.
+            f = raw.get("_file")
+            if isinstance(f, str) and f.startswith("http"):
+                src = f
             norm = phase0.normalize_record(market or "", state or "", raw)
             apn_n = sale_history._norm_apn(norm.get("apn"))
             addr_n = sale_history._norm_addr(norm.get("address"))
