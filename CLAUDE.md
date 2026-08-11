@@ -294,13 +294,23 @@ sizes the pull FIRST and never deletes on a transient empty.
     Property_Sales FeatureServer exists - do not hunt for one.
   * Richmond = socrata_snapshot_stack on data.richmondgov.com: "Property
     Transfer History" uxre-by3i (quarterly, full history) + "Property
-    Transfers" k9h9-y482 (recent). Also UPGRADED the MUNI_FEEDS Richmond
-    entry from status="file" to live Socrata "Property Assessments Current"
-    vm9j-9f88 (the old "auth-gated 403" note was from probing a different
-    dataset). Socrata column spellings vary per city - the stack adapter
-    probes _STACK_ID_KEYS/_STACK_DATE_KEYS candidates and its sized logs make
-    a spelling miss loud; extend those tuples if a new city's first host run
-    reports 0 dated transfers against non-zero counts.
+    Transfers" k9h9-y482 (recent); MUNI_FEEDS entry upgraded to live Socrata
+    "Property Assessments Current" vm9j-9f88. STATUS 2026-08-11: first host
+    run FAILED every count query while Norfolk's identical code worked, so
+    the ORIGINAL "auth-gated 403" note about this domain was probably right
+    (do not dismiss prior probe notes without re-testing). Dataset IDs are
+    confirmed SODA-accessible via dev.socrata.com foundry, so it's the HTTP
+    layer: V5.35.0.1.0 adds exact status logging (_LAST_ERR), a browser UA
+    (the Spatialest lever), and ER_SOCRATA_APP_TOKEN -> X-App-Token (free
+    token: evergreen.data.socrata.com). Next cycle's arcgis-sales-latest.txt
+    is decisive; if it still says HTTP 403, mint the token. Socrata column
+    spellings vary per city - the stack adapter probes _STACK_ID_KEYS/
+    _STACK_DATE_KEYS candidates; extend those tuples if a city reports 0
+    dated transfers against non-zero counts.
+  * FIRST HOST RUN RESULTS (2026-08-10 22:15 cycle): VB 47,631; Norfolk
+    114,698 unique (gpin,date) from a 671k-row FY stack; Chesapeake 120,557
+    LandBook rows (30,272 commercial + 90,285 residential). 282,886 sale
+    rows total, indexed same cycle. Richmond 0 (above).
 
 ### National discovery is ON and AGGRESSIVE (owner directive 2026-08-09)
 discover_feeds is national: (city,state) tuples, correct state stamped, VGIN

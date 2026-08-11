@@ -65,8 +65,30 @@ PAGE = 2000                              # Esri Hub default max per page
 SOCRATA_PAGE = 50000                     # Socrata $limit ceiling
 SINCE_YEAR = int(os.environ.get("ER_ARCGIS_SALES_SINCE_YEAR", "2021"))
 MAX_RECORDS = int(os.environ.get("ER_ARCGIS_SALES_MAX", "400000"))
-UA = {"User-Agent": "EightRockWorkbench/1.0 (contact bmccune@gmail.com)",
-      "Accept": "application/json"}
+# Browser-like UA on purpose: data.richmondgov.com 403'd the first host run
+# (2026-08-11) while data.norfolk.gov served the same code fine - Tyler/
+# Socrata domains can sit behind bot filtering, and a real-browser UA is the
+# same lever that cleared Spatialest. ER_SOCRATA_APP_TOKEN (free at
+# evergreen.data.socrata.com) rides along as X-App-Token when set - the other
+# way these domains gate API reads.
+UA = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:153.0) "
+                   "Gecko/20100101 Firefox/153.0"),
+    "Accept": "application/json, text/plain, */*",
+}
+
+
+def _headers() -> dict:
+    h = dict(UA)
+    tok = os.environ.get("ER_SOCRATA_APP_TOKEN", "").strip()
+    if tok:
+        h["X-App-Token"] = tok
+    return h
+
+
+# Last failure detail per _get_json call - so a skip line can say WHY
+# (HTTP 403 vs 404 vs timeout), instead of a blind "count query failed".
+_LAST_ERR = ""
 
 # Verified sources ONLY (never pull blind). Each entry's type picks the
 # adapter; source_tag is the muni_records.source_url key that scopes the
@@ -138,16 +160,20 @@ WHERE = f"Sale_Price > 0 AND Sales_Date >= DATE '{SINCE_YEAR}-01-01'"
 # ---------------------------------------------------------------- plumbing
 
 def _get_json(url: str, params: dict | None = None):
+    global _LAST_ERR
     for attempt in range(3):
         try:
-            r = requests.get(url, params=params, headers=UA, timeout=60)
+            r = requests.get(url, params=params, headers=_headers(), timeout=60)
             if r.status_code == 200:
+                _LAST_ERR = ""
                 try:
                     return r.json()
                 except ValueError:
+                    _LAST_ERR = "HTTP 200 but non-JSON body"
                     return None
-        except requests.RequestException:
-            pass
+            _LAST_ERR = f"HTTP {r.status_code}"
+        except requests.RequestException as exc:
+            _LAST_ERR = repr(exc)
         time.sleep(1.5 * (attempt + 1))
     return None
 
@@ -288,11 +314,16 @@ def _pull_socrata_stack(conn, market: str, cfg: dict) -> int:
     sized = []
     for fy, rid in cfg["resources"]:
         n = _socrata_count(base, rid)
+        if n is None:
+            print(f"[sales:{market}] {fy} ({rid}) count failed: "
+                  f"{_LAST_ERR or 'no response'}")
         sized.append((fy, rid, n))
     known = [(fy, n) for fy, _, n in sized if n is not None]
     if not known:
-        print(f"[sales:{market}] every FY count query failed - skip, "
-              f"no rows touched")
+        print(f"[sales:{market}] every count query failed (see per-resource "
+              f"detail above; HTTP 403 = domain wants an app token - set "
+              f"ER_SOCRATA_APP_TOKEN, free at evergreen.data.socrata.com) - "
+              f"skip, no rows touched")
         return 0
     print(f"[sales:{market}] FY stack sizes: "
           + ", ".join(f"{fy}={n}" for fy, n in known)
