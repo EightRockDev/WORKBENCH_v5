@@ -4,6 +4,13 @@ Project memory for Claude sessions. Loaded automatically on startup. Read this
 first; it captures what this project is, how the owner works, and where the
 build currently stands so you can continue without re-asking.
 
+> **FIRST ACTION every session: read `Feedback.md` (repo root) and apply it
+> before doing any work.** It is the durable record of the owner's
+> corrections, preferences, and process lessons (owner directive 2026-08-11).
+> Update it the moment a correction lands and at every session wrapup —
+> cross-reference to avoid duplicates, date-stamp new entries, commit and
+> push in the same session. A lesson that isn't pushed does not exist.
+
 ## What this is
 
 Eight Rock Workbench **v5.0** — a full-loop multifamily acquisition platform
