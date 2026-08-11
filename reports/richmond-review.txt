@@ -1,0 +1,27 @@
+autopilot richmondreview @ 2026-08-11T00:45:23
+
+================================================================
+RICHMOND REVIEW  @ 2026-08-11T00:45:25
+================================================================
+
+-- 1. Backbone properties (properties_8r) --
+Richmond properties total: 102,232
+Multifamily (units>=10 or MF-coded): 102,232
+  units:          n=248  min=10  median=22  max=1,090
+  year built:     1885-2024
+  assessed value: n=6,543  min=1,000  median=20,000  max=20,001,000
+
+-- 2. Raw Richmond assessor rows on hand --
+    76,739  2026-08-10T09:52:28  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
+    32,907  2026-08-11T00:23:19  https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/services/COR_Parcel_Ow
+     6,570  2026-08-09T17:19:50  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
+
+-- 3. Richmond sales (muni_records kind='sales') --
+sale rows: 0
+
+-- 4. Estimated real-estate tax (rate $1.20/$100 assessed; ER_RICHMOND_TAX_RATE) --
+  MF annual tax:  n=6,543  min=12  median=240  max=240,012
+  MF tax base:    $495,663,000 assessed -> $5,947,956/yr estimated
+
+-- 5. GAPS (each names its unblock) --
+  [GAP] NO Richmond sales rows - the transfer stack (uxre-by3i/k9h9-y482) has not landed. Check arcgis-sales-latest.txt: HTTP 403 means set ER_SOCRATA_APP_TOKEN in .env; anything else, send the report line to Claude.
