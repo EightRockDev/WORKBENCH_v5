@@ -287,7 +287,7 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
         # prop["market"] is "Hampton Roads" on the 8r read path, so only the
         # city leg can realistically hit; NOCASE so "NORFOLK" still matches.
         rows = conn.execute(
-            "SELECT state, record FROM muni_records "
+            "SELECT state, record, source_url FROM muni_records "
             "WHERE kind LIKE 'assessor%' AND "
             "(market = ? COLLATE NOCASE OR market = ? COLLATE NOCASE)",
             (market, city)).fetchall()
@@ -319,6 +319,7 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
             if key in seen:
                 continue
             seen.add(key)
+            rec["source_url"] = r["source_url"] or ""
             out.append(rec)
 
     out.sort(key=lambda x: (x.get("date") or ""), reverse=True)

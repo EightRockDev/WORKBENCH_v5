@@ -1224,6 +1224,15 @@ def _render_sales(folder: PropertyFolder | None,
     if drop:
         df = df.drop(columns=drop)
 
+    # Clickable reporting source (owner ask 2026-08-11): each sale links to
+    # the website that reported it. The machine source_url is mapped to the
+    # human page; rows without one just show no link.
+    if "source_url" in df.columns:
+        from core.sale_links import sale_source_link
+        df["source_url"] = df["source_url"].apply(sale_source_link)
+        if df["source_url"].isna().all():
+            df = df.drop(columns=["source_url"])
+
     # Format known columns. Source records use legal terms `grantor`/`grantee`
     # (= seller / buyer respectively, per Black's Law). Rename to plain English
     # so reading the chain is unambiguous: each row shows BUYER receiving from
@@ -1234,6 +1243,7 @@ def _render_sales(folder: PropertyFolder | None,
         "grantor": "Seller",
         "grantee": "Buyer",
         "notes": "Notes",
+        "source_url": "Source",
     }
     if "date" in df.columns:
         df["date"] = df["date"].apply(_format_sale_date)
@@ -1248,7 +1258,13 @@ def _render_sales(folder: PropertyFolder | None,
     df = df[preferred + rest]
 
     df = _format_money_columns(df)
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    col_cfg = {}
+    if "Source" in df.columns:
+        col_cfg["Source"] = st.column_config.LinkColumn(
+            "Source", display_text="view record ↗",
+            help="Opens the site that reported this sale")
+    st.dataframe(df, use_container_width=True, hide_index=True,
+                 column_config=col_cfg or None)
     st.caption(
         "📜 Each row reads chronologically: **Buyer** received the property from **Seller** "
         "on **Date** for **Price**. The most-recent buyer is the current owner of record."

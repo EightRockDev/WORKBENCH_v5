@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS sale_records (
     price     REAL,
     grantor   TEXT,
     grantee   TEXT,
-    notes     TEXT
+    notes     TEXT,
+    source_url TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_sale_apn  ON sale_records(apn_norm);
 CREATE INDEX IF NOT EXISTS ix_sale_addr ON sale_records(addr_norm);
@@ -71,6 +72,14 @@ def build(db_path: Path, *, force: bool = False) -> dict:
     conn = sqlite3.connect(db_path)
     try:
         conn.executescript(_SCHEMA)
+        # Migration (2026-08-11, clickable sale sources): older indexes lack
+        # source_url. Add it AND force a rebuild this run so every row gets
+        # its link - otherwise the fresh-stamp gate would keep link-less rows
+        # alive until the next muni change.
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(sale_records)")}
+        if "source_url" not in cols:
+            conn.execute("ALTER TABLE sale_records ADD COLUMN source_url TEXT")
+            force = True
         stamp = _muni_stamp(conn)
         prev = conn.execute(
             "SELECT muni_stamp FROM sale_index_meta WHERE id=1").fetchone()
@@ -80,9 +89,9 @@ def build(db_path: Path, *, force: bool = False) -> dict:
         rows_in = 0
         sales = []
         cur = conn.execute(
-            "SELECT market, state, record FROM muni_records "
+            "SELECT market, state, record, source_url FROM muni_records "
             "WHERE kind LIKE 'assessor%' OR kind LIKE 'sales%'")
-        for market, state, record in cur:
+        for market, state, record, src in cur:
             rows_in += 1
             try:
                 raw = json.loads(record) if record else {}
@@ -101,13 +110,14 @@ def build(db_path: Path, *, force: bool = False) -> dict:
             for r in recs:
                 sales.append((market, state, apn_n, addr_n, r["date"],
                               r["price"], r["grantor"], r["grantee"],
-                              r["notes"]))
+                              r["notes"], src))
 
         with conn:                                    # one atomic txn
             conn.execute("DELETE FROM sale_records")
             conn.executemany(
                 "INSERT INTO sale_records (market,state,apn_norm,addr_norm,"
-                "date,price,grantor,grantee,notes) VALUES (?,?,?,?,?,?,?,?,?)",
+                "date,price,grantor,grantee,notes,source_url) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
                 sales)
             conn.execute(
                 "INSERT INTO sale_index_meta (id, muni_stamp, built_at) "
@@ -128,14 +138,21 @@ def lookup(db_path: Path, *, apn_norm: str, addr_norm: str) -> list[dict] | None
     conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     try:
         conn.row_factory = sqlite3.Row
+        # source_url may be absent on a not-yet-migrated index; COALESCE via
+        # try/except keeps lookup working either way.
+        cols = "date, price, grantor, grantee, notes, source_url"
+        try:
+            conn.execute(f"SELECT {cols} FROM sale_records LIMIT 0")
+        except sqlite3.OperationalError:
+            cols = "date, price, grantor, grantee, notes, NULL AS source_url"
         rows = []
         if apn_norm:
             rows = conn.execute(
-                "SELECT date, price, grantor, grantee, notes FROM sale_records"
+                f"SELECT {cols} FROM sale_records"
                 " WHERE apn_norm = ?", (apn_norm,)).fetchall()
         if not rows and addr_norm:
             rows = conn.execute(
-                "SELECT date, price, grantor, grantee, notes FROM sale_records"
+                f"SELECT {cols} FROM sale_records"
                 " WHERE addr_norm = ?", (addr_norm,)).fetchall()
         out, seen = [], set()
         for r in rows:
@@ -147,6 +164,7 @@ def lookup(db_path: Path, *, apn_norm: str, addr_norm: str) -> list[dict] | None
                         "grantor": r["grantor"] or "",
                         "grantee": r["grantee"] or "",
                         "notes": r["notes"] or "",
+                        "source_url": r["source_url"] or "",
                         "source": "assessor transfer record"})
         out.sort(key=lambda x: (x.get("date") or ""), reverse=True)
         return out

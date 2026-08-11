@@ -341,6 +341,17 @@ Status per remaining jurisdiction after the source hunt:
     (default = the VB arm's-length WHERE) so future Esri sales layers with
     different field names can join the registry cleanly.
 
+### Clickable sale sources (V5.37.0, owner ask 2026-08-11)
+Every sale row carries source_url end-to-end: muni_records -> sale_records
+(column added; migration ALTERs + FORCES a rebuild so link-less rows never
+survive a fresh stamp) -> sale_history_for -> Sale History card, rendered as
+a LinkColumn ("view record ->"). core/sale_links.sale_source_link maps
+machine endpoints to HUMAN pages (stack tags/LandBook/VB Esri -> explicit
+overrides; any Socrata /resource/<id>.json -> /d/<id>; Spatialest API ->
+community portal; browsable REST URLs pass through; junk -> no link, never a
+broken card). New sales sources should get an override there when their
+machine URL isn't itself human-readable.
+
 ### Hottest-50 metro sales rollout has begun (2026-08-11)
 Chicago (Wave 1 #1) is in SALES_SOURCES: Cook County Assessor "Parcel Sales"
 wvhk-k5uv on datacatalog.cookcountyil.gov - TRANSACTION-level full history per
