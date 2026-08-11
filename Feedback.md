@@ -162,6 +162,15 @@
   confirm what is already running in one line and spend the turn on the NEW
   part of the message (the sale-links ask), not on re-explaining the old.
 
+## Done means done (2026-08-11, owner: "Not review. I want it done.")
+
+- **The data is the deliverable; a report is a byproduct.** Never frame an
+  outcome commitment around the artifact that documents it. When one path to
+  "done" has an external gate (a 403, a token, a portal), BUILD A SECOND
+  INDEPENDENT PATH on different infrastructure in the same session (Richmond:
+  Socrata domain + the assessor's own rva.gov monthly files) so "done" does
+  not hinge on a single unblock.
+
 ## Session log (append-only, date-stamped)
 
 - **2026-08-11:** File created (owner directive). Seeded with the standing
