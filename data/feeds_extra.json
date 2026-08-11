@@ -98,9 +98,9 @@
     "platform": "arcgis",
     "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
     "status": "live",
-    "where": "FIPS = '51650'",
+    "where": "UPPER(LOCALITY) = 'HAMPTON CITY'",
     "record_count": 51803,
-    "note": "VGIN statewide fallback: FIPS = '51650'; 51,803 records; fields ['apn']"
+    "note": "VGIN statewide fallback: UPPER(LOCALITY) = 'HAMPTON CITY'; 51,803 records; fields ['apn']"
   },
   {
     "market": "Hampton",
