@@ -52,6 +52,10 @@ STEPS = (
     # Per-city MF unit distribution (min/median/max) from the backbone -
     # answers unit-count questions in the morning stream (owner 2026-08-09).
     ("backbonestats", ["scripts/run_backbone_stats.py"], "backbone-stats-latest.txt"),
+    # Richmond review in one file (owner 2026-08-11: review at 3AM ET -
+    # properties, sales, units, taxes; exits non-zero while gaps remain and
+    # names each gap's unblock).
+    ("richmondreview", ["scripts/run_richmond_report.py"], "richmond-review.txt"),
     ("alerts", ["scripts/run_alerts.py"], "alerts-latest.txt"),
     ("preflight", ["scripts/preflight_cutover.py"], "cutover-preflight.txt"),
     # Nightly Postgres dump, self-gated to one per day (CLAUDE.md lesson 9b:
