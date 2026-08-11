@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-10T19:11:48
+autopilot pull @ 2026-08-10T20:11:29
 
 QUARRIE muni-data ETL — 2026-08-10
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -12,6 +12,8 @@ QUARRIE muni-data ETL — 2026-08-10
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/5
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3
+  [swept] Virginia Beach: 47,631 stale rows from retired feed https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0
+  stale rows removed: 47,631
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 437,507 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  437507 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 183,456 rows (ER_MUNI_FORCE=1 to re-pull)
