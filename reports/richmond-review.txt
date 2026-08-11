@@ -1,27 +1,34 @@
-autopilot richmondreview @ 2026-08-11T01:45:24
+autopilot richmondreview @ 2026-08-11T02:48:00
 
 ================================================================
-RICHMOND REVIEW  @ 2026-08-11T01:45:26
+RICHMOND REVIEW  @ 2026-08-11T02:48:03
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
-Richmond properties total: 102,232
+Richmond properties total: 179,208
   with unit data:  248
 Multifamily (units>=10): 248
   units:          n=248  min=10  median=22  max=1,090
   year built:     1901-2022
 
 -- 2. Raw Richmond assessor rows on hand --
+    76,976  2026-08-11T02:24:11  files:rva.gov/assessor-real-estate
     76,739  2026-08-10T09:52:28  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
-    32,907  2026-08-11T01:23:27  https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/services/COR_Parcel_Ow
+    32,907  2026-08-11T02:23:39  https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/services/COR_Parcel_Ow
      6,570  2026-08-09T17:19:50  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
 
 -- 3. Richmond sales (muni_records kind='sales') --
-sale rows: 0
+sale rows: 84,148
+  transfer dates: 2015-01-01 .. 2026-05-18
+  consideration:  n=58,582  min=100  median=267,716  max=142,455,000
+    2026-05-18  $562,000  -> GORMAN GEOFFREY G & MARY H
+    2026-05-18  $565,000  -> BURNETTE KYLE & RACHEL
+    2026-05-18  $170,000  -> RAMOS JULIO
+    2026-05-18  $270,000  -> BLANCO GONZALES MIGUEL
+    2026-05-18  $540,000  -> MOFFETT TAYLOR ANNE
 
 -- 4. Estimated real-estate tax (rate $1.20/$100 assessed; ER_RICHMOND_TAX_RATE) --
 
 -- 5. GAPS (each names its unblock) --
-  [GAP] Unit coverage is thin: 248 of 102,232 parcels carry unit counts - the COR ownership layer has none, so units depend on vm9j-9f88 (Socrata 403 -> token) or the rva.gov Public Data Set files.
-  [GAP] NO Richmond sales rows - the transfer stack (uxre-by3i/k9h9-y482) has not landed. Check arcgis-sales-latest.txt: HTTP 403 means set ER_SOCRATA_APP_TOKEN in .env; anything else, send the report line to Claude.
+  [GAP] Unit coverage is thin: 248 of 179,208 parcels carry unit counts - the COR ownership layer has none, so units depend on vm9j-9f88 (Socrata 403 -> token) or the rva.gov Public Data Set files.
   [GAP] Tax estimates: blocked on assessed values (needs the assessments feed above).
