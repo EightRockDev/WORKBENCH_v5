@@ -99,11 +99,12 @@ def main() -> int:
                   f"{r['source_url'][:80]}")
         if not any(("richmondgov" in (r["source_url"] or ""))
                    or ("rva.gov" in (r["source_url"] or ""))
+                   or ("il6vO1TutlF580Ku" in (r["source_url"] or ""))
                    for r in srcs):
-            gaps.append("Assessments have NOT landed by EITHER path "
-                        "(Socrata vm9j-9f88 or the rva.gov monthly files) - "
-                        "if the pull report shows HTTP 403 on richmondgov, "
-                        "set ER_SOCRATA_APP_TOKEN (free: "
+            gaps.append("Assessments have NOT landed by ANY path (Socrata "
+                        "vm9j-9f88, the COR parcels Esri API, or the rva.gov "
+                        "monthly files) - if the pull report shows HTTP 403 "
+                        "on richmondgov, set ER_SOCRATA_APP_TOKEN (free: "
                         "evergreen.data.socrata.com) in .env.")
 
         # ---- 3. sales ---------------------------------------------------

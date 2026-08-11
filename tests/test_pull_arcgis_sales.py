@@ -215,6 +215,27 @@ def test_landbook_empty_parse_touches_nothing(monkeypatch):
     assert conn.execute("SELECT count(*) FROM muni_records").fetchone()[0] == 1
 
 
+# ------------------------------------- Richmond parcels via Esri REST API
+
+def test_arcgis_kind_and_market_override(monkeypatch):
+    """Richmond-parcels rides the arcgis adapter with kind='assessor' and
+    market='Richmond' (not the dict key) so phase0 sees an assessor roll."""
+    m = _mod()
+    cfg = m.SALES_SOURCES["Richmond-parcels"]
+    assert cfg["kind"] == "assessor" and cfg["where"] == "1=1"
+    monkeypatch.setattr(m, "count_sales", lambda url, where="": 2)
+    monkeypatch.setattr(
+        m, "iter_features",
+        lambda url, total, where="": iter(
+            [{"PIN": "W0001", "LandUse": "Multi-Family", "TotalValue": 1.0},
+             {"PIN": "W0002", "LandUse": "Single Family", "TotalValue": 2.0}]))
+    conn = _mk_db()
+    assert m.pull_market(conn, "Richmond-parcels", cfg) == 2
+    rows = conn.execute(
+        "SELECT DISTINCT market, kind FROM muni_records").fetchall()
+    assert rows == [("Richmond", "assessor")]
+
+
 # -------------------------------------------- Richmond / rva.gov files
 
 def test_html_files_scrapes_classifies_and_writes(monkeypatch):

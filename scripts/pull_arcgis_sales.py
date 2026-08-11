@@ -151,6 +151,22 @@ SALES_SOURCES: dict[str, dict] = {
     # + assessment history) and a market-transfers workbook, refreshed ~15th
     # monthly with changing URLs - so the adapter scrapes the page for
     # spreadsheet links each run instead of hardcoding any.
+    # Richmond PATH 3 (owner 2026-08-11 "you should [use an API]"): the
+    # Assessor's own published parcel layer on the city's AGOL org - the
+    # Office of the Assessor GeoHub site's "Parcels" dataset IS this layer,
+    # so it's the authoritative Esri REST API for parcel/ownership data.
+    # where=1=1 (no sale-field filter - this is an assessor roll, not a
+    # sales layer); kind=assessor feeds phase0 MF classification directly.
+    "Richmond-parcels": {
+        "type": "arcgis",
+        "url": ("https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/"
+                "services/COR_Parcel_Ownership_WFL1/FeatureServer/1"),
+        "market": "Richmond",
+        "state": "VA", "county": "Richmond",
+        "kind": "assessor",
+        "where": "1=1",
+        "refresh_d": 7,
+    },
     "Richmond-files": {
         "type": "html_files",
         "page": "https://www.rva.gov/assessor-real-estate/data-request",
@@ -292,18 +308,20 @@ def iter_features(url: str, expected: int, where: str = ""):
 
 def _pull_arcgis(conn, market: str, cfg: dict) -> int:
     url = cfg["url"]
+    market = cfg.get("market", market)   # dict key may be a variant label
+    kind = cfg.get("kind", "sales")      # assessor layers reuse this adapter
     where = cfg.get("where", "")         # per-source filter; default = WHERE
     total = count_sales(url, where)
     if total is None:
         print(f"[sales:{market}] count query FAILED "
               f"({_LAST_ERR or 'endpoint/where?'}) - skip, no rows touched")
         return 0
-    print(f"[sales:{market}] {total} sales to pull "
+    print(f"[sales:{market}] {total} {kind} rows to pull "
           f"(where: {where or WHERE})")
     if total == 0:
         return 0
     now_iso = dt.datetime.now().isoformat(timespec="seconds")
-    rows = [(market, cfg["state"], cfg["county"], "sales", url, now_iso,
+    rows = [(market, cfg["state"], cfg["county"], kind, url, now_iso,
              json.dumps(attrs)) for attrs in iter_features(url, total, where)]
     if not rows:
         print(f"[sales:{market}] expected {total} but paginated 0 - NOT "
