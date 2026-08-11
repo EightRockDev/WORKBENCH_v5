@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-08-10T23:27:56
+autopilot phase0 @ 2026-08-11T00:31:01
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,388,638
+Assessor records available: 3,421,545
 
 Assessor feeds present (Hampton Roads):
   Chesapeake         92,588  .../OpenData/MapServer/15
@@ -16,20 +16,20 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 22 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      2,445,831
-parcels normalized:        2,445,831
-multifamily (>= 10 units): 5,921
-written to properties_8r:  2,445,831
+muni records scanned:      2,478,738
+parcels normalized:        2,478,738
+multifamily (>= 10 units): 6,061
+written to properties_8r:  2,478,738
 provisional (no-APN) ids:  3,049
-units derived from address points: 1,465  (skipped non-residential: 2,549)
+units derived from address points: 1,482  (skipped non-residential: 2,550)
 coords backfilled by address (multifamily): 208
 rent estimates stamped (HUD FMR blend): 1,129
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 732,271  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 734,513  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 2,091, Raleigh 1,613, Greensboro 900, Norfolk 866, Newport News 244, Richmond 111, Chesapeake 62, Suffolk 17, Durham 15, Hampton 2
+Multifamily by city: Atlanta 2,091, Raleigh 1,613, Greensboro 900, Norfolk 866, Richmond 251, Newport News 244, Chesapeake 62, Suffolk 17, Durham 15, Hampton 2
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Norfolk: Apartment x866
@@ -38,7 +38,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Chesapeake: 3352 x62
   Newport News: A x237, C x4, (units only) x2, R x1
   Raleigh: (units only) x1613
-  Richmond: (units only) x108, Multi-Family x3
+  Richmond: (units only) x108, 28 x30, 25 x24, 27 x22, 26 x22
   Durham: R-4 x14, (units only) x1
   Hampton: (units only) x2
   Suffolk: (units only) x17
@@ -55,7 +55,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Chesapeake: learned code (no units): 62
   Newport News: units>=10: 244
   Raleigh: units>=10: 1,613
-  Richmond: units>=10: 108, code only (no units): 3
+  Richmond: units>=10: 248, code only (no units): 3
   Durham: code only (no units): 13, units>=10: 2
   Hampton: units>=10: 2
   Suffolk: units>=10: 17
@@ -65,7 +65,7 @@ Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, AddrNumber, OwnerAddr1, TotAssess, TotAppr, ImprAppr, LandAssess
   Winston-Salem: BLKCNTRL, BLK, LOT, BLKLOT, TBLCNTRL, CNTRL, TAXPIN, TAXPIN_N, PINMAP, PINBLK, PINLOT, PINLOT_A
   Raleigh: PIN_NUM, CALC_AREA, PARCEL_PK, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE
-  Richmond: VGIN_QPID, LOCALITY, PTM_ID, OBJECTID_12, CountOfPIN, DwellingVa, LandSqFt, ProvalAsmt, PropertyCl, Mailable, Locality, ParcelID_1
+  Richmond: VGIN_QPID, LOCALITY, PTM_ID, full_address_display, parcel_dashes, assr_url, CITY_LIMIT, FHSZ, OWNER_GRP, AREA_ACRES, TAX_DESC, COUNCIL_DIST
   Durham: FEATURE_KEY, PARCEL_TYPE, PARCEL_PK, AUT_SNAPSHOT_DATE, PIN_EXT, PIN_MAP, PIN_BLOCK, PIN_LOT, PROPERTY_DESCR, LOCATION_ADDR, SPEC_DIST, SPEC_DIST_PCNT
   Nashville: STANPAR, FEATURETYPE, PropHouse, PropState, LegalDesc, PropInstr, Front, Side, OwnDate, OwnInstr, Council, PropDate
   Hampton: VGIN_QPID, LOCALITY
