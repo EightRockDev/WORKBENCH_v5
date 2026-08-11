@@ -1,5 +1,22 @@
-autopilot arcgissales @ 2026-08-10T21:14:42
+autopilot arcgissales @ 2026-08-10T22:15:22
 
-[arcgis-sales] Virginia Beach: 47631 arm's-length sales since 2021 to pull
-[arcgis-sales] Virginia Beach: wrote 47631 sale rows (expected 47631)
-[arcgis-sales] done: 47631 rows across 1 source(s)
+[sales:Virginia Beach] 47631 arm's-length sales since 2021 to pull
+[sales:Virginia Beach] wrote 47631 rows (expected 47631)
+[sales:Norfolk] FY stack sizes: FY19=74835, FY20=74898, FY21=74767, FY22=74659, FY23=74637, FY24=74520, FY25=74253, FY26=74311, FY27=74359 (total 671239)
+[sales:Norfolk] FY19: 72322 dated transfers (70615 unique so far)
+[sales:Norfolk] FY20: 72269 dated transfers (73704 unique so far)
+[sales:Norfolk] FY21: 72258 dated transfers (79739 unique so far)
+[sales:Norfolk] FY22: 72293 dated transfers (88450 unique so far)
+[sales:Norfolk] FY23: 72301 dated transfers (95309 unique so far)
+[sales:Norfolk] FY24: 72133 dated transfers (100541 unique so far)
+[sales:Norfolk] FY25: 71998 dated transfers (106034 unique so far)
+[sales:Norfolk] FY26: 72037 dated transfers (111809 unique so far)
+[sales:Norfolk] FY27: 72042 dated transfers (114698 unique so far)
+[sales:Norfolk] wrote 114698 unique (gpin,date) sale rows
+[sales:Chesapeake] commercial LandBook: 30272 rows parsed
+[sales:Chesapeake] commercial: kept 30272 date-bearing rows
+[sales:Chesapeake] residential LandBook: 90285 rows parsed
+[sales:Chesapeake] residential: kept 90285 date-bearing rows
+[sales:Chesapeake] wrote 120557 LandBook sale rows
+[sales:Richmond] every FY count query failed - skip, no rows touched
+[sales] done: 282886 rows across 4 source(s)
