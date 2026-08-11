@@ -272,21 +272,35 @@ findings the moment they land.
     Standing rule: a feed that returns 0 rows where it once returned thousands
     is a BREAK, not a success - treat [OK] ... 0 records lines as failures.
 
-### Hampton Roads sales coverage per jurisdiction (verified 2026-08-11)
-  * Virginia Beach: pull_arcgis_sales.py -> Property_Sales_ (full transfer
-    events, kind='sales'). Default since-2021 arm's-length (owner call);
+### Municipal sales coverage - THREE ADAPTER TYPES (owner-verified 2026-08-11)
+All in scripts/pull_arcgis_sales.py (autopilot `arcgissales`), registry
+SALES_SOURCES, rows land VERBATIM as muni_records kind='sales' (sale_history's
+key sets + phase0 apn aliases make field maps unnecessary). Every adapter
+sizes the pull FIRST and never deletes on a transient empty.
+  * Virginia Beach = esri_history: Property_Sales_/FeatureServer/0, full
+    transfer events (~594k, ~2wk lag). Default since-2021 arm's-length;
     ER_ARCGIS_SALES_SINCE_YEAR widens for full deed-chain tenure.
-  * Norfolk: ALREADY COVERED - Socrata g7sg-tivf "Property Assessment and
-    Sales" pulls nightly as kind='assessor+sales' (74k rows; consideration +
-    transfer_date are already in sale_history's key sets). Most-recent sale
-    per parcel; no separate ArcGIS sales layer needed.
-  * Chesapeake: NO public sales feed exists. Its ArcGIS Hub
-    (public-chesva.opendata.arcgis.com) has Parcels/Addresses/Subdivisions
-    only; the parcels layer carries transfer DATE but no price/owner. Sale
-    prices are portal/Excel-download only (cityofchesapeake.net Open Data /
-    Assessor) - the Richmond-style "file" path is the follow-up if the owner
-    wants Chesapeake deed prices. Do not hunt for a chesva Property_Sales
-    FeatureServer; it does not exist (searched 2026-08-11).
+  * Norfolk = socrata_snapshot_stack: data.norfolk.gov FY files are ONE row
+    per parcel (latest transfer), re-published yearly. Stack FY19..FY27
+    (th3n-jr9u, pdf2-gh9c, 8bfx-a5g8, 7tu9-2ytx, yvpm-8aid, 9gmp-9x4c,
+    g7sg-tivf, m5ya-5grb, qva7-tzrf) + dedupe (gpin,transfer_date), later FY
+    wins -> ~last 3 sales/parcel. FY27 lags ~5 days. MUNI_FEEDS assessor
+    entry now FY27 qva7-tzrf - ROLL YEARLY (FY25 had gone stale).
+  * Chesapeake = esri_date + xlsx_join: parcels layer (already kind='assessor')
+    carries TRANSFER/DEEDBK/DEEDPG, NO price; prices come from the assessor's
+    annual LandBook XLS portal items (commercial 28f709bf..., residential
+    714668f4...) joined on MAP_PARCEL (aliased to apn). "currentowner" +
+    "transfer" added to sale_history key sets for this. No chesva
+    Property_Sales FeatureServer exists - do not hunt for one.
+  * Richmond = socrata_snapshot_stack on data.richmondgov.com: "Property
+    Transfer History" uxre-by3i (quarterly, full history) + "Property
+    Transfers" k9h9-y482 (recent). Also UPGRADED the MUNI_FEEDS Richmond
+    entry from status="file" to live Socrata "Property Assessments Current"
+    vm9j-9f88 (the old "auth-gated 403" note was from probing a different
+    dataset). Socrata column spellings vary per city - the stack adapter
+    probes _STACK_ID_KEYS/_STACK_DATE_KEYS candidates and its sized logs make
+    a spelling miss loud; extend those tuples if a new city's first host run
+    reports 0 dated transfers against non-zero counts.
 
 ### National discovery is ON and AGGRESSIVE (owner directive 2026-08-09)
 discover_feeds is national: (city,state) tuples, correct state stamped, VGIN

@@ -39,9 +39,14 @@ _PRICE_KEYS = ("lastsaleprice", "last_sale_price", "saleprice", "sale_price",
 _DATE_KEYS = ("lastsaledate", "last_sale_date", "saledate", "sale_date",
               "salesdate", "transferdate", "transfer_date", "deeddate",
               "recordeddate", "recorddate", "saledate1", "owndate",
-              "lastqualifiedsaledate")
+              "lastqualifiedsaledate",
+              # LAST on purpose (earlier keys win): Chesapeake's parcels layer
+              # names its transfer date just "TRANSFER" (2026-08-11).
+              "transfer")
 _BUYER_KEYS = ("last_sale_buyer", "lastsalebuyer", "grantee", "buyer",
-               "buyername", "granteename", "newowner")
+               "buyername", "granteename", "newowner",
+               # Chesapeake LandBook: owner-of-record after the transfer.
+               "currentowner")
 _SELLER_KEYS = ("grantor", "seller", "sellername", "grantorname", "prevowner",
                 "previousowner")
 _DEED_BOOK_KEYS = ("deedbk", "deedbook", "deed_book", "book", "instrumentbook")

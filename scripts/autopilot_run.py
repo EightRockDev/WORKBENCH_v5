@@ -33,11 +33,12 @@ STEPS = (
     # muni_records (kind=sales); auto-discovers each locality's endpoint,
     # self-skips those not on Spatialest (owner directive 2026-08-09).
     ("salespull", ["scripts/pull_sales.py"], "sales-latest.txt"),
-    # Property Sales from ArcGIS Hub FeatureServers (Virginia Beach confirmed;
-    # Norfolk/Chesapeake same pattern). VB deeds are NOT on Spatialest - they
-    # live on the city's own ArcGIS org, sized-then-paginated into muni_records
-    # (kind=sales). Owner-confirmed source 2026-08-10 (replaces the vbprobe
-    # dead end below).
+    # Municipal SALES, three adapter types (owner-verified 2026-08-11):
+    # VB = esri_history (Property_Sales_), Norfolk + Richmond =
+    # socrata snapshot-stack (FY files / transfer history, deduped on
+    # (parcel, date)), Chesapeake = assessor LandBook XLS join. All land in
+    # muni_records kind=sales; every adapter sizes the pull BEFORE writing
+    # and never deletes on a transient empty ([OK] 0 records = break).
     ("arcgissales", ["scripts/pull_arcgis_sales.py"], "arcgis-sales-latest.txt"),
     # Sale-history index: render-time answers come from this table, not a
     # per-page muni scan (owner "too slow" report 2026-08-09). Runs AFTER the

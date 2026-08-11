@@ -151,9 +151,10 @@ MUNI_FEEDS: list[FeedSpec] = [
              note="No open feed; WebPro 'Export results' tool only. Defer."),
     # ---- Virginia (home base + the rest) ----
     FeedSpec("Norfolk", "VA", "Norfolk", "assessor+sales", "socrata",
-             "https://data.norfolk.gov/resource/g7sg-tivf.json",
+             "https://data.norfolk.gov/resource/qva7-tzrf.json",
              note="Reference model. Owner+land/imp/total value+yr built+use+consideration+transfer_date. "
-                  "FY-stamped id — resolve current FY yearly."),
+                  "FY-stamped id - FY27 as of 2026-08-11 (was FY25 g7sg-tivf, STALE); "
+                  "roll yearly. Multi-sale history = the FY stack in pull_arcgis_sales.py."),
     FeedSpec("Norfolk", "VA", "Norfolk", "permits", "socrata",
              "https://data.norfolk.gov/resource/fahm-yuh4.json"),
     # RETIRED 2026-08-11: Property_Sales_view went dark (nightly pull returned
@@ -174,9 +175,16 @@ MUNI_FEEDS: list[FeedSpec] = [
     FeedSpec("Newport News", "VA", "Newport News", "assessor+sales", "arcgis",
              "https://maps.nnva.gov/gis/rest/services/Operational/Parcel/MapServer/0",
              note="One layer: owner+use+yr built+LIVUNIT(units)+current/prior land+imp value+last sale."),
-    FeedSpec("Richmond", "VA", "Richmond", "assessor+sales", "file", status="file",
-             url="https://www.rva.gov/assessor-real-estate/data-request",
-             note="Socrata API auth-gated (403). Use free monthly assessor Excel + Transfers/Sales report."),
+    # Upgraded 2026-08-11: Richmond DOES expose public Socrata datasets -
+    # "Property Assessments Current" (vm9j-9f88) for parcel attributes here,
+    # and transfer history via pull_arcgis_sales.py (uxre-by3i + k9h9-y482).
+    # The old "auth-gated 403" note came from probing a different dataset. If
+    # this 403s on the host, the pull logs it loudly; fallback = the monthly
+    # assessor Excel at rva.gov/assessor-real-estate/data-request.
+    FeedSpec("Richmond", "VA", "Richmond", "assessor+sales", "socrata",
+             "https://data.richmondgov.com/resource/vm9j-9f88.json",
+             note="Property Assessments Current. Sales history via "
+                  "pull_arcgis_sales.py Property Transfer History stack."),
     FeedSpec("Chesapeake", "VA", "Chesapeake", "assessor", "arcgis", status="live",
              url="https://gis.cityofchesapeake.net/mapping/rest/services/OpenData/"
                  "OpenData/MapServer/15",

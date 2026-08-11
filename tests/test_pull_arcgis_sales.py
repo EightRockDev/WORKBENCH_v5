@@ -1,6 +1,6 @@
-"""ArcGIS Hub Property-Sales puller: sizes before paginating, writes rows in
-the shape core.sale_index already understands, and never deletes on a
-transient empty pull."""
+"""Municipal sales pullers (three adapter types): size-before-paginate,
+verbatim rows core.sale_index already understands, dedupe semantics, and
+never deleting good data on a transient empty pull."""
 
 from __future__ import annotations
 
@@ -23,69 +23,201 @@ def _mk_db():
     return conn
 
 
+# ------------------------------------------------------------ VB / esri
+
 def test_where_is_arms_length_and_dated():
     m = _mod()
     assert "Sale_Price > 0" in m.WHERE
     assert "Sales_Date >=" in m.WHERE
 
 
-def test_sizes_then_paginates_and_writes(monkeypatch):
+def test_vb_sizes_then_paginates_and_writes(monkeypatch):
     m = _mod()
-    url = m.ARCGIS_SALES_FEEDS["Virginia Beach"]["url"]
-
-    calls = {"count": 0, "pages": 0}
+    calls = {"count": 0}
 
     def fake_query(u, params):
         if params.get("returnCountOnly"):
             calls["count"] += 1
             return {"count": 3}
-        calls["pages"] += 1
         off = params["resultOffset"]
-        # 3 features total, PAGE forced to 2 so we exercise a second page.
         allf = [{"attributes": {"GPIN": f"{i}", "Sale_Price": 100 + i,
                                 "Sales_Date": 1609459200000}} for i in range(3)]
-        chunk = allf[off:off + m.PAGE]
-        return {"features": chunk}
+        return {"features": allf[off:off + m.PAGE]}
 
     monkeypatch.setattr(m, "PAGE", 2)
     monkeypatch.setattr(m, "_query", fake_query)
     conn = _mk_db()
-    n = m.pull_market(conn, "Virginia Beach",
-                      m.ARCGIS_SALES_FEEDS["Virginia Beach"])
+    n = m.pull_market(conn, "Virginia Beach", m.SALES_SOURCES["Virginia Beach"])
     assert n == 3
     assert calls["count"] == 1              # sized exactly once, first
-    rows = conn.execute("SELECT market,kind,record FROM muni_records").fetchall()
-    assert len(rows) == 3
-    assert all(r[1] == "sales" for r in rows)
-    rec = json.loads(rows[0][2])
-    assert "Sale_Price" in rec and "Sales_Date" in rec   # verbatim attributes
+    rows = conn.execute("SELECT kind, record FROM muni_records").fetchall()
+    assert len(rows) == 3 and all(r[0] == "sales" for r in rows)
+    rec = json.loads(rows[0][1])
+    assert "Sale_Price" in rec and "Sales_Date" in rec   # verbatim
 
 
-def test_transient_empty_does_not_delete_existing(monkeypatch):
+def test_vb_transient_empty_does_not_delete_existing(monkeypatch):
     m = _mod()
-    url = m.ARCGIS_SALES_FEEDS["Virginia Beach"]["url"]
+    url = m.SALES_SOURCES["Virginia Beach"]["url"]
     conn = _mk_db()
-    # a prior good pull is on hand
     conn.execute("INSERT INTO muni_records VALUES ('Virginia Beach','VA',"
-                 "'Virginia Beach','sales',?, '2000-01-01', '{\"GPIN\":\"x\"}')",
-                 (url,))
+                 "'Virginia Beach','sales',?, '2000-01-01', '{}')", (url,))
 
     def fake_query(u, params):
         if params.get("returnCountOnly"):
-            return {"count": 500}          # server says there ARE rows
-        return {"features": []}            # but pagination returns nothing
+            return {"count": 500}
+        return {"features": []}
 
     monkeypatch.setattr(m, "_query", fake_query)
-    n = m.pull_market(conn, "Virginia Beach",
-                      m.ARCGIS_SALES_FEEDS["Virginia Beach"])
-    assert n == 0
-    # existing row survives - a transient blip must not wipe good data
+    assert m.pull_market(conn, "Virginia Beach",
+                         m.SALES_SOURCES["Virginia Beach"]) == 0
     assert conn.execute("SELECT count(*) FROM muni_records").fetchone()[0] == 1
 
 
-def test_count_failure_skips_cleanly(monkeypatch):
+def test_vb_count_failure_skips_cleanly(monkeypatch):
     m = _mod()
     monkeypatch.setattr(m, "_query", lambda u, p: None)
     conn = _mk_db()
     assert m.pull_market(conn, "Virginia Beach",
-                         m.ARCGIS_SALES_FEEDS["Virginia Beach"]) == 0
+                         m.SALES_SOURCES["Virginia Beach"]) == 0
+
+
+# ---------------------------------------------------- Norfolk / socrata
+
+def test_norfolk_stack_dedupes_latest_fy_wins(monkeypatch):
+    m = _mod()
+    cfg = dict(m.SALES_SOURCES["Norfolk"])
+    cfg["resources"] = (("FY26", "aaaa-aaaa"), ("FY27", "bbbb-bbbb"))
+
+    data = {
+        "aaaa-aaaa": [
+            {"gpin": "G1", "transfer_date": "2020-05-01T00:00:00",
+             "consideration": "100000", "grantee": "OLD LLC"},
+            {"gpin": "G1", "transfer_date": "2015-01-01T00:00:00",
+             "consideration": "50000"},
+            {"gpin": "G2", "consideration": "1"},          # no date -> skip
+        ],
+        "bbbb-bbbb": [
+            # same (gpin, date) as FY26 but fresher snapshot -> must win
+            {"gpin": "G1", "transfer_date": "2020-05-01T00:00:00",
+             "consideration": "100000", "grantee": "NEW LLC"},
+            {"gpin": "G3", "transfer_date": "2026-08-01T00:00:00",
+             "consideration": "2500000",
+             "location": {"latitude": "36.8"}},            # dict stripped
+        ],
+    }
+
+    def fake_get_json(url, params=None):
+        rid = url.rsplit("/", 1)[-1].replace(".json", "")
+        if params and "$select" in params:
+            return [{"count": str(len(data[rid]))}]
+        if params and params.get("$offset", 0) >= len(data[rid]):
+            return []
+        return data[rid]
+
+    monkeypatch.setattr(m, "_get_json", fake_get_json)
+    conn = _mk_db()
+    n = m.pull_market(conn, "Norfolk", cfg)
+    assert n == 3                       # G1@2020, G1@2015, G3@2026
+    recs = [json.loads(r[0]) for r in conn.execute(
+        "SELECT record FROM muni_records").fetchall()]
+    g1_2020 = next(r for r in recs
+                   if r.get("gpin") == "G1" and "2020" in r["transfer_date"])
+    assert g1_2020["grantee"] == "NEW LLC"           # later FY won
+    assert g1_2020["_fy_resource"].startswith("FY27")
+    assert all("location" not in r for r in recs)    # geometry stripped
+
+
+def test_stack_id_and_date_key_flexibility_for_richmond(monkeypatch):
+    m = _mod()
+    cfg = dict(m.SALES_SOURCES["Richmond"])
+    cfg["resources"] = (("history", "cccc-cccc"),)
+    rows = [{"pin": "W0001", "transfer_date": "2024-03-01T00:00:00",
+             "consideration_amount": "750000"}]
+
+    def fake_get_json(url, params=None):
+        if params and "$select" in params:
+            return [{"count": "1"}]
+        if params and params.get("$offset", 0) >= 1:
+            return []
+        return rows
+
+    monkeypatch.setattr(m, "_get_json", fake_get_json)
+    conn = _mk_db()
+    assert m.pull_market(conn, "Richmond", cfg) == 1
+
+
+def test_stack_all_counts_failing_touches_nothing(monkeypatch):
+    m = _mod()
+    cfg = dict(m.SALES_SOURCES["Norfolk"])
+    monkeypatch.setattr(m, "_get_json", lambda u, p=None: None)
+    conn = _mk_db()
+    conn.execute("INSERT INTO muni_records VALUES ('Norfolk','VA','Norfolk',"
+                 "'sales',?, '2000-01-01', '{}')", (cfg["source_tag"],))
+    assert m.pull_market(conn, "Norfolk", cfg) == 0
+    assert conn.execute("SELECT count(*) FROM muni_records").fetchone()[0] == 1
+
+
+# ------------------------------------------------- Chesapeake / landbook
+
+def test_landbook_keeps_date_bearing_rows_and_cleans_timestamps(monkeypatch):
+    import pandas as pd
+    m = _mod()
+    df = pd.DataFrame([
+        {"MAP_PARCEL": "0123000", "CONSIDERATION": 1_200_000,
+         "TRANSFER DATE": pd.Timestamp("2025-11-03"),
+         "CURRENTOWNER": "MF HOLDINGS LLC", "TOTALVALUE": 950_000},
+        {"MAP_PARCEL": "0456000", "CONSIDERATION": None,
+         "TRANSFER DATE": pd.NaT, "TOTALVALUE": 300_000},   # never sold
+    ])
+    monkeypatch.setattr(m, "_landbook_frames",
+                        lambda cfg: iter([("commercial", df)]))
+    conn = _mk_db()
+    n = m.pull_market(conn, "Chesapeake", m.SALES_SOURCES["Chesapeake"])
+    assert n == 1
+    rec = json.loads(conn.execute(
+        "SELECT record FROM muni_records").fetchone()[0])
+    assert rec["TRANSFER DATE"] == "2025-11-03"      # Timestamp -> ISO
+    assert rec["_landbook"] == "commercial"
+
+
+def test_landbook_empty_parse_touches_nothing(monkeypatch):
+    m = _mod()
+    cfg = m.SALES_SOURCES["Chesapeake"]
+    monkeypatch.setattr(m, "_landbook_frames", lambda c: iter([]))
+    conn = _mk_db()
+    conn.execute("INSERT INTO muni_records VALUES ('Chesapeake','VA',"
+                 "'Chesapeake','sales',?, '2000-01-01', '{}')",
+                 (cfg["source_tag"],))
+    assert m.pull_market(conn, "Chesapeake", cfg) == 0
+    assert conn.execute("SELECT count(*) FROM muni_records").fetchone()[0] == 1
+
+
+# ------------------------------------- rows are readable by sale_history
+
+def test_extractor_reads_all_three_jurisdictions_rows():
+    from core.sale_history import extract_sale_records
+    norfolk = extract_sale_records(
+        {"gpin": "G1", "consideration": "875000",
+         "transfer_date": "2024-06-15T00:00:00", "grantee": "BUYER LLC"})
+    assert norfolk and norfolk[0]["price"] == 875000.0
+    assert norfolk[0]["date"] == "2024-06-15"
+    assert norfolk[0]["grantee"] == "BUYER LLC"
+
+    ches_landbook = extract_sale_records(
+        {"MAP_PARCEL": "0123000", "CONSIDERATION": 1200000,
+         "TRANSFER DATE": "2025-11-03", "CURRENTOWNER": "MF HOLDINGS LLC",
+         "DEEDBK": "9012", "DEEDPG": "345"})
+    assert ches_landbook and ches_landbook[0]["price"] == 1200000.0
+    assert ches_landbook[0]["grantee"] == "MF HOLDINGS LLC"
+    assert "9012" in ches_landbook[0]["notes"]
+
+    ches_parcel = extract_sale_records(
+        {"PARNO": "0123000", "TRANSFER": "2025-11-03",
+         "DEEDBK": "9012", "DEEDPG": "345"})
+    assert ches_parcel and ches_parcel[0]["date"] == "2025-11-03"
+
+    richmond = extract_sale_records(
+        {"pin": "W0001", "consideration_amount": "750000",
+         "transfer_date": "2024-03-01T00:00:00"})
+    assert richmond and richmond[0]["price"] == 750000.0
