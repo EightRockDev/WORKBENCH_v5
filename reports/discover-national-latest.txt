@@ -1,4 +1,4 @@
-autopilot discover_national @ 2026-08-10T22:07:48
+autopilot discover_national @ 2026-08-10T23:07:40
 
 [national-discovery] probing top-50 metros for free parcel feeds...
 Probing GIS portals for unit-bearing parcel layers (50 national metros)...
@@ -25,6 +25,17 @@ Probing GIS portals for unit-bearing parcel layers (50 national metros)...
    [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 1,107 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 163 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Raleigh: Raleigh County Dilapidated Structures_WFL1: only 830 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Richmond: Basemap/City Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: City_of_Richmond_Basemap/COR_Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: City_of_Richmond_Parcels_Public/City of Richmond Parcels (public): records are NOT in Richmond
+   [rejected - wrong city] Richmond: CitySurplusMapService_ReadOnly/General Plan 2030 Zones: records are NOT in Richmond
+   [rejected - wrong city] Richmond: COR_BASE/COR Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: COR_Parcel_Ownership/Parcel Ownership: records are NOT in Richmond
+   [rejected - wrong city] Richmond: COR_Parcel_Ownership_WFL1/City of Richmond Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: Fire_Ownership/Ownership: records are NOT in Richmond
+   [rejected - wrong city] Richmond: Parcel_Ownership/Ownership: records are NOT in Richmond
+   [rejected - wrong city] Richmond: General/City Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: Zoning_Parcels/Zoning Parcels: records are NOT in Richmond
    [rejected - wrong city] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
    [rejected - wrong city] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
    [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
