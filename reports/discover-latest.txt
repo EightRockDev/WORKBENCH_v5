@@ -1,4 +1,4 @@
-autopilot discover @ 2026-08-10T23:00:02
+autopilot discover @ 2026-08-11T00:00:03
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
@@ -28,6 +28,11 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected - wrong city] Chesapeake: FWS R5 ES DRCN LSP Results and Optimization Example CEA: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: FWS R5 ES DRCN LSP Results and Optimization Example CEA: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: FWS R5 ES DRCN LSP Results and Optimization Example CEA: records are NOT in Chesapeake
+   [rejected - wrong city] Hampton: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Hampton
+   [rejected - wrong city] Hampton: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Hampton
+   [rejected - wrong city] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Hampton
+   [rejected - wrong city] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Hampton
+   [rejected - wrong city] Hampton: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Hampton
    [rejected - wrong city] Hampton: Chesapeake Parcels Within Blast Zone: layer is named for another city
    [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
    [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
@@ -43,9 +48,30 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected - wrong city] Hampton: CZM_Hampton_Data: only 716 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Hampton: CZM_Hampton_Data: layer name declares a subset - demoted, does not count as the city roll
    [rejected - wrong city] Hampton: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Hampton
+   [rejected - wrong city] Portsmouth: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Portsmouth
+   [rejected - wrong city] Portsmouth: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Portsmouth
+   [rejected - wrong city] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Portsmouth
+   [rejected - wrong city] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Portsmouth
+   [rejected - wrong city] Portsmouth: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Portsmouth
    [rejected - wrong city] Portsmouth: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Portsmouth
+   [rejected - wrong city] Suffolk: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Suffolk
+   [rejected - wrong city] Suffolk: ElevationCertificates/Elevation Certificates - Parcels: layer name declares a subset - demoted, does not count as the city roll
+   [rejected - wrong city] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Suffolk
+   [rejected - wrong city] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): layer name declares a subset - demoted, does not count as the city roll
+   [rejected - wrong city] Suffolk: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Suffolk
    [rejected - wrong city] Norfolk: Backlick Run Stream Restoration: records are NOT in Norfolk
    [rejected - wrong city] Norfolk: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Norfolk
+   [rejected - wrong city] Richmond: Basemap/City Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: City_of_Richmond_Basemap/COR_Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: City_of_Richmond_Parcels_Public/City of Richmond Parcels (public): records are NOT in Richmond
+   [rejected - wrong city] Richmond: CitySurplusMapService_ReadOnly/General Plan 2030 Zones: records are NOT in Richmond
+   [rejected - wrong city] Richmond: COR_BASE/COR Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: COR_Parcel_Ownership/Parcel Ownership: records are NOT in Richmond
+   [rejected - wrong city] Richmond: COR_Parcel_Ownership_WFL1/City of Richmond Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: Fire_Ownership/Ownership: records are NOT in Richmond
+   [rejected - wrong city] Richmond: Parcel_Ownership/Ownership: records are NOT in Richmond
+   [rejected - wrong city] Richmond: General/City Parcels: records are NOT in Richmond
+   [rejected - wrong city] Richmond: Zoning_Parcels/Zoning Parcels: records are NOT in Richmond
    [rejected - wrong city] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
    [rejected - wrong city] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
    [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
@@ -61,9 +87,9 @@ Virginia Beach: 2 candidate layer(s)
 
 Chesapeake: 3 candidate layer(s)
    https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
-      auto-discovered: Accela_base_map_pro/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 110,289 records
+      auto-discovered: Accela_base_map_pro/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 110,293 records
    https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
-      auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,461 records
+      auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,460 records
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
       geometry supplement; VGIN statewide fallback: FIPS = '51550'; 92,461 records; fields ['apn']
 
@@ -81,9 +107,11 @@ Portsmouth: 3 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
       geometry supplement; VGIN statewide fallback: FIPS = '51740'; 36,615 records; fields ['apn']
 
-Suffolk: 1 candidate layer(s)
-   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      VGIN statewide fallback: FIPS = '51800'; 45,160 records; fields ['apn']
+Suffolk: 2 candidate layer(s)
+   https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificates/MapServer/1
+      auto-discovered: ElevationCertificates/Elevation Certificates - Parcels; score 10; fields ['address', 'apn', 'assessed_value', 'city', 'use_code', 'year_built']; 5,823 records; NAMED as a subset - demoted
+   https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1
+      auto-discovered: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88); score 10; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; 5,775 records; NAMED as a subset - demoted
 
 Norfolk: 2 candidate layer(s)
    https://data.norfolk.gov/resource/ykcq-76im.json
@@ -97,5 +125,5 @@ Richmond: 2 candidate layer(s)
    https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
       auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records; NAMED as a subset - demoted
 
-Wrote 15 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
+Wrote 16 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
 NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.
