@@ -23,6 +23,9 @@ def main() -> int:
     print(f"alert sweep, NEW this cycle: {counts['new_mf']} multifamily, "
           f"{counts['units_jump']} unit-count moves, "
           f"{counts.get('owner_change', 0)} ownership changes")
+    if counts.get("stale_closed"):
+        print(f"  closed {counts['stale_closed']} stale alert(s) whose "
+              f"property no longer qualifies as multifamily")
 
     open_counts = alerts.count_open_alerts(db)
     total = open_counts.get("total", 0)

@@ -342,15 +342,29 @@ def test_explicit_units_beat_point_counting(tmp_path):
 def test_short_mf_codes_match_whole_tokens_only():
     """VB zoning 'R-40' (single-family) substring-contains 'r-4' - that bug
     classified ~116K SFH parcels as multifamily. Short codes now require an
-    exact token."""
+    exact token - and 'r-4' itself is GONE from the global set: Richmond's
+    roll says 'R-4 Single Family' (x9,001), Durham and Atlanta agree. A city
+    where R-4 truly means apartments re-adds it via use_code_learn."""
     assert phase0.is_multifamily("R-40", None) is False
-    assert phase0.is_multifamily("R-4", None) is True
+    assert phase0.is_multifamily("R-4", None) is False
     assert phase0.is_multifamily("MF", None) is True
     assert phase0.is_multifamily("MFG WAREHOUSE", None) is False
     assert phase0.is_multifamily("405", None) is True
     assert phase0.is_multifamily("405 APARTMENT", None) is True
     assert phase0.is_multifamily("1405", None) is False
     assert phase0.is_multifamily("APT", None) is True
+
+
+def test_single_family_text_vetoes_any_code_match():
+    """The roll's own words beat a code lookup: 'R-4 Single Family' must
+    never classify as multifamily, whatever any token list says - but an
+    explicit unit count >= the bar still wins over the label."""
+    assert phase0.is_multifamily("R-4 Single Family", None) is False
+    assert phase0.is_multifamily("MF SINGLE FAMILY CONVERSION", None) is False
+    assert phase0.is_multifamily("APT 1 FAM", None) is False
+    assert phase0.is_multifamily("R-4 Single Family", 24) is True
+    assert phase0.is_multifamily("R-48 Multi Family", None) is True
+    assert phase0.is_multifamily("R-63 Multi Family Urban Res.", None) is True
 
 
 def test_small_plex_forms_are_not_ten_plus_multifamily():

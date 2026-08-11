@@ -446,6 +446,25 @@ via `caddy reload` when the service already exists (zero downtime) instead of
 stop/remove/reinstall, so future Caddyfile edits just need install-caddy re-run
 (or a bare `caddy reload --config deploy\windows\Caddyfile.active`).
 
+### Global short-code MF tokens are a trap; roll text vetoes labels (2026-08-11)
+The original _MF_USE_TOKENS carried "r-4" as a VA apartment class; Richmond's
+roll arrived and "R-4 Single Family" x9,001 became multifamily overnight ->
+15.6K "MF" in Richmond, a 20K+ open new_mf alert flood, and a poisoned
+rent-coverage denominator. Three rules now enforced in code:
+  1. NO city-ambiguous short code lives in the global token set - "r-4" is
+     removed; a city where it truly means apartments re-adds it via the
+     per-city learned map (use_code_learn), which is evidence-based.
+  2. Single-family veto: text containing "single family"/"1 fam"/etc. never
+     classifies MF by label (_SF_VETO_SUBSTRINGS); explicit units >= 10
+     still win. The phase0 report's "Top use codes" line printed the bug
+     plainly ("R-4 Single Family x9001") - READ that section every cycle;
+     wrong codes there = bad aliasing, its own caption says so.
+  3. Alerts self-heal: run_sweep closes open alerts (status='stale') whose
+     property no longer qualifies MF, so a misclassification correction
+     drains the flood next cycle instead of carrying it forever.
+Legit Richmond MF codes (R-48/R-53/R-63/R-73 "Multi Family...") match via
+the "multi family" substring and are untouched.
+
 ### salespull: coerce record-derived APN with str() before .strip() (2026-08-10)
 pull_sales.sample_gpins crashed the WHOLE sales pull mid-locality with
 `'int' object has no attribute 'strip'`: some rolls store APN/GPIN as a bare

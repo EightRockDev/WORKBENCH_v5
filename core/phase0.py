@@ -173,12 +173,24 @@ _IGNORED_KEYS = re.compile(
 #     hyphens, so "r-4" stays one token distinct from "r-40".
 # Duplex/triplex/quadplex are deliberately absent: the product's multifamily
 # bar is >= 10 units (spec 7.3); 2-4 unit forms only add proximity noise.
+# "r-4" is deliberately absent from the tokens: it shipped in the original
+# list as a VA apartment class, but every feed observed carrying it means
+# low-density single family (Richmond "R-4 Single Family" x9,001, Durham,
+# Atlanta). A short code whose meaning flips per city belongs in the
+# per-city learned-code map (core/use_code_learn.py), never in this global set.
 _MF_USE_SUBSTRINGS = (
     "apartment", "multifamily", "multi-family", "multi family",
     "condo hi rise", "garden apt", "townhouse rental", "res 4+",
     "housing",   # public/subsidized/senior housing = rental multifamily
 )
-_MF_USE_TOKENS = frozenset({"mf", "405", "r-4", "apt", "apts"})  # 405 = VA apartment class
+_MF_USE_TOKENS = frozenset({"mf", "405", "apt", "apts"})  # 405 = VA apartment class
+
+# When the roll's own text affirmatively says single-family, no code or
+# token match may overrule it (an explicit unit count >= the bar still
+# wins - measured data beats labels in both directions).
+_SF_VETO_SUBSTRINGS = (
+    "single family", "single-family", "single fam", "1 fam", "one family",
+)
 
 _TOKEN_SPLIT = re.compile(r"[\s,/;:()]+")
 
@@ -442,6 +454,8 @@ def is_multifamily(use_code: str | None, units: float | None) -> bool:
     if units is not None and units >= MIN_MF_UNITS:
         return True
     text = (use_code or "").lower()
+    if any(veto in text for veto in _SF_VETO_SUBSTRINGS):
+        return False
     if any(fragment in text for fragment in _MF_USE_SUBSTRINGS):
         return True
     tokens = {t.strip(".") for t in _TOKEN_SPLIT.split(text) if t}

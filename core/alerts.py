@@ -68,7 +68,8 @@ def run_sweep(db_path: Path) -> dict[str, int]:
     silently - everything would be "new")."""
     from core.phase0 import is_mf_ten_plus
     now = dt.datetime.now().isoformat(timespec="seconds")
-    counts = {"new_mf": 0, "units_jump": 0, "owner_change": 0}
+    counts = {"new_mf": 0, "units_jump": 0, "owner_change": 0,
+              "stale_closed": 0}
     with sqlite3.connect(db_path, timeout=60) as conn:
         conn.executescript(_SCHEMA)
         cols = {r[1] for r in conn.execute(
@@ -119,6 +120,20 @@ def run_sweep(db_path: Path) -> dict[str, int]:
                          f"Unit count moved: {addr or pid}",
                          f"{old_u} -> {units} units · {city}", now))
                     counts["units_jump"] += max(cur.rowcount, 0)
+        # An alert whose property no longer qualifies as multifamily is
+        # noise, not a lead: when a misclassification is corrected (the
+        # 2026-08-11 Richmond "R-4 Single Family" flood - 20K+ open new_mf
+        # rows) the sweep closes it instead of carrying it forever. Dismissed
+        # rows keep their status; only 'open' ones are touched.
+        conn.execute("CREATE TEMP TABLE IF NOT EXISTS _current_mf (pid TEXT PRIMARY KEY)")
+        conn.execute("DELETE FROM _current_mf")
+        conn.executemany("INSERT OR IGNORE INTO _current_mf VALUES (?)",
+                         [(pid,) for pid in current])
+        cur = conn.execute(
+            """UPDATE alerts SET status='stale'
+                WHERE status='open'
+                  AND property_id NOT IN (SELECT pid FROM _current_mf)""")
+        counts["stale_closed"] = max(cur.rowcount, 0)
         conn.execute("DELETE FROM alert_snapshot")
         conn.executemany(
             "INSERT INTO alert_snapshot VALUES (?,?,?,?)",

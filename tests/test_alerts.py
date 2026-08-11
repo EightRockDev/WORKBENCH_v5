@@ -22,16 +22,19 @@ def _spine(path, rows):
 
 def test_first_sweep_seeds_silently_then_detects_changes(tmp_path):
     db = _spine(tmp_path / "wb.db", [("8R-a", "1 Main St", 50)])
-    assert alerts.run_sweep(db) == {"new_mf": 0, "units_jump": 0, "owner_change": 0}  # seed
+    assert alerts.run_sweep(db) == {"new_mf": 0, "units_jump": 0,
+                                    "owner_change": 0, "stale_closed": 0}  # seed
     # Next build: a new complex appears and an existing one grows.
     _spine(db, [("8R-a", "1 Main St", 80), ("8R-b", "2 Oak Ave", 32)])
     counts = alerts.run_sweep(db)
-    assert counts == {"new_mf": 1, "units_jump": 1, "owner_change": 0}
+    assert counts == {"new_mf": 1, "units_jump": 1, "owner_change": 0,
+                      "stale_closed": 0}
     kinds = {a["kind"]: a for a in alerts.open_alerts(db)}
     assert "2 Oak Ave" in kinds["new_mf"]["headline"]
     assert "50 -> 80" in kinds["units_jump"]["detail"]
     # Re-running the same sweep never duplicates.
-    assert alerts.run_sweep(db) == {"new_mf": 0, "units_jump": 0, "owner_change": 0}
+    assert alerts.run_sweep(db) == {"new_mf": 0, "units_jump": 0,
+                                    "owner_change": 0, "stale_closed": 0}
     assert len(alerts.open_alerts(db)) == 2
 
 
@@ -131,3 +134,26 @@ def test_open_count_on_a_database_with_no_alerts_table(tmp_path):
     db = tmp_path / "empty.db"
     sqlite3.connect(db).close()
     assert alerts.count_open_alerts(db) == {"total": 0}
+
+
+def test_stale_alert_closes_when_property_leaves_mf(tmp_path):
+    """A corrected misclassification (Richmond 'R-4 Single Family' flood)
+    must drain the alert list: when the property no longer qualifies as
+    multifamily on a later build, its open alerts close as 'stale'.
+    Dismissed alerts keep their own status."""
+    import sqlite3
+    db = _spine(tmp_path / "wb.db", [("8R-a", "1 Main St", 50)])
+    alerts.run_sweep(db)                                        # seed
+    _spine(db, [("8R-a", "1 Main St", 50), ("8R-b", "2 Oak Ave", 32)])
+    assert alerts.run_sweep(db)["new_mf"] == 1
+    # The 'new' property turns out to be single-family (reclassified).
+    with sqlite3.connect(db) as conn:
+        conn.execute("UPDATE properties_8r SET use_code='R-4 Single Family',"
+                     " units=NULL WHERE property_id='8R-b'")
+    counts = alerts.run_sweep(db)
+    assert counts["stale_closed"] == 1
+    assert alerts.open_alerts(db) == []
+    with sqlite3.connect(db) as conn:
+        status = conn.execute("SELECT status FROM alerts WHERE "
+                              "property_id='8R-b'").fetchone()[0]
+    assert status == "stale"
