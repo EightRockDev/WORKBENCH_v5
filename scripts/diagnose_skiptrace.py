@@ -45,8 +45,12 @@ def main() -> None:
     ap.add_argument("--entity", help="LLC/entity name to resolve via SOS (VA SCC)")
     ap.add_argument("--name", help="person name to skip-trace")
     ap.add_argument("--address", help="mailing/property address hint")
+    ap.add_argument("--company", help="company name for firmographic enrichment (Apollo)")
     ap.add_argument("--state", default="VA")
     args = ap.parse_args()
+
+    from core.skiptrace import trace
+    trace.reset()
 
     mode = os.environ.get("ER_SKIPTRACE_PROVIDERS", "mock")
     reg = prov.get_registry()
@@ -78,8 +82,28 @@ def main() -> None:
             except Exception as e:
                 print(f"[ERROR] {getattr(tier,'name','?')}: {type(e).__name__}: {e}")
 
-    if not args.entity and not args.name:
-        print("\nNothing to do. Pass --entity and/or --name (+ --address). See --help.")
+    if args.company or args.entity:
+        company = args.company or args.entity
+        firm = getattr(reg, "firmographic", None)
+        if firm is not None:
+            print(f"\n### Firmographic / business contact: {company!r} "
+                  f"({reg.status.get('firmographic')})")
+            try:
+                bc = firm.enrich_company(company, None, args.state)
+                _dump("BusinessContact", bc if bc else "(no result / None)")
+            except Exception as e:
+                print(f"[ERROR] {type(e).__name__}: {e}")
+
+    lines = trace.snapshot()
+    if lines:
+        print("\n### Provider trace (every call this run)")
+        for t in lines:
+            print(f"  [{t['outcome']:<5}] {t['vendor']}: {t['op']}"
+                  + (f" - {t['detail']}" if t.get("detail") else ""))
+
+    if not args.entity and not args.name and not args.company:
+        print("\nNothing to do. Pass --entity and/or --name (+ --address) "
+              "and/or --company. See --help.")
 
 
 if __name__ == "__main__":

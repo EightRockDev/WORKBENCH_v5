@@ -29,6 +29,8 @@ import uuid
 from dataclasses import dataclass, field
 
 from core.skiptrace import providers as prov
+from core.skiptrace import trace
+from core.skiptrace.live import ProviderError
 from data import pg
 
 # §4.4 C1: federal DNC scrub validity — 31 days.
@@ -56,6 +58,17 @@ class ResolveResult:
     total_cost_usd: float = 0.0
     spend_lines: list[dict] = field(default_factory=list)
     stages_run: list[str] = field(default_factory=list)
+    # Per-call provider evidence (vendor/op/outcome/detail) — rendered by the
+    # panel so a run that resolves nothing SHOWS WHY (owner 2026-08-11).
+    provider_trace: list[dict] = field(default_factory=list)
+
+    @property
+    def phones_found(self) -> int:
+        return sum(len(p.get("phones") or []) for p in self.pocs)
+
+    @property
+    def emails_found(self) -> int:
+        return sum(len(p.get("emails") or []) for p in self.pocs)
 
     @property
     def owner_resolved(self) -> bool:
@@ -123,6 +136,7 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
     reg = registry or prov.get_registry()
     res = ResolveResult(property_id=str(prop.get("property_id")), portfolio_id=None)
     now = dt.datetime.now(dt.timezone.utc)
+    trace.reset()
 
     # --- S1 ENTITY ANCHOR --------------------------------------------------
     owner_name = (prop.get("owner") or "").strip()
@@ -130,6 +144,7 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
     mailing = (prop.get("owner_address") or "").strip() or None
     res.stages_run.append("S1")
     if not owner_name:
+        res.provider_trace = trace.snapshot()
         return res  # nothing to anchor on; empty result (caller shows guidance)
 
     # --- S2 PORTFOLIO CHAIN (free) -----------------------------------------
@@ -190,8 +205,24 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
     validated_phones: list[dict] = []
     validated_emails: list[dict] = []
     candidate = None
-    for tier in reg.trace_waterfall:
-        cand = tier.trace_person(person_name, trace_addr, trace_state)
+    # Never skip-trace an ENTITY NAME as a person. When piercing failed (or
+    # named another entity), person_name is still "... LLC" - splitting that
+    # into first/last ("Gd" + "Richmond Two Llc") and paying a person-trace
+    # vendor for it is a guaranteed miss (owner screenshot 2026-08-11). The
+    # reachable path for an unpierced entity is the firmographic block below.
+    waterfall = reg.trace_waterfall
+    if looks_like_entity(person_name):
+        waterfall = []
+        trace.record("pipeline", f"skip-trace {person_name!r}", "skip",
+                     "still an entity name after piercing - person trace "
+                     "would be garbage-in; using business enrichment instead")
+    for tier in waterfall:
+        try:
+            cand = tier.trace_person(person_name, trace_addr, trace_state)
+        except Exception as e:      # noqa: BLE001 - one tier down never sinks the run
+            trace.record(getattr(tier, "name", "trace"),
+                         f"skip-trace {person_name!r}", "error", repr(e))
+            continue
         if cand is None:
             continue
         res.total_cost_usd += cand.cost_usd
@@ -200,12 +231,33 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
 
         # --- S5 VALIDATION & GRADING for this tier's contacts ---------------
         for e164 in cand.phones:
-            v = reg.validation.validate_phone(e164, person_name)
+            try:
+                v = reg.validation.validate_phone(e164, person_name)
+            except ProviderError as e:
+                # Validation down must not hide a traced phone - but an
+                # unvalidated number is never callable (AC-A3).
+                trace.record("validation", f"validate {e164}", "error", str(e))
+                validated_phones.append({
+                    "e164": e164, "line_type": "unknown", "grade": "F",
+                    "name_match": 0.0, "litigator": False,
+                    "dnc": {"federal": None, "state": [], "scrubbed_at": None,
+                            "expires_at": None},
+                    "callable": False,
+                    "reason": "validation unavailable - not scrubbed, do not dial",
+                    "retrieved_at": now.isoformat(),
+                })
+                continue
             res.total_cost_usd += v.cost_usd
             res.spend_lines.append(_spend(org_id, v.vendor, v.query_id, v.cost_usd))
             validated_phones.append(_stamp_phone(v, now))
         for addr in cand.emails:
-            ev = reg.validation.validate_email(addr)
+            try:
+                ev = reg.validation.validate_email(addr)
+            except ProviderError as e:
+                trace.record("validation", f"validate {addr}", "error", str(e))
+                validated_emails.append({"address": addr, "deliverability": 0.0,
+                                         "grade": "F"})
+                continue
             res.total_cost_usd += ev.cost_usd
             res.spend_lines.append(_spend(org_id, ev.vendor, ev.query_id, ev.cost_usd))
             validated_emails.append({
@@ -260,11 +312,17 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
 
     pierced_to_human = (bool(entity_chain) and not looks_like_entity(person_name)
                         and not pierce_was_mock)
-    if not entity_chain:
+    if not entity_chain and not looks_like_entity(owner_name):
         role = "owner"
     elif pierced_to_human:
         role = "principal"
     else:
+        # Covers BOTH unpierced shapes: the registry answered but named no
+        # individual (entity_chain non-empty), AND the registry returned
+        # nothing at all (entity_chain empty - the SOS erred or found no
+        # record). The old code called the second shape "owner", which
+        # rendered an LLC card with empty phone/email lines and skipped the
+        # firmographic fallback entirely (owner screenshot 2026-08-11).
         role = "entity_unpierced"
     person = {
         "full_name": person_name,
@@ -275,7 +333,13 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
         agent = ""
         for c in entity_chain:
             agent = c.get("registered_agent") or agent
-        if pierce_was_mock:
+        if not entity_chain:
+            person["unpierced_note"] = (
+                "state registry returned no record for this entity "
+                f"(sos: {sos_status or 'unknown'}) - see the provider trace "
+                "for the exact vendor response; reach this owner through "
+                "the management company or business line below")
+        elif pierce_was_mock:
             person["unpierced_note"] = (
                 "LLC piercing is on the MOCK SOS — no verified principal. "
                 "Enable a live SOS (Cobalt / VA SCC) and re-run Resolve "
@@ -363,6 +427,8 @@ def resolve_contacts(org_id: str, prop: dict, *, registry=None,
                 "retrieved_at": now.isoformat()})
 
     res.total_cost_usd = round(res.total_cost_usd, 4)
+
+    res.provider_trace = trace.snapshot()
 
     # --- S7 PERSIST & MONITOR ----------------------------------------------
     if persist:

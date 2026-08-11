@@ -80,8 +80,34 @@ def render_owner_intel(prop: dict | None) -> None:
         try:
             with st.spinner("Piercing entity, tracing, validating, compliance-scrubbing…"):
                 res = pipeline.resolve_contacts(org_id, prop)
-            st.success(f"Resolved {len(res.pocs)} contact(s) · stages "
-                       f"{'→'.join(res.stages_run)} · run cost ${res.total_cost_usd:.2f}")
+            # Honest banner: "Resolved 2 contact(s)" with zero phones/emails
+            # is a failure wearing a green box (owner 2026-08-11). Count what
+            # was actually delivered, and warn when it's nothing.
+            got = (f"{res.phones_found} phone(s) · {res.emails_found} "
+                   f"email(s) · {len(res.pocs)} contact card(s) · run cost "
+                   f"${res.total_cost_usd:.2f}")
+            bc = sum(1 for p in res.pocs if p.get("business_contact"))
+            if res.phones_found or res.emails_found or bc:
+                st.success(f"Resolved: {got}"
+                           + (f" · {bc} business contact(s)" if bc else ""))
+            else:
+                st.warning(f"No contact data resolved — {got}. See the "
+                           "provider trace below for what each vendor "
+                           "answered.", icon="⚠️")
+            ptrace = getattr(res, "provider_trace", None) or []
+            if ptrace:
+                bad = sum(1 for t in ptrace if t.get("outcome") == "error")
+                with st.expander(
+                        f"Provider trace — {len(ptrace)} call(s)"
+                        + (f", {bad} error(s)" if bad else ""),
+                        expanded=bool(bad)):
+                    icon_by = {"hit": "✅", "miss": "▫️", "error": "❌",
+                               "skip": "⏭️"}
+                    for t in ptrace:
+                        st.markdown(
+                            f"{icon_by.get(t['outcome'], '·')} "
+                            f"`{t['vendor']}` {t['op']} — **{t['outcome']}**"
+                            + (f": {t['detail']}" if t.get("detail") else ""))
         except pipeline.BudgetExceeded as e:
             st.error(str(e))
 

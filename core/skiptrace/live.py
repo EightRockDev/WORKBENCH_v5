@@ -20,9 +20,11 @@ No LLM anywhere (Section 11).
 from __future__ import annotations
 
 import os
+import time
 
 import requests
 
+from core.skiptrace import trace
 from core.skiptrace.providers import (
     EmailValidation, PhoneValidation, SOSResult, TraceCandidate,
 )
@@ -31,27 +33,43 @@ _TIMEOUT = 25  # seconds per vendor call
 
 
 class ProviderError(RuntimeError):
-    """A live vendor call failed (network, auth, or unexpected payload)."""
+    """A live vendor call failed (network, auth, or unexpected payload).
+
+    Carries the HTTP status and the first bytes of the response body —
+    vendors put the actionable message there ("invalid api key", "unknown
+    endpoint"), and hiding it is why live mode failed silently for weeks.
+    """
+
+
+def _err_detail(r: requests.Response) -> str:
+    body = (r.text or "")[:200].replace("\n", " ")
+    return f"HTTP {r.status_code}: {body}"
+
+
+def _request(method: str, url: str, *, headers: dict,
+             json: dict | None = None, params: dict | None = None) -> dict:
+    try:
+        r = requests.request(method, url, headers=headers, json=json,
+                             params=params, timeout=_TIMEOUT)
+    except requests.RequestException as e:
+        raise ProviderError(f"{method} {url} failed: {e}") from e
+    if r.status_code >= 400:
+        raise ProviderError(f"{method} {url} -> {_err_detail(r)}")
+    try:
+        return r.json()
+    except ValueError as e:
+        raise ProviderError(
+            f"{method} {url} -> HTTP {r.status_code} non-JSON body: "
+            f"{(r.text or '')[:120]}") from e
 
 
 def _post(url: str, *, headers: dict, json: dict | None = None,
           params: dict | None = None) -> dict:
-    try:
-        r = requests.post(url, headers=headers, json=json, params=params,
-                          timeout=_TIMEOUT)
-        r.raise_for_status()
-        return r.json()
-    except requests.RequestException as e:
-        raise ProviderError(f"POST {url} failed: {e}") from e
+    return _request("POST", url, headers=headers, json=json, params=params)
 
 
 def _get(url: str, *, headers: dict, params: dict) -> dict:
-    try:
-        r = requests.get(url, headers=headers, params=params, timeout=_TIMEOUT)
-        r.raise_for_status()
-        return r.json()
-    except requests.RequestException as e:
-        raise ProviderError(f"GET {url} failed: {e}") from e
+    return _request("GET", url, headers=headers, params=params)
 
 
 def _first(d: dict, *keys, default=None):
@@ -97,12 +115,18 @@ class BatchDataSkipTrace:
             "name": {"first": first, "last": last.strip() or first},
             "propertyAddress": {"street": address_hint or "", "state": state or "VA"},
         }]}
-        data = _post(f"{self.BASE}{self.ENDPOINT}", headers=headers, json=req)
+        try:
+            data = _post(f"{self.BASE}{self.ENDPOINT}", headers=headers, json=req)
+        except ProviderError as e:
+            trace.record(self.name, f"skip-trace {full_name!r}", "error", str(e))
+            return None
 
         # Response shape is defensive-parsed; BatchData nests results under
         # results.persons[] with phoneNumbers[]/emails[] and DNC flags.
         persons = (_first(data, "results.persons", "persons", "data.persons", default=[]) or [])
         if not persons:
+            trace.record(self.name, f"skip-trace {full_name!r}", "miss",
+                         f"no persons in response (keys: {list(data)[:6]})")
             return None
         p = persons[0]
 
@@ -118,7 +142,11 @@ class BatchDataSkipTrace:
                 emails.append(addr)
 
         if not phones and not emails:
+            trace.record(self.name, f"skip-trace {full_name!r}", "miss",
+                         "person matched but carried no phone/email")
             return None
+        trace.record(self.name, f"skip-trace {full_name!r}", "hit",
+                     f"{len(phones)} phone(s), {len(emails)} email(s)")
 
         addr_out = []
         for a in (_first(p, "addresses", default=[]) or []):
@@ -150,7 +178,12 @@ class BatchDataSkipTrace:
 class TrestleValidation:
     name = "trestle"
     BASE = os.environ.get("TRESTLE_BASE", "https://api.trestleiq.com")
-    PHONE_ENDPOINT = "/3.1/phone_intel"
+    # Real Contact, not Phone Intel: phone_intel returns NO name-match field,
+    # so name_match parsed to 0.0 on every call and grade A (>= 0.8) was
+    # mathematically unreachable — every live-validated phone graded B at
+    # best. Real Contact takes phone+name and returns the match + grade
+    # inputs this grading actually needs (docs.trestleiq.com Real Contact).
+    PHONE_ENDPOINT = "/1.1/real_contact"
     COST_PHONE = float(os.environ.get("TRESTLE_PHONE_COST", "0.035"))
     COST_EMAIL = float(os.environ.get("TRESTLE_EMAIL_COST", "0.005"))
 
@@ -162,25 +195,53 @@ class TrestleValidation:
         params = {"phone": e164, "name": expected_name}
         data = _get(f"{self.BASE}{self.PHONE_ENDPOINT}", headers=headers, params=params)
 
-        line_type = str(_first(data, "line_type", "phone_type", default="unknown")).lower()
-        active = bool(_first(data, "is_valid", "active", default=True))
-        name_match = float(_first(data, "name_match_score", "contact_grade_score", default=0.0) or 0.0)
+        line_type = str(_first(data, "phone.line_type", "line_type",
+                               "phone_type", default="unknown")).lower()
+        active = bool(_first(data, "phone.is_valid", "is_valid", "active",
+                             default=True))
+        # Real Contact: phone.name_match is "true"/"false"/null; the graded
+        # score lives in phone.contact_grade (A-F) / activity_score. Take the
+        # strongest signal available, tolerating the 3.1 phone_intel shape too.
+        raw_match = _first(data, "phone.name_match", "name_match",
+                           "name_match_score", "contact_grade_score",
+                           default=None)
+        if isinstance(raw_match, bool):
+            name_match = 1.0 if raw_match else 0.0
+        elif isinstance(raw_match, str):
+            name_match = {"true": 1.0, "match": 1.0, "false": 0.0,
+                          "no_match": 0.0}.get(raw_match.lower(), 0.0)
+        else:
+            try:
+                name_match = float(raw_match or 0.0)
+            except (TypeError, ValueError):
+                name_match = 0.0
         if name_match > 1:            # some APIs return 0–100
             name_match = name_match / 100.0
-        return PhoneValidation(
+        grade = str(_first(data, "phone.contact_grade", default="")).upper()
+        if name_match == 0.0 and grade in ("A", "B"):
+            # Vendor says the contact grades well but gave no numeric match -
+            # trust the grade rather than flooring to 0 (the old bug's shape).
+            name_match = 0.9 if grade == "A" else 0.7
+        out = PhoneValidation(
             e164=e164,
             line_type=("mobile" if "mobile" in line_type or "cell" in line_type
                        else "landline" if "land" in line_type or "fixed" in line_type
                        else "voip" if "voip" in line_type else "unknown"),
             active=active,
             name_match=round(name_match, 2),
-            litigator=bool(_first(data, "is_litigator", "litigator", default=False)),
-            dnc_federal=bool(_first(data, "is_dnc", "dnc.federal", "do_not_call", default=False)),
+            litigator=bool(_first(data, "litigator_checks.is_litigator",
+                                  "is_litigator", "litigator", default=False)),
+            dnc_federal=bool(_first(data, "phone.is_dnc", "is_dnc",
+                                    "dnc.federal", "do_not_call", default=False)),
             dnc_states=list(_first(data, "dnc.state", "dnc_states", default=[]) or []),
             vendor=self.name,
             query_id=str(_first(data, "request_id", default="trestle")),
             cost_usd=self.COST_PHONE,
         )
+        trace.record(self.name, f"validate {e164}", "hit",
+                     f"line={out.line_type} active={out.active} "
+                     f"name_match={out.name_match}")
+        return out
 
     def validate_email(self, addr: str) -> EmailValidation:
         # Deliverability via Trestle if available; conservative default otherwise.
@@ -209,11 +270,15 @@ class VaSccSOS:
         try:
             search = _get(f"{self.BASE}/Business/Search", headers=headers,
                           params={"searchTerm": entity_name})
-        except ProviderError:
+        except ProviderError as e:
+            trace.record(self.name, f"pierce {entity_name!r}", "error", str(e))
             return None
         hits = _first(search, "items", "results", "businesses", default=[]) or []
         if not hits:
+            trace.record(self.name, f"pierce {entity_name!r}", "miss",
+                         "no matching entity on VA SCC")
             return None
+        trace.record(self.name, f"pierce {entity_name!r}", "hit")
         biz = hits[0]
         officers = []
         for o in (_first(biz, "principals", "officers", default=[]) or []):
@@ -250,6 +315,12 @@ class CobaltSOS:
     def __init__(self, api_key: str):
         self._key = api_key
 
+    # Async states hand back a retryId instead of results; poll it. Docs:
+    # cobaltintelligence.stoplight.io — slow states (OR up to ~5 min); we
+    # bound the wait so one slow state can't hang a resolve run.
+    RETRY_WAIT_S = float(os.environ.get("COBALT_RETRY_WAIT_S", "6"))
+    RETRY_MAX = int(os.environ.get("COBALT_RETRY_MAX", "15"))
+
     def resolve_entity(self, entity_name: str, state: str) -> SOSResult | None:
         st = (state or "").strip().upper()[:2]   # Cobalt keys results by state
         if not st:
@@ -258,7 +329,22 @@ class CobaltSOS:
         try:
             data = _get(f"{self.BASE}/search", headers=headers,
                         params={"searchQuery": entity_name, "state": st})
-        except ProviderError:
+            retry_id = _first(data, "retryId", "retry_id", default=None)
+            polls = 0
+            while retry_id and polls < self.RETRY_MAX:
+                time.sleep(self.RETRY_WAIT_S)
+                polls += 1
+                data = _get(f"{self.BASE}/search", headers=headers,
+                            params={"retryId": retry_id})
+                retry_id = _first(data, "retryId", "retry_id", default=None)
+            if retry_id:
+                trace.record(self.name, f"pierce {entity_name!r} ({st})",
+                             "error", f"still pending after {polls} polls "
+                             f"(retryId {retry_id})")
+                return None
+        except ProviderError as e:
+            trace.record(self.name, f"pierce {entity_name!r} ({st})",
+                         "error", str(e))
             return None
         # Cobalt returns {results:[...]} or a bare object; tolerate both.
         hits = _first(data, "results", "data", default=None)
@@ -266,6 +352,8 @@ class CobaltSOS:
                else (data if isinstance(data, dict) and
                      _first(data, "title", "entityName", "sosId") else None))
         if not isinstance(biz, dict):
+            trace.record(self.name, f"pierce {entity_name!r} ({st})", "miss",
+                         f"no entity in response (keys: {list(data)[:6]})")
             return None
         officers: list[str] = []
         # Array fields (officers/members/...) AND scalar principal fields -
@@ -291,6 +379,8 @@ class CobaltSOS:
         # beneficial owner and must never be handed to skip trace.
         if not officers and agent and not _is_commercial_agent(agent):
             officers = [agent]
+        trace.record(self.name, f"pierce {entity_name!r} ({st})", "hit",
+                     f"{len(officers)} officer(s), agent={agent or '-'}")
         return SOSResult(
             entity_name=_first(biz, "title", "entityName", "name",
                                default=entity_name),
@@ -333,33 +423,65 @@ class ApolloFirmographic:
 
     def __init__(self, api_key: str):
         self._key = api_key
+        self._prefix: str | None = None   # learned working path prefix
 
     def _headers(self) -> dict:
         return {"Content-Type": "application/json", "Accept": "application/json",
                 "Cache-Control": "no-cache", "X-Api-Key": self._key}
 
+    def _call(self, method: str, suffix: str, *, params: dict) -> dict:
+        """Apollo's docs have shipped BOTH api.apollo.io/api/v1/... (current
+        docs.apollo.io) and api.apollo.io/v1/... (older reference) - and this
+        codebase has been flip-flopped between them twice on doc reads alone
+        (V5.18.2 pinned /v1 as "the fix"; neither was ever live-verified and
+        the panel still returned nothing). Stop guessing: try /api/v1 first,
+        fall back to /v1 on a 404, remember what worked, and put the winning
+        path in the trace so the host run settles it with evidence."""
+        prefixes = ([self._prefix] if self._prefix
+                    else ["/api/v1", "/v1"])
+        last: ProviderError | None = None
+        for pfx in prefixes:
+            url = f"{self.BASE}{pfx}{suffix}"
+            try:
+                data = _request(method, url, headers=self._headers(),
+                                params=params)
+            except ProviderError as e:
+                last = e
+                if "HTTP 404" in str(e) and self._prefix is None:
+                    continue          # wrong prefix generation - try the other
+                raise
+            if self._prefix is None:
+                self._prefix = pfx
+                trace.record(self.name, f"endpoint prefix {pfx}", "hit",
+                             f"{method} {url} answered")
+            return data
+        raise last if last else ProviderError(f"{suffix}: no prefix answered")
+
     def _search_org(self, company: str) -> dict | None:
         """Name-based org SEARCH — the right call for a bare company name.
         Org ENRICH matches best by domain, which we don't have, so a name
         like "Nexus Management Company" often enriches to nothing. Search
-        does fuzzy name matching. POST /v1/mixed_companies/search with the
-        term in the query string (Apollo's documented shape)."""
+        does fuzzy name matching, POST with the term in the query string.
+        Path prefix is self-verifying via _call (docs have shipped both
+        /api/v1 and /v1 generations)."""
         try:
-            data = _post(f"{self.BASE}/v1/mixed_companies/search",
-                         headers=self._headers(),
-                         params={"q_organization_name": company, "per_page": 1})
-        except ProviderError:
+            data = self._call("POST", "/mixed_companies/search",
+                              params={"q_organization_name": company,
+                                      "per_page": 1})
+        except ProviderError as e:
+            trace.record(self.name, f"org-search {company!r}", "error", str(e))
             return None
         orgs = _first(data, "organizations", "accounts", default=[]) or []
         return orgs[0] if isinstance(orgs, list) and orgs else None
 
     def _enrich_org(self, company: str) -> dict | None:
-        """Org ENRICH by name — GET, match params in the query string.
-        Verified against docs.apollo.io/reference/organization-enrichment."""
+        """Org ENRICH by name — GET, match params in the query string
+        (docs.apollo.io/reference/organization-enrichment)."""
         try:
-            data = _get(f"{self.BASE}/v1/organizations/enrich",
-                        headers=self._headers(), params={"name": company})
-        except ProviderError:
+            data = self._call("GET", "/organizations/enrich",
+                              params={"name": company})
+        except ProviderError as e:
+            trace.record(self.name, f"org-enrich {company!r}", "error", str(e))
             return None
         org = _first(data, "organization", "organizations", default=None)
         if isinstance(org, list):
@@ -373,6 +495,8 @@ class ApolloFirmographic:
         # Search first (name is what we have), enrich as fallback.
         org = self._search_org(company) or self._enrich_org(company)
         if not isinstance(org, dict):
+            trace.record(self.name, f"enrich {company!r}", "miss",
+                         "no org matched by search or enrich")
             return None
         phone = _first(org, "phone", "primary_phone.number", "sanitized_phone",
                        default="") or ""
@@ -388,7 +512,11 @@ class ApolloFirmographic:
                 break
         email = _first(org, "email", "primary_email", default="") or ""
         if not (phone or website or email or contact_name):
+            trace.record(self.name, f"enrich {company!r}", "miss",
+                         "org matched but had no phone/site/email/contact")
             return None
+        trace.record(self.name, f"enrich {company!r}", "hit",
+                     f"phone={'y' if phone else '-'} site={'y' if website else '-'}")
         return BusinessContact(
             company=_first(org, "name", default=company),
             phone=_e164(phone) if phone else "",

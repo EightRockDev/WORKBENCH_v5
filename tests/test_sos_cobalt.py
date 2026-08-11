@@ -309,30 +309,58 @@ def test_the_management_company_poc_is_enriched():
 
 
 def test_apollo_uses_get_with_query_params(monkeypatch):
-    """Apollo org-enrich is a GET with match params in the query string -
-    a POST or a bad path 404s and silently falls back to mock."""
-    seen = {}
+    """Apollo org-enrich is a GET with match params in the query string.
+    The path prefix is SELF-VERIFYING: docs have shipped both /api/v1
+    (current docs.apollo.io) and /v1 (older reference), this repo has been
+    flipped between them twice on doc reads alone, and neither was ever
+    live-confirmed - so the adapter tries /api/v1, falls back to /v1 on a
+    404, and remembers the one that answered (owner 2026-08-11: research
+    the method, don't guess-and-grind)."""
+    seen = {"urls": [], "auth": None, "params": None}
 
-    def fake_get(url, *, headers, params):
-        seen["url"] = url
+    def fake_request(method, url, *, headers, json=None, params=None):
+        assert method == "GET"
+        seen["urls"].append(url)
         seen["params"] = params
         seen["auth"] = headers.get("X-Api-Key")
+        if "/api/v1/" in url:
+            raise live.ProviderError(f"GET {url} -> HTTP 404: unknown route")
         return {"organization": {
             "name": "RAM Partners LLC", "phone": "(404) 555-1212",
             "website_url": "https://rampartners.com"}}
 
-    monkeypatch.setattr(live, "_get", fake_get)
-    bc = live.ApolloFirmographic("k").enrich_company("RAM Partners LLC")
-    assert seen["url"].endswith("/v1/organizations/enrich")
-    assert "/api/v1" not in seen["url"]           # the extra-/api bug
+    monkeypatch.setattr(live, "_request", fake_request)
+    apollo = live.ApolloFirmographic("k")
+    monkeypatch.setattr(apollo, "_search_org", lambda c: None)  # force enrich
+    bc = apollo.enrich_company("RAM Partners LLC")
+    assert ["/api/v1/" in u for u in seen["urls"]] == [True, False]
+    assert all(u.endswith("/organizations/enrich") for u in seen["urls"])
+    assert apollo._prefix == "/v1"                 # remembered for next call
     assert seen["params"] == {"name": "RAM Partners LLC"}
     assert seen["auth"] == "k"
     assert bc.phone == "+14045551212"
     assert bc.website.endswith("rampartners.com")
 
 
+def test_apollo_prefers_api_v1_when_it_answers(monkeypatch):
+    urls = []
+
+    def fake_request(method, url, *, headers, json=None, params=None):
+        urls.append(url)
+        return {"organizations": [{"name": "Harbor Group",
+                                   "phone": "7575550100", "id": "o1"}]}
+
+    monkeypatch.setattr(live, "_request", fake_request)
+    apollo = live.ApolloFirmographic("k")
+    bc = apollo.enrich_company("Harbor Group")
+    assert bc is not None and bc.phone == "+17575550100"
+    assert urls == ["https://api.apollo.io/api/v1/mixed_companies/search"]
+    assert apollo._prefix == "/api/v1"
+
+
 def test_apollo_returns_none_on_empty(monkeypatch):
-    monkeypatch.setattr(live, "_get", lambda *a, **k: {"organization": {}})
+    monkeypatch.setattr(live, "_request",
+                        lambda *a, **k: {"organization": {}})
     assert live.ApolloFirmographic("k").enrich_company("Nobody LLC") is None
 
 
@@ -343,32 +371,40 @@ def test_apollo_searches_by_name_first(monkeypatch):
     name-SEARCH endpoint, not just domain-based enrich."""
     seen = {}
 
-    def fake_post(url, *, headers, json=None, params=None):
+    def fake_request(method, url, *, headers, json=None, params=None):
+        assert method == "POST"
         seen["url"] = url
         seen["params"] = params
         return {"organizations": [{
             "name": "Nexus Management Company", "phone": "(804) 555-0100",
             "website_url": "https://nexusmgmt.com"}]}
 
-    monkeypatch.setattr(live, "_post", fake_post)
+    monkeypatch.setattr(live, "_request", fake_request)
     bc = live.ApolloFirmographic("k").enrich_company("Nexus Management Company")
-    assert seen["url"].endswith("/v1/mixed_companies/search")
+    assert seen["url"].endswith("/mixed_companies/search")
     assert seen["params"]["q_organization_name"] == "Nexus Management Company"
     assert bc.phone == "+18045550100"
     assert bc.company == "Nexus Management Company"
 
 
 def test_apollo_falls_back_to_enrich_when_search_is_empty(monkeypatch):
-    monkeypatch.setattr(live, "_post", lambda *a, **k: {"organizations": []})
-    monkeypatch.setattr(live, "_get", lambda *a, **k: {"organization": {
-        "name": "RAM Partners LLC", "website_url": "https://rampartners.com"}})
+    def fake_request(method, url, *, headers, json=None, params=None):
+        if "mixed_companies" in url:
+            return {"organizations": []}
+        return {"organization": {"name": "RAM Partners LLC",
+                                 "website_url": "https://rampartners.com"}}
+
+    monkeypatch.setattr(live, "_request", fake_request)
     bc = live.ApolloFirmographic("k").enrich_company("RAM Partners LLC")
     assert bc and bc.website.endswith("rampartners.com")
 
 
 def test_apollo_all_empty_is_none(monkeypatch):
-    monkeypatch.setattr(live, "_post", lambda *a, **k: {"organizations": []})
-    monkeypatch.setattr(live, "_get", lambda *a, **k: {"organization": {}})
+    def fake_request(method, url, *, headers, json=None, params=None):
+        return ({"organizations": []} if "mixed_companies" in url
+                else {"organization": {}})
+
+    monkeypatch.setattr(live, "_request", fake_request)
     assert live.ApolloFirmographic("k").enrich_company("Nobody LLC") is None
 
 
