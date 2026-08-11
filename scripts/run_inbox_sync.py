@@ -35,8 +35,26 @@ from data import pg  # noqa: E402
 
 
 def main() -> int:
+    # KB drop folder FIRST (owner 2026-08-11: the Cowork outlook-connector
+    # is the mail source - "here's how you pull from inbox into the
+    # workbench"). Works with or without Postgres; property data always
+    # lands. Mailbox OAuth sync below stays as the secondary path.
+    from core.inbox import kb_drop
+    kb = kb_drop.ingest_dir()
+    if kb.files or kb.notes:
+        print(f"[inbox-sync] KB drop ({kb_drop.kb_dir()}): {kb.files} "
+              f"file(s), {kb.records} record(s), {kb.ingested} ingested, "
+              f"{kb.linked} linked to deals/properties, {kb.failed} failed")
+        for n in kb.notes[:10]:
+            print(f"[inbox-sync]   note: {n}")
+    else:
+        print(f"[inbox-sync] KB drop ({kb_drop.kb_dir()}): empty - "
+              "point the Cowork outlook-connector at this folder "
+              "(one JSON per ingested email; see core/inbox/kb_drop.py "
+              "docstring for the accepted shape)")
+
     if not pg.is_reachable():
-        print("inbox-sync: Postgres not reachable - nothing to sync")
+        print("inbox-sync: Postgres not reachable - mailbox sync skipped")
         return 0
     try:
         with pg.connection() as conn, conn.cursor() as cur:

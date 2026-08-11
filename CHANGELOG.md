@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.38.1.0.0 — 2026-08-11  ·  KB drop folder: the Cowork outlook-connector feeds the workbench
+Owner: "Here's how you pull from inbox into the workbench. If we need to
+build something in workbench, LMK." Built the receiving end:
+- `data\inbox_kb\*.json` (ER_INBOX_KB_DIR overrides) is swept every cycle by
+  `inboxsync` BEFORE mailbox OAuth sync. One JSON per ingested email (or a
+  list / {records:[...]} envelope); pre-extracted `fields` skip the extractor
+  at confidence 0.9, raw subject/body runs the deterministic extractor.
+- Every record flows the same pipeline: Pg deals when Postgres is up,
+  property-data ingestion (muni_records kind='assessor-email', spine-merged)
+  always. Processed files -> processed/, unparseable -> failed/ with the
+  error alongside; idempotent on external_id.
+
 ## V5.38.0.0.0 — 2026-08-11  ·  Research-first data sourcing + Owner Intelligence evidence + O365 ingestion
 Owner: "research the methods to pull data", "make Owner Intelligence work -
 alternative approaches", "read O365 mail - just ingest data".
