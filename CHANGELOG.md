@@ -12,6 +12,35 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.38.0.0.0 — 2026-08-11  ·  Research-first data sourcing + Owner Intelligence evidence + O365 ingestion
+Owner: "research the methods to pull data", "make Owner Intelligence work -
+alternative approaches", "read O365 mail - just ingest data".
+- **Sales-source discovery step** (`salesdiscovery`, weekly): ranks per-locality
+  sales feeds from the central catalogs (Socrata Discovery / ArcGIS Hub /
+  CKAN-VA / HRGEO) — metadata only, never touches bot-gated city domains.
+  Richmond's 403'ing Socrata transfer stack retired (rva.gov files already
+  deliver the same sales). New `csv_download` adapter pulls state-mirror
+  CSV/XLSX files when discovery promotes them.
+- **Fast stale-generation sweep + muni_records index**: the 60c727d sweep's
+  correlated subquery was quadratic on the unindexed million-row table and
+  hung the 06:00 cycle (blocking all later cycles — schtasks won't start a
+  second instance). Two-step sweep + `ix_muni_src_kind_pulled`.
+- **Owner Intelligence overhaul**: per-run provider trace (every vendor call
+  logged hit/miss/error with HTTP evidence — silent Nones impossible); honest
+  result banner (counts, warning on empty); never skip-trace an entity name
+  as a person; failed piercing now renders `entity_unpierced` with the
+  business-contact fallback; Trestle moved to Real Contact (name-match was
+  unparseable on phone_intel, so grade A was unreachable); Apollo path prefix
+  self-verifies (/api/v1 then /v1); Cobalt async retryId polled.
+- **SEC EDGAR piercing (free, keyless)**: institutional single-purpose LLCs
+  list only a commercial agent on state records; their Reg D Form D names the
+  sponsor's related persons. SOS waterfall is now cost-ordered
+  va-scc → edgar → cobalt and never mock in live mode.
+- **O365 inbox ingestion**: hourly `inboxsync` autopilot step polls every
+  connected mailbox (per-user OAuth); gate-clearing extractions ingest as
+  `muni_records` kind='assessor-email' rows keyed to the matched parcel —
+  spine-merged data (COALESCE; assessor always wins), no per-email UI.
+
 ## V5.32.0.0.0 — 2026-08-09  ·  National feed discovery turned on (aggressive) + "Virginia"->"Multifamily"
 Owner: go attack the top-50 metro data, and stop calling the app "Virginia".
 - **National discovery live**: `discover_feeds` was VA-shaped (7 cities,
