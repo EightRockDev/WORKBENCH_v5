@@ -657,11 +657,110 @@ def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
     return len(rows)
 
 
+def _tabular_frames(files, market: str):
+    """Download (label, url) files and parse each to a DataFrame - CSV or
+    Excel decided by content, not extension (state-portal mirror URLs are
+    often extension-less resource ids)."""
+    import pandas as pd
+    for label, url in files:
+        try:
+            r = requests.get(url, headers=UA, timeout=120)
+            if r.status_code != 200 or not r.content:
+                print(f"[sales:{market}] {label} download failed "
+                      f"(HTTP {r.status_code})")
+                continue
+        except requests.RequestException as exc:
+            print(f"[sales:{market}] {label} download failed ({exc!r})")
+            continue
+        df = None
+        if r.content[:2] == b"PK" or r.content[:4] == b"\xd0\xcf\x11\xe0":
+            for engine in ("openpyxl", "xlrd"):
+                try:
+                    df = pd.read_excel(io.BytesIO(r.content), engine=engine)
+                    break
+                except Exception:
+                    continue
+        else:
+            try:
+                df = pd.read_csv(io.BytesIO(r.content), dtype=str,
+                                 encoding_errors="replace", low_memory=False)
+            except Exception as exc:
+                print(f"[sales:{market}] {label}: CSV parse failed ({exc!r})")
+        if df is None:
+            print(f"[sales:{market}] {label}: could not parse file")
+            continue
+        yield label, df
+
+
+def _pull_csv_download(conn, market: str, cfg: dict) -> int:
+    """Generic tabular-file source - the adapter for discover_sales_feeds'
+    'csv_download' candidates (e.g. data.virginia.gov CKAN mirrors, which
+    serve locality files from the state domain with no bot filtering).
+
+    cfg:
+      files       ((label, url), ...) oldest first - on a dedupe collision
+                  the later file's row wins (Norfolk FY-stack semantics)
+      kind        'sales' (default) or 'assessor'
+      dedupe      True to dedupe on the probed (parcel-id, date) keys
+    Same safety rails as every adapter here: size logged per file before
+    write, transient empty never deletes existing rows.
+    """
+    tag = cfg["source_tag"]
+    kind = cfg.get("kind", "sales")
+    mkt = cfg.get("market", market)
+    now_iso = dt.datetime.now().isoformat(timespec="seconds")
+    cleaned: list[dict] = []
+    for label, df in _tabular_frames(cfg["files"], mkt):
+        print(f"[sales:{mkt}] {label}: {len(df)} rows parsed")
+        for rec in df.to_dict(orient="records"):
+            clean = {}
+            for k, v in rec.items():
+                cv = _clean_value(v)
+                if cv not in (None, ""):
+                    clean[str(k).strip()] = cv
+            if clean:
+                clean["_file"] = label
+                cleaned.append(clean)
+    if cfg.get("dedupe") and cleaned:
+        id_key = next((k for k in _STACK_ID_KEYS
+                       if any(k in {c.lower() for c in r} for r in cleaned[:50])),
+                      None)
+        date_key = next((k for k in _STACK_DATE_KEYS
+                         if any(k in {c.lower() for c in r} for r in cleaned[:50])),
+                        None)
+        if id_key and date_key:
+            def _kv(r, want):
+                for c, v in r.items():
+                    if c.lower() == want:
+                        return str(v)
+                return ""
+            by_key = {}
+            for r in cleaned:            # later files overwrite earlier
+                by_key[(_kv(r, id_key), _kv(r, date_key))] = r
+            print(f"[sales:{mkt}] dedupe on ({id_key}, {date_key}): "
+                  f"{len(cleaned)} -> {len(by_key)}")
+            cleaned = list(by_key.values())
+        else:
+            print(f"[sales:{mkt}] dedupe requested but no id/date columns "
+                  "probed - keeping all rows")
+    if not cleaned:
+        print(f"[sales:{mkt}] files yielded 0 rows - NOT deleting existing "
+              "rows (transient?)")
+        return 0
+    rows = [(mkt, cfg["state"], cfg["county"], kind, tag, now_iso,
+             json.dumps(r)) for r in cleaned]
+    _replace_rows(conn, tag, rows, kind)
+    print(f"[sales:{mkt}] wrote {len(rows)} rows from "
+          f"{len(cfg['files'])} file(s)")
+    return len(rows)
+
+
 _ADAPTERS = {
     "arcgis": _pull_arcgis,
     "socrata_stack": _pull_socrata_stack,
     "landbook_xlsx": _pull_landbook,
     "html_files": _pull_html_files,
+    "csv_download": _pull_csv_download,
 }
 
 

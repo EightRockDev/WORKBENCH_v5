@@ -419,3 +419,86 @@ def test_extractor_reads_all_three_jurisdictions_rows():
         {"pin": "W0001", "consideration_amount": "750000",
          "transfer_date": "2024-03-01T00:00:00"})
     assert richmond and richmond[0]["price"] == 750000.0
+
+
+# ------------------------------------------- csv_download (state mirrors)
+
+def _csv_cfg(**kw):
+    base = dict(type="csv_download",
+                files=(("FY24", "https://data.virginia.gov/a.csv"),
+                       ("FY25", "https://data.virginia.gov/b.csv")),
+                market="Hampton", state="VA", county="Hampton",
+                source_tag="ckan:data.virginia.gov/hampton-sales",
+                refresh_d=7)
+    base.update(kw)
+    return base
+
+
+class _Resp:
+    def __init__(self, content, status=200):
+        self.content = content
+        self.status_code = status
+
+
+def test_csv_download_parses_sizes_and_writes(monkeypatch):
+    m = _mod()
+    csv_by_url = {
+        "https://data.virginia.gov/a.csv":
+            b"GPIN,TRANSFER_DATE,CONSIDERATION\nG1,2024-01-02,100000\n",
+        "https://data.virginia.gov/b.csv":
+            b"GPIN,TRANSFER_DATE,CONSIDERATION\nG2,2025-03-04,250000\n",
+    }
+    monkeypatch.setattr(m.requests, "get",
+                        lambda url, **k: _Resp(csv_by_url[url]))
+    conn = _mk_db()
+    n = m.pull_market(conn, "Hampton-state-mirror", _csv_cfg())
+    assert n == 2
+    rows = conn.execute("SELECT market, kind, record FROM muni_records").fetchall()
+    assert all(r[0] == "Hampton" and r[1] == "sales" for r in rows)
+    recs = [json.loads(r[2]) for r in rows]
+    assert {r["GPIN"] for r in recs} == {"G1", "G2"}
+    assert {r["_file"] for r in recs} == {"FY24", "FY25"}
+
+
+def test_csv_download_dedupes_later_file_wins(monkeypatch):
+    m = _mod()
+    csv_by_url = {
+        "https://data.virginia.gov/a.csv":
+            b"GPIN,TRANSFER_DATE,OWNER\nG1,2024-01-02,OLD LLC\n",
+        "https://data.virginia.gov/b.csv":
+            b"GPIN,TRANSFER_DATE,OWNER\nG1,2024-01-02,NEW LLC\n",
+    }
+    monkeypatch.setattr(m.requests, "get",
+                        lambda url, **k: _Resp(csv_by_url[url]))
+    conn = _mk_db()
+    n = m.pull_market(conn, "Hampton-state-mirror", _csv_cfg(dedupe=True))
+    assert n == 1
+    rec = json.loads(conn.execute("SELECT record FROM muni_records").fetchone()[0])
+    assert rec["OWNER"] == "NEW LLC"                 # later file won
+
+
+def test_csv_download_transient_empty_never_deletes(monkeypatch):
+    m = _mod()
+    conn = _mk_db()
+    conn.execute("INSERT INTO muni_records (market,state,county,kind,"
+                 "source_url,pulled_at,record) VALUES ('Hampton','VA',"
+                 "'Hampton','sales','ckan:data.virginia.gov/hampton-sales',"
+                 "'2020-01-01T00:00:00','{}')")
+    monkeypatch.setattr(m.requests, "get",
+                        lambda url, **k: _Resp(b"", status=503))
+    cfg = _csv_cfg()
+    n = m._ADAPTERS["csv_download"](conn, "Hampton-state-mirror", cfg)
+    assert n == 0
+    assert conn.execute("SELECT COUNT(*) FROM muni_records").fetchone()[0] == 1
+
+
+def test_csv_download_assessor_kind_lands_as_assessor(monkeypatch):
+    m = _mod()
+    monkeypatch.setattr(m.requests, "get", lambda url, **k: _Resp(
+        b"PIN,ASSESSED\nR1,500000\n"))
+    conn = _mk_db()
+    cfg = _csv_cfg(files=(("roll", "https://data.virginia.gov/r.csv"),),
+                   kind="assessor")
+    n = m.pull_market(conn, "Hampton-roll", cfg)
+    assert n == 1
+    assert conn.execute("SELECT kind FROM muni_records").fetchone()[0] == "assessor"
