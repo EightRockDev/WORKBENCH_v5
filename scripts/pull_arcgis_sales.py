@@ -674,12 +674,21 @@ def _sweep_stale_generations(conn, tag: str) -> None:
     even on fresh-skip cycles so those copies drain without waiting out
     the refresh window.
     """
+    # Two steps on purpose. The first version was one DELETE with a
+    # correlated max(pulled_at) subquery - on the host's unindexed
+    # million-row muni_records that re-scanned the whole table PER
+    # CANDIDATE ROW (65k x 1M+), and the 06:00 2026-08-11 cycle hung in it
+    # for over an hour, blocking every later step AND the next cycles
+    # (schtasks won't start a new instance while one runs).
+    latest_by_kind = conn.execute(
+        "SELECT kind, max(pulled_at) FROM muni_records "
+        "WHERE source_url=? GROUP BY kind", (tag,)).fetchall()
     with conn:
-        conn.execute(
-            "DELETE FROM muni_records WHERE source_url=? AND pulled_at < "
-            "(SELECT max(pulled_at) FROM muni_records m2 "
-            " WHERE m2.source_url = muni_records.source_url "
-            " AND m2.kind = muni_records.kind)", (tag,))
+        for kind, latest in latest_by_kind:
+            if latest:
+                conn.execute(
+                    "DELETE FROM muni_records WHERE source_url=? AND "
+                    "kind=? AND pulled_at<?", (tag, kind, latest))
 
 
 def pull_market(conn: sqlite3.Connection, market: str, cfg: dict) -> int:
@@ -700,6 +709,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     conn = sqlite3.connect(db)
     try:
+        # muni_records ships with no index at all; every freshness check,
+        # sweep and generation delete was a full-table scan. One-time cost
+        # is a few seconds on the host db, then all of those are instant.
+        conn.execute("CREATE INDEX IF NOT EXISTS ix_muni_src_kind_pulled "
+                     "ON muni_records(source_url, kind, pulled_at)")
         wrote = 0
         for market, cfg in SALES_SOURCES.items():
             if only and market not in only:
