@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.38.2.0.0 — 2026-08-11  ·  Autopilot self-healing: no more silent flash-and-die
+Root cause of "autopilot.bat flashes too fast": the 6:00 AM cycle (old code)
+hung in arcgissales; Task Scheduler's 3h limit killed the launcher cmd but
+ORPHANED the python children, and an orphan appending to reports\autopilot.log
+made every new launcher's first ">>" redirect fail in under a second. Fixes:
+- `scripts/autopilot_preflight.ps1`: kills leftover cycle processes (never
+  its own chain, never the app/API) + clears stale .git\index.lock, before
+  the launcher touches the log. Output: reports\autopilot-preflight.txt.
+- `autopilot.bat`: calls preflight first; every failure path now writes
+  autopilot-status.txt and holds the window 60s readable - it can no longer
+  exit invisibly.
+- `run_step()` per-step timeout (ER_AUTOPILOT_STEP_TIMEOUT, default 3600s):
+  a hung step is killed, reported as exit 124, and the cycle moves on.
+
 ## V5.38.1.0.0 — 2026-08-11  ·  KB drop folder: the Cowork outlook-connector feeds the workbench
 Owner: "Here's how you pull from inbox into the workbench. If we need to
 build something in workbench, LMK." Built the receiving end:

@@ -83,6 +83,13 @@ def git(*args: str, root: Path = ROOT) -> subprocess.CompletedProcess:
                           capture_output=True, text=True)
 
 
+# No single step may wedge the cycle (2026-08-11: the 6:00 AM cycle hung
+# in arcgissales for 3 hours until Task Scheduler killed it, orphaning
+# children that blocked every relaunch). A hung step gets killed, reported
+# as exit 124, and the cycle moves on.
+STEP_TIMEOUT = int(os.environ.get("ER_AUTOPILOT_STEP_TIMEOUT", "3600"))
+
+
 def run_step(name: str, args: list[str], out_name: str) -> tuple[Path, int]:
     REPORTS.mkdir(exist_ok=True)
     out = REPORTS / out_name
@@ -90,10 +97,18 @@ def run_step(name: str, args: list[str], out_name: str) -> tuple[Path, int]:
     with open(out, "w", encoding="utf-8") as fh:
         fh.write(f"autopilot {name} @ {stamp}\n\n")
         fh.flush()
-        proc = subprocess.run([sys.executable, "-u", *args], cwd=ROOT,
-                              stdout=fh, stderr=subprocess.STDOUT, text=True)
-    print(f"[{name}] exit {proc.returncode} -> {out.name}", flush=True)
-    return out, proc.returncode
+        try:
+            proc = subprocess.run([sys.executable, "-u", *args], cwd=ROOT,
+                                  stdout=fh, stderr=subprocess.STDOUT,
+                                  text=True, timeout=STEP_TIMEOUT)
+            code = proc.returncode
+        except subprocess.TimeoutExpired:
+            fh.write(f"\n!! step killed after {STEP_TIMEOUT}s "
+                     "(ER_AUTOPILOT_STEP_TIMEOUT) - a hung step must never "
+                     "wedge the cycle\n")
+            code = 124
+    print(f"[{name}] exit {code} -> {out.name}", flush=True)
+    return out, code
 
 
 def publish(files: list[Path], label: str, root: Path = ROOT) -> bool:
