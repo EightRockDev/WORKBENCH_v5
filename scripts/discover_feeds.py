@@ -119,8 +119,13 @@ KNOWN_ROOTS: dict[str, list[str]] = {
     ],
     # Wave 1 of the 50-metro rollout (spec 15). Richmond's own server plus
     # AGOL search; the VGIN statewide fallback below covers it regardless.
+    # The COR AGOL org (Richmond GeoHub) added 2026-08-11: AGOL keyword search
+    # never surfaced it (only county lookalikes + VGIN apn-only), which is why
+    # Richmond classified just 111 MF. Walking the org service-by-service lets
+    # the host verify field vocab (use_code/units) instead of guessing.
     "Richmond": [
         "https://gis.richmondgov.com/arcgis/rest/services",
+        "https://services6.arcgis.com/il6vO1TutlF580Ku/arcgis/rest/services",
     ],
 }
 

@@ -312,6 +312,24 @@ sizes the pull FIRST and never deletes on a transient empty.
     LandBook rows (30,272 commercial + 90,285 residential). 282,886 sale
     rows total, indexed same cycle. Richmond 0 (above).
 
+### Richmond MF completeness (owner commitment 2026-08-11: "all Richmond MF
+### in the DB by morning")
+Backbone had 71,590 Richmond properties but only 111 MF - VGIN parcels carry
+apn ONLY (no use codes/units), and AGOL keyword search never surfaced
+Richmond's own GeoHub org (only RichmondCounty lookalikes). Three concurrent
+paths, all riding the hourly cycles overnight:
+  1. vm9j-9f88 "Property Assessments Current" (MUNI_FEEDS, live) brings
+     property CLASS for every parcel -> phase0 MF-code matching. Same 403-risk
+     domain as the transfer stack; rides the browser-UA fix, else needs
+     ER_SOCRATA_APP_TOKEN.
+  2. COR AGOL org root (services6.arcgis.com/il6vO1TutlF580Ku) added to
+     discover_feeds KNOWN_ROOTS - the host walks/field-scores every GeoHub
+     layer and auto-feeds qualifying ones (use_code/units) via feeds_extra.
+  3. Transfer-history stack (sales) - same UA/token gate.
+Morning check: backbone-stats Richmond MF count should jump from 111 toward
+Raleigh-scale (~1,000+); arcgis-sales-latest shows Richmond sales; if either
+still blocked with HTTP 403, the app token is the single unlock.
+
 ### National discovery is ON and AGGRESSIVE (owner directive 2026-08-09)
 discover_feeds is national: (city,state) tuples, correct state stamped, VGIN
 gated to VA. Autopilot `discover_national` runs EVERY cycle
