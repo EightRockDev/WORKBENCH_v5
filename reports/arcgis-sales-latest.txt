@@ -1,13 +1,9 @@
-autopilot arcgissales @ 2026-08-11T05:19:47
+autopilot arcgissales @ 2026-08-11T12:24:21
 
 [sales:Virginia Beach] fresh (<7d) - skip
 [sales:Norfolk] fresh (<3d) - skip
 [sales:Chesapeake] fresh (<30d) - skip
-[sales:Richmond] history (uxre-by3i) count failed: HTTP 403
-[sales:Richmond] current (k9h9-y482) count failed: HTTP 403
-[sales:Richmond] every count query failed (see per-resource detail above; HTTP 403 = domain wants an app token - set ER_SOCRATA_APP_TOKEN, free at evergreen.data.socrata.com) - skip, no rows touched
-[sales:Richmond] 32907 assessor rows to pull (where: 1=1)
-[sales:Richmond] wrote 32907 rows (expected 32907)
+[sales:Richmond-parcels] fresh (<7d) - skip
 [sales:Richmond-files] fresh (<7d) - skip
 [sales:Chicago] fresh (<7d) - skip
-[sales] done: 32907 rows across 7 source(s)
+[sales] done: 0 rows across 6 source(s)
