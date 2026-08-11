@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-11T00:16:36
+autopilot pull @ 2026-08-11T01:17:02
 
 QUARRIE muni-data ETL — 2026-08-11
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -15,7 +15,8 @@ QUARRIE muni-data ETL — 2026-08-11
   [swept] Norfolk: 114,698 stale rows from retired feed socrata-stack:data.norfolk.gov/property-assessment-and-sales
   [swept] Virginia Beach: 47,631 stale rows from retired feed https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0
   [swept] Chesapeake: 120,557 stale rows from retired feed landbook:gis.cityofchesapeake.net FY26-27
-  stale rows removed: 282,886
+  [swept] Richmond: 32,907 stale rows from retired feed https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/services/COR_Parcel_Ownership_WFL1/FeatureServer/1
+  stale rows removed: 315,793
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 437,507 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  437507 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 183,456 rows (ER_MUNI_FORCE=1 to re-pull)
