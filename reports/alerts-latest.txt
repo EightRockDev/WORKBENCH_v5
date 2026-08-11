@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-08-10T22:38:55
+autopilot alerts @ 2026-08-10T23:42:01
 
-alert sweep, NEW this cycle: 8 multifamily, 0 unit-count moves, 81 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 4936 - new_mf 4936
   showing the 25 most recent of 4936
   [new_mf] New multifamily on the backbone: 500 E Plume ST  (? units · Norfolk)
