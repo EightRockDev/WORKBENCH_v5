@@ -156,10 +156,18 @@ MUNI_FEEDS: list[FeedSpec] = [
                   "FY-stamped id — resolve current FY yearly."),
     FeedSpec("Norfolk", "VA", "Norfolk", "permits", "socrata",
              "https://data.norfolk.gov/resource/fahm-yuh4.json"),
+    # RETIRED 2026-08-11: Property_Sales_view went dark (nightly pull returned
+    # 0 records - the silent break behind "VB sale history stopped working").
+    # The canonical Property_Sales_/FeatureServer/0 (594k transfer EVENTS,
+    # ~2wk lag) is pulled by scripts/pull_arcgis_sales.py as kind='sales'
+    # instead: multiple rows per GPIN are sale history, not parcel records, so
+    # they must NOT enter the spine as assessor rows. status!="live" keeps the
+    # entry documented without pulling it.
     FeedSpec("Virginia Beach", "VA", "Virginia Beach", "assessor+sales", "arcgis",
              "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/"
-             "Property_Sales_view/FeatureServer/0",
-             note="Sale date/price + land/imp/total value."),
+             "Property_Sales_view/FeatureServer/0", status="superseded",
+             note="DEAD (0 records). Sales now via pull_arcgis_sales.py -> "
+                  "Property_Sales_/FeatureServer/0 as kind='sales'."),
     FeedSpec("Virginia Beach", "VA", "Virginia Beach", "permits", "arcgis",
              "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/"
              "Building_Permits_Applications_view/FeatureServer/0"),

@@ -265,6 +265,28 @@ findings the moment they land.
     portal recordcard 403s "Direct API access not permitted". The `vbprobe`
     step and scripts/probe_vb_sales.py are RETIRED. Do not re-chase Spatialest
     for VB sales.
+  * ROOT CAUSE of "VB sales worked months ago, now doesn't" (found 2026-08-11):
+    MUNI_FEEDS carried VB assessor+sales via Property_Sales_view/FeatureServer/0
+    and that view WENT DARK - the nightly pull "succeeded" with 0 records, so
+    nothing alerted. Entry now status="superseded" (documented, not pulled).
+    Standing rule: a feed that returns 0 rows where it once returned thousands
+    is a BREAK, not a success - treat [OK] ... 0 records lines as failures.
+
+### Hampton Roads sales coverage per jurisdiction (verified 2026-08-11)
+  * Virginia Beach: pull_arcgis_sales.py -> Property_Sales_ (full transfer
+    events, kind='sales'). Default since-2021 arm's-length (owner call);
+    ER_ARCGIS_SALES_SINCE_YEAR widens for full deed-chain tenure.
+  * Norfolk: ALREADY COVERED - Socrata g7sg-tivf "Property Assessment and
+    Sales" pulls nightly as kind='assessor+sales' (74k rows; consideration +
+    transfer_date are already in sale_history's key sets). Most-recent sale
+    per parcel; no separate ArcGIS sales layer needed.
+  * Chesapeake: NO public sales feed exists. Its ArcGIS Hub
+    (public-chesva.opendata.arcgis.com) has Parcels/Addresses/Subdivisions
+    only; the parcels layer carries transfer DATE but no price/owner. Sale
+    prices are portal/Excel-download only (cityofchesapeake.net Open Data /
+    Assessor) - the Richmond-style "file" path is the follow-up if the owner
+    wants Chesapeake deed prices. Do not hunt for a chesva Property_Sales
+    FeatureServer; it does not exist (searched 2026-08-11).
 
 ### National discovery is ON and AGGRESSIVE (owner directive 2026-08-09)
 discover_feeds is national: (city,state) tuples, correct state stamped, VGIN
