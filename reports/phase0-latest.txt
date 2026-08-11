@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-08-11T01:31:09
+autopilot phase0 @ 2026-08-11T02:33:07
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,421,545
+Assessor records available: 3,498,521
 
 Assessor feeds present (Hampton Roads):
   Chesapeake         92,588  .../OpenData/MapServer/15
@@ -16,10 +16,10 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 22 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      2,478,738
-parcels normalized:        2,478,738
-multifamily (>= 10 units): 6,061
-written to properties_8r:  2,478,738
+muni records scanned:      2,555,714
+parcels normalized:        2,555,714
+multifamily (>= 10 units): 21,410
+written to properties_8r:  2,555,714
 provisional (no-APN) ids:  3,049
 units derived from address points: 1,482  (skipped non-residential: 2,550)
 coords backfilled by address (multifamily): 208
@@ -29,16 +29,16 @@ unusable (no parcel/latlng): 0
 pruned from backbone (known < 10 units): 734,513  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 2,091, Raleigh 1,613, Greensboro 900, Norfolk 866, Richmond 251, Newport News 244, Chesapeake 62, Suffolk 17, Durham 15, Hampton 2
+Multifamily by city: Richmond 15,600, Atlanta 2,091, Raleigh 1,613, Greensboro 900, Norfolk 866, Newport News 244, Chesapeake 62, Suffolk 17, Durham 15, Hampton 2
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
+  Richmond: R-4 Single Family x9001, R-48 Multi Family x2364, R-63 Multi Family Urban Res. x1952, R-53 Multi Family x1548, R-73 Multi Family x257
   Norfolk: Apartment x866
   Greensboro: MULTI-FAMILY<4 x734, MULTI-FAMILY5> x166
   Atlanta: C3 x809, C4 x645, C5 x278, R-4 x109, C1 x62
   Chesapeake: 3352 x62
   Newport News: A x237, C x4, (units only) x2, R x1
   Raleigh: (units only) x1613
-  Richmond: (units only) x108, 28 x30, 25 x24, 27 x22, 26 x22
   Durham: R-4 x14, (units only) x1
   Hampton: (units only) x2
   Suffolk: (units only) x17
@@ -49,23 +49,23 @@ Cities with parcels but NO multifamily found - their top use codes:
   Portsmouth: (blank) x36602
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
+  Richmond: code only (no units): 15,352, units>=10: 248
   Norfolk: code only (no units): 863, units>=10: 3
   Greensboro: code only (no units): 900
   Atlanta: units>=10: 1,982, code only (no units): 109
   Chesapeake: learned code (no units): 62
   Newport News: units>=10: 244
   Raleigh: units>=10: 1,613
-  Richmond: units>=10: 248, code only (no units): 3
   Durham: code only (no units): 13, units>=10: 2
   Hampton: units>=10: 2
   Suffolk: units>=10: 17
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
+  Richmond: CONDITION, PID, NBHD, PRIMARY_USE, MODEL, MAIL_ADDR, MAIL_CITY, BED_COUNT, BATH_COUNT, HALF_BATH_COUNT, LEGAL_AC, PROP_SF
   Greensboro: CentroidXCoordinate, CentroidYCoordinat, NumberOfParts, INSIDE_X, INSIDE_Y, ORIG_FID, Owner_History, Mail_Address, Total_Building_Value, Total_Land_Value, TOTAL_DEFERRED_VALUE, DEED_DATE
   Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, AddrNumber, OwnerAddr1, TotAssess, TotAppr, ImprAppr, LandAssess
   Winston-Salem: BLKCNTRL, BLK, LOT, BLKLOT, TBLCNTRL, CNTRL, TAXPIN, TAXPIN_N, PINMAP, PINBLK, PINLOT, PINLOT_A
   Raleigh: PIN_NUM, CALC_AREA, PARCEL_PK, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE
-  Richmond: VGIN_QPID, LOCALITY, PTM_ID, full_address_display, parcel_dashes, assr_url, CITY_LIMIT, FHSZ, OWNER_GRP, AREA_ACRES, TAX_DESC, COUNCIL_DIST
   Durham: FEATURE_KEY, PARCEL_TYPE, PARCEL_PK, AUT_SNAPSHOT_DATE, PIN_EXT, PIN_MAP, PIN_BLOCK, PIN_LOT, PROPERTY_DESCR, LOCATION_ADDR, SPEC_DIST, SPEC_DIST_PCNT
   Nashville: STANPAR, FEATURETYPE, PropHouse, PropState, LegalDesc, PropInstr, Front, Side, OwnDate, OwnInstr, Council, PropDate
   Hampton: VGIN_QPID, LOCALITY
