@@ -1,4 +1,4 @@
-autopilot backbonestats @ 2026-08-10T23:41:54
+autopilot backbonestats @ 2026-08-11T00:45:16
 
 Properties on the backbone, per metro/market:
 market                properties
@@ -8,16 +8,16 @@ Greensboro               215,024
 Winston-Salem            167,343
 Raleigh                  133,573
 Durham-Chapel Hill       128,871
-Richmond                  71,590
+Richmond                 102,232
 Atlanta                   69,394
-TOTAL                  1,372,227
+TOTAL                  1,402,869
 
 Multifamily unit stats (units >= 10), per city:
 city                count   min  median    max
 Atlanta              1982    10     106   1663
 Raleigh              1613    10     127   1902
+Richmond              248    10      21   1090
 Newport News          244    10     103    553
-Richmond              108    10      19    217
 Suffolk                17    12      44     81
 Norfolk                 3    10      10     12
 Durham                  2    10      44     79
