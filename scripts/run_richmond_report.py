@@ -57,10 +57,19 @@ def main() -> int:
         total = conn.execute(
             "SELECT COUNT(*) AS n FROM properties_8r "
             "WHERE COALESCE(r8_market, city) = 'Richmond'").fetchone()["n"]
+        # MF = unit-count evidence ONLY. derive_8r_form defaults every parcel
+        # to "garden", so "r8_form IS NOT NULL" matched ALL rows and the
+        # midnight-cycle review claimed 102,232 MF properties - a number the
+        # owner cannot trust. Honest version: count rows with units data,
+        # then MF among them, and gap loudly when unit coverage is thin.
+        with_units = conn.execute(
+            "SELECT COUNT(*) AS n FROM properties_8r "
+            "WHERE COALESCE(r8_market, city) = 'Richmond' "
+            "AND units IS NOT NULL AND units > 0").fetchone()["n"]
         mf = conn.execute(
             "SELECT units, year_built, assessed_value FROM properties_8r "
             "WHERE COALESCE(r8_market, city) = 'Richmond' "
-            "AND ((units IS NOT NULL AND units >= ?) OR r8_form IS NOT NULL)",
+            "AND units IS NOT NULL AND units >= ?",
             (phase0.MIN_MF_UNITS,)).fetchall()
         units = [int(r["units"]) for r in mf if r["units"]]
         yrs = [int(r["year_built"]) for r in mf if r["year_built"]]
@@ -72,8 +81,13 @@ def main() -> int:
         print("=" * 64)
         print("\n-- 1. Backbone properties (properties_8r) --")
         print(f"Richmond properties total: {total:,}")
-        print(f"Multifamily (units>={phase0.MIN_MF_UNITS} or MF-coded): "
-              f"{len(mf):,}")
+        print(f"  with unit data:  {with_units:,}")
+        print(f"Multifamily (units>={phase0.MIN_MF_UNITS}): {len(mf):,}")
+        if total and with_units < total * 0.01:
+            gaps.append(f"Unit coverage is thin: {with_units:,} of {total:,} "
+                        "parcels carry unit counts - the COR ownership layer "
+                        "has none, so units depend on vm9j-9f88 (Socrata "
+                        "403 -> token) or the rva.gov Public Data Set files.")
         if units:
             print(f"  units:          {_stats([float(u) for u in units])}")
         else:

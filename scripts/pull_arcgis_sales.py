@@ -495,49 +495,70 @@ def _pull_landbook(conn, market: str, cfg: dict) -> int:
     return len(all_rows)
 
 
-_SHEET_LINK = re.compile(
-    r"""href\s*=\s*["']([^"']+\.(?:xlsx|xls|csv)(?:\?[^"']*)?)["']""",
+# Anchor tags with their inner text. rva.gov (Drupal) links files as
+# extension-less /media/<id> URLs - first contact 2026-08-11 midnight cycle:
+# HTTP 200 but 0 links matched the old .xlsx-only href regex. So capture
+# EVERY anchor, filter by href shape (spreadsheet extension, /media/<id>, or
+# /sites/default/files/), and keep the link text for kind classification.
+_ANCHOR = re.compile(
+    r"""<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>(.*?)</a>""",
+    re.IGNORECASE | re.DOTALL)
+_TAGS = re.compile(r"<[^>]+>")
+_FILEISH = re.compile(
+    r"(\.(?:xlsx|xls|csv)(?:$|\?))|(/media/\d+)|(/sites/default/files/)",
     re.IGNORECASE)
 
 
-def _list_file_links(html: str, page_url: str) -> list[str]:
-    """Spreadsheet links on an assessor download page, absolutized."""
+def _list_file_links(html: str, page_url: str) -> list[tuple[str, str]]:
+    """(url, link_text) pairs for file-ish links, absolutized, deduped."""
     from urllib.parse import urljoin
     out, seen = [], set()
-    for m in _SHEET_LINK.finditer(html or ""):
-        u = urljoin(page_url, m.group(1))
-        if u not in seen:
-            seen.add(u)
-            out.append(u)
+    for m in _ANCHOR.finditer(html or ""):
+        href = m.group(1)
+        if not _FILEISH.search(href):
+            continue
+        u = urljoin(page_url, href)
+        if u in seen:
+            continue
+        seen.add(u)
+        label = _TAGS.sub("", m.group(2)).strip()
+        out.append((u, label))
     return out
 
 
-def _file_kind(url: str) -> str:
+def _file_kind(url: str, label: str = "") -> str:
     """transfers/sales workbooks -> kind='sales'; everything else on an
-    assessor page is parcel data -> kind='assessor'."""
-    name = url.rsplit("/", 1)[-1].lower()
-    return "sales" if ("transfer" in name or "sale" in name) else "assessor"
+    assessor page is parcel data -> kind='assessor'. /media/<id> URLs carry
+    no filename, so the anchor TEXT is the classification signal there."""
+    hay = f"{url.rsplit('/', 1)[-1]} {label}".lower()
+    return "sales" if ("transfer" in hay or "sale" in hay) else "assessor"
 
 
 def _download_table(url: str):
-    """DataFrame from a remote xlsx/xls/csv, or None (logged by caller)."""
+    """DataFrame from a remote spreadsheet, or None (logged by caller).
+    Format sniffed from magic bytes, NOT the URL - /media/<id> links have no
+    extension (PK.. = xlsx zip, D0 CF = legacy xls, else try CSV)."""
     import pandas as pd
     try:
-        r = requests.get(url, headers=_headers(), timeout=180)
+        r = requests.get(url, headers=_headers(), timeout=180,
+                         allow_redirects=True)
         if r.status_code != 200 or not r.content:
             return None
     except requests.RequestException:
         return None
-    buf = io.BytesIO(r.content)
-    if url.lower().split("?")[0].endswith(".csv"):
+    content = r.content
+    if content[:4] == b"PK\x03\x04":
+        engines = ("openpyxl",)
+    elif content[:4] == b"\xd0\xcf\x11\xe0":
+        engines = ("xlrd",)
+    else:
         try:
-            return pd.read_csv(io.BytesIO(r.content))
+            return pd.read_csv(io.BytesIO(content))
         except Exception:
-            return None
-    for engine in ("openpyxl", "xlrd"):
-        buf.seek(0)
+            engines = ("openpyxl", "xlrd")   # last resort: header lied
+    for engine in engines:
         try:
-            return pd.read_excel(buf, engine=engine)
+            return pd.read_excel(io.BytesIO(content), engine=engine)
         except Exception:
             continue
     return None
@@ -565,13 +586,14 @@ def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
     now_iso = dt.datetime.now().isoformat(timespec="seconds")
     rows: list[tuple] = []
     per_kind = {"sales": 0, "assessor": 0}
-    for url in links[:12]:               # sanity cap on a scraped page
+    for url, label in links[:12]:        # sanity cap on a scraped page
         df = _download_table(url)
+        name = label or url.rsplit("/", 1)[-1]
         if df is None:
-            print(f"[sales:{market}]   {url.rsplit('/', 1)[-1][:60]}: "
-                  f"download/parse FAILED")
+            print(f"[sales:{market}]   {name[:60]}: download/parse FAILED "
+                  f"({url})")
             continue
-        kind = _file_kind(url)
+        kind = _file_kind(url, label)
         kept = 0
         for rec in df.to_dict(orient="records"):
             clean = {}
@@ -588,8 +610,7 @@ def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
             if len(rows) >= MAX_RECORDS:
                 break
         per_kind[kind] = per_kind.get(kind, 0) + kept
-        print(f"[sales:{market}]   {url.rsplit('/', 1)[-1][:60]}: "
-              f"{kept} rows -> kind={kind}")
+        print(f"[sales:{market}]   {name[:60]}: {kept} rows -> kind={kind}")
     if not rows:
         print(f"[sales:{market}] every file failed to parse - NOT deleting "
               f"existing rows (transient?)")

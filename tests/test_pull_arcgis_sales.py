@@ -5,6 +5,7 @@ never deleting good data on a transient empty pull."""
 from __future__ import annotations
 
 import importlib
+import io
 import json
 import sqlite3
 
@@ -243,7 +244,8 @@ def test_html_files_scrapes_classifies_and_writes(monkeypatch):
     m = _mod()
     cfg = m.SALES_SOURCES["Richmond-files"]
 
-    html = ('<a href="/files/PublicDataSet_Parcels_0726.xlsx">parcels</a>'
+    html = ('<a href="/sites/default/files/PublicDataSet_Parcels_0726.xlsx">'
+            'parcels</a>'
             '<a href="/files/Transfers_July2026.xlsx">transfers</a>'
             '<a href="/files/notes.pdf">ignore</a>')
 
@@ -274,6 +276,36 @@ def test_html_files_scrapes_classifies_and_writes(monkeypatch):
     sale = json.loads(next(r[2] for r in rows if r[1] == "sales"))
     assert sale["TransferDate"] == "2026-05-04"      # Timestamp -> ISO
     assert sale["_file"].endswith("Transfers_July2026.xlsx")
+
+
+def test_html_files_media_links_classified_by_anchor_text(monkeypatch):
+    """rva.gov links files as extension-less /media/<id> (first-contact
+    failure, midnight cycle 2026-08-11: HTTP 200 but 0 links matched). The
+    anchor TEXT is the only classification signal on those."""
+    import pandas as pd
+    m = _mod()
+    links = m._list_file_links(
+        '<a href="/media/50901"><span>Property Transfers - July 2026'
+        '</span></a> <a href="/media/50902">Public Data Set 2026</a>'
+        ' <a href="/about">not a file</a>',
+        "https://www.rva.gov/assessor-real-estate/data-request")
+    assert links == [
+        ("https://www.rva.gov/media/50901", "Property Transfers - July 2026"),
+        ("https://www.rva.gov/media/50902", "Public Data Set 2026")]
+    assert m._file_kind(*[links[0][0], links[0][1]]) == "sales"
+    assert m._file_kind(links[1][0], links[1][1]) == "assessor"
+
+    # magic-byte sniffing: an xlsx body parses even with no extension
+    buf = io.BytesIO()
+    pd.DataFrame([{"PIN": "W1", "Consideration": 5}]).to_excel(
+        buf, index=False)
+
+    class R:
+        status_code = 200
+        content = buf.getvalue()
+    monkeypatch.setattr(m.requests, "get", lambda *a, **k: R())
+    df = m._download_table("https://www.rva.gov/media/50901")
+    assert df is not None and df.iloc[0]["PIN"] == "W1"
 
 
 def test_html_files_no_links_touches_nothing(monkeypatch):
