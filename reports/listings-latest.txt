@@ -1,3 +1,3 @@
-autopilot listings @ 2026-08-12T10:18:53
+autopilot listings @ 2026-08-12T11:19:52
 
   [listings] fresh (pulled within 7 days, 18 favourites, generation 2) - skipping; 329 rent_listings rows on hand
