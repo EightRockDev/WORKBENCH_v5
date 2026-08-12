@@ -1,9 +1,9 @@
-autopilot alerts @ 2026-08-12T04:32:27
+autopilot alerts @ 2026-08-12T05:32:11
 
 alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 11092 - new_mf 11092
-  showing the 25 most recent of 11092
-  [new_mf] New multifamily on the backbone: 8R-51760-a3f61af2e806  (20 units · Richmond)
+  closed 109 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 10983 - new_mf 10983
+  showing the 25 most recent of 10983
   [new_mf] New multifamily on the backbone: 8R-37067-279b652c1925  (22 units · Winston-Salem)
   [new_mf] New multifamily on the backbone: 8R-51760-27ea7550d881  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-12c30547aee1  (? units · Richmond)
@@ -28,3 +28,4 @@ OPEN alerts (carried forward): 11092 - new_mf 11092
   [new_mf] New multifamily on the backbone: 8R-51760-d35f240d79da  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-032d5c3342b1  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-c53c48add5cd  (? units · Richmond)
+  [new_mf] New multifamily on the backbone: 8R-51760-9975b131d8ab  (? units · Richmond)
