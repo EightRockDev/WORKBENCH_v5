@@ -110,6 +110,13 @@ def render_owner_intel(prop: dict | None) -> None:
                             + (f": {t['detail']}" if t.get("detail") else ""))
         except pipeline.BudgetExceeded as e:
             st.error(str(e))
+        except Exception as e:
+            # A resolve/persist failure must degrade to a message, never a
+            # red traceback over the whole page (2026-08-12: a poc_records
+            # role CheckViolation took down the market page pre-demo).
+            st.error("Contact resolution hit a storage error — the rest of "
+                     "the page is unaffected. Detail for the log: "
+                     f"{type(e).__name__}: {e}")
 
     pocs = pipeline.load_pocs(org_id, prop_id)
     if not pocs:

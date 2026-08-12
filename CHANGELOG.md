@@ -12,6 +12,15 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.38.3.1.0 — 2026-08-12  ·  HOTFIX: Owner Intel crash on unpierced LLC owners
+`poc_records_role_check` didn't allow 'entity_unpierced' - the role the
+skip-trace pipeline assigns when an LLC owner can't be pierced - so Owner
+Intel crashed the whole market page with a CheckViolation on exactly the
+institutional-owned properties (found live, pre-demo). Constraint widened
+(inline + idempotent ALTER migration; migrate-db.ps1 re-applies the schema),
+and the panel now degrades any resolve/persist failure to an error message
+instead of a page-wide traceback.
+
 ## V5.38.3.0.0 — 2026-08-12  ·  Richmond workbook join unblocked: PTM_ID / PIN_1 aliases
 Yesterday's alias-candidate scan named the evidence: VGIN's PTM_ID matches
 the rva.gov workbook apn set 4,000/4,000 (Undeveloped's PIN_1: 3,748). Both

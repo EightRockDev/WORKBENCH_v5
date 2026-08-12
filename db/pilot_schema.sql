@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS poc_records (
     property_id   text NOT NULL,                    -- 8R-{FIPS}-{parcel-hash} (Section 7.2)
     portfolio_id  text,
     role          text NOT NULL
-                    CHECK (role IN ('owner','principal','pm','lender','agent','prior_owner')),
+                    CHECK (role IN ('owner','principal','pm','lender','agent','prior_owner','entity_unpierced')),
     person        jsonb NOT NULL DEFAULT '{}'::jsonb, -- { full_name, age_band, deceased }
     entity_chain  jsonb NOT NULL DEFAULT '[]'::jsonb, -- [{ entity_name, jurisdiction, filing_id, officers[], confidence }]
     phones        jsonb NOT NULL DEFAULT '[]'::jsonb, -- [{ e164, line_type, grade, dnc{}, callable, reason }]
@@ -731,3 +731,17 @@ LANGUAGE sql SECURITY DEFINER STABLE AS $$
     SELECT org_id, user_id, provider, last_sync_at
       FROM mailbox_connections WHERE status = 'connected'
 $$;
+
+-- ---------------------------------------------------------------------------
+-- (2026-08-12) poc_records role check was missing 'entity_unpierced' - the
+-- role the skip-trace pipeline assigns when an LLC owner cannot be pierced
+-- (pipeline.py S4). Every Owner Intel render on an institutional-owned
+-- property crashed with CheckViolation at persist. Idempotent widen:
+-- ---------------------------------------------------------------------------
+DO $$
+BEGIN
+    ALTER TABLE poc_records DROP CONSTRAINT IF EXISTS poc_records_role_check;
+    ALTER TABLE poc_records ADD CONSTRAINT poc_records_role_check
+        CHECK (role IN ('owner','principal','pm','lender','agent',
+                        'prior_owner','entity_unpierced'));
+END $$;
