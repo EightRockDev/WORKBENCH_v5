@@ -1,4 +1,4 @@
-autopilot discover_national @ 2026-08-12T08:11:00
+autopilot discover_national @ 2026-08-12T09:10:25
 
 [national-discovery] probing top-50 metros for free parcel feeds...
 Probing GIS portals for unit-bearing parcel layers (50 national metros)...
@@ -27,7 +27,8 @@ Probing GIS portals for unit-bearing parcel layers (50 national metros)...
    [rejected - wrong city] Raleigh: Raleigh County Dilapidated Structures_WFL1: only 830 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Richmond: Basemap/City Parcels: records are NOT in Richmond
    [rejected - wrong city] Richmond: City_of_Richmond_Basemap/COR_Parcels: records are NOT in Richmond
-   [rejected - wrong city] Richmond: CitySurplusMapService_ReadOnly/General Plan 2030 Zones: layer name declares a subset - demoted, does not count as the city roll
+   [rejected - wrong city] Richmond: City_of_Richmond_Parcels_Public/City of Richmond Parcels (public): records are NOT in Richmond
+   [rejected - wrong city] Richmond: CitySurplusMapService_ReadOnly/General Plan 2030 Zones: records are NOT in Richmond
    [rejected - wrong city] Richmond: COR_BASE/COR Parcels: records are NOT in Richmond
    [rejected - wrong city] Richmond: COR_Parcel_Ownership/Parcel Ownership: records are NOT in Richmond
    [rejected - wrong city] Richmond: COR_Parcel_Ownership_WFL1/City of Richmond Parcels: records are NOT in Richmond
@@ -105,13 +106,11 @@ Raleigh: 2 candidate layer(s)
    https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/Raleigh_Precinct_Data/FeatureServer/6
       auto-discovered: Raleigh_Precinct_Data; score 13; fields ['address', 'apn', 'use_code']; geo-verify inconclusive; 61,157 records
 
-Richmond: 3 candidate layer(s)
-   https://services6.arcgis.com/il6vO1TutlF580Ku/arcgis/rest/services/City_of_Richmond_Parcels_Public/FeatureServer/275
-      auto-discovered: City_of_Richmond_Parcels_Public/City of Richmond Parcels (public); score 13; fields ['address', 'apn', 'use_code']; geo-verify inconclusive; 32,907 records
+Richmond: 2 candidate layer(s)
+   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
+      VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']
    https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
       auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records; NAMED as a subset - demoted
-   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      geometry supplement; VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']
 
 Las Vegas: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
 
@@ -165,5 +164,5 @@ New Haven: nothing suitable found (portal may be offline or hides fields until q
 
 Memphis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
 
-Wrote 11 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
+Wrote 10 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
 NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.
