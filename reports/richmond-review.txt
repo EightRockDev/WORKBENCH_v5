@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-08-12T07:40:45
+autopilot richmondreview @ 2026-08-12T08:46:37
 
 ================================================================
-RICHMOND REVIEW  @ 2026-08-12T07:40:48
+RICHMOND REVIEW  @ 2026-08-12T08:46:39
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
@@ -14,6 +14,7 @@ Multifamily (units>=10): 140
 -- 2. Raw Richmond assessor rows on hand --
     76,976  2026-08-11T03:24:33  files:rva.gov/assessor-real-estate
     76,739  2026-08-11T12:22:10  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
+    32,907  2026-08-12T08:20:52  https://services6.arcgis.com/il6vO1TutlF580Ku/arcgis/rest/services/City_of_Richm
     32,907  2026-08-11T05:20:14  https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/services/COR_Parcel_Ow
      6,570  2026-08-09T17:19:50  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
 
@@ -24,6 +25,8 @@ Multifamily (units>=10): 140
     rows=76,739  apn=76,739 (sample: C0010124008)  units=0  assessed_value=0  use_code=0
   https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/se
     rows=32,907  apn=32,907 (sample: 405010001)  units=2,365  assessed_value=0  use_code=32,767
+  https://services6.arcgis.com/il6vO1TutlF580Ku/arcgis/rest/se
+    rows=32,907  apn=32,907 (sample: 405010001)  units=0  assessed_value=0  use_code=32,765
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
   rva.gov-files join health: 76,715 of 76,976 workbook parcels match an API-feed parcel
