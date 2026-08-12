@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-08-12T03:31:18
+autopilot richmondreview @ 2026-08-12T04:31:45
 
 ================================================================
-RICHMOND REVIEW  @ 2026-08-12T03:31:20
+RICHMOND REVIEW  @ 2026-08-12T04:31:47
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
@@ -21,16 +21,12 @@ Multifamily (units>=10): 249
   files:rva.gov/assessor-real-estate
     rows=76,976  apn=76,976 (sample: C0010124002)  units=0  assessed_value=76,765  use_code=76,976
   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_B
-    rows=76,739  apn=76,739 (sample: 74807)  units=0  assessed_value=0  use_code=0
+    rows=76,739  apn=76,739 (sample: C0010124008)  units=0  assessed_value=0  use_code=0
   https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/se
     rows=32,907  apn=32,907 (sample: 405010001)  units=2,365  assessed_value=0  use_code=32,767
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
-  rva.gov-files join health: 6,173 of 76,976 workbook parcels match an API-feed parcel
-  alias candidates (API attribute -> workbook apn overlap, first 4,000 rows per source):
-     4,000  PTM_ID  @ https://vginmaps.vdem.virginia.gov/arcgis/rest/servi
-     3,748  PIN_1  @ https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/
-     3,747  PIN  @ https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/
+  rva.gov-files join health: 76,715 of 76,976 workbook parcels match an API-feed parcel
 
 -- 3. Richmond sales (muni_records kind='sales') --
 sale rows: 84,148
@@ -46,6 +42,5 @@ sale rows: 84,148
 
 -- 5. GAPS (each names its unblock) --
   [GAP] Unit coverage is thin: 249 of 179,146 parcels carry unit counts - the COR ownership layer has none, so units depend on the rva.gov Public Data Set files or a discover-sales-latest candidate (no token chases - owner 2026-08-11).
-  [GAP] rva.gov workbook rows do NOT join the parcel backbone (6,173/76,976 apn matches) - their units/values enrich nothing. The alias-candidate lines above name the raw attribute to alias in core/phase0.py.
   [GAP] The rva.gov Public Data Set maps NO unit counts - check section 2b and the phase0 unmapped-keys list for the workbook's unit column, or promote a units-bearing candidate from discover-sales-latest.txt.
   [GAP] Tax estimates: blocked on assessed values (needs the assessments feed above).
