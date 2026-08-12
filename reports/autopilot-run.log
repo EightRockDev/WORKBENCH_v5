@@ -9266,3 +9266,5 @@ Checked 111 packages in 12ms
 [publicdata] exit 0 -> public-data-latest.txt
 [publish] pushed to GitHub
 [listings] exit 0 -> listings-latest.txt
+[publish] pushed to GitHub
+[salespull] exit 0 -> sales-latest.txt
