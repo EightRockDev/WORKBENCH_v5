@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-08-12T17:40:35
+autopilot alerts @ 2026-08-12T19:16:31
 
-alert sweep, NEW this cycle: 3 multifamily, 1 unit-count moves, 0 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 10987 - new_mf 10986, units_jump 1
   showing the 25 most recent of 10987
   [new_mf] New multifamily on the backbone: 2810 HILLSBOROUGH ST  (16 units · Raleigh)
