@@ -1,28 +1,28 @@
-autopilot phase0 @ 2026-08-12T17:26:16
+autopilot phase0 @ 2026-08-12T19:03:12
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,272,506
+Assessor records available: 3,272,518
 
 Assessor feeds present (Hampton Roads):
-  Chesapeake         92,588  .../OpenData/MapServer/15
-  Newport News       54,437  .../Parcel/MapServer/0
+  Chesapeake         92,590  .../OpenData/MapServer/15
+  Newport News       54,440  .../Parcel/MapServer/0
   Norfolk            74,359  .../data.norfolk.gov/resource/qva7-tzrf.json
 
 Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 22 success rows -> 6 properties, 4 with usable rents, 2 in crosswalk -> 2 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b, a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
 
-muni records scanned:      2,329,699
-parcels normalized:        2,329,699
+muni records scanned:      2,329,711
+parcels normalized:        2,329,711
 multifamily (>= 10 units): 12,148
-written to properties_8r:  2,329,699
+written to properties_8r:  2,329,711
 provisional (no-APN) ids:  1,361
 units derived from address points: 189  (skipped non-residential: 3,950)
 coords backfilled by address (multifamily): 208
 rent estimates stamped (HUD FMR blend): 1,110
 rents from scraped listings: 2
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 733,346  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 733,352  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
 Multifamily by city: Richmond 6,476, Atlanta 1,982, Raleigh 1,616, Greensboro 900, Norfolk 866, Newport News 244, Chesapeake 62, Winston-Salem 1, Durham 1
@@ -39,7 +39,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Durham: (units only) x1
 
 Cities with parcels but NO multifamily found - their top use codes:
-  Nashville: RS10 x38978, R10 x31901, SP x19255, RS7.5 x18928, RS15 x16444, R6 x14258, RS20 x12129, R8 x11608
+  Nashville: RS10 x38978, R10 x31901, SP x19256, RS7.5 x18928, RS15 x16444, R6 x14260, RS20 x12129, R8 x11608
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Richmond: code only (no units): 6,336, units>=10: 140
@@ -100,25 +100,25 @@ Largest unit-count disagreements (check these matches):
 
 Learning apartment use codes from matched properties:
   Chesapeake: 68 known-MF parcels matched
-      [ACCEPT] code '3352': on 27 MF parcels, 62/92,491 citywide (0.1%) - 40% of known MF, only 0.1% of the roll
-      [reject] code '3346': on 11 MF parcels, 40/92,491 citywide (0.0%) - only 16% of this city's known MF, need 25%
-      [reject] code '1010': on 5 MF parcels, 50,485/92,491 citywide (54.6%) - only 7% of this city's known MF, need 25%
-      [reject] code '1060': on 4 MF parcels, 7,877/92,491 citywide (8.5%) - only 6% of this city's known MF, need 25%
-      [reject] code '2010': on 2 MF parcels, 7,305/92,491 citywide (7.9%) - only 2 supporting parcel(s), need 3
-      [reject] code '4406': on 2 MF parcels, 357/92,491 citywide (0.4%) - only 2 supporting parcel(s), need 3
-      [reject] code '4344': on 2 MF parcels, 235/92,491 citywide (0.3%) - only 2 supporting parcel(s), need 3
-      [reject] code '4341': on 2 MF parcels, 82/92,491 citywide (0.1%) - only 2 supporting parcel(s), need 3
-      [reject] code '4330': on 1 MF parcels, 27/92,491 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '4410': on 1 MF parcels, 20/92,491 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '2000': on 1 MF parcels, 3,444/92,491 citywide (3.7%) - only 1 supporting parcel(s), need 3
-      [reject] code '7430': on 1 MF parcels, 39/92,491 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '3812': on 1 MF parcels, 70/92,491 citywide (0.1%) - only 1 supporting parcel(s), need 3
-      [reject] code '3015': on 1 MF parcels, 430/92,491 citywide (0.5%) - only 1 supporting parcel(s), need 3
-      [reject] code '4419': on 1 MF parcels, 98/92,491 citywide (0.1%) - only 1 supporting parcel(s), need 3
-      [reject] code '4407': on 1 MF parcels, 18/92,491 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '4021': on 1 MF parcels, 56/92,491 citywide (0.1%) - only 1 supporting parcel(s), need 3
-      [reject] code '1000': on 1 MF parcels, 1,078/92,491 citywide (1.2%) - only 1 supporting parcel(s), need 3
-      [reject] code '4020': on 1 MF parcels, 283/92,491 citywide (0.3%) - only 1 supporting parcel(s), need 3
-      [reject] code '7410': on 1 MF parcels, 944/92,491 citywide (1.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '4000': on 1 MF parcels, 980/92,491 citywide (1.1%) - only 1 supporting parcel(s), need 3
+      [ACCEPT] code '3352': on 27 MF parcels, 62/92,493 citywide (0.1%) - 40% of known MF, only 0.1% of the roll
+      [reject] code '3346': on 11 MF parcels, 40/92,493 citywide (0.0%) - only 16% of this city's known MF, need 25%
+      [reject] code '1010': on 5 MF parcels, 50,469/92,493 citywide (54.6%) - only 7% of this city's known MF, need 25%
+      [reject] code '1060': on 4 MF parcels, 7,880/92,493 citywide (8.5%) - only 6% of this city's known MF, need 25%
+      [reject] code '2010': on 2 MF parcels, 7,304/92,493 citywide (7.9%) - only 2 supporting parcel(s), need 3
+      [reject] code '4406': on 2 MF parcels, 357/92,493 citywide (0.4%) - only 2 supporting parcel(s), need 3
+      [reject] code '4344': on 2 MF parcels, 235/92,493 citywide (0.3%) - only 2 supporting parcel(s), need 3
+      [reject] code '4341': on 2 MF parcels, 82/92,493 citywide (0.1%) - only 2 supporting parcel(s), need 3
+      [reject] code '4330': on 1 MF parcels, 27/92,493 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '4410': on 1 MF parcels, 20/92,493 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '2000': on 1 MF parcels, 3,443/92,493 citywide (3.7%) - only 1 supporting parcel(s), need 3
+      [reject] code '7430': on 1 MF parcels, 39/92,493 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '3812': on 1 MF parcels, 70/92,493 citywide (0.1%) - only 1 supporting parcel(s), need 3
+      [reject] code '3015': on 1 MF parcels, 430/92,493 citywide (0.5%) - only 1 supporting parcel(s), need 3
+      [reject] code '4419': on 1 MF parcels, 98/92,493 citywide (0.1%) - only 1 supporting parcel(s), need 3
+      [reject] code '4407': on 1 MF parcels, 18/92,493 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '4021': on 1 MF parcels, 56/92,493 citywide (0.1%) - only 1 supporting parcel(s), need 3
+      [reject] code '1000': on 1 MF parcels, 1,079/92,493 citywide (1.2%) - only 1 supporting parcel(s), need 3
+      [reject] code '4020': on 1 MF parcels, 283/92,493 citywide (0.3%) - only 1 supporting parcel(s), need 3
+      [reject] code '7410': on 1 MF parcels, 944/92,493 citywide (1.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '4000': on 1 MF parcels, 980/92,493 citywide (1.1%) - only 1 supporting parcel(s), need 3
   learned 1 code(s) - they take effect on the next run-phase0 (re-run to see the new counts)
