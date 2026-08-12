@@ -12,6 +12,14 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.38.3.0.0 — 2026-08-12  ·  Richmond workbook join unblocked: PTM_ID / PIN_1 aliases
+Yesterday's alias-candidate scan named the evidence: VGIN's PTM_ID matches
+the rva.gov workbook apn set 4,000/4,000 (Undeveloped's PIN_1: 3,748). Both
+are now apn aliases at low priority, activated only by the Richmond PIN
+shape rule - so the VGIN backbone parcels re-key to the city's real PIN and
+the 76,976 workbook rows (assessed values) finally merge. Expect the next
+richmondreview: join health ~70K+, section 4 tax estimates populated.
+
 ## V5.38.2.2.0 — 2026-08-11  ·  Richmond join: alias-candidate evidence in section 2b
 The workbook still joins only 6,173/76,976 (its PINs look like C0010124002;
 the COR feed's mapped apn is 405010001 - different id scheme). When the join

@@ -180,6 +180,17 @@ The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
    - cosmetic: inventory "matched to property records" counters + property_detail
      "db"->src_8r color read wrong after flip (dual-run only today)
 
+### Richmond parcel join: evidence-scan pattern (2026-08-12)
+Three Richmond feeds used three id schemes (COR 405010001, VGIN 74807-style,
+workbook C0010124002); the workbook's 76,976 assessed values sat orphaned.
+Fix pattern to reuse: when a join is broken, don't guess from samples - the
+richmondreview 2b now scores every raw attribute by actual overlap with the
+target apn set and prints winners (V5.38.2.2.0), and the alias fix cites
+that evidence (V5.38.3.0.0: ptmid/pin1 + the _APN_FORMAT_BY_CITY shape
+rule). COR still has NO letter-format column - COR units merge by its own
+apn; if COR-vs-VGIN duplicate properties show up in backbone totals, the
+crosswalk (not more aliases) is the next move.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

@@ -831,3 +831,20 @@ def test_richmond_workbook_assessment_columns_map_and_declutter():
     both = normalize_record("Richmond", "VA",
                             {"TOTAL_VALUE": 1, "ASSSESS_TOTAL_VALUE_1": 2})
     assert both["assessed_value"] == 1
+
+
+def test_richmond_vgin_ptm_id_takes_over_short_numeric_id():
+    """2026-08-12 alias-candidate scan: VGIN's PTM_ID carries the real
+    Richmond PIN (letter + 10 digits) 4,000/4,000, while its priority-
+    winning column is a short statewide numeric id. The city-format rule
+    must hand the apn to PTM_ID or the 76,976 workbook rows stay orphans."""
+    from core import phase0
+    m = phase0.normalize_record(
+        "Richmond", "VA", {"PARCELID": "74807", "PTM_ID": "C0010124002"})
+    assert m["apn"] == "C0010124002"
+    m = phase0.normalize_record(
+        "Richmond", "VA", {"PIN_1": "N0001746010", "ASSESSEDVALUE": 1})
+    assert m["apn"] == "N0001746010"
+    # Other cities keep their existing keys untouched.
+    m = phase0.normalize_record("Norfolk", "VA", {"GPIN": "1404875013"})
+    assert m["apn"] == "1404875013"

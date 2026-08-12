@@ -61,7 +61,14 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
             "parcelno", "pin", "pid", "mappin", "acct", "account",
             "accountnumber", "taxparcelid", "parid", "parno", "propid",
             "propertyid", "realestateid", "reid", "lrsn", "mastergpin",
-            "recordedgpin"),
+            "recordedgpin",
+            # ptmid/pin1: named by the 2026-08-12 richmondreview alias-
+            # candidate scan (overlap vs the rva.gov workbook apn set:
+            # VGIN PTM_ID 4,000/4,000, Undeveloped PIN_1 3,748). Low
+            # priority on purpose - they only take over via the
+            # _APN_FORMAT_BY_CITY shape rule when the priority winner
+            # (VGIN's short numeric id) is not the city's real parcel id.
+            "ptmid", "pin1"),
     "address": ("address", "situsaddress", "situs", "propertyaddress",
                 "siteaddress", "locationaddress", "location", "fulladdress",
                 "fulladdr", "propaddress", "propertystreet", "streetaddress",
