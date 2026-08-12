@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-08-12T14:18:54
+autopilot phase0 @ 2026-08-12T17:26:16
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,272,482
+Assessor records available: 3,272,506
 
 Assessor feeds present (Hampton Roads):
   Chesapeake         92,588  .../OpenData/MapServer/15
@@ -12,20 +12,20 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 22 success rows -> 6 properties, 4 with usable rents, 2 in crosswalk -> 2 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b, a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
 
-muni records scanned:      2,329,675
-parcels normalized:        2,329,675
-multifamily (>= 10 units): 12,145
-written to properties_8r:  2,329,675
+muni records scanned:      2,329,699
+parcels normalized:        2,329,699
+multifamily (>= 10 units): 12,148
+written to properties_8r:  2,329,699
 provisional (no-APN) ids:  1,361
 units derived from address points: 189  (skipped non-residential: 3,950)
 coords backfilled by address (multifamily): 208
 rent estimates stamped (HUD FMR blend): 1,110
 rents from scraped listings: 2
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 733,347  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 733,346  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Richmond 6,476, Atlanta 1,982, Raleigh 1,613, Greensboro 900, Norfolk 866, Newport News 244, Chesapeake 62, Winston-Salem 1, Durham 1
+Multifamily by city: Richmond 6,476, Atlanta 1,982, Raleigh 1,616, Greensboro 900, Norfolk 866, Newport News 244, Chesapeake 62, Winston-Salem 1, Durham 1
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Richmond: R-48 Multi Family x2364, R-63 Multi Family Urban Res. x1952, R-53 Multi Family x1548, R-73 Multi Family x257, R-43 Multi Family x202
@@ -35,7 +35,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Chesapeake: 3352 x62
   Winston-Salem: (units only) x1
   Newport News: A x237, C x4, (units only) x2, R x1
-  Raleigh: (units only) x1613
+  Raleigh: (units only) x1616
   Durham: (units only) x1
 
 Cities with parcels but NO multifamily found - their top use codes:
@@ -49,7 +49,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Chesapeake: learned code (no units): 62
   Winston-Salem: units>=10: 1
   Newport News: units>=10: 244
-  Raleigh: units>=10: 1,613
+  Raleigh: units>=10: 1,616
   Durham: units>=10: 1
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
