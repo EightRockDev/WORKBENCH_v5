@@ -191,6 +191,20 @@ rule). COR still has NO letter-format column - COR units merge by its own
 apn; if COR-vs-VGIN duplicate properties show up in backbone totals, the
 crosswalk (not more aliases) is the next move.
 
+### A frozen metric usually means a stale SCOPE, not a stale source (2026-08-13)
+The rent gate did not move when the owner added HUD_API_TOKEN: coverage was
+byte-identical (9.2%, 1,110 rows) across cycles. The token worked fine - the
+pull and stamp loops were still HR-only (7 counties) against a 15-city
+backbone. Two rules from this:
+  * When expanding city coverage, grep for `HR_CITY_TO_COUNTY_FIPS_5` - each
+    remaining use is a place the expansion silently stops. `CITY_TO_COUNTY_
+    FIPS_5` is the whole-backbone map; HR-only is now a deliberate choice
+    (HMDA still is), never a default.
+  * Freshness checks must test COVERAGE, not just age: `is_fresh(90d)` kept
+    an HR-era table authoritative forever. Any cached-source gate should ask
+    "does it contain everything I now map?" alongside "how old is it?".
+Identical gate numbers two days running = suspect the scope, not the feed.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

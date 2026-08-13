@@ -29,7 +29,7 @@ import sqlite3
 from pathlib import Path
 
 from core import etl_db
-from core.market_data import HR_CITY_TO_COUNTY_FIPS_5
+from core.market_data import CITY_TO_COUNTY_FIPS_5, HR_CITY_TO_COUNTY_FIPS_5
 
 # Autopilot runs this module OUTSIDE the app, where nothing else has
 # loaded .env - without this, HUD_API_TOKEN added to C:\WORKBENCH_V5\.env
@@ -241,13 +241,29 @@ def pull_hud_fmr(db_path: Path | None = None) -> int:
             pulled_by_us = bool(row and "in-workbench" in str(row[0]))
     except sqlite3.Error:
         pass
-    if is_fresh(db, "hud_fmr", days=90) and (not token or pulled_by_us):
+    # Freshness alone is not enough: a table pulled when the map held only
+    # the 7 HR counties stays "fresh" forever while every expansion metro
+    # has no FMR row at all (2026-08-13 - rent coverage frozen at 9.2%).
+    # A pull is also due whenever a mapped county is MISSING.
+    missing: set[str] = set()
+    try:
+        with sqlite3.connect(db) as _c:
+            have = {str(r[0]) for r in _c.execute(
+                "SELECT DISTINCT fips_county_5 FROM hud_fmr")}
+        missing = set(CITY_TO_COUNTY_FIPS_5.values()) - have
+    except sqlite3.Error:
+        pass
+    if (is_fresh(db, "hud_fmr", days=90) and (not token or pulled_by_us)
+            and not missing):
         # Say WHY in the report - "fresh - skipping" alone hid the real
         # question (is a token even visible?) during the 2026-07-31 debug.
         why = ("already pulled live with token" if pulled_by_us
                else "no HUD_API_TOKEN visible to this run")
         print(f"  [hud_fmr] fresh - skipping ({why})")
         return 0
+    if missing and token:
+        print(f"  [hud_fmr] {len(missing)} mapped county(ies) absent from "
+              "the table - pulling the full map")
     if not token:
         print("  [hud_fmr] HUD_API_TOKEN not set - skipping. Free token:")
         print("    https://www.huduser.gov/portal/dataset/fmr-api.html")
@@ -255,7 +271,10 @@ def pull_hud_fmr(db_path: Path | None = None) -> int:
         return 0
     year = dt.date.today().year
     rows = []
-    for fips5 in HR_CITY_TO_COUNTY_FIPS_5.values():
+    # Every mapped county (2026-08-13). Pulling only the 7 HR counties
+    # capped rent coverage at 9.2% of the backbone - the expansion
+    # metros had no FMR row to blend from.
+    for fips5 in dict.fromkeys(CITY_TO_COUNTY_FIPS_5.values()):
         data = None
         try:
             for entity in (f"{fips5}99999", fips5):

@@ -23,7 +23,7 @@ import sqlite3
 from pathlib import Path
 
 from core import etl_db
-from core.market_data import HR_CITY_TO_COUNTY_FIPS_5
+from core.market_data import CITY_TO_COUNTY_FIPS_5
 
 # Bedroom mix for a typical Hampton Roads garden community. Assessor rolls
 # carry no unit-mix data, so this is a fixed documented assumption:
@@ -189,7 +189,12 @@ def apply_rent_signal(spine_db: Path, etl_path: Path | None = None) -> int:
     updated = 0
     with sqlite3.connect(spine_db, timeout=60) as conn:
         ensure_rent_columns(conn)
-        for city, fips in HR_CITY_TO_COUNTY_FIPS_5.items():
+        # EVERY backbone city, not just Hampton Roads (2026-08-13): the
+        # backbone is 50-metro but this loop was still HR-only, so
+        # Richmond's 6,585 MF rows, Atlanta's 1,982 and Raleigh's 1,613
+        # could never receive an FMR estimate - rent coverage sat frozen
+        # at 9.2% no matter what the HUD pull returned.
+        for city, fips in CITY_TO_COUNTY_FIPS_5.items():
             est = blend.get(fips)
             if est is None:
                 continue

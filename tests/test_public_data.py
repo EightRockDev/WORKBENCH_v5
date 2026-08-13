@@ -111,7 +111,10 @@ def test_pull_hud_fmr_survives_wider_seeded_table(tmp_path, monkeypatch):
     monkeypatch.setattr(requests, "get", lambda url, **kw: _R())
     monkeypatch.setenv("HUD_API_TOKEN", "tok")
     n = pdta.pull_hud_fmr(db)
-    assert n == len(pdta.HR_CITY_TO_COUNTY_FIPS_5)
+    # Every mapped county, not just Hampton Roads (2026-08-13): the
+    # backbone is 50-metro, and an HR-only pull left the expansion
+    # metros with no FMR row to blend from.
+    assert n == len(set(pdta.CITY_TO_COUNTY_FIPS_5.values()))
     year = dt.date.today().year
     with sqlite3.connect(db) as conn:
         live = conn.execute(
@@ -126,3 +129,42 @@ def test_pull_hud_fmr_survives_wider_seeded_table(tmp_path, monkeypatch):
     assert live == (1500.0, None)     # extra column simply stays NULL
     assert seeded == (1300.0,)        # prior-year seed untouched
     assert "in-workbench" in stamp[0]  # next cycle skips as pulled-live
+
+
+def test_hud_fmr_pulls_when_a_mapped_county_is_missing(tmp_path, monkeypatch):
+    """Freshness must not mask incomplete coverage: a table pulled when the
+    map held only the HR counties stays 'fresh' for 90 days while every
+    expansion metro has no FMR row - which is exactly how rent coverage sat
+    frozen at 9.2% of the backbone (2026-08-13)."""
+    import sqlite3
+    from core import public_data as pdta
+    db = tmp_path / "etl.db"
+    with sqlite3.connect(db) as conn:
+        conn.execute("""CREATE TABLE hud_fmr (
+            fips_county_5 TEXT, year INTEGER, fmr_efficiency REAL,
+            fmr_one_bedroom REAL, fmr_two_bedroom REAL,
+            fmr_three_bedroom REAL, fmr_four_bedroom REAL)""")
+        for f in pdta.HR_CITY_TO_COUNTY_FIPS_5.values():   # HR only - stale scope
+            conn.execute("INSERT INTO hud_fmr VALUES (?,?,?,?,?,?,?)",
+                         (f, 2026, 1000, 1100, 1300, 1700, 2100))
+        pdta._stamp(conn, "hud_fmr", "HUD Fair Market Rents (in-workbench)",
+                    "u", 7)
+
+    class _R:
+        status_code = 200
+
+        def json(self):
+            return {"data": {"basicdata": {
+                "Efficiency": 1200, "One-Bedroom": 1300,
+                "Two-Bedroom": 1500, "Three-Bedroom": 1900,
+                "Four-Bedroom": 2300}, "year": 2026}}
+
+    import requests
+    monkeypatch.setattr(requests, "get", lambda url, **kw: _R())
+    monkeypatch.setenv("HUD_API_TOKEN", "tok")
+    n = pdta.pull_hud_fmr(db)
+    assert n == len(set(pdta.CITY_TO_COUNTY_FIPS_5.values()))
+    with sqlite3.connect(db) as conn:
+        have = {r[0] for r in conn.execute(
+            "SELECT DISTINCT fips_county_5 FROM hud_fmr")}
+    assert set(pdta.CITY_TO_COUNTY_FIPS_5.values()) <= have

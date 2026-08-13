@@ -12,6 +12,16 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.38.4.0.0 — 2026-08-13  ·  Rent coverage unfrozen: FMR follows the 50-metro backbone
+Rent coverage sat at exactly 9.2% (1,110 of 12,086 MF rows) no matter what
+the HUD pull returned, because BOTH the FMR pull and the stamp still looped
+`HR_CITY_TO_COUNTY_FIPS_5` (7 Hampton Roads counties) while the backbone is
+now 15 mapped cities. Richmond's 6,585 MF rows, Atlanta's 1,982 and
+Raleigh's 1,613 had no FMR row to blend from. Both loops now use
+`CITY_TO_COUNTY_FIPS_5`, and freshness no longer masks incomplete coverage:
+a pull is due whenever a mapped county is ABSENT from hud_fmr (otherwise the
+HR-era table stays "fresh" for 90 days and nothing ever backfills).
+
 ## V5.38.3.1.0 — 2026-08-12  ·  HOTFIX: Owner Intel crash on unpierced LLC owners
 `poc_records_role_check` didn't allow 'entity_unpierced' - the role the
 skip-trace pipeline assigns when an LLC owner can't be pierced - so Owner
