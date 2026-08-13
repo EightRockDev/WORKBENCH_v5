@@ -1,5 +1,6 @@
-autopilot publicdata @ 2026-08-13T08:17:33
+autopilot publicdata @ 2026-08-13T09:17:49
 
 ETL db: C:\WORKBENCH_V5\data\hampton_roads.db
   [hmda] fresh (pulled within 30 days) - skipping
-  [hud_fmr] fresh - skipping (already pulled live with token)
+  [hud_fmr] 8 mapped county(ies) absent from the table - pulling the full map
+  [hud_fmr] wrote 15 county rows
