@@ -1,245 +1,116 @@
 [
   {
-    "market": "Virginia Beach",
-    "state": "VA",
-    "county": "Virginia Beach",
+    "market": "Riverside",
+    "state": "CA",
+    "county": "Riverside",
     "kind": "assessor",
     "platform": "arcgis",
-    "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Residential_Address_Points_w_Housing_Structure/FeatureServer/0",
+    "url": "https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26",
     "status": "live",
-    "record_count": 177893,
+    "record_count": 62781,
+    "fields_mapped": [
+      "apn",
+      "assessed_value",
+      "owner_name",
+      "use_code"
+    ],
+    "is_subset": false,
+    "note": "auto-discovered: Vision_Plan_260727_WFL1; score 13; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; geo-verify inconclusive; 62,781 records"
+  },
+  {
+    "market": "Riverside",
+    "state": "CA",
+    "county": "Riverside",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/0",
+    "status": "live",
+    "record_count": 189,
     "fields_mapped": [
       "address",
       "apn",
-      "assessed_value",
-      "lat",
-      "lng",
+      "owner_name"
+    ],
+    "is_subset": false,
+    "note": "auto-discovered: Vision_Plan_260727_WFL1; score 1; fields ['address', 'apn', 'owner_name']; geo-verify inconclusive; ONLY 189 records - too small to be a full parcel roll, probably a subset or study extract"
+  },
+  {
+    "market": "Atlanta",
+    "state": "GA",
+    "county": "Atlanta",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Virginia_Highland_Focus_Area/FeatureServer/1",
+    "status": "live",
+    "record_count": 244,
+    "fields_mapped": [
+      "address",
+      "apn",
+      "owner_name",
+      "sqft",
+      "units",
       "use_code",
       "year_built",
       "zip"
     ],
     "is_subset": false,
-    "note": "auto-discovered: Residential_Address_Points_w_Housing_Structure/Residential Address Points w Housing Structure; score 16; fields ['address', 'apn', 'assessed_value', 'lat', 'lng', 'use_code', 'year_built', 'zip']; 177,893 records"
+    "note": "auto-discovered: Virginia Highland Focus Area; score 15; fields ['address', 'apn', 'owner_name', 'sqft', 'units', 'use_code', 'year_built', 'zip']; geo-verify inconclusive; ONLY 244 records - too small to be a full parcel roll, probably a subset or study extract"
   },
   {
-    "market": "Virginia Beach",
-    "state": "VA",
-    "county": "Virginia Beach",
+    "market": "Atlanta",
+    "state": "GA",
+    "county": "Atlanta",
     "kind": "assessor",
     "platform": "arcgis",
-    "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/SolarVector_PubLayers/FeatureServer/2",
+    "url": "https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Atlanta_Main_Street_District_Boundaries/FeatureServer/1",
     "status": "live",
-    "record_count": 177259,
-    "fields_mapped": [
-      "apn",
-      "assessed_value",
-      "year_built"
-    ],
-    "is_subset": true,
-    "note": "auto-discovered: SolarVector_PubLayers/Radiation Energy Production; score 5; fields ['apn', 'assessed_value', 'year_built']; 177,259 records; NAMED as a subset - demoted"
-  },
-  {
-    "market": "Chesapeake",
-    "state": "VA",
-    "county": "Chesapeake",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0",
-    "status": "live",
-    "record_count": 110293,
+    "record_count": 224,
     "fields_mapped": [
       "address",
       "apn",
-      "city",
-      "units",
-      "use_code",
-      "zip"
-    ],
-    "is_subset": false,
-    "note": "auto-discovered: Accela_base_map_pro/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 110,293 records"
-  },
-  {
-    "market": "Chesapeake",
-    "state": "VA",
-    "county": "Chesapeake",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0",
-    "status": "live",
-    "record_count": 116460,
-    "fields_mapped": [
-      "address",
-      "apn",
-      "city",
-      "units",
-      "use_code",
-      "zip"
-    ],
-    "is_subset": false,
-    "note": "auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,460 records"
-  },
-  {
-    "market": "Chesapeake",
-    "state": "VA",
-    "county": "Chesapeake",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
-    "status": "live",
-    "where": "FIPS = '51550'",
-    "record_count": 92461,
-    "note": "geometry supplement; VGIN statewide fallback: FIPS = '51550'; 92,461 records; fields ['apn']"
-  },
-  {
-    "market": "Hampton",
-    "state": "VA",
-    "county": "Hampton",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
-    "status": "live",
-    "where": "FIPS = '51650'",
-    "record_count": 51803,
-    "note": "VGIN statewide fallback: FIPS = '51650'; 51,803 records; fields ['apn']"
-  },
-  {
-    "market": "Hampton",
-    "state": "VA",
-    "county": "Hampton",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44",
-    "status": "live",
-    "record_count": 703,
-    "fields_mapped": [
-      "address",
-      "apn",
-      "assessed_value",
-      "city",
-      "lat",
-      "lng",
-      "use_code",
-      "year_built"
-    ],
-    "is_subset": true,
-    "note": "auto-discovered: CZM_Hampton_Data; score 0; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 703 records - too small to be a full parcel roll, probably a subset or study extract; NAMED as a subset - demoted"
-  },
-  {
-    "market": "Portsmouth",
-    "state": "VA",
-    "county": "Portsmouth",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3",
-    "status": "live",
-    "record_count": 36464,
-    "fields_mapped": [
-      "address",
-      "apn",
-      "assessed_value",
-      "city",
       "owner_name",
       "sqft",
+      "units",
       "use_code",
+      "year_built",
       "zip"
     ],
     "is_subset": false,
-    "note": "auto-discovered: Parcels; score 16; fields ['address', 'apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'zip']; 36,464 records"
+    "note": "auto-discovered: Atlanta Main Street District Boundaries; score 15; fields ['address', 'apn', 'owner_name', 'sqft', 'units', 'use_code', 'year_built', 'zip']; geo-verify inconclusive; ONLY 224 records - too small to be a full parcel roll, probably a subset or study extract"
   },
   {
-    "market": "Portsmouth",
-    "state": "VA",
-    "county": "Portsmouth",
+    "market": "Raleigh",
+    "state": "NC",
+    "county": "Raleigh",
     "kind": "assessor",
     "platform": "arcgis",
-    "url": "https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3",
+    "url": "https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/RaleighWV_Service/FeatureServer/0",
     "status": "live",
-    "record_count": 36241,
+    "record_count": 61217,
     "fields_mapped": [
       "address",
       "apn",
-      "assessed_value",
-      "owner_name",
-      "sqft",
-      "use_code",
-      "zip"
+      "use_code"
     ],
     "is_subset": false,
-    "note": "auto-discovered: Parcels_Real_Estate_View; score 16; fields ['address', 'apn', 'assessed_value', 'owner_name', 'sqft', 'use_code', 'zip']; 36,241 records"
+    "note": "auto-discovered: RaleighWV_Service; score 13; fields ['address', 'apn', 'use_code']; geo-verify inconclusive; 61,217 records"
   },
   {
-    "market": "Portsmouth",
-    "state": "VA",
-    "county": "Portsmouth",
+    "market": "Raleigh",
+    "state": "NC",
+    "county": "Raleigh",
     "kind": "assessor",
     "platform": "arcgis",
-    "url": "https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0",
+    "url": "https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/Raleigh_Precinct_Data/FeatureServer/6",
     "status": "live",
-    "where": "FIPS = '51740'",
-    "record_count": 36615,
-    "note": "geometry supplement; VGIN statewide fallback: FIPS = '51740'; 36,615 records; fields ['apn']"
-  },
-  {
-    "market": "Suffolk",
-    "state": "VA",
-    "county": "Suffolk",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificates/MapServer/1",
-    "status": "live",
-    "record_count": 5823,
+    "record_count": 61157,
     "fields_mapped": [
       "address",
       "apn",
-      "assessed_value",
-      "city",
-      "use_code",
-      "year_built"
+      "use_code"
     ],
-    "is_subset": true,
-    "note": "auto-discovered: ElevationCertificates/Elevation Certificates - Parcels; score 10; fields ['address', 'apn', 'assessed_value', 'city', 'use_code', 'year_built']; 5,823 records; NAMED as a subset - demoted"
-  },
-  {
-    "market": "Suffolk",
-    "state": "VA",
-    "county": "Suffolk",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1",
-    "status": "live",
-    "record_count": 5775,
-    "fields_mapped": [
-      "address",
-      "apn",
-      "assessed_value",
-      "city",
-      "lat",
-      "lng",
-      "use_code",
-      "year_built"
-    ],
-    "is_subset": true,
-    "note": "auto-discovered: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88); score 10; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; 5,775 records; NAMED as a subset - demoted"
-  },
-  {
-    "market": "Norfolk",
-    "state": "VA",
-    "county": "Norfolk",
-    "kind": "assessor",
-    "platform": "socrata",
-    "url": "https://data.norfolk.gov/resource/ykcq-76im.json",
-    "status": "live",
-    "note": "auto-discovered (socrata): Better Buildings Challenge Properties; score 17; fields ['address', 'apn', 'lat', 'lng', 'sqft', 'use_code', 'year_built']"
-  },
-  {
-    "market": "Norfolk",
-    "state": "VA",
-    "county": "Norfolk",
-    "kind": "assessor",
-    "platform": "socrata",
-    "url": "https://data.norfolk.gov/resource/yvpm-8aid.json",
-    "status": "live",
-    "note": "auto-discovered (socrata): Property Assessment and Sales - FY23; score 12; fields ['apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'year_built', 'zip']; geo-verify inconclusive"
+    "is_subset": false,
+    "note": "auto-discovered: Raleigh_Precinct_Data; score 13; fields ['address', 'apn', 'use_code']; geo-verify inconclusive; 61,157 records"
   },
   {
     "market": "Richmond",
@@ -270,5 +141,44 @@
     ],
     "is_subset": true,
     "note": "auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records; NAMED as a subset - demoted"
+  },
+  {
+    "market": "Houston",
+    "state": "TX",
+    "county": "Houston",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/5",
+    "status": "live",
+    "record_count": 68166,
+    "fields_mapped": [
+      "apn",
+      "lat",
+      "lng",
+      "use_code",
+      "zip"
+    ],
+    "is_subset": false,
+    "note": "auto-discovered: North Houston REPI 2_0_WFL1; score 11; fields ['apn', 'lat', 'lng', 'use_code', 'zip']; geo-verify inconclusive; 68,166 records"
+  },
+  {
+    "market": "Houston",
+    "state": "TX",
+    "county": "Houston",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3",
+    "status": "live",
+    "record_count": 304,
+    "fields_mapped": [
+      "address",
+      "apn",
+      "lat",
+      "lng",
+      "use_code",
+      "zip"
+    ],
+    "is_subset": false,
+    "note": "auto-discovered: North Houston REPI 2_0_WFL1; score 3; fields ['address', 'apn', 'lat', 'lng', 'use_code', 'zip']; geo-verify inconclusive; ONLY 304 records - too small to be a full parcel roll, probably a subset or study extract"
   }
 ]
