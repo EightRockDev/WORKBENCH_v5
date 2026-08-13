@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-12T18:17:55
+autopilot pull @ 2026-08-12T20:17:00
 
 QUARRIE muni-data ETL — 2026-08-12
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -27,19 +27,30 @@ QUARRIE muni-data ETL — 2026-08-12
   [OK] Atlanta/assessor                        171156 records
   [fresh] Atlanta/assessor: pulled within 3 days - keeping 373,307 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        373307 records
+  [fresh] Nashville/assessor+sales: pulled within 3 days - keeping 286,871 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/assessor+sales                286871 records
+  [fresh] Nashville/permits: pulled within 3 days - keeping 28,567 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/permits                        28567 records
   [fresh] Norfolk/assessor+sales: pulled within 3 days - keeping 74,359 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor+sales                   74359 records
+  [fresh] Norfolk/permits: pulled within 3 days - keeping 125,305 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/permits                         125305 records
+  [fresh] Virginia Beach/permits: pulled within 3 days - keeping 104,315 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/permits                  104315 records
+  [fresh] Newport News/assessor+sales: pulled within 3 days - keeping 54,440 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Newport News/assessor+sales              54440 records
   [ERR] Richmond/assessor+sales                403 Client Error: Forbidden for url: https://data.richmondgov.com/resource/vm9j-9f88.json?%24limit=50000&%24offset=0&%24order=%3Aid
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,590 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92590 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 244 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           244 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 224 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           224 records
+  [fresh] Raleigh/assessor: pulled within 3 days - keeping 61,217 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor                         61217 records
+  [fresh] Raleigh/assessor: pulled within 3 days - keeping 61,157 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor                         61157 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 76,739 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                        76739 records
+  [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
