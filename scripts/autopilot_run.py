@@ -60,6 +60,7 @@ STEPS = (
     # its own user-scoped OAuth path; extracted facts land in deals AND as
     # muni_records kind='assessor-email' rows the spine merges per-parcel.
     ("inboxsync", ["scripts/run_inbox_sync.py"], "inbox-sync-latest.txt"),
+    ("expertise", ["scripts/run_expertise_publish.py"], "expertise-latest.txt"),
     # Per-city MF unit distribution (min/median/max) from the backbone -
     # answers unit-count questions in the morning stream (owner 2026-08-09).
     ("backbonestats", ["scripts/run_backbone_stats.py"], "backbone-stats-latest.txt"),
