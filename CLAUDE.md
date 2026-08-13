@@ -1805,3 +1805,4 @@ spreadsheet is a model, and a model that changes between downloads is broken.
 - Small, focused commits; reference the spec section/AC in the message.
 - Footer on every commit:
   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
+
