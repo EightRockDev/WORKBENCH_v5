@@ -1816,3 +1816,13 @@ spreadsheet is a model, and a model that changes between downloads is broken.
 - Footer on every commit:
   `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`
 
+
+## Standing rule — Inbox ? KB drop folder (owner directive 2026-08-11)
+
+Applies to every autopilot/analysis session that sweeps mail, on every run. Not optional.
+
+**Produce.** Sweep Gmail (bmccune@gmail.com) and O365 (Brian@eight-rock.com) for new deal mail; ingest to the KB; skip newsletters and non-deal mail. For EACH ingested email write one JSON file, filename = message id, shaped per `core/inbox/kb_drop.py`: keys `external_id`, `from_email`, `from_name`, `subject`, `received_at` (ISO 8601 with offset), `body` (plain text), plus optional `fields` object (`name`, `address`, `city`, `state`, `units`, `asking_price`, `cap_rate` — any subset) when deal facts are already extracted (curated, confidence 0.9). Dedupe on `external_id`.
+
+**Land.** `C:\WORKBENCH_V5\data\inbox_kb\` on the host. Lanes in order: (1) device-bridge grant on `C:\WORKBENCH_V5` then commit files into `data\inbox_kb\` — note the grant cannot be requested programmatically and cannot be added mid-session in a cloud task; (2) git intake lane — commit JSONs to `data/inbox_kb_intake/` on origin/main, `ingest_git_intake` V5.38.3.0.0+ lands them host-side; (3) if neither lane is live, package the JSONs and hand them to the owner as a file. Never leave records only in a session workspace.
+
+**Verify, every run.** Read `reports/inbox-sync-latest.txt` and report the counts in the run summary (files / records / ingested / linked / failed). Processed files move to `inbox_kb\processed\`. If mailbox connectors are unavailable to the session, say so plainly rather than skipping silently. Append delivery status to project doc `claude/inbox-kb-log.md`.
