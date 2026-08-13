@@ -1720,25 +1720,32 @@ def _render_verdict(
 # Top-level renderer
 # ---------------------------------------------------------------------------
 
+def build_seed_for(prop: dict[str, Any]):
+    """The asset-aware seed behind build_default_deal, with its evidence.
+
+    Surfaces that render the seeded numbers call this directly so they can
+    print the basis next to the field (core.deal_seed.seed_caption).
+    """
+    from core import deal_seed
+    return deal_seed.build_seed(prop)
+
+
 def build_default_deal(prop: dict[str, Any]) -> DealState:
     """Build a sensible default DealState from the property record.
 
     Shared by the Underwriting tab (when a property has no saved deal.json yet)
     and the Input tab's quick-start form, so the seeded first numbers are
-    identical no matter which surface creates the deal. Purchase price seeds off
-    a mid-range Class-C $/unit; NOI off the record's avg rent × class expense
-    ratio; everything else off the ratified config defaults.
+    identical no matter which surface creates the deal.
+
+    Price is ASSET-ANCHORED as of 2026-08-13 (owner ask): this parcel's own
+    recent sale, else the assessor's value, and only then the legacy market
+    $/unit - see core.deal_seed, which also reports WHICH basis it used so
+    the surfaces can say so inline. Everything else stays on the ratified
+    config defaults.
     """
-    units = prop.get("units")
-    ppu_default = 130_000  # mid-range Class C HR
-    default_pp = (units or 100) * ppu_default
-    avg_rent = prop.get("avg_rent") or 1500
-    gpr_est = (units or 100) * avg_rent * 12
-    er = config.EXPENSE_RATIOS.get(prop.get("asset_class") or "C", 0.45)
-    vac = config.VACANCY_DEFAULT
-    noi_est = gpr_est * (1 - vac) - gpr_est * er
+    seed = build_seed_for(prop)
     return DealState.model_validate({
-        "s-pp": default_pp, "s-noi": int(noi_est),
+        "s-pp": seed.purchase_price, "s-noi": int(seed.noi),
         "s-dp": int(config.DOWN_PAYMENT_DEFAULT * 100),
         "s-ir": int(config.INTEREST_RATE_DEFAULT * 100 * 10) / 10,
         "s-vac": int(config.VACANCY_DEFAULT * 100),
@@ -1768,7 +1775,14 @@ def render_underwriting(
         deal = load_deal(folder.path)
     if deal is None:
         deal = build_default_deal(prop)
-        st.warning("No saved dial yet — defaults derived from property record. Adjust sliders to save.")
+        # Name the anchor, don't just say "derived from property record"
+        # (owner ask 2026-08-13) - and keep the warning styling for a
+        # market placeholder, which is the seed most likely to mislead.
+        from core import deal_seed
+        _seed = build_seed_for(prop)
+        _msg = ("No saved dial yet — "
+                f"{deal_seed.seed_caption(_seed)} Adjust sliders to save.")
+        (st.info if _seed.is_anchored else st.warning)(_msg)
 
     # Load sources for T-12 inputs (if available)
     from data.property_io import load_sources

@@ -64,9 +64,16 @@ def render_input(prop: dict[str, Any], folder: PropertyFolder | None) -> None:
 
     with section_card("First numbers", icon="✏️"):
         if seeded:
-            st.info(
-                "No deal saved yet — the fields below are seeded from the "
-                "property record. Adjust and Save to create the deal.")
+            # Name the seed's BASIS inline (owner ask 2026-08-13): a seeded
+            # price used to be units x a fixed $/unit with nothing to
+            # distinguish it from a real number. An asset-anchored seed
+            # informs; a market placeholder warns.
+            from core import deal_seed
+            _seed = deal_seed.build_seed(prop)
+            _msg = ("No deal saved yet — the fields below are seeded from "
+                    f"the property record. {deal_seed.seed_caption(_seed)} "
+                    "Adjust and Save to create the deal.")
+            (st.info if _seed.is_anchored else st.warning)(_msg)
         with st.form("input_first_numbers"):
             c1, c2 = st.columns(2)
             with c1:

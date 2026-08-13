@@ -205,6 +205,16 @@ backbone. Two rules from this:
     "does it contain everything I now map?" alongside "how old is it?".
 Identical gate numbers two days running = suspect the scope, not the feed.
 
+### Seeded numbers must name their basis (owner ask 2026-08-13)
+Asked how price/NOI were populated on an untouched property, the honest
+answer was "a constant that looks like analysis": units x $130k, 100 units
+assumed when unknown, $1,500 rent fallback. The fix pattern, reusable for
+any future default: pick the best per-asset ANCHOR available (own sale ->
+assessor value -> market constant), return WHICH one was used alongside the
+number (core/deal_seed.DealSeed.price_basis), and have every surface render
+that basis next to the field - warning styling when the value is a market
+placeholder. A default nobody can trace is indistinguishable from data.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

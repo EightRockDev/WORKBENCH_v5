@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.39.0.0.0 — 2026-08-13  ·  Asset-aware deal seeding (owner ask)
+An untouched property seeded purchase price as `units x $130,000` - a fixed
+Class-C Hampton Roads $/unit that ignored assessed value, sale history and
+city, and assumed 100 units (a $13M seed) when the roll carried no count.
+NOI came off a flat $1,500 rent whenever the backbone had no estimate. The
+numbers looked like underwriting and were constants.
+
+`core/deal_seed.py` now anchors price to the best available evidence:
+  1. the parcel's own arm's-length sale within 7 years, trended +3%/yr
+     (junk $1/$10 deed transfers rejected),
+  2. else assessed value ÷ 0.85 assessment ratio,
+  3. else the legacy $/unit - explicitly labelled a MARKET PLACEHOLDER.
+Unknown unit counts now assume 24, not 100, and say so. Both surfaces
+(Input "First numbers", Underwriting dials) print the basis inline via
+`seed_caption()` - info styling when the seed is asset-anchored, warning
+styling when it is a placeholder - so a seed is never mistaken for
+analysis.
+
 ## V5.38.4.0.0 — 2026-08-13  ·  Rent coverage unfrozen: FMR follows the 50-metro backbone
 Rent coverage sat at exactly 9.2% (1,110 of 12,086 MF rows) no matter what
 the HUD pull returned, because BOTH the FMR pull and the stamp still looped
