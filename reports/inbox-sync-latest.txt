@@ -1,4 +1,4 @@
-autopilot inboxsync @ 2026-08-13T07:30:29
+autopilot inboxsync @ 2026-08-13T08:30:43
 
 [inbox-sync] KB drop (C:\WORKBENCH_V5\data\inbox_kb): 0 file(s), 0 record(s), 0 ingested, 0 linked to deals/properties, 0 failed
 [inbox-sync]   note: drop dir absent: C:\WORKBENCH_V5\data\inbox_kb (connector not writing yet)
