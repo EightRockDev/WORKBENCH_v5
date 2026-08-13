@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-13T08:18:17
+autopilot phase0 @ 2026-08-13T09:20:09
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,272,518
@@ -19,7 +19,7 @@ written to properties_8r:  2,329,711
 provisional (no-APN) ids:  1,361
 units derived from address points: 189  (skipped non-residential: 3,950)
 coords backfilled by address (multifamily): 208
-rent estimates stamped (HUD FMR blend): 1,110
+rent estimates stamped (HUD FMR blend): 12,086
 rents from scraped listings: 2
 unusable (no parcel/latlng): 0
 pruned from backbone (known < 10 units): 733,352  (full roll kept in parcel_index)
