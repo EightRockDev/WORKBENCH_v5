@@ -1,4 +1,4 @@
-autopilot inboxsync @ 2026-08-14T03:30:55
+autopilot inboxsync @ 2026-08-14T04:39:28
 
 [inbox-sync] KB drop (C:\WORKBENCH_V5\data\inbox_kb): empty - point the Cowork outlook-connector at this folder (one JSON per ingested email; see core/inbox/kb_drop.py docstring for the accepted shape)
 inbox-sync: no connected mailboxes (connect one in the app: Inbox tab -> Connect Microsoft 365)
