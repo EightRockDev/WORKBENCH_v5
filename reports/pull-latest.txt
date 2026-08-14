@@ -1,6 +1,6 @@
-autopilot pull @ 2026-08-13T23:17:09
+autopilot pull @ 2026-08-14T00:16:29
 
-QUARRIE muni-data ETL — 2026-08-13
+QUARRIE muni-data ETL — 2026-08-14
   discovered feeds loaded from data/feeds_extra.json: 10
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/0
