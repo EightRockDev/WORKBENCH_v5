@@ -31,7 +31,16 @@ param(
     [string]$BindAddress = "0.0.0.0",
     # Reuse the passcode already in .env without prompting. Used for the
     # SECOND colour so installing the pair asks once, not twice.
-    [switch]$KeepPasscode
+    [switch]$KeepPasscode,
+
+    # Run the service as a named account instead of SYSTEM. The reason this
+    # exists (owner, 2026-08-13): a machine Application Control policy blocks
+    # the SYSTEM service's interpreter with os error 4551, while the SAME app
+    # launched from the owner's own account runs fine. Handing the service
+    # that account is the fix that needs no policy change. Password is read
+    # interactively and passed to the Service Control Manager - never stored
+    # by us, never written to a file.
+    [string]$RunAsUser
 )
 $lanMode = ($BindAddress -eq "0.0.0.0")
 $ErrorActionPreference = "Stop"
@@ -262,8 +271,27 @@ Invoke-Nssm @("set", $svc, "AppRotateBytes", "10485760") | Out-Null
 # colour gets a SEPARATE dir: sharing one means both services can `uv run`
 # into the same tree at once during a swap and corrupt it mid-sync.
 Invoke-Nssm @("set", $svc, "AppEnvironmentExtra", ("UV_PROJECT_ENVIRONMENT=C:\ProgramData\EightRockWorkbench\venv-" + $Name)) | Out-Null
-Invoke-Nssm @("start", $svc) | Out-Null
-Write-Host "   Service installed and started."
+if ($RunAsUser) {
+    $cred = Get-Credential -UserName $RunAsUser `
+        -Message "Windows password for $RunAsUser (the account the service will run as)"
+    if (-not $cred) { throw "A password is required to run the service as $RunAsUser." }
+    $plain = $cred.GetNetworkCredential().Password
+    Invoke-Nssm @("set", $svc, "ObjectName", $RunAsUser, $plain) | Out-Null
+    # That account also needs its OWN uv environment: the ProgramData path
+    # below is what Application Control refuses to run.
+    Invoke-Nssm @("set", $svc, "AppEnvironmentExtra",
+                  ("UV_PROJECT_ENVIRONMENT=" + $env:LOCALAPPDATA +
+                   "\EightRockWorkbench\venv-" + $Name)) | Out-Null
+    Write-Host ("   Service will run as " + $RunAsUser + ".")
+}
+$rcStart = Invoke-Nssm @("start", $svc)
+if ($rcStart -ne 0) {
+    Write-Host ""
+    Write-Host "   !! The service did not start. Run this for the reason:" -ForegroundColor Yellow
+    Write-Host "      powershell -ExecutionPolicy Bypass -File deploy\windows\diagnose-service.ps1" -ForegroundColor Yellow
+} else {
+    Write-Host "   Service installed and started."
+}
 
 # --- 4. Firewall (LAN only) ----------------------------------------------
 $fwName = "Eight Rock Workbench (" + $Name + ")"

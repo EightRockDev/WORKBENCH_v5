@@ -85,3 +85,28 @@ def _cols(db) -> set:
         return {r[1] for r in conn.execute("PRAGMA table_info(properties_8r)")}
     finally:
         conn.close()
+
+
+def test_mailing_address_reaches_the_skiptrace_read_shape(tmp_path):
+    """End-to-end: backbone column -> data/db read shape -> the key the
+    skip-trace pipeline actually reads (prop["owner_address"], its S1 anchor
+    and S4 trace address). A column nobody surfaces is a column nobody uses."""
+    from data import db as dbmod
+    db = tmp_path / "wb.db"
+    conn = sqlite3.connect(db)
+    conn.executescript(phase0._SPINE_SCHEMA)
+    conn.execute(
+        "INSERT INTO properties_8r (property_id, fips, apn, address, city, "
+        "state, zip, units, owner_name, owner_address, provenance, built_at) "
+        "VALUES ('8R-T-1','51710','A1','1200 Ballentine Blvd','Norfolk','VA',"
+        "'23504',26,'CROSSROADS APTS LLC',"
+        "'PO Box 1234, Virginia Beach VA 23451','8r','x')")
+    conn.commit()
+    conn.row_factory = sqlite3.Row
+    raw = dict(conn.execute("SELECT * FROM properties_8r").fetchone())
+    conn.close()
+
+    shaped = dbmod._r8_to_legacy_shape(raw)
+    assert shaped["owner_address"] == "PO Box 1234, Virginia Beach VA 23451"
+    # ...and it is NOT the building, which is the whole point.
+    assert shaped["owner_address"] != shaped["address"]

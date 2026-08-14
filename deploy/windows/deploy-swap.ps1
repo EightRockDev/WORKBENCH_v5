@@ -69,7 +69,18 @@ foreach ($pair in @(@("WorkbenchBlue", 8501), @("WorkbenchGreen", 8502))) {
         continue
     }
     Write-Host ("[swap] restarting {0} (port {1})..." -f $name, $port)
-    Restart-Service -Name $name -Force
+    try {
+        Restart-Service -Name $name -Force -ErrorAction Stop
+    } catch {
+        # "Failed to start service" alone sent the owner into a 45-minute
+        # dig 45 minutes before an investor demo (2026-08-13). Name the
+        # cause here, and leave the other colour serving.
+        Write-Host ("[swap] {0} FAILED TO START: {1}" -f $name, $_.Exception.Message)
+        Write-Host "[swap] the other colour is untouched and still serving."
+        Write-Host "[swap] for the actual reason (and the remedy), run:"
+        Write-Host "[swap]   powershell -ExecutionPolicy Bypass -File deploy\windows\diagnose-service.ps1"
+        exit 1
+    }
     if (-not (Wait-Healthy $port)) {
         Write-Host ("[swap] {0} did NOT come healthy - stopping swap so the" -f $name)
         Write-Host "[swap] other color keeps serving. Investigate before rerunning."

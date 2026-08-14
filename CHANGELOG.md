@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.41.2.0.0 — 2026-08-14  ·  Blue/green: name the blocker, offer the fix
+Build-queue item 0 (zero-downtime deploys) has been silently unavailable: the
+SYSTEM services fail with `os error 4551` - a machine Application Control
+policy refuses the interpreter uv puts under C:\ProgramData, while the same
+app launched from the owner's account has run for weeks. The swap reported
+only "Failed to start service", which cost 45 minutes 45 minutes before an
+investor demo. Now: `deploy/windows/diagnose-service.ps1` reads the service
+state, ports and logs and names the cause plus both remedies;
+`install-lan-service.ps1 -RunAsUser <account>` runs the services as a trusted
+account (the no-policy-change fix); and deploy-swap.ps1 prints the real error
+and points at the diagnostic instead of a bare failure. Also: an end-to-end
+test that the owner mailing address reaches the skip-trace read shape.
+
 ## V5.41.1.0.0 — 2026-08-14  ·  Richmond: name the units-vs-values split
 The PTM_ID alias fix worked (join health 6,173 -> 76,715 of 76,976), but it
 merged the VALUE-bearing workbook with the VGIN parcels and left the COR layer
