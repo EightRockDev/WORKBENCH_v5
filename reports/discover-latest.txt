@@ -1,4 +1,4 @@
-autopilot discover @ 2026-08-14T01:00:04
+autopilot discover @ 2026-08-14T02:00:04
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
@@ -97,7 +97,7 @@ Hampton: 2 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
       VGIN statewide fallback: FIPS = '51650'; 51,803 records; fields ['apn']
    https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
-      auto-discovered: CZM_Hampton_Data; score 0; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; ONLY 703 records - too small to be a full parcel roll, probably a subset or study extract; NAMED as a subset - demoted
+      auto-discovered: CZM_Hampton_Data; score 0; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'owner_zip', 'use_code', 'year_built']; ONLY 703 records - too small to be a full parcel roll, probably a subset or study extract; NAMED as a subset - demoted
 
 Portsmouth: 3 candidate layer(s)
    https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
@@ -109,9 +109,9 @@ Portsmouth: 3 candidate layer(s)
 
 Suffolk: 2 candidate layer(s)
    https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificates/MapServer/1
-      auto-discovered: ElevationCertificates/Elevation Certificates - Parcels; score 10; fields ['address', 'apn', 'assessed_value', 'city', 'use_code', 'year_built']; 5,823 records; NAMED as a subset - demoted
+      auto-discovered: ElevationCertificates/Elevation Certificates - Parcels; score 10; fields ['address', 'apn', 'assessed_value', 'city', 'owner_zip', 'use_code', 'year_built']; 5,823 records; NAMED as a subset - demoted
    https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1
-      auto-discovered: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88); score 10; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'use_code', 'year_built']; 5,775 records; NAMED as a subset - demoted
+      auto-discovered: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88); score 10; fields ['address', 'apn', 'assessed_value', 'city', 'lat', 'lng', 'owner_zip', 'use_code', 'year_built']; 5,775 records; NAMED as a subset - demoted
 
 Norfolk: 2 candidate layer(s)
    https://data.norfolk.gov/resource/ykcq-76im.json
@@ -123,7 +123,7 @@ Richmond: 2 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
       VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']
    https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
-      auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_name', 'use_code']; 6,570 records; NAMED as a subset - demoted
+      auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_address', 'owner_city', 'owner_name', 'owner_state', 'owner_zip', 'use_code']; 6,570 records; NAMED as a subset - demoted
 
 Wrote 16 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
 NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.
