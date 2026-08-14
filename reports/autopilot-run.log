@@ -11253,3 +11253,5 @@ Checked 111 packages in 11ms
 [backbonestats] exit 0 -> backbone-stats-latest.txt
 [publish] pushed to GitHub
 [richmondreview] exit 1 -> richmond-review.txt
+[publish] pushed to GitHub
+[alerts] exit 0 -> alerts-latest.txt
