@@ -1,9 +1,19 @@
-autopilot arcgissales @ 2026-08-14T03:17:45
+autopilot arcgissales @ 2026-08-14T04:17:46
 
 [sales:Virginia Beach] fresh (<7d) - skip
-[sales:Norfolk] fresh (<3d) - skip
+[sales:Norfolk] FY stack sizes: FY19=74835, FY20=74898, FY21=74767, FY22=74659, FY23=74637, FY24=74520, FY25=74253, FY26=74311, FY27=74334 (total 671214)
+[sales:Norfolk] FY19: 72322 dated transfers (70615 unique so far)
+[sales:Norfolk] FY20: 72269 dated transfers (73704 unique so far)
+[sales:Norfolk] FY21: 72258 dated transfers (79739 unique so far)
+[sales:Norfolk] FY22: 72293 dated transfers (88450 unique so far)
+[sales:Norfolk] FY23: 72301 dated transfers (95309 unique so far)
+[sales:Norfolk] FY24: 72133 dated transfers (100541 unique so far)
+[sales:Norfolk] FY25: 71998 dated transfers (106034 unique so far)
+[sales:Norfolk] FY26: 72037 dated transfers (111809 unique so far)
+[sales:Norfolk] FY27: 72019 dated transfers (114824 unique so far)
+[sales:Norfolk] wrote 114824 unique (gpin,date) sale rows
 [sales:Chesapeake] fresh (<30d) - skip
 [sales:Richmond-parcels] fresh (<7d) - skip
 [sales:Richmond-files] fresh (<7d) - skip
 [sales:Chicago] fresh (<7d) - skip
-[sales] done: 0 rows across 6 source(s)
+[sales] done: 114824 rows across 6 source(s)
