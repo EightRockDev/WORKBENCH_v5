@@ -1,8 +1,5 @@
-autopilot publicdata @ 2026-08-14T16:17:22
+autopilot publicdata @ 2026-08-14T17:17:09
 
 ETL db: C:\WORKBENCH_V5\data\hampton_roads.db
-  [hmda] resolving 63 new LEIs via GLEIF...
-  [hmda]   25/63
-  [hmda]   50/63
-  [hmda] wrote 323 originations, 198 lender-summary rows
+  [hmda] fresh (pulled within 30 days) - skipping
   [hud_fmr] fresh - skipping (already pulled live with token)
