@@ -10908,3 +10908,5 @@ Checked 111 packages in 10ms
 [expertise] exit 0 -> expertise-latest.txt
 [publish] pushed to GitHub
 [backbonestats] exit 0 -> backbone-stats-latest.txt
+[publish] pushed to GitHub
+[richmondreview] exit 1 -> richmond-review.txt
