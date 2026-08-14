@@ -1,0 +1,17 @@
+autopilot rentbias @ 2026-08-14T11:35:31
+
+================================================================
+RENT BIAS — observed market rent vs the HUD FMR blend
+================================================================
+
+Observed (rent_source='listings') rows: 2
+
+-- Per-city ratio (observed ÷ FMR blend) --
+  Norfolk          n=   1  median= 0.94x   <- sample too small
+  Chesapeake       n=   1  median= 1.01x   <- sample too small
+
+-- Verdict --
+  No city clears n>=5. There is not enough
+  observed rent to justify a calibration factor yet, and
+  inventing one from thin data would move the gate without
+  improving a single estimate.
