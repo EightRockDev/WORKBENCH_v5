@@ -12,6 +12,14 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.42.0.1.0 — 2026-08-14  ·  Crosswalk scan reports even when it finds nothing
+Its first run printed nothing at all, which reads as "no problem" - the repo's
+own oldest lesson (a gap hidden looks like completeness). The silence actually
+meant the unit-bearing source maps no usable address either, which is a bigger
+finding than the one being hunted. Address coverage per source now always
+prints, and the no-address case gaps explicitly and names geometry
+(point-in-polygon off the COR feature service) as the remaining axis.
+
 ## V5.42.0.0.0 — 2026-08-14  ·  Why the rent gate is stuck: measure the FMR bias
 Rent coverage went 9.2% -> 100% and the rent-delta gate did not move (31.6%,
 171 pairs). That is the diagnosis, not a disappointment: the error is

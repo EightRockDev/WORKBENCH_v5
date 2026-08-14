@@ -240,9 +240,31 @@ def main() -> int:
                 d2["addrs"].add(a)
                 if m2.get("units"):
                     d2["units"].add(a)
+            # Report address coverage per source ALWAYS. The first run of
+            # this scan printed nothing at all, which reads as "no problem"
+            # when it actually meant "the unit-bearing source has no usable
+            # address either" - a bigger finding than the one being hunted.
+            print("  address coverage per source (usable normalized "
+                  "addresses / with units):")
+            for s2, d2 in sorted(addr_by_src.items(),
+                                 key=lambda kv: -len(kv[1]["addrs"])):
+                print(f"    {len(d2['addrs']):>7,} addrs  "
+                      f"{len(d2['units']):>7,} of them carry units   "
+                      f"{s2[:44]}")
+            if not addr_by_src:
+                print("    NONE - no Richmond assessor source maps an "
+                      "address at all")
             unit_src = max(addr_by_src.items(),
                            key=lambda kv: len(kv[1]["units"]),
                            default=(None, None))[0]
+            if not unit_src or not addr_by_src.get(unit_src, {}).get("units"):
+                gaps.append(
+                    "Units and values sit on different parcel-id schemes AND "
+                    "no unit-bearing source maps a usable address - so "
+                    "neither an alias nor an address crosswalk can bridge "
+                    "them. Next axis is geometry (the COR layer is an Esri "
+                    "feature service; its centroid can point-in-polygon onto "
+                    "the parcel layer). See the coverage lines above.")
             if unit_src and addr_by_src[unit_src]["units"]:
                 u_addrs = addr_by_src[unit_src]["units"]
                 print("  address-crosswalk candidates (the unit-bearing "
