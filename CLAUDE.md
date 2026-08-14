@@ -234,6 +234,21 @@ each build their own cash flow. They agree only because they all read
 DealState properties - so capital-stack logic belongs on the model, never in a
 tab. Three divergent builds is still the biggest structural risk in the app.
 
+### Fixing one join can strand another source (2026-08-14)
+The PTM_ID alias fix did exactly what it promised - and made Richmond WORSE on
+the metric the owner actually reads. Merging the workbook onto VGIN deduped
+179k parcels to 108k and dropped MF rows 249 -> 140, because the COR layer
+(the only source carrying unit counts) keys on a numeric parcel id that
+matches neither scheme. Values and units are now on opposite sides of a join
+that has no bridging attribute. Rules banked:
+  * A join fix changes which rows MERGE, so re-check every metric that counts
+    rows afterwards - totals, MF counts, unit coverage - not just the join
+    health number that motivated the change.
+  * When two sources carry disjoint id schemes and no attribute bridges them,
+    the answer is a crosswalk on a different axis (address, geometry), never
+    more aliases. Measure the candidate axis's real overlap first and gap on
+    the evidence; that is what turned the last guess into a fix.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

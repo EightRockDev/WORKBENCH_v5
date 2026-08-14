@@ -214,6 +214,56 @@ def main() -> int:
                     "their units/values enrich nothing. The alias-candidate "
                     "lines above name the raw attribute to alias in "
                     "core/phase0.py.")
+            # CROSSWALK EVIDENCE (2026-08-14). The COR layer holds every
+            # Richmond unit count (2,365 rows) but keys on a NUMERIC parcel
+            # id, while values + parcels now key on the letter PIN - so units
+            # cannot merge, MF collapsed to 140 rows and section 4 stays
+            # blocked. No COR attribute matches the workbook apn set (the
+            # alias scan above proves it), so the join has to be built on
+            # something else. Address is the candidate: measure the real
+            # overlap before writing any merge, exactly as the alias-candidate
+            # scan did before the PTM_ID fix.
+            from core.calibration import _norm_addr
+            addr_by_src: dict[str, dict] = {}
+            for src2, rec2 in conn.execute(
+                    "SELECT source_url, record FROM muni_records "
+                    "WHERE market='Richmond' AND kind LIKE 'assessor%'"):
+                raw2 = phase0._decode_muni_record(rec2)
+                if not raw2:
+                    continue
+                m2 = phase0.normalize_record("Richmond", "VA", raw2)
+                a = _norm_addr(m2.get("address"))
+                if not a:
+                    continue
+                d2 = addr_by_src.setdefault(src2 or "?",
+                                            {"addrs": set(), "units": set()})
+                d2["addrs"].add(a)
+                if m2.get("units"):
+                    d2["units"].add(a)
+            unit_src = max(addr_by_src.items(),
+                           key=lambda kv: len(kv[1]["units"]),
+                           default=(None, None))[0]
+            if unit_src and addr_by_src[unit_src]["units"]:
+                u_addrs = addr_by_src[unit_src]["units"]
+                print("  address-crosswalk candidates (the unit-bearing "
+                      f"source is {unit_src[:52]}, {len(u_addrs):,} parcels "
+                      "with units and a usable address):")
+                for s2, d2 in sorted(addr_by_src.items(),
+                                     key=lambda kv: -len(kv[1]["addrs"])):
+                    if s2 == unit_src:
+                        continue
+                    hit = len(u_addrs & d2["addrs"])
+                    pct = (100.0 * hit / len(u_addrs)) if u_addrs else 0.0
+                    print(f"    {hit:>6,} ({pct:4.1f}%) of unit-bearing "
+                          f"addresses also appear in {s2[:46]}")
+                gaps.append(
+                    "Richmond units and values sit on DIFFERENT parcel-id "
+                    "schemes (COR numeric vs letter PIN) and no attribute "
+                    "bridges them - see the address-crosswalk candidate lines "
+                    "above. A high overlap there is the go-ahead to merge COR "
+                    "units onto the value-bearing parcels by normalized "
+                    "address; a low one means the crosswalk needs geometry.")
+
             if per[files_src]["units"] == 0:
                 gaps.append(
                     "The rva.gov Public Data Set maps NO unit counts - "

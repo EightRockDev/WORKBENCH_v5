@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.41.1.0.0 — 2026-08-14  ·  Richmond: name the units-vs-values split
+The PTM_ID alias fix worked (join health 6,173 -> 76,715 of 76,976), but it
+merged the VALUE-bearing workbook with the VGIN parcels and left the COR layer
+- which holds every one of Richmond's 2,365 unit counts - stranded on its own
+NUMERIC parcel id. Net effect: MF rows fell 249 -> 140 and section 4 taxes
+stay blocked despite 76,765 assessed values being on hand. No COR attribute
+matches the workbook apn set (the alias scan proves it), so the bridge has to
+be built on something else. richmondreview now measures normalized-ADDRESS
+overlap between the unit-bearing source and every other source, and gaps with
+that evidence - the same evidence-before-merge pattern that produced the
+PTM_ID fix rather than a guess.
+
 ## V5.41.0.0.0 — 2026-08-13  ·  Owner MAILING address captured (free skip-trace input)
 Found while researching skip-trace vendors: core/skiptrace/pipeline.py anchors
 on prop["owner_address"] and calls it "the best" trace input (S1/S4) - but
