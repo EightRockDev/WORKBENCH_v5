@@ -11602,3 +11602,5 @@ Checked 111 packages in 11ms
 [pendingusers] exit 0 -> pending-users-latest.txt
 [publish] pushed to GitHub
 [inboxsync] exit 0 -> inbox-sync-latest.txt
+[publish] pushed to GitHub
+[expertise] exit 0 -> expertise-latest.txt
