@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.42.0.0.0 — 2026-08-14  ·  Why the rent gate is stuck: measure the FMR bias
+Rent coverage went 9.2% -> 100% and the rent-delta gate did not move (31.6%,
+171 pairs). That is the diagnosis, not a disappointment: the error is
+SYSTEMATIC, not missing data. HUD FMR is a 40th-percentile subsidy benchmark
+that sits structurally below market asking rent, so stamping more of it cannot
+close a gap it creates. New autopilot step `rentbias` measures the real
+observed-over-FMR ratio per city and reports whether it is stable enough to
+calibrate on. It deliberately does NOT apply a factor: the evidence comes from
+scraped listings, INDEPENDENT of the legacy survey rents the gate scores,
+because fitting a factor on the numbers being graded would move the gate
+without improving one estimate. Cities under n=5 are named unusable rather
+than folded into an average.
+
 ## V5.41.2.0.0 — 2026-08-14  ·  Blue/green: name the blocker, offer the fix
 Build-queue item 0 (zero-downtime deploys) has been silently unavailable: the
 SYSTEM services fail with `os error 4551` - a machine Application Control

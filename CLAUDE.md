@@ -249,6 +249,22 @@ that has no bridging attribute. Rules banked:
     more aliases. Measure the candidate axis's real overlap first and gap on
     the evidence; that is what turned the last guess into a fix.
 
+### A gate that ignores a 10x data improvement is measuring bias (2026-08-14)
+Rent coverage went 9.2% -> 100% overnight and the rent-delta gate did not move
+a single basis point. The instinct is "need more data"; the truth was the
+opposite - every new row carried the SAME systematic error, because HUD FMR is
+a 40th-percentile subsidy benchmark and the gate scores it against market
+rent. More of a biased estimator cannot reduce bias. Rules banked:
+  * When a metric is flat across a large change in input volume, stop adding
+    volume and go measure the bias. Flatness under 10x more data is a
+    signature, not noise.
+  * Calibrate against a source INDEPENDENT of the one the gate scores. Here:
+    fit on scraped listings, grade against the legacy survey. Fitting on the
+    graded numbers moves the gate without improving any estimate - and every
+    such gate is one somebody will eventually trust in an IC memo.
+  * Measure, report, and only then apply. Three times this week that order
+    turned a guess into a fix (PTM_ID aliases, Richmond crosswalk, this).
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

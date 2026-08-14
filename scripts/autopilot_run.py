@@ -51,6 +51,12 @@ STEPS = (
     # sales pullers so freshly pulled sales are indexed the same cycle.
     ("saleindex", ["scripts/run_sale_index.py"], "sale-index-latest.txt"),
     ("phase0", ["scripts/run_phase0.py"], "phase0-latest.txt"),
+    # Why the rent-delta gate is stuck (2026-08-14): coverage went 9.2% ->
+    # 100% and the delta did not move, because HUD FMR is a 40th-percentile
+    # subsidy benchmark that sits structurally BELOW market. Measures the
+    # bias from observed listings - an independent source from the one the
+    # gate scores - and reports whether it is stable enough to calibrate on.
+    ("rentbias", ["scripts/measure_rent_bias.py"], "rent-bias-latest.txt"),
     ("validate", ["scripts/run_validate.py"], "validate-latest.txt"),
     # Pending-approval queue -> report stream (owner directive 2026-08-09:
     # surface new users waiting for approval every morning).
