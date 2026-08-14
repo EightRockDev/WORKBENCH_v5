@@ -473,19 +473,70 @@ def _render_dials(
             unsafe_allow_html=True,
         )
 
-    # LP equity raise — defaults to down-payment dollars. Number input
-    # lets Brian type exact figures (e.g. $1,250,000 if including reserves).
-    default_raise = pp * (dp / 100.0)
-    current_raise = int(deal.raise_amount) if deal.raise_amount else int(default_raise)
-    raise_amount = st.number_input(
-        f"LP equity raise — defaults to the down payment (${default_raise:,.0f})",
-        min_value=0,
-        value=current_raise,
-        step=5_000,
-        key=f"dial_raise_input_{pid}",
-        help="Type exact LP raise amount, or step by $5,000 with ↑/↓.",
+    # --- One-time uses at close (owner items 6 + 7, 2026-08-13) ----------
+    # Excluded from NOI, cap rate and loan sizing - these are capital uses.
+    st.markdown(
+        f'<div style="margin-top:8px;color:{c["tx2"]};font-size:11px;'
+        f'text-transform:uppercase;letter-spacing:0.7px;font-weight:600">'
+        f'One-time at close — not in NOI</div>',
+        unsafe_allow_html=True,
     )
-    st.caption(f"**${int(raise_amount):,}**")
+    fee_c1, fee_c2 = st.columns(2)
+    with fee_c1:
+        closing_costs = st.number_input(
+            "Closing costs ($)", min_value=0,
+            value=int(deal.closing_costs), step=5_000,
+            key=f"dial_closing_{pid}",
+            help="Funded by the equity raise, so it raises LP invested "
+                 "capital and lowers LP IRR / equity multiple / CoC. "
+                 "Never touches NOI, cap rate or loan sizing.")
+    with fee_c2:
+        gp_fee = st.number_input(
+            "GP acquisition fee ($)", min_value=0,
+            value=int(deal.gp_fee), step=5_000,
+            key=f"dial_gpfee_{pid}",
+            help="Charged to the project (lowers project IRR and "
+                 "return-on-cost) but excluded from LP invested capital, "
+                 "so LP IRR / EM / CoC are not penalised. Never in NOI.")
+
+    # LP equity raise. TRACKS the dials (down payment + closing costs)
+    # until the analyst deliberately overrides it - owner decision
+    # 2026-08-13. The old code inferred "custom" from `raise_amount is not
+    # None`, and a keyed number_input keeps its own state across reruns, so
+    # the first dial move silently pinned the raise and every later IRR was
+    # computed against a frozen denominator (item 8).
+    tracked_raise = pp * (dp / 100.0) + float(closing_costs)
+    raise_key = f"dial_raise_input_{pid}"
+    override = st.checkbox(
+        "Override LP equity raise",
+        value=bool(deal.raise_is_custom),
+        key=f"dial_raise_custom_{pid}",
+        help="Off: the raise follows the down payment + closing costs, so "
+             "the model stays a pure function of the dials. On: type an "
+             "exact figure (e.g. extra for reserves) and it stays put.")
+    if not override:
+        # A keyed widget ignores `value=` after first registration, so
+        # tracking has to WRITE session state before the widget renders.
+        st.session_state[raise_key] = int(round(tracked_raise))
+    raise_amount = st.number_input(
+        f"LP equity raise — tracking the dials (${tracked_raise:,.0f})"
+        if not override else "LP equity raise ($) — overridden",
+        min_value=0,
+        value=int(round(tracked_raise)) if raise_key not in st.session_state
+        else st.session_state[raise_key],
+        step=5_000,
+        key=raise_key,
+        disabled=not override,
+        help="Type an exact LP raise amount, or step by $5,000 with ↑/↓.",
+    )
+    if not override:
+        raise_amount = tracked_raise
+    st.caption(
+        f"**${int(raise_amount):,}**"
+        + ("" if override else
+           f"  ·  down payment ${pp * (dp / 100.0):,.0f}"
+           + (f" + closing ${float(closing_costs):,.0f}"
+              if closing_costs else "")))
 
     # Post-sale expense adjustments (Beardsley) — surface as a small
     # toggle row so the analyst sees what's being applied to year-1 opex.
@@ -580,7 +631,14 @@ def _render_dials(
         "vac": float(vac), "rg": float(rg), "eg": float(eg), "xc": float(xc),
         "hp": int(hp), "am": int(config.AMORT_YEARS), "io": int(io),
         "amf": float(amf),
-        "raise_amount": raise_amount if raise_amount != int(default_raise) else None,
+        # Persist the OVERRIDE FLAG, never a value-comparison guess. The old
+        # `raise_amount if raise_amount != int(default_raise) else None` was
+        # the item-8 bug: a stale keyed widget made that condition true on
+        # the first dial move and pinned the denominator for good.
+        "raise_is_custom": bool(override),
+        "raise_amount": float(raise_amount) if override else None,
+        "closing_costs": float(closing_costs),
+        "gp_fee": float(gp_fee),
         "vacancy_source": new_vacancy_source,
         "tax_reassessment_on": bool(tax_reassess),
         "insurance_escalator_on": bool(ins_esc),
@@ -615,6 +673,19 @@ def _render_dials(
         # infinite fade loop — keep the rerun scoped to folder creation.
         if created_folder:
             st.rerun()
+        else:
+            # ...but the HEADLINE is not below - it is the V2 stat bar and
+            # inspector, rendered in app.py BEFORE this tab body and
+            # computed from deal.json on disk (item 5, 2026-08-13: "enter a
+            # figure, the headline doesn't update"). One rerun after a
+            # successful save is what lets it read the value just written.
+            # Guarded by a signature so it fires ONCE per distinct saved
+            # state - an unguarded rerun here is what caused the historical
+            # infinite fade loop.
+            sig = new_deal.model_dump_json(by_alias=True)
+            if st.session_state.get("_headline_sig") != sig:
+                st.session_state["_headline_sig"] = sig
+                st.rerun()
 
     return new_deal
 
@@ -740,9 +811,16 @@ def _kpi_tile(
     val_color = value_color or c["tx"]
     border_left = f"border-left:3px solid {accent};" if accent else ""
     val_size = "32px" if big else "24px"
+    # The footnote row ALWAYS renders, empty or not (owner item 9,
+    # 2026-08-13). The tile is a fixed-height flex column with
+    # justify-content:space-between, so a tile with no footnote had two
+    # children instead of three and its value floated to the bottom while
+    # its neighbours' values sat mid-tile - which is exactly how "Price /
+    # Unit" and "LP Equity Raise" ended up out of line. A non-breaking
+    # space keeps the third child's height without printing anything.
     target_html = (
-        f'<div style="color:{c["tx3"]};font-size:10px;margin-top:2px">{target}</div>'
-        if target else ""
+        f'<div style="color:{c["tx3"]};font-size:10px;margin-top:2px">'
+        f'{target or "&nbsp;"}</div>'
     )
     return (
         f'<div style="background:{c["bg3"]};border:1px solid {c["bdr"]};'
@@ -824,9 +902,14 @@ def _render_metrics(
     # Headline metrics
     cap = cap_rate(deal.noi, deal.pp)
     stabilized_noi = max(r.noi for r in cf.rows) if cf.rows else deal.noi
-    roc = return_on_cost(stabilized_noi, deal.pp)  # Eight Rock: basis = pp until capex tracking added
+    # Return-on-cost basis is ALL-IN (price + closing + GP fee) as of
+    # 2026-08-13 - a yield on cost that ignores the cost of closing flatters
+    # the deal. Cap rate stays on price alone (market convention).
+    roc = return_on_cost(stabilized_noi, deal.total_uses)
+    # Project IRR is charged the GP fee (owner decision 2026-08-13); LP-side
+    # metrics below use deal.equity_raise, which excludes it.
     irr_v = project_irr(
-        equity_raise=deal.equity_raise,
+        equity_raise=deal.project_equity,
         annual_cashflows=[r.cash_flow for r in cf.rows],
         exit_proceeds_net=cf.exit_proceeds_net,
     )

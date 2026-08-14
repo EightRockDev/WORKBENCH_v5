@@ -43,7 +43,14 @@ def render_outreach(prop: dict | None = None) -> None:
         return
 
     can_send = perms is None or perms.can("send_outreach")
-    _render_sweep_queue()
+    # Same failure mode as Owner Intelligence above (2026-08-13): unguarded
+    # DB work here crashed the whole Market tab, not just this panel.
+    try:
+        _render_sweep_queue()
+    except Exception as e:
+        st.error("Outreach queue unavailable — the rest of the page is "
+                 f"unaffected. Detail for the log: {type(e).__name__}: {e}")
+        return
     tabs = st.tabs(["☎️ Call list", "✉️ Direct mail", "🧾 Audit log", "🚫 Opt-outs"])
 
     with tabs[0]:

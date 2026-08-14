@@ -53,6 +53,15 @@ def render_owner_intel(prop: dict | None) -> None:
         st.info("This property has no owner-of-record to anchor on.")
         return
 
+    import os
+    _demo = os.environ.get("ER_SKIPTRACE_PROVIDERS", "mock").lower() != "live"
+    if _demo:
+        st.warning(
+            "**Demo mode** — no skip-trace vendor keys are configured, so "
+            "any names, phones and emails below are realistic placeholders, "
+            "not real contact data. Set `ER_SKIPTRACE_PROVIDERS=live` plus "
+            "vendor keys for real traces.", icon="🧪")
+
     typ, worst = pipeline.estimate_cost(prop)
     can_run = not isinstance(perms, Permissions) or perms.can("run_skiptrace")
 
@@ -118,7 +127,12 @@ def render_owner_intel(prop: dict | None) -> None:
                      "the page is unaffected. Detail for the log: "
                      f"{type(e).__name__}: {e}")
 
-    pocs = pipeline.load_pocs(org_id, prop_id)
+    try:
+        pocs = pipeline.load_pocs(org_id, prop_id)
+    except Exception as e:
+        st.error("Could not read saved contacts — the rest of the page is "
+                 f"unaffected. Detail for the log: {type(e).__name__}: {e}")
+        return
     if not pocs:
         st.caption("No contacts resolved yet — click **Resolve Contacts**.")
         return

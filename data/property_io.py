@@ -122,6 +122,32 @@ class DealState(BaseModel):
             "Brian can raise extra for closing/capex/reserves."
         ),
     )
+    # Whether raise_amount is a DELIBERATE override (owner decision
+    # 2026-08-13: "track the dials until I override it"). Before this flag,
+    # `raise_amount is not None` was the only signal - and the dial widget
+    # silently wrote a value on the first dial move, pinning the raise
+    # forever. That is what made slider A->B->A return a DIFFERENT IRR:
+    # the dials came back, the denominator did not.
+    raise_is_custom: bool = Field(
+        False, alias="s-raise-custom",
+        description=("True only when the analyst typed an LP raise. False = "
+                     "the raise tracks the dials (down payment + closing "
+                     "costs)."))
+    # --- one-time uses at close (2026-08-13, owner items 6 + 7) ---------
+    # Both are EXCLUDED from NOI, cap rate and loan sizing - they are
+    # capital uses, not operations.
+    gp_fee: float = Field(
+        0.0, alias="s-gpfee", ge=0,
+        description=("One-time GP / sponsor acquisition fee (dollars) paid "
+                     "at close. Owner decision 2026-08-13: charged to the "
+                     "PROJECT but excluded from LP invested capital - it "
+                     "depresses project IRR and return-on-cost, not LP IRR, "
+                     "equity multiple or CoC."))
+    closing_costs: float = Field(
+        0.0, alias="s-closing", ge=0,
+        description=("One-time closing costs (dollars). Owner decision "
+                     "2026-08-13: funded by the equity raise, so they raise "
+                     "LP invested capital and depress LP IRR / EM / CoC."))
     vacancy_source: str = Field(
         "record",
         description=(
@@ -260,15 +286,67 @@ class DealState(BaseModel):
         return self.pp * (1.0 - self.down_payment_frac)
 
     @property
-    def equity_raise(self) -> float:
-        """LP equity raise. Falls back to down-payment dollars if not explicit.
-
-        Per Brian's 2026-05-06 convention: this is the denominator in CoC,
-        project IRR, LP IRR, and equity multiple — NOT the down payment alone.
-        """
-        if self.raise_amount is not None and self.raise_amount > 0:
-            return self.raise_amount
+    def down_payment_dollars(self) -> float:
+        """The down payment itself — price × dp%, no fees."""
         return self.pp * self.down_payment_frac
+
+    @property
+    def tracked_raise(self) -> float:
+        """What the LP raise is when it TRACKS the dials: the down payment
+        plus the closing costs the equity has to fund (owner decision
+        2026-08-13). A pure function of the dials - that is the property
+        that makes A->B->A reproduce."""
+        return self.down_payment_dollars + self.closing_costs
+
+    @property
+    def equity_raise(self) -> float:
+        """LP invested capital — the denominator for LP IRR, equity
+        multiple and cash-on-cash.
+
+        Per Brian's 2026-05-06 convention this is NOT the down payment
+        alone. As of 2026-08-13 it tracks the dials (down payment +
+        closing costs) UNLESS the analyst explicitly overrode it, which
+        `raise_is_custom` records. The GP fee is deliberately absent: the
+        owner's 2026-08-13 call is that the sponsor's acquisition fee sits
+        outside LP invested capital.
+        """
+        if self.raise_is_custom and self.raise_amount and self.raise_amount > 0:
+            return self.raise_amount
+        return self.tracked_raise
+
+    @property
+    def total_uses(self) -> float:
+        """All-in capitalisation at close: price + closing costs + GP fee.
+        The basis for return-on-cost. NOT the loan basis - debt is still
+        sized off the purchase price alone."""
+        return self.pp + self.closing_costs + self.gp_fee
+
+    @property
+    def project_equity(self) -> float:
+        """Total equity deployed at close, including the GP fee. This is
+        the year-0 outflow for PROJECT IRR; LP-level metrics use
+        `equity_raise` instead."""
+        return self.equity_raise + self.gp_fee
+
+    @model_validator(mode="after")
+    def _migrate_legacy_raise(self):
+        """Classify a pre-2026-08-13 `raise_amount` as tracking or custom.
+
+        Old files carry no `raise_is_custom`, and most non-null values were
+        written by the pinning bug rather than typed by a human. Marking
+        them all custom would launder that corruption into permanence. A
+        value that matches what the dials imply (within $1k or 1%) is
+        therefore treated as a pinned copy and released back to tracking;
+        anything materially different was a real human decision and is
+        kept as an override.
+        """
+        if self.raise_is_custom or not self.raise_amount:
+            return self
+        implied = self.pp * self.down_payment_frac + self.closing_costs
+        tol = max(1_000.0, implied * 0.01)
+        if abs(self.raise_amount - implied) > tol:
+            object.__setattr__(self, "raise_is_custom", True)
+        return self
 
 
 # ---------------------------------------------------------------------------

@@ -3503,11 +3503,15 @@ def gather_metrics(prop: dict, folder: Any = None) -> dict:
                 m["going_in_cap"] = cap_rate(deal.noi, deal.pp)
                 stabilized_noi = max(r.noi for r in cf.rows) if cf.rows else deal.noi
                 m["stabilized_noi"] = stabilized_noi
-                m["return_on_cost"] = return_on_cost(stabilized_noi, deal.pp)
+                # All-in basis (2026-08-13): price + closing costs + GP fee.
+                m["return_on_cost"] = return_on_cost(
+                    stabilized_noi, deal.total_uses)
                 m["equity_multiple"] = cf.equity_multiple
 
                 irr_v = project_irr(
-                    equity_raise=deal.equity_raise,
+                    # Project IRR carries the GP fee; LP metrics below do
+                    # not (owner decision 2026-08-13).
+                    equity_raise=deal.project_equity,
                     annual_cashflows=[r.cash_flow for r in cf.rows],
                     exit_proceeds_net=cf.exit_proceeds_net,
                 )

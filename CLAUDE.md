@@ -215,7 +215,26 @@ number (core/deal_seed.DealSeed.price_basis), and have every surface render
 that basis next to the field - warning styling when the value is a market
 placeholder. A default nobody can trace is indistinguishable from data.
 
-### Per-user edits, field governance, signup email â€” SHIPPED V5.25.0.0.0 (2026-08-07)
+### A sentinel decoded against widget state is a corruption engine (2026-08-13)
+Item 8 ("slider A->B->A gives a different IRR") was not rounding. `raise_amount
+= None` MEANT "derive from the dials", and the derived/explicit decision was
+made by comparing a keyed Streamlit number_input against a freshly computed
+default. Keyed widgets keep their own state across reruns and ignore `value=`
+after first registration, so the comparison went true on the first dial move
+and pinned the IRR denominator forever. Rules banked:
+  * Never encode "is this value derived or explicit?" as a sentinel plus a
+    value comparison. Store the INTENT as its own field (raise_is_custom).
+  * A keyed widget that must display a derived value has to have session_state
+    written before it renders - `value=` alone is ignored after the first run.
+  * Migrating legacy sentinel data: classify by EVIDENCE (does the stored
+    value match what its own inputs imply?), never "non-null means the user
+    meant it" - that launders old corruption into permanence.
+Also confirmed here: the Underwriting tab, the V2 headline and the Returns tab
+each build their own cash flow. They agree only because they all read
+DealState properties - so capital-stack logic belongs on the model, never in a
+tab. Three divergent builds is still the biggest structural risk in the app.
+
+### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field
 tiers live in `core/field_policy.py` + `docs/DATA-DICTIONARY.md` â€” reference

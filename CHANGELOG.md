@@ -12,6 +12,48 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.40.0.0.0 — 2026-08-13  ·  Owner punchlist: items 2-9
+2. Market tab provider tracing. The mock adapters never imported
+   core.skiptrace.trace, so the Provider Trace expander was structurally
+   empty in the only configuration this host runs - all six now record hit /
+   miss / skip lines. load_pocs() sat OUTSIDE the panel's try/except and
+   still crashed the page; guarded, as is the identical unguarded DB call in
+   ui/outreach_panel.py directly below it. Added an explicit DEMO MODE banner:
+   without vendor keys the pipeline invents realistic names and phones, which
+   rendered indistinguishably from real contact data.
+3. Down Payment removed from the Input tab (Underwriting keeps it). The save
+   omits the dp key entirely, so an underwriter's saved value is inherited,
+   never clobbered; Hold period moved right for a balanced 2x2 grid.
+4. "Open full Underwriting" link fixed. A bare <a href="?goto=underwriting">
+   replaced the WHOLE query string per RFC 3986, dropping the ?prop= that
+   identifies the open property - the click bounced the user back to the
+   property list. Now a real button that sets ?goto= (preserving ?prop=) and
+   reruns, letting app.py's existing tab machinery consume it.
+5. Headline now updates on input. The V2 stat bar / inspector are rendered in
+   app.py BEFORE the tab body and computed from deal.json on disk, so they
+   always showed the previous save. A successful dial save now triggers one
+   signature-guarded rerun (an unguarded one caused the historical fade loop).
+6+7. One-time GP acquisition fee and Closing Costs (s-gpfee, s-closing).
+   Per owner decision: closing costs are funded by the equity raise, so they
+   raise LP invested capital and depress LP IRR / EM / CoC; the GP fee is
+   charged to the project (project IRR, all-in return-on-cost basis) but sits
+   OUTSIDE LP invested capital. Neither touches NOI, cap rate or loan sizing.
+8. IRR non-determinism - NOT rounding. equity_raise, the denominator of IRR,
+   EM and CoC, was sentinel-encoded (raise_amount=None meant "= pp x dp") and
+   decoded against a STALE keyed Streamlit widget: the first dial move wrote a
+   value, `raise_amount != default` went true, and the raise pinned itself
+   permanently. Dials returned; the denominator did not. Replaced with an
+   explicit raise_is_custom flag - the raise now TRACKS the dials (down
+   payment + closing costs) until deliberately overridden via a checkbox.
+   Legacy files are migrated by evidence: a saved raise matching what its own
+   dials imply (within $1k / 1%) is released back to tracking rather than
+   laundering the pinning bug into a permanent override.
+9. Returns tab tile alignment. _kpi_tile is a fixed-height flex column with
+   justify-content:space-between; tiles without a footnote had two children
+   instead of three, floating their value to the bottom. The footnote row now
+   always renders (&nbsp; when empty), so Price / Unit and LP Equity Raise
+   line up with their neighbours.
+
 ## V5.39.0.0.0 — 2026-08-13  ·  Asset-aware deal seeding (owner ask)
 An untouched property seeded purchase price as `units x $130,000` - a fixed
 Class-C Hampton Roads $/unit that ignored assessed value, sale history and

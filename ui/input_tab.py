@@ -85,24 +85,27 @@ def render_input(prop: dict[str, Any], folder: PropertyFolder | None) -> None:
                     "Net operating income — NOI ($/yr)", min_value=0,
                     value=int(deal.noi), step=1_000,
                     help="In-place annual NOI. Going-in cap = NOI ÷ purchase price.")
-                hp = st.number_input(
-                    "Hold period (years)", min_value=3, max_value=10,
-                    value=int(deal.hp), step=1)
             with c2:
-                dp = st.number_input(
-                    "Down payment (%)", min_value=10, max_value=50,
-                    value=int(deal.dp), step=1,
-                    help="Equity as a percent of price; the rest is financed.")
+                # Down payment lives on the Underwriting tab only (owner
+                # 2026-08-13). It is deliberately NOT collected here: the
+                # save below applies model_copy ON TOP of the loaded deal,
+                # so an underwriter's saved dp survives a first-tab save
+                # untouched.
                 ir = st.number_input(
                     "Interest rate (%)", min_value=3.0, max_value=12.0,
                     value=float(deal.ir), step=0.1, format="%.1f")
+                hp = st.number_input(
+                    "Hold period (years)", min_value=3, max_value=10,
+                    value=int(deal.hp), step=1)
             submitted = st.form_submit_button(
                 "💾 Save", type="primary", use_container_width=True)
 
         if submitted:
+            # No "dp" key: omitting it makes new_deal inherit the saved
+            # down payment verbatim instead of clobbering it.
             new_deal = deal.model_copy(update={
                 "pp": float(pp), "noi": float(noi), "hp": int(hp),
-                "dp": float(dp), "ir": float(ir),
+                "ir": float(ir),
             })
             save_folder = folder
             if save_folder is None:
@@ -134,8 +137,17 @@ def render_input(prop: dict[str, Any], folder: PropertyFolder | None) -> None:
             "full 5-year model — plus the GO / WATCH / NO-GO verdict — live on "
             "the Underwriting and Summary tabs."
         )
-        st.markdown(
-            '<a href="?goto=underwriting" target="_self" '
-            'style="text-decoration:none;font-weight:600">Open full Underwriting →</a>',
-            unsafe_allow_html=True,
-        )
+        # A bare <a href="?goto=underwriting"> replaced the WHOLE query
+        # string (RFC 3986 relative-reference resolution), dropping the
+        # ?prop=<id> that identifies the open property - so the click threw
+        # the user back to the property list instead of switching tabs
+        # (owner 2026-08-13). Set ?goto= and rerun instead: assigning ONE
+        # key on st.query_params leaves ?prop= intact, and
+        # app.py::_sticky_property_tab consumes goto at the TOP of the next
+        # run - before the selector widget is created. Writing
+        # st.session_state["ptab_sel"] from here would raise: that widget
+        # has already been instantiated by the time this tab body runs.
+        if st.button("Open full Underwriting →", key="input_to_underwriting",
+                     type="secondary"):
+            st.query_params["goto"] = "underwriting"
+            st.rerun()

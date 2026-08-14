@@ -20,6 +20,8 @@ provenance (FR-A7) and the spend ledger stays accurate to the cent (AC-A4).
 from __future__ import annotations
 
 import hashlib
+
+from core.skiptrace import trace as _trace
 import os
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -168,8 +170,12 @@ class MockSOS:
 
     def resolve_entity(self, entity_name: str, state: str) -> SOSResult | None:
         if not entity_name:
+            _trace.record(self.name, "resolve_entity", "skip",
+                          "no entity name on the record")
             return None
         principal = _principal_name_for(entity_name)
+        _trace.record(self.name, "resolve_entity", "hit",
+                      f"{entity_name} -> {principal} (demo data)")
         qid = f"sos-{_h(entity_name):x}"
         return SOSResult(
             entity_name=entity_name,
@@ -195,7 +201,10 @@ class MockFirmographic:
     def enrich_company(self, company: str, city: str | None = None,
                        state: str | None = None) -> BusinessContact | None:
         if not company:
+            _trace.record(self.name, "enrich_company", "skip", "no company")
             return None
+        _trace.record(self.name, "enrich_company", "hit",
+                      f"{company} (demo data)")
         base = _h("firm" + company)
         slug = "".join(c for c in company.lower() if c.isalnum())[:18] or "firm"
         contact = _principal_name_for(company + "|amgr")
@@ -246,7 +255,11 @@ class MockTier1Append:
     def trace_person(self, full_name, address_hint, state):
         # ~40% hit rate, deterministic per name
         if _h(self.name + full_name) % 10 >= 4:
+            _trace.record(self.name, "trace_person", "miss",
+                          f"no match for {full_name} (demo data)")
             return None
+        _trace.record(self.name, "trace_person", "hit",
+                      f"{full_name} (demo data)")
         return _mk_candidate(full_name, address_hint, state, self.name, n_phones=1,
                              n_emails=0, cost=0.02)
 
@@ -260,7 +273,11 @@ class MockTier2BatchData:
     def trace_person(self, full_name, address_hint, state):
         # ~80% hit rate (spec: 75–85% phone hit rate)
         if _h(self.name + full_name) % 10 >= 8:
+            _trace.record(self.name, "trace_person", "miss",
+                          f"no match for {full_name} (demo data)")
             return None
+        _trace.record(self.name, "trace_person", "hit",
+                      f"{full_name} (demo data)")
         return _mk_candidate(full_name, address_hint, state, self.name, n_phones=2,
                              n_emails=1, cost=0.12)
 
@@ -272,6 +289,8 @@ class MockTier3Enformion:
     tier = 3
 
     def trace_person(self, full_name, address_hint, state):
+        _trace.record(self.name, "trace_person", "hit",
+                      f"{full_name} (demo data)")
         return _mk_candidate(full_name, address_hint, state, self.name, n_phones=2,
                              n_emails=1, cost=0.25, with_relatives=True)
 
