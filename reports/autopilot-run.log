@@ -11639,3 +11639,5 @@ Checked 111 packages in 10ms
 [listings] exit 0 -> listings-latest.txt
 [publish] pushed to GitHub
 [salespull] exit 0 -> sales-latest.txt
+[publish] pushed to GitHub
+[arcgissales] exit 0 -> arcgis-sales-latest.txt
