@@ -11441,3 +11441,5 @@ Checked 111 packages in 12ms
 [saleindex] exit 0 -> sale-index-latest.txt
 [publish] pushed to GitHub
 [phase0] exit 0 -> phase0-latest.txt
+[publish] pushed to GitHub
+[rentbias] exit 0 -> rent-bias-latest.txt
