@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-08-14T09:31:41
+autopilot richmondreview @ 2026-08-14T10:33:07
 
 ================================================================
-RICHMOND REVIEW  @ 2026-08-14T09:31:43
+RICHMOND REVIEW  @ 2026-08-14T10:33:09
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
@@ -27,6 +27,8 @@ Multifamily (units>=10): 140
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
   rva.gov-files join health: 76,715 of 76,976 workbook parcels match an API-feed parcel
+  address coverage per source (usable normalized addresses / with units):
+    NONE - no Richmond assessor source maps an address at all
 
 -- 3. Richmond sales (muni_records kind='sales') --
 sale rows: 84,148
@@ -42,5 +44,6 @@ sale rows: 84,148
 
 -- 5. GAPS (each names its unblock) --
   [GAP] Unit coverage is thin: 140 of 108,033 parcels carry unit counts - the COR ownership layer has none, so units depend on the rva.gov Public Data Set files or a discover-sales-latest candidate (no token chases - owner 2026-08-11).
+  [GAP] Units and values sit on different parcel-id schemes AND no unit-bearing source maps a usable address - so neither an alias nor an address crosswalk can bridge them. Next axis is geometry (the COR layer is an Esri feature service; its centroid can point-in-polygon onto the parcel layer). See the coverage lines above.
   [GAP] The rva.gov Public Data Set maps NO unit counts - check section 2b and the phase0 unmapped-keys list for the workbook's unit column, or promote a units-bearing candidate from discover-sales-latest.txt.
   [GAP] Tax estimates: blocked on assessed values (needs the assessments feed above).
