@@ -12,6 +12,19 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.41.0.0.0 — 2026-08-13  ·  Owner MAILING address captured (free skip-trace input)
+Found while researching skip-trace vendors: core/skiptrace/pipeline.py anchors
+on prop["owner_address"] and calls it "the best" trace input (S1/S4) - but
+every postal field (pstladdress1/2, pstlcity, pstlstate, pstlzip5) sat in
+phase0._IGNORED_KEYS, so the backbone never carried one and every trace fell
+back to the PROPERTY address. For an LLC-owned building that is the one
+address the owner is definitionally not at. Now aliased (plus mailing/
+tax-bill/billing spellings), assembled by _owner_mailing(), stored on
+properties_8r.owner_address (added in place on existing backbones) and
+exposed through data/db.py. This is the input skip-trace vendors charge to
+return, it was already in the rolls we pull for free, and on its own it is a
+zero-cost direct-mail channel - the tax bill reaches it by construction.
+
 ## V5.40.0.0.0 — 2026-08-13  ·  Owner punchlist: items 2-9
 2. Market tab provider tracing. The mock adapters never imported
    core.skiptrace.trace, so the Provider Trace expander was structurally

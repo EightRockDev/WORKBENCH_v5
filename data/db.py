@@ -220,6 +220,11 @@ def _r8_to_legacy_shape(row: dict[str, Any]) -> dict[str, Any]:
         "market": row.get("r8_market"),
         "submarket": row.get("r8_submarket"),
         "owner": row.get("owner_name"),
+        # The owner's MAILING address off the assessor roll - the skip-trace
+        # pipeline's S1 anchor and S4 trace input (2026-08-13). Without it
+        # every trace ran on the property address, which for an LLC-owned
+        # building is where the owner is not.
+        "owner_address": row.get("owner_address"),
         "management_company": None,         # awaits Module A resolution
         "latitude": row.get("lat"),
         "longitude": row.get("lng"),

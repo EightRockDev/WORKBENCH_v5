@@ -5,7 +5,8 @@ Turns the raw municipal pulls (heterogeneous per-city JSON in the
 
     properties_8r(property_id, fips, apn, address, city, state, zip,
                   units, year_built, sqft, use_code, r8_form, r8_market,
-                  r8_submarket, assessed_value, owner_name, lat, lng,
+                  r8_submarket, assessed_value, owner_name, owner_address,
+                  lat, lng,
                   provenance, built_at)
 
 Everything provider-free by construction: IDs from `core.spine.property_id`
@@ -122,6 +123,22 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                        "asssesstotalvalue1", "assesstotalvalue1"),
     "owner_name": ("owner", "ownername", "ownernme1", "owner1",
                    "primaryowner", "ownersname", "currentowner"),
+    # The OWNER'S MAILING address - not the property's. Assessor rolls carry
+    # it as the postal/tax-bill address (2026-08-13: it was in _IGNORED_KEYS,
+    # so every skip trace ran on the property address instead. For an
+    # LLC-owned building that is the one address the owner is NOT at, and it
+    # is also the free input a skip-trace vendor charges to hand back).
+    "owner_address": ("pstladdress1", "mailingaddress", "mailaddress",
+                      "mailadd", "owneraddress", "owneraddr", "ownaddr",
+                      "taxbilladdress", "taxaddress", "billingaddress",
+                      "careofaddress", "mailingaddress1", "mailaddr1",
+                      "pstladdress2", "mailingaddress2"),
+    "owner_city": ("pstlcity", "mailingcity", "mailcity", "ownercity",
+                   "taxbillcity", "billingcity"),
+    "owner_state": ("pstlstate", "mailingstate", "mailstate", "ownerstate",
+                    "taxbillstate", "billingstate"),
+    "owner_zip": ("pstlzip5", "pstlzip", "mailingzip", "mailzip", "ownerzip",
+                  "taxbillzip", "billingzip"),
     # geolat/geolng come first: the ETL writes them from the layer's actual
     # geometry (WGS84-verified), which beats any attribute column.
     "lat": ("geolat", "lat", "latitude", "y", "pointy", "centroidy"),
@@ -155,7 +172,7 @@ _IGNORED_KEYS = re.compile(
     r"documentnumber|assessmntdist|calcacreage|acreage|landsquarefootage|"
     r"mapbookpg|project|hubzone|pspzone|cityowned|censustract|censusblock|"
     r"consideration|grantee|grantor|extension|commercialbuildingarea|"
-    r"nghbrhdcd|vahu6|zone|pstladdress1|pstlcity|pstlzip5|pstlstate|"
+    r"nghbrhdcd|vahu6|zone|"
     r"unit|unitnumber|cntlndval|cntimpval|prvlndval|prvimpval|subdivcd|"
     r"subdivdscrp|statedarea|status|ststate|lastediteduser|lastediteddate|"
     r"fid|objectid1|calcacreag|createdda|lastedite|assessmnt|bldgdiagr|"
@@ -169,7 +186,7 @@ _IGNORED_KEYS = re.compile(
     r"bath|halfbath|garsf|fp|dtsqft|book|page|prevbook|prevpage|cpn|"
     r"gp10k|gptax|gpcomp|agrid|taxdistrict|taxdistrictdescription|"
     r"daypickup|policepatrolzone|policeprecinct|votingprecinct|"
-    r"femazonebldg|watershed|edasite|pstladdress2|frontage|depth|culdesac|"
+    r"femazonebldg|watershed|edasite|frontage|depth|culdesac|"
     r"lglstartdt|ffh|lowfloor99|highwater9|lengthuni|fips|impvalue|"
     r"lndvalue|srcagency|currentda|convm|convft|map|wf|mail1|mail2|"
     r"mailaddr|mailcity|bedcount|bathcount|halfbathcount|legalac|propsf|"
@@ -257,6 +274,26 @@ def _num(value: Any) -> float | None:
         return None
 
 
+def _owner_mailing(mapped: dict[str, Any]) -> str | None:
+    """Assemble the owner's MAILING address from whatever the roll carries.
+
+    This is the skip-trace pipeline's S1 anchor and its S4 trace input
+    (core/skiptrace/pipeline.py) - name + where the owner actually receives
+    mail. For an LLC-owned building the property address is precisely where
+    the decision-maker is not, so tracing without this costs match rate on
+    every single lookup. It is also, on its own, a zero-cost direct-mail
+    channel: the tax bill reaches this address by construction.
+    """
+    street = str(mapped.get("owner_address") or "").strip()
+    if not street:
+        return None
+    city = str(mapped.get("owner_city") or "").strip()
+    state = str(mapped.get("owner_state") or "").strip()
+    zipc = str(mapped.get("owner_zip") or "").strip()
+    tail = " ".join(p for p in (city, state, zipc) if p)
+    return f"{street}, {tail}" if tail else street
+
+
 # Continental-US sanity box: coordinates outside it are junk for a Hampton
 # Roads spine no matter what a feed claims.
 _US_LAT = (24.0, 50.0)
@@ -304,6 +341,7 @@ class SpineRow:
     r8_submarket: str
     assessed_value: float | None
     owner_name: str | None
+    owner_address: str | None
     lat: float | None
     lng: float | None
     provenance: str = "8r"
@@ -583,6 +621,7 @@ def build_row(city: str, state: str, raw: dict,
         r8_submarket=city,
         assessed_value=_num(mapped.get("assessed_value")),
         owner_name=str(mapped.get("owner_name") or "") or None,
+        owner_address=_owner_mailing(mapped),
         lat=lat,
         lng=lng,
     )
@@ -610,6 +649,7 @@ CREATE TABLE IF NOT EXISTS properties_8r (
     r8_submarket   TEXT,
     assessed_value REAL,
     owner_name     TEXT,
+    owner_address  TEXT,
     lat            REAL,
     lng            REAL,
     est_avg_rent   REAL,
@@ -671,6 +711,13 @@ def build_spine(db_path: Path,
         conn.executescript(_SPINE_SCHEMA)
         from core.rent_signal import ensure_rent_columns
         ensure_rent_columns(conn)   # pre-rent-signal DBs migrate in place
+        # CREATE TABLE IF NOT EXISTS is a no-op on an existing backbone, so a
+        # new column has to be added in place or every write fails on a db
+        # built before 2026-08-13.
+        if "owner_address" not in {r[1] for r in conn.execute(
+                "PRAGMA table_info(properties_8r)")}:
+            conn.execute(
+                "ALTER TABLE properties_8r ADD COLUMN owner_address TEXT")
         if rebuild:
             conn.execute("DELETE FROM properties_8r")
         now = dt.datetime.now().isoformat(timespec="seconds")
@@ -697,9 +744,9 @@ def build_spine(db_path: Path,
                 """INSERT INTO properties_8r
                    (property_id, fips, apn, address, city, state, zip, units,
                     year_built, sqft, use_code, r8_form, r8_market,
-                    r8_submarket, assessed_value, owner_name, lat, lng,
-                    provenance, built_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    r8_submarket, assessed_value, owner_name, owner_address,
+                    lat, lng, provenance, built_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(property_id) DO UPDATE SET
                      address=COALESCE(properties_8r.address, excluded.address),
                      units=COALESCE(properties_8r.units, excluded.units),
@@ -712,14 +759,16 @@ def build_spine(db_path: Path,
                                              excluded.assessed_value),
                      owner_name=COALESCE(properties_8r.owner_name,
                                          excluded.owner_name),
+                     owner_address=COALESCE(properties_8r.owner_address,
+                                            excluded.owner_address),
                      lat=COALESCE(properties_8r.lat, excluded.lat),
                      lng=COALESCE(properties_8r.lng, excluded.lng),
                      built_at=excluded.built_at""",
                 (row.property_id, row.fips, row.apn, row.address, row.city,
                  row.state, row.zip, row.units, row.year_built, row.sqft,
                  row.use_code, row.r8_form, row.r8_market, row.r8_submarket,
-                 row.assessed_value, row.owner_name, row.lat, row.lng,
-                 row.provenance, now))
+                 row.assessed_value, row.owner_name, row.owner_address,
+                 row.lat, row.lng, row.provenance, now))
             report.written += 1
 
         # Derive units from address-point multiplicity: N apartment-points
