@@ -1,4 +1,4 @@
-autopilot pull @ 2026-08-13T22:16:57
+autopilot pull @ 2026-08-13T23:17:09
 
 QUARRIE muni-data ETL — 2026-08-13
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -31,6 +31,7 @@ QUARRIE muni-data ETL — 2026-08-13
   [OK] Nashville/assessor+sales                286871 records
   [fresh] Nashville/permits: pulled within 3 days - keeping 28,567 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/permits                        28567 records
+  [fresh] Norfolk/assessor+sales: pulled within 3 days - keeping 74,334 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor+sales                   74334 records
   [fresh] Norfolk/permits: pulled within 3 days - keeping 125,305 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/permits                         125305 records
