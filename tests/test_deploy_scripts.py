@@ -304,3 +304,26 @@ def test_backup_role_setup_uses_the_trust_flip_and_bypassrls():
     assert "run_backup.py" in src        # proves the path end to end
     # Upsert, never clobber .env (the shared-file lesson).
     assert "-ne $managedKey" in src and ".bak" in src
+
+
+def test_login_diagnostic_covers_the_known_oauth_failure():
+    """2026-08-10 root cause: Caddy fronts blue+green with no session
+    affinity, so the OAuth state set on one instance fails the CSRF check
+    on the other and /oauth2callback 500s. The diagnostic must check the
+    config Caddy actually RUNS (Caddyfile.active), not the repo template -
+    the fix lives in the template and only reaches the host when
+    install-caddy regenerates it."""
+    d = (ROOT / "diagnose-login.bat").read_text(encoding="utf-8")
+    assert "Caddyfile.active" in d, "must inspect the live config, not the template"
+    assert "lb_policy cookie" in d
+    assert "install-caddy.ps1" in d, "must name the remedy"
+    # and it must never print secret values
+    assert "cookie_secret" in d and "never values" in d.lower()
+
+
+def test_login_diagnostic_flags_upstream_mismatch():
+    """A second route to the same 500: the live config forwards to an
+    instance that is not running."""
+    d = (ROOT / "diagnose-login.bat").read_text(encoding="utf-8")
+    assert "8501" in d and "8502" in d
+    assert "MISMATCH" in d

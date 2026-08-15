@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.47.0.0.0 — 2026-08-15  ·  Sign-in triage + branded auth screens
+Owner hit "Internal Server Error" on /oauth2callback — no way into the app.
+`diagnose-login.bat` triages it in one double-click. It checks the config Caddy
+is actually RUNNING (Caddyfile.active) rather than the repo template, because
+the 2026-08-10 session-affinity fix lives in the template and only reaches the
+host when install-caddy regenerates it — a repo that looks fixed while the live
+config is not is exactly how this recurs. Also flags a second route to the same
+500 (the live config forwarding to an instance that is not running, which is
+likely here given the blue/green services cannot start), tails the service logs
+for the Authlib CSRF signature, and reports which of the five flat `[auth]`
+keys are present — names only, never values.
+
+The pre-login screens are also rebuilt: 8R mark, WORKBENCH wordmark, tagline,
+and a styled sign-in on a deep-navy field, shared by the login, pending and
+suspended screens so a stranger meets a locked door in the same building rather
+than a different one. Self-contained CSS with the two brand colours inlined —
+a login page has to render even when the app behind it cannot. The footer
+carries the running version, which is the cheapest possible answer to "did my
+deploy actually take effect".
+
 ## V5.46.2.0.0 — 2026-08-15  ·  whats-running.bat — disk vs. serving, in one read
 The stale version pill has exactly two causes and they need opposite fixes:
 the code on disk is old (the update never synced), or the disk is current and
