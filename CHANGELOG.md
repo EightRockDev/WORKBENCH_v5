@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.50.0.0.0 — 2026-08-15  ·  Sale history actually matches now
+The card was reporting 186,843 sales loaded for Norfolk and none matchable,
+because the property carried no parcel id and the crosswalk — which holds only
+what parity has matched, a few hundred rows — could not supply one. That is a
+true statement and a useless one.
+
+Two changes make it match instead of explain. First, a second bridge: the
+backbone knows every parcel in the county BY ADDRESS and carries the id the
+sales are keyed on, so address -> backbone row -> parcel id -> sales, no
+crosswalk needed. It refuses when more than one parcel answers, because
+attaching a neighbour's sale history is worse than showing none. Second, the
+looser address key no longer waits for an index rebuild: the `addr_core` column
+is only filled by the nightly cycle, so the same key is now derived at query
+time from `addr_norm` (the house number narrows it to a handful of rows). Both
+work the moment the app restarts.
+
 ## V5.49.0.0.0 — 2026-08-15  ·  Sale history: match the way addresses actually differ
 Exact address equality was the only fallback once the parcel-id route died,
 and it fails on precisely the two things a vendor address and an assessor

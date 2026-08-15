@@ -327,6 +327,21 @@ Two rules banked:
     downstream features silently depend on. Anything keyed on a column the
     other side lacks dies quietly at the seam.
 
+### A precise explanation is not a fix (2026-08-15)
+Replacing "No sale history available." with "186,843 sales loaded, but this
+property is not tied to a parcel" felt like progress - the message was true,
+specific, and derived from real counts. The owner's response was correct: it
+was still an empty card. A diagnostic that names the blocker is a step on the
+way to a fix, never the deliverable, and shipping one as though it were the
+deliverable reads as an excuse because it is.
+
+Also banked: a bridge that only works after a rebuild does not work. The
+`addr_core` column was populated by the nightly cycle, so the match it enabled
+would have started working a day after it shipped, which for the person asking
+is indistinguishable from not shipping. Derive it at query time and it works on
+restart. Ask of any fix: what has to happen BEFORE this helps, and can I remove
+that precondition?
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

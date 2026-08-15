@@ -289,6 +289,44 @@ def _addr_core(address: str | None) -> str:
     return ""
 
 
+def _apn_via_address(prop: dict, path: Path) -> str:
+    """Parcel id for a property the crosswalk does not know, via its address.
+
+    `property_crosswalk` only holds what Phase 0 parity has matched - a few
+    hundred rows - so it answers for almost nothing. But the backbone knows
+    every parcel in the county BY ADDRESS and carries the parcel id, and
+    Norfolk's sales are keyed on that id. So: address -> backbone row ->
+    parcel id -> sales. Two hops, no crosswalk required, and it works for any
+    property that has an address at all.
+
+    Matching uses the house-number + street-name key, scoped to the property's
+    own city, and REFUSES when more than one distinct parcel id answers -
+    an ambiguous match would attach another building's sale history to this
+    one, which is worse than showing nothing.
+    """
+    core = _addr_core(prop.get("address"))
+    city = (prop.get("city") or "").strip()
+    if not core or not city:
+        return ""
+    number = core.split("|", 1)[0]
+    try:
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return ""
+    try:
+        rows = conn.execute(
+            "SELECT apn, address FROM properties_8r "
+            " WHERE COALESCE(r8_market, city) = ? AND apn IS NOT NULL "
+            "   AND address LIKE ?", (city, f"{number} %")).fetchall()
+    except sqlite3.Error:
+        return ""
+    finally:
+        conn.close()
+    hits = {_norm_apn(a) for a, addr in rows if _addr_core(addr) == core}
+    hits.discard("")
+    return hits.pop() if len(hits) == 1 else ""
+
+
 def _apn_via_crosswalk(prop: dict, path: Path) -> str:
     """Parcel id for a LEGACY property row, resolved through the crosswalk.
 
@@ -347,7 +385,8 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
     # Resolve one through the crosswalk before giving up on the strong key -
     # address matching alone is why so many cards read "no sale history".
     if not want_apn:
-        want_apn = _apn_via_crosswalk(prop, Path(path))
+        want_apn = (_apn_via_crosswalk(prop, Path(path))
+                    or _apn_via_address(prop, Path(path)))
     if not (want_apn or want_addr):
         return []
 
@@ -438,7 +477,8 @@ def explain_no_sales(prop: dict, *, db_path: Path | None = None) -> str:
                         "the nightly data pull has not landed this locality's "
                         "transfer records.")
             has_key = bool(_norm_apn(prop.get("apn"))
-                           or _apn_via_crosswalk(prop, Path(path)))
+                           or _apn_via_crosswalk(prop, Path(path))
+                           or _apn_via_address(prop, Path(path)))
             if not has_key:
                 return (f"{n_city:,} recorded sales loaded for {city}, but "
                         "this property is not yet tied to a county parcel, "

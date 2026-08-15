@@ -72,3 +72,43 @@ def test_missing_crosswalk_table_is_survivable(tmp_path):
     conn.commit()
     conn.close()
     assert sale_history._apn_via_crosswalk({"property_id": "X"}, db) == ""
+
+
+def test_address_bridge_resolves_a_parcel_the_crosswalk_never_matched(spine):
+    """The crosswalk holds only what parity matched - a few hundred rows - so
+    it answers for almost nothing. The backbone knows every parcel in the
+    county by address and carries the id sales are keyed on. Owner screenshot
+    2026-08-15: "186,843 recorded sales loaded for Norfolk, but this property
+    is not yet tied to a county parcel"."""
+    import sqlite3 as _s
+    from core import sale_history as sh
+    conn = _s.connect(spine)
+    conn.execute(
+        "INSERT INTO properties_8r (property_id, fips, apn, address, city, "
+        "state, zip, provenance, built_at) VALUES "
+        "('8R-N1','51710','14712345','3000 CAPE HENRY AVE','Norfolk','VA',"
+        "'23503','8r','x')")
+    conn.commit()
+    conn.close()
+    vendor_row = {"property_id": "NOT-IN-CROSSWALK",
+                  "address": "3000 S. Cape Henry", "city": "Norfolk"}
+    assert sh._apn_via_crosswalk(vendor_row, spine) == ""
+    assert sh._apn_via_address(vendor_row, spine) == "14712345"
+
+
+def test_address_bridge_refuses_an_ambiguous_match(spine):
+    """Two parcels answering the same address must yield nothing - attaching
+    a neighbour's sale history is worse than showing none."""
+    import sqlite3 as _s
+    from core import sale_history as sh
+    conn = _s.connect(spine)
+    for pid, apn, addr in (("8R-A", "111", "500 MAIN ST"),
+                           ("8R-B", "222", "500 MAIN AVE")):
+        conn.execute(
+            "INSERT INTO properties_8r (property_id, fips, apn, address, city,"
+            " state, zip, provenance, built_at) VALUES (?,'51710',?,?, "
+            "'Norfolk','VA','23503','8r','x')", (pid, apn, addr))
+    conn.commit()
+    conn.close()
+    assert sh._apn_via_address(
+        {"address": "500 Main", "city": "Norfolk"}, spine) == ""

@@ -195,7 +195,25 @@ def lookup(db_path: Path, *, apn_norm: str, addr_norm: str,
                     " WHERE market = ? AND addr_core = ?",
                     (market, addr_core)).fetchall()
             except sqlite3.OperationalError:
-                rows = []      # index predates addr_core; rebuild adds it
+                rows = []      # column predates this build
+            if not rows:
+                # The addr_core COLUMN is only filled by a rebuild, and the
+                # app never rebuilds - only the nightly cycle does. Waiting
+                # for that would mean the fix does nothing until tomorrow.
+                # Derive the same key at query time from addr_norm instead:
+                # the house number narrows it to a handful of rows, and the
+                # comparison happens here. Works the moment the app restarts.
+                from core import sale_history as _sh
+                number = addr_core.split("|", 1)[0]
+                try:
+                    cand = conn.execute(
+                        f"SELECT {cols}, addr_norm FROM sale_records"
+                        " WHERE market = ? AND addr_norm LIKE ?",
+                        (market, f"{number} %")).fetchall()
+                except sqlite3.Error:
+                    cand = []
+                rows = [r for r in cand
+                        if _sh._addr_core(r["addr_norm"]) == addr_core]
         out, seen = [], set()
         for r in rows:
             key = (r["date"], r["price"])
