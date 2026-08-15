@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.46.2.0.0 — 2026-08-15  ·  whats-running.bat — disk vs. serving, in one read
+The stale version pill has exactly two causes and they need opposite fixes:
+the code on disk is old (the update never synced), or the disk is current and
+the running process still holds the old code (it was never restarted).
+`whats-running.bat` answers which in one double-click, read-only and with no
+administrator prompt: the version on disk, how many commits behind origin/main
+the disk is, which PID is serving each port and when it started, and the
+blue/green service states. Also fixes the deploy-script test, which asserted
+the updater's old literal `sc query WorkbenchBlue` and broke when that became a
+loop — rewritten to assert the contract (detection before the kill, gated on
+RUNNING, and a stale-serving verdict) rather than the spelling.
+
 ## V5.46.1.0.0 — 2026-08-15  ·  The updater could leave stale code serving
 Owner reported the app still showing V5.43.0.0.0 and the pre-rename brand after
 running update. Root cause: `sc query` succeeds when a service merely EXISTS,

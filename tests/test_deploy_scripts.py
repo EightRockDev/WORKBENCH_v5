@@ -222,16 +222,30 @@ def test_updater_swaps_instead_of_killing_in_service_mode():
     a different door. In service mode the updater must skip the kill and
     finish with the one-at-a-time blue-green swap."""
     upd = (ROOT / "update-workbench.bat").read_text(encoding="utf-8")
-    # detects both colours...
-    assert "sc query WorkbenchBlue" in upd
-    assert "sc query WorkbenchGreen" in upd
-    # ...BEFORE the kill, and jumps past it when they exist
+    # detects both colours (now via a loop, not two literal sc calls)...
+    assert "WorkbenchBlue WorkbenchGreen" in upd
+    # ...BEFORE the kill, and jumps past it when they are RUNNING
     assert "goto :synccode" in upd and "\n:synccode" in upd
-    assert upd.index("sc query WorkbenchBlue") < upd.index("taskkill"), (
+    assert upd.index("WorkbenchBlue WorkbenchGreen") < upd.index("taskkill"), (
         "service detection must run before the port-kill")
+    # The hazard this test protects - NSSM instantly restarting a killed
+    # service with the old code - only exists while a service is actually
+    # RUNNING. Gating on mere existence stranded the owner three releases
+    # back on 2026-08-15: the services exist, cannot start, and a stray
+    # process served stale code while the updater reported success. So the
+    # skip must be conditioned on RUNNING, not on existence.
+    assert 'findstr /c:"RUNNING"' in upd, (
+        "service mode must require RUNNING, not merely that the service exists")
+    assert "INSTALLED but NOT RUNNING" in upd, (
+        "an installed-but-dead service must be called out, not silently "
+        "treated as if it were serving")
     # ends with the swap, and a failed swap must not read as success
     assert "deploy-swap.ps1" in upd
     assert "swap stopped early" in upd
+    # and the update must state whether the NEW code is actually being served
+    assert "STALE" in upd and "PREPIDS" in upd, (
+        "the updater must verify the serving process changed, not just that "
+        "the files on disk did")
 
 
 def test_updater_retries_dependency_sync_when_services_hold_locks():
