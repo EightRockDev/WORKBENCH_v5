@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-15T04:18:00
+autopilot phase0 @ 2026-08-15T05:18:11
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,272,493
@@ -72,7 +72,7 @@ year built agrees:        0/2
 
 comp-set replay subjects: 165  (+35 skipped - city has no 8R coordinates yet)
 avg comp-set overlap:     63.4%  (gate >= 90%)
-avg-rent delta:           31.6%  (gate <= 5%)
+avg-rent delta:           31.6%  [signed +26.0%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
 
 P0-2 GATE: not met yet
 crosswalk persisted:      270 legacy->8R mappings (property_crosswalk)

@@ -3,6 +3,7 @@
   "p0_1_passed": true,
   "comp_overlap": 0.6336899295990202,
   "rent_delta": 0.31631582708330575,
+  "rent_delta_signed": 0.2598583268010215,
   "rent_pairs": 171,
   "match_rate": 0.4225352112676056,
   "covered_match_rate": 0.8285714285714286,
