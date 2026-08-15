@@ -75,24 +75,52 @@ except OSError:
 _WB_ROOT = PROPERTIES_ROOT.parent
 
 
-def _rel(path: Path | str) -> str:
-    """Translate an absolute filesystem path into a workbench-root-relative
-    storage key (POSIX style, e.g. ``"Properties/Driftwood-140-Virginia-Beach/deal.json"``).
+def _local_storage_root() -> Path | None:
+    """The directory the local backend resolves relative keys against.
 
-    Callers continue to pass `Path` objects so this module's public API is
-    unchanged; internally we route every IO through the storage protocol
-    via these relative keys.
+    None in graph mode (no local root) or if storage is unavailable.
+    """
+    try:
+        from core.storage import get_storage
+
+        root = getattr(get_storage(), "root", None)
+        return Path(root) if root is not None else None
+    except Exception:
+        return None
+
+
+def _rel(path: Path | str) -> str:
+    """Translate an absolute filesystem path into a storage key.
+
+    The key is made relative to whatever the storage backend will resolve it
+    against — NOT to this module's own idea of the workbench root. Those two
+    were allowed to disagree until 2026-08-15, and when they did (the local
+    backend rooted one level above the app), every ``Properties/...`` key
+    silently resolved into a directory that did not exist. Nothing raised;
+    folder discovery just returned nothing, forever.
+
+    So: relative to the local backend's root when there is one, else
+    relative to ``_WB_ROOT`` (graph mode, where keys are drive-relative),
+    else absolute. Absolute is always safe in local mode - ``_resolve()``
+    trusts absolute keys - and is what makes deal folders outside the app
+    (``ER_PROPERTIES_ROOT`` on another drive, a test ``tmp_path``) work
+    instead of being silently rewritten to a path under the app root.
     """
     p = Path(path).resolve()
+
+    root = _local_storage_root()
+    if root is not None:
+        try:
+            return str(p.relative_to(root)).replace("\\", "/")
+        except ValueError:
+            # Outside the backend's root - hand it the absolute path rather
+            # than a relative key it would resolve somewhere else entirely.
+            return str(p).replace("\\", "/")
+
     try:
-        rel = p.relative_to(_WB_ROOT)
+        return str(p.relative_to(_WB_ROOT)).replace("\\", "/")
     except ValueError:
-        # Path is outside the workbench root (e.g. a test tmp dir) — fall
-        # back to the absolute path. In local mode this still works (the
-        # LocalDiskStorage will resolve it as absolute); in graph mode the
-        # path would fail, but tests run in local mode by definition.
         return str(p).replace("\\", "/")
-    return str(rel).replace("\\", "/")
 
 
 # ---------------------------------------------------------------------------

@@ -12,6 +12,44 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.59.0.0.0 — 2026-08-15  ·  The app was reading deal folders from `C:\Properties`.
+
+**This is the actual cause of the missing sale history**, and of the four
+releases spent fixing things that were not broken.
+
+`core.storage.LocalDiskStorage` defaulted its root to
+`Path(__file__).parent.parent.parent` with the comment
+*"python_workbench/core/storage.py → workbench root"* — correct under the v1
+layout, where this file sat one directory deeper. In v5 the file is
+`<app>/core/storage.py`, so three parents up lands **one level above the
+app**. Every deal-folder read goes through the storage layer as the relative
+key `Properties/…`, so they were all resolving against `C:\Properties`
+instead of `C:\WORKBENCH_V5\Properties`.
+
+Nothing raised. `discover_property_folders()` returned an empty list from a
+directory that does not exist, no property ever matched a folder, no curated
+`sales.json` was ever opened, and Sale History fell through to county records
+and blamed a nightly data feed for a file sitting on disk.
+
+It hid because it *used* to be right by accident: under the old sibling
+layout the deal folders really did live beside the app, so "one level above
+the app" and "where the folders are" were the same directory. Moving the app
+into `C:\WORKBENCH_V5` separated them and silently severed every folder read.
+
+- **`core/storage.py`** — default root is now the application root.
+- **`data/property_io._rel()`** — composes keys relative to the root the
+  backend will actually resolve them against, and falls back to an absolute
+  path when the folder is outside it, instead of emitting a relative key that
+  resolves somewhere else entirely. This is what makes `ER_PROPERTIES_ROOT`
+  on another drive work rather than silently reading under the app.
+- **`tests/test_properties_root_resolves.py`** — pins the invariant (the two
+  roots must name one directory) and round-trips a real deal folder: write
+  through the app's API, read it back through the app's API. Every existing
+  test passed while the app was broken because each half was locally correct;
+  only the round trip could catch it. These fail against the old code.
+
+---
+
 ## V5.58.0.0.0 — 2026-08-15  ·  The fixed folder now actually has the folders in it.
 
 V5.57 pinned the deal-folder location and deleted all discovery. Correct, and

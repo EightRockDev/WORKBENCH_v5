@@ -1046,6 +1046,48 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` â†’ http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson â€” when four fixes in a row don't move the symptom, the diagnosis is wrong (2026-08-15)
+
+The owner reported missing sale history. I shipped V5.50 (address matching),
+V5.51 (direction/unit guards), V5.53 (corroboration), V5.55-57 (folder
+location), V5.58 (auto-seeding). The screenshot came back **identical every
+time** â€” same property, same sentence, same grey text.
+
+The real cause was one line in `core/storage.py`:
+
+```python
+root = Path(__file__).resolve().parent.parent.parent   # v1: <root>/python_workbench/core/
+```
+
+In v5 this file is `<app>/core/storage.py`, so three parents up is **one level
+above the app**. Every deal-folder read is a relative key `Properties/...`
+resolved against that root, so they all pointed at `C:\Properties`. Discovery
+returned `[]` from a directory that does not exist; no folder ever matched; no
+`sales.json` was ever opened.
+
+Three things to take from it:
+
+1. **An unchanged symptom after a fix is evidence the fix was not on the
+   causal path.** I kept treating it as "not fixed hard enough" and escalated
+   the same wrong layer. The second identical screenshot should have stopped
+   the feature work and started a trace of what the app actually reads.
+2. **Trace the real path before theorising.** Ten lines of
+   `print(storage.root, _rel(PROPERTIES_ROOT), storage._resolve(key))` ended
+   it. That was available on day one and cost nothing.
+3. **A comment describing a directory layout is a claim with an expiry date.**
+   `# python_workbench/core/storage.py -> workbench root` was true when
+   written and false after the v5 split, and it read as reassurance every time
+   anyone looked at it. Path arithmetic against `__file__` must be pinned by a
+   test that names the directory it should land in.
+
+The suite had 1289 passing tests and every one walked past this, because both
+halves were locally correct: `property_io` composed keys relative to
+`_WB_ROOT`, storage resolved them against a different root, and nothing
+compared the two. **Two modules that must agree need a test that asserts they
+agree** â€” `tests/test_properties_root_resolves.py` does, plus a write-then-read
+round trip through the app's own API, which is the only assertion that could
+not have passed while the app was broken.
+
 ## Lesson â€” a fix that ends in "now go run this" is not a fix (2026-08-15)
 
 V5.57 pinned `PROPERTIES_ROOT` to one constant folder, exactly as the owner

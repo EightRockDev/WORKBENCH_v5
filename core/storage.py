@@ -89,9 +89,34 @@ class Storage(Protocol):
 class LocalDiskStorage:
     """Pass-through to `pathlib.Path` rooted at a local directory.
 
-    Default root resolves to the workbench root — the parent of
-    ``python_workbench/``. Configurable via ``ER_LOCAL_ROOT`` env var or the
+    Default root is the APPLICATION root — the folder holding ``app.py``,
+    ``core/`` and ``Properties/``. Configurable via ``ER_LOCAL_ROOT`` or the
     ``root`` constructor argument (tests use this to point at a tmp dir).
+
+    This default was wrong from the v5 split until 2026-08-15, and it is
+    worth spelling out because the symptom never once looked like a path
+    bug. The line read ``parent.parent.parent`` with the comment
+    "python_workbench/core/storage.py -> workbench root" — correct for the
+    v1 layout, where this file sat one directory deeper. In v5 the file is
+    ``<app>/core/storage.py``, so three parents up lands ONE LEVEL ABOVE the
+    app: ``C:\\`` instead of ``C:\\WORKBENCH_V5``.
+
+    Every deal-folder read goes through here as the relative key
+    ``Properties/...``, so they were all resolving against ``C:\\Properties``
+    — a directory that does not exist. ``discover_property_folders()``
+    returned an empty list, no property ever matched a folder, no
+    ``sales.json`` was ever opened, and Sale History fell through to county
+    records and blamed a nightly data feed for a file sitting on disk.
+
+    It hid for as long as it did because it USED to be right by accident:
+    under the old sibling layout the deal folders really did live beside the
+    app, so "one level above the app" and "where the folders are" were the
+    same directory. Moving the app into ``C:\\WORKBENCH_V5`` separated them
+    and silently severed every folder read.
+
+    ``test_storage_root_matches_property_io`` pins the invariant that
+    actually matters: this root and ``data.property_io._WB_ROOT`` must name
+    the same directory, because one composes the keys the other resolves.
     """
 
     backend_label = "local-disk"
@@ -102,8 +127,8 @@ class LocalDiskStorage:
             if env_root:
                 root = Path(env_root)
             else:
-                # python_workbench/core/storage.py → workbench root
-                root = Path(__file__).resolve().parent.parent.parent
+                # <app>/core/storage.py -> <app>
+                root = Path(__file__).resolve().parent.parent
         self.root = Path(root).resolve()
 
     def _resolve(self, path: str) -> Path:
