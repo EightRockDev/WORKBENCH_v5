@@ -37,3 +37,8 @@ hampton-roads-etl/**/*.db
 hampton_roads.db
 data/hampton_roads.db
 hampton-roads-etl/.env
+
+# Deal folders live inside the app folder (owner decision 2026-08-15).
+# Never commit them: owner names, financials and notes, and this repo is
+# pushed to GitHub.
+/Properties/

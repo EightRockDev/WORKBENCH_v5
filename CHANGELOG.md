@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.55.0.0.0 — 2026-08-15  ·  Deal folders move into the application folder
+Owner decision: the deal folders belong in `C:\WORKBENCH_V5` with the rest of
+the application data. I recommended leaving them in the OneDrive/SharePoint
+sync root and was overruled, so this implements the move properly.
+
+`move-deal-folders.bat` COPIES rather than moves — the original stays untouched
+until the owner deletes it deliberately, because a half-failed move takes the
+only copy of hand-verified sale history with it. It counts deal folders and
+`sales.json` files on both sides afterwards and treats any shortfall as a
+failure rather than a warning. Then it pins `ER_PROPERTIES_ROOT` to the new
+location, so the app stops inferring it from its own install path — the
+assumption that caused this whole class of failure.
+
+`/Properties/` added to `.gitignore`: without it, the next publish would commit
+owner names, financials and deal notes to GitHub. Verified safe against the
+updater, which uses `checkout -f` and `reset --soft` (neither removes untracked
+files) and never runs `git clean`.
+
+One consequence to own: this location has no sync and no version history.
+SharePoint was providing backup for free and a local folder provides none.
+
 ## V5.54.0.0.0 — 2026-08-15  ·  Find the deal folders where they actually live
 Owner located them:
 `C:\Users\<user>\<Org>\<Org> - Documents\Properties` — the OneDrive /
