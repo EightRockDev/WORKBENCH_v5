@@ -98,6 +98,14 @@ class ParityReport:
     comp_overlaps: list[float] = field(default_factory=list)
     rent_pairs: int = 0
     rent_delta_sum: float = 0.0
+    # SIGNED delta, kept alongside the absolute one. The gate scores
+    # abs(), which cannot tell a systematic bias from symmetric scatter -
+    # and those two have opposite fixes. If the signed mean is close to
+    # -31%, the estimator is uniformly LOW and a calibration factor closes
+    # it. If the signed mean is near zero while abs() is 31%, the error is
+    # scatter and NO factor helps; the answer is better per-property rent,
+    # not better arithmetic. Free to carry, decides the next move.
+    rent_signed_sum: float = 0.0
     worst_unit_mismatches: list[str] = field(default_factory=list)
     legacy_by_city: dict = field(default_factory=dict)
     matched_by_city: dict = field(default_factory=dict)
@@ -123,6 +131,12 @@ class ParityReport:
         return (self.rent_delta_sum / self.rent_pairs) if self.rent_pairs else None
 
     @property
+    def avg_rent_signed(self) -> float | None:
+        """Mean (estimate - actual)/actual. Negative = estimate runs low."""
+        return ((self.rent_signed_sum / self.rent_pairs)
+                if self.rent_pairs else None)
+
+    @property
     def gate_passed(self) -> bool:
         rent_ok = self.avg_rent_delta is None or self.avg_rent_delta <= GATE_RENT_DELTA
         return (self.comp_subjects > 0
@@ -143,6 +157,17 @@ class ParityReport:
     def summary(self) -> str:
         rent = (f"{self.avg_rent_delta:.1%}" if self.avg_rent_delta is not None
                 else "n/a (8R rent signal not populated yet)")
+        if self.avg_rent_signed is not None:
+            sg = self.avg_rent_signed
+            # Name which failure mode this is, in the report itself.
+            if abs(sg) > 0.6 * (self.avg_rent_delta or 1):
+                verdict = ("systematic - the estimate runs "
+                           + ("LOW" if sg < 0 else "HIGH")
+                           + "; a calibration factor is the fix")
+            else:
+                verdict = ("scatter, not bias - a calibration factor cannot "
+                           "close this; better per-property rent can")
+            rent += f"  [signed {sg:+.1%}: {verdict}]" 
         unit_total = self.unit_agreement + self.unit_disagreement
         year_total = self.year_agreement + self.year_disagreement
         lines = [
@@ -438,6 +463,7 @@ def _score_fields(legacy: dict, r8: dict, report: ParityReport) -> None:
     if lr and rr:
         report.rent_pairs += 1
         report.rent_delta_sum += abs(lr - rr) / lr
+        report.rent_signed_sum += (rr - lr) / lr
     lu, ru = legacy.get("units"), r8.get("units")
     if lu and ru:
         tolerance = max(UNIT_TOLERANCE_ABS, lu * UNIT_TOLERANCE_PCT)

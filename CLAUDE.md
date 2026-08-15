@@ -265,6 +265,22 @@ rent. More of a biased estimator cannot reduce bias. Rules banked:
   * Measure, report, and only then apply. Three times this week that order
     turned a guess into a fix (PTM_ID aliases, Richmond crosswalk, this).
 
+### abs() in a gate hides which fix applies (2026-08-15)
+The rent gate summed `abs(estimate - actual)`, so 31.6% could mean either "the
+estimate is uniformly 31% low" (calibrate it - one multiplier, done) or "the
+estimate is right on average and scattered ±31%" (no multiplier can ever close
+it; the answer is better per-property data). Same number, opposite fixes, and
+a day of work aimed at the wrong one. Carrying the SIGNED mean alongside costs
+one float and decides the move. Generalised: whenever a metric aggregates an
+error, keep the sign somewhere - the magnitude tells you how bad, only the
+sign tells you what to do.
+
+Corollary on thin evidence: the first rentbias run returned n=2 at 0.94x and
+1.01x, which quietly contradicted the FMR-runs-low hypothesis I had already
+written into a changelog. Two samples do not overturn it either - the point is
+that the cheap signed metric settles it over 171 pairs this cycle, instead of
+either belief getting another day of momentum.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

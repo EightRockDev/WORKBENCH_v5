@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.43.0.0.0 — 2026-08-15  ·  Tell bias from scatter; hunt the Richmond join key
+Two diagnostics, both driven by overnight evidence rather than a guess.
+(1) The rent gate scores `abs(estimate - actual)`, which cannot distinguish a
+systematic bias from symmetric scatter - and those have OPPOSITE fixes. The
+parity report now carries the signed mean alongside it, names which failure
+mode it is in the summary line, and publishes `rent_delta_signed` to
+phase0-gates.json. Yesterday's first rentbias run made this urgent: the only
+two observed listings came in at 0.94x and 1.01x of FMR, which is evidence
+AGAINST the "FMR runs low" hypothesis and points at the legacy survey rents
+instead - but n=2 decides nothing, and the signed mean over 171 pairs does.
+(2) `scripts/find_join_key.py` scans every field of each Richmond assessor
+layer against every field of the others and reports which pairs actually share
+values. The alias axis merged the workbook to VDEM, not to COR, and the
+2026-08-15 review proved NO Richmond source maps an address at all - so
+guessing a third transform is out; this finds the key or proves none exists
+and geometry is the only axis left.
+
 ## V5.42.0.1.0 — 2026-08-14  ·  Crosswalk scan reports even when it finds nothing
 Its first run printed nothing at all, which reads as "no problem" - the repo's
 own oldest lesson (a gap hidden looks like completeness). The silence actually

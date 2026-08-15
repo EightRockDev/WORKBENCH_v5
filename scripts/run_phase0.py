@@ -216,6 +216,9 @@ def _phase0_flow(db) -> int:
         "p0_1_passed": report.gate_passed,
         "comp_overlap": parity.avg_comp_overlap,
         "rent_delta": parity.avg_rent_delta,
+        # Signed companion: tells bias from scatter, which have
+        # opposite fixes. Tracked so the trend is visible per cycle.
+        "rent_delta_signed": parity.avg_rent_signed,
         "rent_pairs": parity.rent_pairs,
         "match_rate": parity.match_rate,
         "covered_match_rate": parity.covered_match_rate,

@@ -74,6 +74,13 @@ STEPS = (
     # properties, sales, units, taxes; exits non-zero while gaps remain and
     # names each gap's unblock).
     ("richmondreview", ["scripts/run_richmond_report.py"], "richmond-review.txt"),
+    # Richmond units and values key on different id schemes and never meet.
+    # Two axes are closed by evidence (apn alias merged workbook->VDEM not
+    # COR; NO Richmond source maps an address at all, 2026-08-15). Rather
+    # than guess a third transform, scan every field of each layer against
+    # every field of the others and report which pairs actually share
+    # values - the way PTM_ID was eventually found.
+    ("joinkey", ["scripts/find_join_key.py"], "join-key-latest.txt"),
     ("alerts", ["scripts/run_alerts.py"], "alerts-latest.txt"),
     ("preflight", ["scripts/preflight_cutover.py"], "cutover-preflight.txt"),
     # Nightly Postgres dump, self-gated to one per day (CLAUDE.md lesson 9b:
