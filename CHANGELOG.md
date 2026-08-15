@@ -12,6 +12,22 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.45.0.0.0 — 2026-08-15  ·  Norfolk sale history + no paths in the UI
+`fix-norfolk-sales.bat` forces the sale index to rebuild on demand instead of
+waiting for the 3 AM cycle, then reports whether Norfolk's sales actually join
+to Norfolk's properties — printing both parcel-id formats side by side when
+they don't. Two candidates and it settles which: a stale index (the pre-v3
+freshness stamp was blind to content, and Norfolk's puller replaces rows
+in place, so a re-pull could leave it unchanged), or a key mismatch (sales key
+on gpin).
+
+Also, per owner directive: the ETL runner no longer prints the command it is
+about to run, and scrubs absolute paths out of the stdout and stderr it echoes.
+The old `$ C:\...\hampton_roads_etl.py` caption told the reader nothing they
+could act on and put the install layout into every screenshot; scrubbing the
+tails too means the rule holds when something fails, which is exactly when
+someone screenshots it. File names survive — locations don't.
+
 ## V5.44.0.0.0 — 2026-08-15  ·  Artifact engine on the current Opus
 Document generation and the IC-memo voice check both ran on the previous
 Opus. Moved to the current model at the same input price. The migration is

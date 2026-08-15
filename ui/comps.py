@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import re
 import pandas as pd
 import pydeck as pdk
 import streamlit as st
@@ -753,6 +754,25 @@ _TABLE_TO_ETL_SHORT = {
 }
 
 
+# Owner directive 2026-08-15: never show where scripts are being run.
+# Absolute paths leak the install layout into the UI - and into every
+# screenshot of it - while telling the reader nothing they can act on.
+# Keeps the FILE NAME (which is the part that identifies what failed) and
+# drops the directories. Windows and POSIX both, plus file:// URLs.
+_PATH_RE = re.compile(
+    r"""(?:file://)?           # optional file:// prefix
+        (?:[A-Za-z]:[\\/]|/) # drive letter, or a leading slash
+        (?:[^\s'"<>|]*[\\/])+  # one or more directory components
+        (?=[^\s'"<>|]+)       # leave the final segment in place
+    """,
+    re.VERBOSE)
+
+
+def _strip_paths(text: str) -> str:
+    """Replace absolute paths with just their file name."""
+    return _PATH_RE.sub("", text or "")
+
+
 def _run_etl_refresh(only: str | None = None) -> None:
     """Run the Hampton Roads ETL via subprocess. Shows a live status in the UI.
 
@@ -789,7 +809,11 @@ def _run_etl_refresh(only: str | None = None) -> None:
     label = f"source '{only}'" if only else "all sources"
 
     with st.status(f"⚙ Running ETL for {label}…", expanded=True) as status:
-        st.caption(f"$ {' '.join(cmd[1:])}")
+        # NO command line, and NO paths in anything echoed below (owner
+        # directive 2026-08-15: never show where scripts are being run).
+        # This used to print `$ C:\WORKBENCH_V5\...\hampton_roads_etl.py`,
+        # which tells the reader nothing they can act on and exposes the
+        # install layout to anyone looking at the screen or a screenshot.
         try:
             result = subprocess.run(
                 cmd,
@@ -804,7 +828,8 @@ def _run_etl_refresh(only: str | None = None) -> None:
                     state="complete",
                 )
                 # Show last few lines of stdout so Brian can see what happened
-                tail = "\n".join(result.stdout.splitlines()[-10:])
+                tail = _strip_paths(
+                    "\n".join(result.stdout.splitlines()[-10:]))
                 if tail:
                     st.code(tail, language=None)
                 st.success("Reload the page to see fresh data in the comp tables.")
@@ -814,7 +839,11 @@ def _run_etl_refresh(only: str | None = None) -> None:
                     state="error",
                 )
                 st.error("Stderr tail:")
-                st.code(result.stderr[-800:] or "(empty)", language=None)
+                # Tracebacks carry absolute paths on every frame - scrub
+                # them too, or the directive holds only until something
+                # fails, which is exactly when someone screenshots it.
+                st.code(_strip_paths(result.stderr[-800:]) or "(empty)",
+                        language=None)
         except subprocess.TimeoutExpired:
             status.update(label="⏱ ETL timed out (>10 min)", state="error")
             st.error("ETL run exceeded the 10-minute limit and was terminated.")
