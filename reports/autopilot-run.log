@@ -11916,3 +11916,5 @@ Checked 111 packages in 10ms
 [richmondreview] exit 1 -> richmond-review.txt
 [publish] pushed to GitHub
 [alerts] exit 0 -> alerts-latest.txt
+[publish] pushed to GitHub
+[preflight] exit 0 -> cutover-preflight.txt
