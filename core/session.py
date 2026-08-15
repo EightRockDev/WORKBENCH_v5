@@ -33,6 +33,50 @@ def auth_configured(st) -> bool:
         return False
 
 
+_LOOPBACK = {"127.0.0.1", "localhost", "::1", "0:0:0:0:0:0:0:1"}
+
+
+def _bound_to_loopback() -> bool:
+    """True only when this server refuses connections from other machines.
+
+    Read from Streamlit's resolved config, so it reflects what the server is
+    actually bound to rather than what someone meant to pass. Unknown or
+    unreadable counts as NOT loopback: the safe answer when in doubt is the
+    one that keeps the sign-in gate on.
+    """
+    try:
+        from streamlit import config as _st_config
+
+        return str(_st_config.get_option("server.address") or "").strip() in _LOOPBACK
+    except Exception:
+        return False
+
+
+def local_console_login_enabled() -> bool:
+    """Owner-at-the-keyboard bypass: `ER_LOCAL_LOGIN=1` on a loopback bind.
+
+    Sign-in depends on two things outside this app - an identity provider on
+    the internet and a reverse proxy in front. When either misbehaves the
+    owner is locked out of his own machine's data with no way in, which is
+    exactly what happened on 2026-08-15.
+
+    This is the door that cannot be taken away by anything outside the
+    machine. It opens ONLY when both hold:
+
+      * `ER_LOCAL_LOGIN=1` is set - deliberate, by a launcher whose whole
+        purpose is this;
+      * the server is bound to loopback, so the only person who can reach it
+        is someone already sitting at the machine, who by then has the files
+        and the database anyway.
+
+    The loopback condition is what makes this safe rather than a backdoor:
+    the environment variable alone does nothing on a server that answers the
+    network. Setting it on the LAN or Caddy-fronted instances has no effect,
+    by construction, not by convention.
+    """
+    return os.getenv("ER_LOCAL_LOGIN") == "1" and _bound_to_loopback()
+
+
 def require_passcode(st) -> None:
     """Shared-passcode gate for network exposure before real sign-in exists.
 
@@ -151,6 +195,18 @@ def resolve_user(st) -> AdminUser | None:
 
     if not pg.is_configured():
         return None  # legacy single-user mode; no pilot auth
+
+    if local_console_login_enabled():
+        # Checked BEFORE OIDC on purpose: the whole point is a way in when
+        # the identity provider or the reverse proxy is the thing that is
+        # broken. Loopback-bound only - see local_console_login_enabled().
+        from core import user_admin
+
+        return user_admin.sync_user_on_login(
+            "local|console",
+            os.getenv("ER_DEV_EMAIL", "owner@eight-rock.local"),
+            "Owner (this computer)",
+        )
 
     if auth_configured(st):
         from core import oidc

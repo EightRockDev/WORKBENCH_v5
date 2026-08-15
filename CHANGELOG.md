@@ -12,6 +12,52 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.58.0.0.0 — 2026-08-15  ·  The fixed folder now actually has the folders in it.
+
+V5.57 pinned the deal-folder location and deleted all discovery. Correct, and
+the owner's call — but it pointed the app at an *empty* directory, because the
+deal folders were still in the OneDrive sync root where they have always
+lived. Sale History for Grand Hampton at Langley found no folder, never read
+its `sales.json`, fell through to county records, and printed *"No sales
+loaded for Hampton yet — the nightly data pull has not landed this locality's
+transfer records."* That sentence was false, and it sent the owner looking for
+an ETL problem that did not exist.
+
+The move existed as a batch file the owner had to run. That was the actual
+defect: a fix that ends in "now go double-click this" is a to-do item handed
+back, and this one had been handed back three times.
+
+- **`data/property_seed.py`** — on startup the app fills the fixed location
+  itself, once, from wherever the deal folders really are. The destination
+  never moves and still takes every write. The source is only ever *read*;
+  nothing is moved, renamed or deleted. A folder already at the destination is
+  never overwritten. It only ever seeds a destination with nothing in it, so a
+  folder the owner later deletes on purpose stays deleted.
+- **Sale History caption** no longer blames a nightly data pull when the real
+  cause is that no deal folder was found. Three situations had collapsed into
+  one wrong sentence; that one is now told apart from the other two.
+
+Also in this release, from being locked out of sign-in twice the same day:
+
+- **`core/auth_patch.py`** — Streamlit 1.57's OAuth callback calls
+  `authorize_access_token` with no error handling, so a spent one-time code
+  (refresh or Back on the callback page), a rejected credential or an
+  unreachable provider all render Starlette's bare `Internal Server Error` —
+  no reason, no way forward, nothing logged where anyone would look. That one
+  route is now wrapped: the failure is explained in plain language with a
+  "start again" button, and the real traceback goes to the app's output. No
+  sign-in that should fail now succeeds.
+- **`open-workbench-here.bat`** — a door that nothing outside the machine can
+  take away. Runs on 127.0.0.1:8599, a port the public front door does not
+  forward to, and skips the OIDC gate. Safe because of the loopback bind, not
+  because of the flag: `ER_LOCAL_LOGIN=1` is inert on any server that answers
+  the network (`core.session.local_console_login_enabled`).
+- **`fix-login.bat` / `deploy/windows/fix-login.ps1`** — points Caddy at the
+  instances that are actually listening and hot-reloads, for when the
+  blue/green pair is only half up.
+
+---
+
 ## V5.57.0.0.0 — 2026-08-15  ·  One fixed deal folder. No discovery.
 Owner directive: "Don't choose anything - pick a folder - in the directory I
 told you - and write to it. Every Time. Don't guess."

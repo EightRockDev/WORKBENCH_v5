@@ -33,7 +33,14 @@ except ImportError:
     pass
 
 import config
+from core import auth_patch as _auth_patch
 from core import session as core_session
+
+# A failed sign-in used to render Streamlit's bare "Internal Server Error"
+# — no reason given, no way forward (owner locked out, 2026-08-15). This
+# makes it say what happened. Idempotent; a no-op if Streamlit changes.
+_auth_patch.install()
+
 from data.db import get_property
 from data.property_io import (
     discover_property_folders,
@@ -697,6 +704,26 @@ small {{
     st.markdown(block, unsafe_allow_html=True)
 
 
+@st.cache_resource(show_spinner=False)
+def _seed_deal_folders() -> tuple[int, str]:
+    """Make sure the fixed deal-folder location actually HAS the deal folders.
+
+    Pinning the location (V5.57) pointed the app at an empty directory while
+    the folders still sat in the OneDrive sync root. Sale History then found
+    no folder, fell through to county records, and blamed a nightly data
+    pull for a `sales.json` that was on disk the whole time. Moving them was
+    a script the owner had to run — which is the same bug wearing a hat.
+
+    Runs once per process, and does nothing at all once the folder is
+    populated. See data/property_seed.py for why it only ever seeds empty.
+    """
+    from data.property_io import PROPERTIES_ROOT
+    from data.property_seed import seed_if_empty
+
+    copied, source = seed_if_empty(PROPERTIES_ROOT)
+    return copied, str(source) if source else ""
+
+
 def main() -> None:
     st.set_page_config(
         page_title="Workbench",
@@ -704,6 +731,11 @@ def main() -> None:
         layout="wide",
         initial_sidebar_state="expanded",
     )
+
+    # Before anything reads a deal folder. Cached, so this is one dict
+    # lookup on every run after the first.
+    with st.spinner("Setting up your deal folders…"):
+        _seed_deal_folders()
     # Per-user theme — merges the signed-in user's saved overrides into
     # config.COLORS / config.DARK_COLORS BEFORE any CSS or component reads
     # them. Idempotent (rebuilds from the shipped defaults each run), so it's

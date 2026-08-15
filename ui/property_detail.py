@@ -1202,6 +1202,18 @@ def _render_sales(folder: PropertyFolder | None,
         # no data" when the truth is usually "this city's sales are not
         # loaded yet" or "we could not tie this address to a parcel". Say
         # which, so the next question is answerable (owner, 2026-08-15).
+        #
+        # Order matters here. When there is no deal folder for this property,
+        # blaming a nightly data pull is simply false - the curated
+        # sales.json was never consulted, because the app never found the
+        # folder holding it. That exact wrong caption is what sent the owner
+        # chasing an ETL problem that did not exist.
+        if folder is None:
+            st.caption(
+                "No deal folder for this property yet, so there is no saved "
+                "sale history to show. Add one and its `sales.json` appears "
+                "here.")
+            return
         try:
             from core import sale_history as _sh
             why = _sh.explain_no_sales(prop)

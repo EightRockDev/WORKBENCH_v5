@@ -1046,6 +1046,59 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` â†’ http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson â€” a fix that ends in "now go run this" is not a fix (2026-08-15)
+
+V5.57 pinned `PROPERTIES_ROOT` to one constant folder, exactly as the owner
+directed. It also pointed the app at an empty directory, because the deal
+folders were still in the OneDrive sync root. Sale History found no folder,
+never read the curated `sales.json`, fell through to county records, and told
+the owner Hampton's nightly data pull had not landed â€” a sentence that was
+simply untrue about a file sitting on his disk.
+
+The migration shipped as `move-deal-folders.bat`. He never ran it, and he was
+right not to have to. Three separate releases handed the same chore back to
+him in different wrapping, and each one looked like progress on our side while
+nothing changed on his screen. **Shipping the mechanism is not shipping the
+outcome.** If a change requires a one-time data move, the app performs it
+itself on startup; a batch file is at best a manual override, never the plan.
+
+Second half of the same lesson, in the caption: three distinct causes â€” feed
+not loaded, parcel not matched, *no deal folder found* â€” all printed the feed
+message. A wrong diagnosis costs more than no diagnosis, because it is
+actionable and the action is wasted. Any message naming a cause must be
+reachable ONLY from that cause.
+
+Guard rails now in tests (`tests/test_property_seed.py`): seeding fills an
+empty destination only, never overwrites, never touches the source, and runs
+once so a folder deleted on purpose stays deleted.
+
+## Lesson â€” a bare 500 is a bug in OUR error handling, not just theirs (2026-08-15)
+
+The owner hit `Internal Server Error` on `/oauth2callback` twice in one day. I
+diagnosed it three times from the outside â€” session affinity, dead upstream,
+secrets shape â€” and each diagnosis was a guess, because the page carried no
+information and neither did any log he would open.
+
+The cause was upstream and visible in ten minutes of reading: Streamlit
+1.57's callback route ends `token = await client.authorize_access_token(request)`
+with no `try`. Every ordinary failure (a one-time code spent by a page
+refresh, a rejected credential, a provider timeout) escapes into Starlette's
+default 500. Streamlit 1.61 added the `try`; we are pinned below it.
+
+Two habits out of this: **read the dependency's source before theorising about
+its behaviour** â€” the answer was in the installed package, not in the config;
+and **an unexplained failure on a screen the owner uses is our defect to fix,
+wherever the code lives.** `core/auth_patch.py` wraps that one route so the
+failure states its reason. Nothing that should fail now succeeds â€” the wrap
+changes what the user is told, never who gets in.
+
+Related: a sign-in that depends on an identity provider and a reverse proxy
+has two remote single points of failure between the owner and his own data.
+`open-workbench-here.bat` is the door neither can close: loopback bind, a port
+the public front door does not forward to, gate off. The loopback bind is the
+security argument, not the env var â€” `ER_LOCAL_LOGIN=1` is inert on any server
+that answers the network, enforced in `tests/test_local_console_login.py`.
+
 ## Lesson â€” an empty data card is a source question, not always a code bug (2026-08-05)
 
 Sale history read empty. We first found and fixed a real code bug (wrong function
