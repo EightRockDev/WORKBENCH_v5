@@ -309,6 +309,24 @@ Two rules banked:
     names it if it is still serving after — because the whole failure class
     is invisible from the deploy side and obvious from the browser.
 
+### A dead join key looks exactly like missing data (2026-08-15)
+An owner screenshot read "No sale history available", which reads as "we have
+not pulled the sales yet". The sales were pulled, extracted and indexed. The
+lookup keyed on `prop["apn"]`, and the read path in force serves the licensed
+vendor table, whose schema has no parcel column at all - so that key was
+always empty and only the address fallback ever ran. Marketing address vs
+assessor situs address misses often enough to look like an empty dataset.
+
+Two rules banked:
+  * When a feature reads empty, verify the JOIN KEY exists on both sides
+    before hunting for the data. I spent this session chasing Norfolk's
+    pull and index freshness for a defect that was neither, and was not
+    Norfolk-specific.
+  * A read seam that swaps the underlying table swaps its COLUMNS too.
+    `SPINE_READ_SOURCE` was reviewed for row shape, not for which keys
+    downstream features silently depend on. Anything keyed on a column the
+    other side lacks dies quietly at the seam.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

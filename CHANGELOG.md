@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.48.0.0.0 — 2026-08-15  ·  Sale history: the legacy path had no parcel id
+"No sale history available" was never a Norfolk problem or a data problem — it
+was every property in every market. The app serves the licensed vendor table
+until the Phase 0 gates hold, and that table has NO parcel column (only a
+provider UUID and a provider integer). So `prop["apn"]` was always None, the
+apn branch of the sale lookup was structurally dead, and every card fell back
+to matching a marketing address ("3000 S. Cape Henry") against an assessor
+situs address. Where those differ by an abbreviation or a unit designator, the
+card read empty while the sales sat in the index.
+
+Fix: when the property carries no parcel id, resolve one through
+`property_crosswalk` — the legacy-to-backbone bridge phase0 parity already
+builds — and use the backbone row's apn. Unmatched properties degrade to
+address matching exactly as before, and a box with no crosswalk survives
+untouched. Coverage therefore tracks the parity match rate rather than address
+luck, and improves with it.
+
+Guarded by a test that asserts the vendor table still lacks a parcel column, so
+if that ever changes the bridge gets re-evaluated instead of quietly persisting.
+
 ## V5.47.0.0.0 — 2026-08-15  ·  Sign-in triage + branded auth screens
 Owner hit "Internal Server Error" on /oauth2callback — no way into the app.
 `diagnose-login.bat` triages it in one double-click. It checks the config Caddy

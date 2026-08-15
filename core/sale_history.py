@@ -20,6 +20,7 @@ breaking the page.
 
 from __future__ import annotations
 
+import sqlite3
 import datetime as dt
 import json
 import re
@@ -251,6 +252,45 @@ def last_sale_year_for(prop: dict, *, db_path: Path | None = None) -> int | None
     return None
 
 
+def _apn_via_crosswalk(prop: dict, path: Path) -> str:
+    """Parcel id for a LEGACY property row, resolved through the crosswalk.
+
+    The read layer serves the licensed vendor table until the Phase 0 gates
+    hold, and that table has NO parcel column - `property_id` is a provider
+    UUID and `legacy_id` a provider integer. So `prop["apn"]` is always None
+    on the legacy path, the apn branch of the lookup below is structurally
+    dead, and EVERY property falls back to matching a marketing address
+    ("3000 S. Cape Henry") against an assessor situs address. When those
+    differ by an abbreviation or a unit designator, the card reads "No sale
+    history available" even though the sales are sitting in the index.
+
+    That is not a Norfolk problem or a data problem - it is every property in
+    every market, and it lasts until the cutover. `property_crosswalk` is the
+    bridge phase0 parity already builds (legacy id -> backbone id), and the
+    backbone row carries the real apn. Use it.
+
+    Returns "" when the property is not matched yet, which is honest: the
+    caller then falls back to address matching exactly as before.
+    """
+    legacy_id = prop.get("property_id")
+    if not legacy_id:
+        return ""
+    try:
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return ""
+    try:
+        row = conn.execute(
+            "SELECT p.apn FROM property_crosswalk x "
+            "  JOIN properties_8r p ON p.property_id = x.r8_property_id "
+            " WHERE x.legacy_property_id = ?", (str(legacy_id),)).fetchone()
+    except sqlite3.Error:
+        return ""          # crosswalk or backbone absent - pre-Phase 0 box
+    finally:
+        conn.close()
+    return _norm_apn(row[0]) if row and row[0] else ""
+
+
 def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
     import sqlite3
 
@@ -261,11 +301,17 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
     market = (prop.get("market") or city or "").strip()
     want_apn = _norm_apn(prop.get("apn"))
     want_addr = _norm_addr(prop.get("address"))
-    if not (want_apn or want_addr):
-        return []
 
     path = _muni_db_path(db_path)
     if path is None or not Path(path).exists():
+        return []
+
+    # No apn means the legacy read path (its table has no parcel column).
+    # Resolve one through the crosswalk before giving up on the strong key -
+    # address matching alone is why so many cards read "no sale history".
+    if not want_apn:
+        want_apn = _apn_via_crosswalk(prop, Path(path))
+    if not (want_apn or want_addr):
         return []
 
     # Indexed path first (owner report 2026-08-09 "too slow"): the autopilot
