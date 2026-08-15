@@ -82,3 +82,25 @@ def test_org_rename_does_not_break_it(tmp_path, monkeypatch):
     (real / "A-Deal-10-Norfolk").mkdir(parents=True)
     monkeypatch.setattr("pathlib.Path.home", staticmethod(lambda: home))
     assert _discover_properties_root(app) == real
+
+
+def test_a_decoy_folder_does_not_beat_the_real_one(tmp_path, monkeypatch):
+    """Order-based selection let a stray Properties folder containing one
+    junk directory win over the OneDrive root holding every real deal - so
+    the app read no curated sale history and fell back to county records
+    (owner, 2026-08-15: still empty after the move). Score by how many
+    sales.json files a candidate actually holds."""
+    home = tmp_path / "Users" / "brian2"
+    home.mkdir(parents=True)
+    app = tmp_path / "WORKBENCH_V5"
+    app.mkdir()
+    decoy = tmp_path / "Properties"
+    (decoy / "Archive").mkdir(parents=True)          # 1 folder, 0 sales.json
+    real = (home / "Eight Rock Capital Partners"
+            / "Eight Rock Capital Partners - Documents" / "Properties")
+    for name in ("Grand-Hampton-at-Langley-136-Hampton",
+                 "Crossroads-Townhomes-26-Norfolk"):
+        (real / name).mkdir(parents=True)
+        (real / name / "sales.json").write_text("[]")
+    monkeypatch.setattr("pathlib.Path.home", staticmethod(lambda: home))
+    assert _discover_properties_root(app) == real

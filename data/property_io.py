@@ -86,19 +86,35 @@ def _discover_properties_root(app_root: Path | None = None) -> Path:
     except OSError:
         pass
     candidates += [home / "Properties"]
+    # Pick by EVIDENCE, not by order. Taking the first candidate that held
+    # ANY folder meant a stray `C:\Properties` with one directory in it beat
+    # the OneDrive root holding every real deal - and the app went on
+    # inferring sale history from county records while the curated files sat
+    # there unread. Score each candidate by how many `sales.json` files it
+    # actually contains, since that file IS the thing we are looking for.
     seen: set[Path] = set()
+    best: tuple[int, int, Path] | None = None
     for cand in candidates:
         if cand in seen:
             continue
         seen.add(cand)
         try:
-            if cand.is_dir() and any(
-                    c.is_dir() and not c.name.startswith((".", "_"))
-                    for c in cand.iterdir()):
-                return cand
+            if not cand.is_dir():
+                continue
+            deals = withs = 0
+            for child in cand.iterdir():
+                if not child.is_dir() or child.name.startswith((".", "_")):
+                    continue
+                deals += 1
+                if (child / "sales.json").is_file():
+                    withs += 1
         except OSError:
             continue
-    return classic
+        if not deals:
+            continue
+        if best is None or (withs, deals) > (best[0], best[1]):
+            best = (withs, deals, cand)
+    return best[2] if best else classic
 
 
 PROPERTIES_ROOT = (

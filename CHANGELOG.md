@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.56.0.0.0 — 2026-08-15  ·  Pick the deal folder by evidence, not by order
+Grand Hampton at Langley has a saved `sales.json` — the owner confirmed it —
+and the card still showed the county-records fallback. Cause: discovery
+returned the FIRST candidate containing any directory at all, so a stray
+`Properties` folder with one junk subfolder beat the OneDrive root holding
+every real deal. The curated files were never read.
+
+Discovery now scores every candidate by how many `sales.json` files it actually
+contains and takes the winner. That is the file being looked for, so it is the
+right thing to count. No environment variable, no move, and no configuration
+required — the app finds the deals wherever they are.
+
 ## V5.55.0.0.0 — 2026-08-15  ·  Deal folders move into the application folder
 Owner decision: the deal folders belong in `C:\WORKBENCH_V5` with the rest of
 the application data. I recommended leaving them in the OneDrive/SharePoint
