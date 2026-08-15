@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.52.0.0.0 — 2026-08-15  ·  Find the deal folders v2 left behind
+"This worked fine in V2." It did — and the reason it stopped is not the sale
+matching I spent the day rewriting. Sale history has always come first from a
+curated `sales.json` inside each property folder; the county-records path is
+only the fallback when that file is absent. Both versions locate those folders
+as "one directory above the app", which is a RELATIVE rule — so v5 sitting in a
+different directory than v2 resolves to a different Properties folder. The deal
+folders never moved. v5 simply stopped looking where they are, found nothing,
+and fell through to inferring sales from county data — which is how a house's
+sale history ended up on a 26-unit building.
+
+`PROPERTIES_ROOT` now falls through an empty or config-only Properties
+directory to the previous install's, and `find-my-deal-folders.bat` prints
+which folder the app settled on, how many deals it found, and how many carry
+sale history. Behaviour on a fresh machine is unchanged, and
+`ER_PROPERTIES_ROOT` still overrides everything.
+
 ## V5.51.0.0.0 — 2026-08-15  ·  Sale history: accuracy over coverage
 The address bridge shipped in V5.50 matched a 26-unit apartment building to a
 house and displayed its $313,500 sale between two couples as the building's

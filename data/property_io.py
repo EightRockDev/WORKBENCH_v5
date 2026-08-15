@@ -45,10 +45,53 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 # can live anywhere on disk (second drive, NAS mount) independent of where
 # the app folder sits. Unset -> the classic sibling layout.
 _props_override = os.environ.get("ER_PROPERTIES_ROOT", "").strip()
+
+
+def _discover_properties_root(app_root: Path | None = None) -> Path:
+    """Find the deal folders, wherever the previous install left them.
+
+    Both v2 and v5 compute this as "one directory above the app". That is a
+    RELATIVE rule, so moving the app moves the answer: v2 in one folder and
+    v5 in `WORKBENCH_V5` resolve to two different `Properties` directories.
+    The deal folders - and the curated `sales.json` files inside them, which
+    are the ONLY source of hand-verified sale history - stayed where v2 put
+    them, so v5 quietly saw an empty set and fell back to guessing sales
+    from county records (owner, 2026-08-15: "this worked fine in V2").
+
+    So: keep the classic sibling location as the first candidate, but if it
+    holds no deal folders, look where a previous install would have put
+    them. Returns the first candidate that actually contains folders; falls
+    back to the classic path so behaviour is unchanged on a fresh machine.
+    """
+    app_root = app_root or Path(__file__).resolve().parent.parent
+    classic = app_root.parent / "Properties"
+    candidates = [
+        classic,
+        app_root / "Properties",              # inside the app folder
+        app_root.parent / "WORKBENCH" / "Properties",
+        app_root.parent / "python_workbench" / "Properties",
+        Path.home() / "Properties",
+        Path.home() / "OneDrive" / "Properties",
+    ]
+    seen: set[Path] = set()
+    for cand in candidates:
+        if cand in seen:
+            continue
+        seen.add(cand)
+        try:
+            if cand.is_dir() and any(
+                    c.is_dir() and not c.name.startswith((".", "_"))
+                    for c in cand.iterdir()):
+                return cand
+        except OSError:
+            continue
+    return classic
+
+
 PROPERTIES_ROOT = (
     Path(_props_override).expanduser()
     if _props_override
-    else Path(__file__).resolve().parent.parent.parent / "Properties"
+    else _discover_properties_root()
 )
 
 # Workbench root (parent of Properties/) — used to compute storage-relative paths.

@@ -358,6 +358,26 @@ prices - $313,500 and two individual buyers for a 26-unit building.
     sat on both sides and instantly rejects apartment-matched-to-house; I
     reached for fuzzier matching before I reached for evidence I already had.
 
+### "It worked in the old version" is a bisect, not a complaint (2026-08-15)
+I spent most of a day rebuilding sale matching - crosswalk bridge, looser
+address key, direction guards, unit-count guards - and shipped a wrong match
+along the way. One sentence from the owner ("this worked fine in V2") pointed
+at the predecessor source sitting in the GRANITE repo, where `_render_sales`
+took a FOLDER, not a property: sale history's real source is a curated
+`sales.json` per deal folder, and county records were only ever the fallback.
+v5 could not see those folders because both versions locate them RELATIVE to
+the app directory, and v5 lives somewhere else.
+
+  * When a user says a previous version worked, read that version's code
+    before writing any new logic. It is a free bisect across every change
+    between then and now, and it is usually faster than any diagnostic.
+  * A path computed relative to the app is a promise that the app never
+    moves. Anything user-owned - deal folders, curated files, notes - must be
+    located absolutely or discovered, never inferred from install location.
+  * Check which SOURCE a feature is supposed to use before improving how it
+    matches. I optimised the fallback for hours without noticing the primary
+    source had gone silent.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field
