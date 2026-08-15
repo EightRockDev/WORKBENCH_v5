@@ -467,7 +467,13 @@ def _check_voice_with_claude(
     text: str,
     artifact_type: str,
     workbench_root: Path,
-    model: str = "claude-opus-4-7",
+    # claude-opus-5. Thinking is on by default here too, and this call is
+    # non-streaming with a small budget - so max_tokens went 2048 -> 4096 to
+    # keep the verdict from being squeezed. Not disabling thinking: it is
+    # legal at effort `high` or below, but on Opus 5 a thinking-off request
+    # can leak <thinking> tags into the visible text, and this text gets
+    # parsed rather than read by a human.
+    model: str = "claude-opus-5",
 ) -> list[ValidationFinding]:
     sample = _load_voice_sample(workbench_root, artifact_type)
     if not sample:
@@ -532,7 +538,7 @@ def _check_voice_with_claude(
         client = anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model=model,
-            max_tokens=2048,
+            max_tokens=4096,
             system=system,
             messages=[{"role": "user", "content": user}],
         )

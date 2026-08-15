@@ -86,7 +86,7 @@ class ArtifactSpec:
     icon: str             # emoji prefix
     description: str      # one-liner shown under the button
     enabled: bool = True  # False = stub (button visible but disabled)
-    max_tokens: int = 8192
+    max_tokens: int = 16384
 
 
 ARTIFACT_CATALOG: tuple[ArtifactSpec, ...] = (
@@ -97,7 +97,7 @@ ARTIFACT_CATALOG: tuple[ArtifactSpec, ...] = (
         "Internal go/no-go memo. Analyst-blunt, threshold-cited, conditional "
         "recommendations. For Brian and Eight Rock analysts.",
         enabled=True,
-        max_tokens=8192,
+        max_tokens=16384,
     ),
     ArtifactSpec(
         "investor_memo_summary",
@@ -108,7 +108,7 @@ ARTIFACT_CATALOG: tuple[ArtifactSpec, ...] = (
         "Brian before she invests. Tax benefits explained simply, "
         "honest about what could go wrong, conservative tone. 4-6 pages.",
         enabled=True,
-        max_tokens=8192,
+        max_tokens=16384,
     ),
     ArtifactSpec(
         "investor_memo_detail",
@@ -119,10 +119,13 @@ ARTIFACT_CATALOG: tuple[ArtifactSpec, ...] = (
         "shielding (depreciation + cost seg + 1031), exit scenarios, LP "
         "rights, governance. 15-20 pages.",
         enabled=True,
-        # Bumped from 16384 → 32768 after the 16k cap truncated mid-§1031
-        # before reaching the Risks (#16) and Governance (#19) sections.
-        # `claude-opus-4-7` supports up to 32k output tokens natively.
-        max_tokens=32768,
+        # Bumped 16384 -> 32768 after the 16k cap truncated mid-§1031 before
+        # reaching Risks (#16) and Governance (#19); 32768 -> 65536 on the
+        # move to claude-opus-5, where thinking is ON BY DEFAULT and shares
+        # this budget with the document text. The old ceiling was sized when
+        # the whole allowance went to prose, so it would truncate the longest
+        # artifact again for a reason that never appears in the output.
+        max_tokens=65536,
     ),
     ArtifactSpec(
         "value_add_strategy",
@@ -131,7 +134,7 @@ ARTIFACT_CATALOG: tuple[ArtifactSpec, ...] = (
         "Operational plan — lever-by-lever, vintage-specific, phased capex. "
         "For property mgmt + LPs. 8-12 pages.",
         enabled=True,
-        max_tokens=12288,
+        max_tokens=24576,
     ),
     ArtifactSpec(
         "loi",
@@ -140,7 +143,7 @@ ARTIFACT_CATALOG: tuple[ArtifactSpec, ...] = (
         "Legal-formal offer to seller's broker. Standard CRE LOI structure "
         "with Eight Rock terms. 2 pages.",
         enabled=True,
-        max_tokens=4096,
+        max_tokens=8192,
     ),
 )
 
@@ -945,12 +948,14 @@ def generate_artifact(
     prop: dict[str, Any],
     deal: DealState,
     folder: PropertyFolder,
-    # `claude-opus-4-20250514` is Opus 4.0, deprecated and retires
-    # 2026-06-15. `claude-opus-4-7` is the current Opus — most capable
-    # generally available model. Same input pricing ($5/M); meaningfully
-    # better on long-horizon analytical work, which is exactly what these
-    # artifacts are.
-    model: str = "claude-opus-4-7",
+    # claude-opus-5 is the current Opus - same $5/M input as 4.7, stronger on
+    # the long-horizon analytical work these artifacts are. One migration
+    # trap worth stating where the default lives: on Opus 5 thinking is ON
+    # unless disabled, and max_tokens caps thinking PLUS visible text, so
+    # every per-artifact budget below was raised to keep headroom. Disabling
+    # thinking is only legal at effort `high` or lower, and would cost
+    # quality on exactly this kind of document - so we leave it on.
+    model: str = "claude-opus-5",
 ) -> Path:
     """End-to-end generation. Returns the saved file path. Raises
     `ArtifactGenerationError` on any failure (caller should display).

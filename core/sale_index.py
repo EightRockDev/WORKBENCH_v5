@@ -42,14 +42,22 @@ CREATE TABLE IF NOT EXISTS sale_index_meta (
 
 
 def _muni_stamp(conn: sqlite3.Connection) -> str:
+    # max(pulled_at) is load-bearing (2026-08-15): count+max(id) are both
+    # blind to CONTENT. A puller that refreshes rows in place - Norfolk's
+    # FY stack dedupes on (gpin, transfer_date) and replaces, Chesapeake's
+    # LandBook re-lands the same parcels - leaves the row count and the max
+    # id identical, so this stamp never changed and the index skipped its
+    # rebuild indefinitely while the underlying sales moved on. Any refresh
+    # bumps pulled_at, so a re-pull now always re-indexes.
     row = conn.execute(
-        "SELECT count(*), COALESCE(max(id),0) FROM muni_records "
+        "SELECT count(*), COALESCE(max(id),0), COALESCE(max(pulled_at),'') "
+        "FROM muni_records "
         "WHERE kind LIKE 'assessor%' OR kind LIKE 'sales%'").fetchone()
     # v2 suffix (2026-08-11): rows from scraped-file feeds now store the
     # resolved workbook URL (record's _file) instead of the "files:..."
     # tag. Bumping the stamp forces ONE rebuild so existing rows get real
     # links even when muni_records itself is unchanged.
-    return f"{row[0]}:{row[1]}:v2"
+    return f"{row[0]}:{row[1]}:{row[2]}:v3"
 
 
 def index_present(db_path: Path) -> bool:

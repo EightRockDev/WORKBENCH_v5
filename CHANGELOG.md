@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.44.0.0.0 — 2026-08-15  ·  Artifact engine on the current Opus
+Document generation and the IC-memo voice check both ran on the previous
+Opus. Moved to the current model at the same input price. The migration is
+not just the model string: on the new model thinking is ON unless disabled,
+and max_tokens caps thinking PLUS the visible document, so every per-artifact
+budget here was sized under an assumption that no longer holds. All raised —
+the institutional LP memo 32768 -> 65536 (it had already truncated once at
+16k, mid-1031, before reaching Risks and Governance), the rest doubled, and
+the validator's non-streaming call 2048 -> 4096. Thinking stays on: turning
+it off is legal only at effort `high` or below and can leak internal tags
+into visible text, which the validator parses rather than displays.
+
 ## V5.43.1.0.0 — 2026-08-15  ·  Autopilot runs with no console window
 The nightly cycle popped a console window that only ever echoed what
 reports\autopilot.log and reports\autopilot-status.txt already contain, so

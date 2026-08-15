@@ -281,6 +281,17 @@ written into a changelog. Two samples do not overturn it either - the point is
 that the cheap signed metric settles it over 171 pairs this cycle, instead of
 either belief getting another day of momentum.
 
+### A model upgrade can silently shrink your output budget (2026-08-15)
+Moving the artifact engine to the current Opus looked like a one-line model
+swap. It isn't: the new model thinks by default where the old one did not,
+and max_tokens is a cap on thinking PLUS visible text. Every budget in the
+file had been tuned when the whole allowance went to prose — including one
+raised specifically because a 16k cap truncated the LP memo mid-1031. Left
+alone, the longest documents would have started truncating again, for a
+reason that never appears in the output. Rule: when a model default changes
+what shares a budget, re-check every number sized against the old default —
+the swap is the easy half.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field
