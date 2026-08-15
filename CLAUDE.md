@@ -1046,6 +1046,45 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` â†’ http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — open the page (2026-08-15)
+
+Owner, and he was right: *"Why don't you test these things after you make
+updates? After all, you have browser control no problem."*
+
+Five releases shipped against a screenshot of an empty Sale History card.
+Every one had a green suite of 1289 tests. The defect - deal folders
+resolving one directory above the app - sat in the seam BETWEEN two units
+that were each locally correct, and **no unit test spans a seam**. The suite
+could not have caught it and never would have, no matter how many were added.
+
+Opening the app in a browser took about four minutes: seed a row, write a
+`sales.json`, launch Streamlit on a loopback port, drive the bundled Chromium
+to the Subject tab, read the page. That was available on day one of this bug
+and every day since.
+
+Rules from it:
+
+* **When the deliverable is a screen, the verification is that screen.** Not
+  a passing test that exercises the same functions the screen calls.
+* **Reproduce the owner's exact case, not an analogue.** Same property name,
+  same 192-vs-136 unit mismatch between record and folder name. The analogue
+  would have passed.
+* **Prove the test fails against the broken code.** `git checkout <prev> --
+  <files>`, run it, watch it fail, restore. A green new test that would also
+  have been green before the fix asserts nothing.
+* `st.dataframe` paints to a `<canvas>` and exposes no ARIA grid roles, so
+  cell values are genuinely unreadable from the DOM (probed: gridcell, cell,
+  row, grid, table - all zero). Assert on DOM-visible discriminators instead:
+  the row-legend caption is emitted only under a table with records, and the
+  county-provenance caption appears only on the fallback path. Those two
+  separate "rendered the owner's file" from every failure mode.
+
+Second half: the fixes were landing in git and not on his machine, because
+updating was a separate file he had to remember to run. **Ship along the path
+the user actually takes.** He double-clicks the launcher, so the launcher
+updates - and prints the version, because three exchanges went to
+establishing which code was running.
+
 ## Lesson â€” when four fixes in a row don't move the symptom, the diagnosis is wrong (2026-08-15)
 
 The owner reported missing sale history. I shipped V5.50 (address matching),

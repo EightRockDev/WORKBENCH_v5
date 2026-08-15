@@ -248,6 +248,33 @@ def test_updater_swaps_instead_of_killing_in_service_mode():
         "the files on disk did")
 
 
+def test_launching_the_app_also_updates_it():
+    """The owner ran three-plus releases behind while every fix shipped on
+    time, because update-workbench.bat is a SEPARATE file he has to remember
+    to run, and start-workbench.bat was happy to launch stale code forever
+    without saying so. Launching is updating now."""
+    start = (ROOT / "start-workbench.bat").read_text(encoding="utf-8")
+    assert "git fetch origin" in start, "the launcher does not fetch"
+    assert "git checkout -f origin/main" in start, (
+        "the launcher fetches but never applies the new code")
+    # ...and it must still launch when the sync cannot happen. A launcher
+    # that refuses to launch is a worse failure than being a day behind.
+    assert "Could not check" in start, (
+        "a failed sync must be reported and then ignored, never fatal")
+    # rindex: a comment further up quotes the launch command when explaining
+    # why the kill matches python.exe. The real INVOCATION is the last one.
+    assert start.index("git fetch origin") < start.rindex("streamlit run app.py"), (
+        "the sync must run before the app is launched, not after")
+
+
+def test_the_launcher_states_the_version_it_is_about_to_run():
+    """Three exchanges were spent establishing which version was running.
+    The window that starts the app should simply say so."""
+    start = (ROOT / "start-workbench.bat").read_text(encoding="utf-8")
+    assert 'findstr /C:"WORKBENCH_VERSION =" config.py' in start
+    assert "You are running WORKBENCH" in start
+
+
 def test_updater_retries_dependency_sync_when_services_hold_locks():
     """Windows refuses to replace a .pyd a running service has loaded; the
     retry stops both colours first, and the final swap starts them again."""

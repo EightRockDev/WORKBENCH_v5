@@ -56,6 +56,14 @@ dev = [
     "pytest-cov>=5",
     "ruff>=0.6",
     "mypy>=1.10",
+    # Drives the real app in a real browser (tests/test_sale_history_e2e.py).
+    # Five releases shipped against a screenshot of an empty Sale History
+    # card, each with a green unit suite, because the bug lived in the seam
+    # BETWEEN two individually-correct units. Only opening the page catches
+    # that class of defect. The browser binary is NOT downloaded here - the
+    # test skips unless one is already present, so this stays a small
+    # pure-python addition and never slows the owner's update.
+    "playwright>=1.47",
 ]
 
 [tool.ruff]

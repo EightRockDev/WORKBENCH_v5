@@ -12,6 +12,38 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.60.0.0.0 — 2026-08-15  ·  Launching the app updates it, and a browser test watches the card.
+
+Confirmed working on the owner's machine: the full transfer chain for Grand
+Hampton at Langley renders from his own `sales.json`, non-arm's-length $0
+deeds flagged, current owner of record identified.
+
+Two things kept the earlier fixes from reaching him, and both are closed here.
+
+**The app he double-clicks now updates itself.** `update-workbench.bat` is a
+separate file he has to remember to run; `start-workbench.bat` was happy to
+launch stale code forever without saying so, which is how he sat three-plus
+releases behind while every fix shipped on time. The launcher now fetches and
+applies the latest code before starting, and prints the version it is about
+to run in plain text. The sync is best-effort by design: no network, a wedged
+git state, anything at all — it says so in one line and starts the app
+regardless. A launcher that refuses to launch is a worse failure than being a
+day behind.
+
+**A real browser now checks the Sale History card.** Owner, fairly: *"Why
+don't you test these things after you make updates? After all, you have
+browser control no problem."* Five releases shipped against a screenshot of
+an empty card, each with a green unit suite, because the defect lived in the
+seam BETWEEN two individually-correct units and no unit test spans a seam.
+`tests/test_sale_history_e2e.py` writes a `sales.json` the way the owner
+does, starts the app, clicks to the Subject tab, and asserts the rows are on
+the page and that they came from his file rather than a county fallback. It
+fails against the pre-V5.59 code and passes against this one — verified both
+ways, not assumed. It skips cleanly where no browser is installed, so the
+owner's own update never slows down for it.
+
+---
+
 ## V5.59.0.0.0 — 2026-08-15  ·  The app was reading deal folders from `C:\Properties`.
 
 **This is the actual cause of the missing sale history**, and of the four
