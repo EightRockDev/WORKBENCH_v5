@@ -47,81 +47,29 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 _props_override = os.environ.get("ER_PROPERTIES_ROOT", "").strip()
 
 
-def _discover_properties_root(app_root: Path | None = None) -> Path:
-    """Find the deal folders, wherever the previous install left them.
-
-    Both v2 and v5 compute this as "one directory above the app". That is a
-    RELATIVE rule, so moving the app moves the answer: v2 in one folder and
-    v5 in `WORKBENCH_V5` resolve to two different `Properties` directories.
-    The deal folders - and the curated `sales.json` files inside them, which
-    are the ONLY source of hand-verified sale history - stayed where v2 put
-    them, so v5 quietly saw an empty set and fell back to guessing sales
-    from county records (owner, 2026-08-15: "this worked fine in V2").
-
-    So: keep the classic sibling location as the first candidate, but if it
-    holds no deal folders, look where a previous install would have put
-    them. Returns the first candidate that actually contains folders; falls
-    back to the classic path so behaviour is unchanged on a fresh machine.
-    """
-    app_root = app_root or Path(__file__).resolve().parent.parent
-    classic = app_root.parent / "Properties"
-    home = Path.home()
-    candidates = [
-        classic,
-        app_root / "Properties",              # inside the app folder
-        app_root.parent / "WORKBENCH" / "Properties",
-        app_root.parent / "python_workbench" / "Properties",
-    ]
-    # Where they ACTUALLY are (owner, 2026-08-15):
-    #   C:\Users\<user>\<Org>\<Org> - Documents\Properties
-    # That is a OneDrive/SharePoint business sync root - a place no rule
-    # based on the app's own location could ever reach, which is why every
-    # "one directory above the app" candidate came up empty and the app fell
-    # back to inferring sale history from county records. Globbed rather than
-    # hardcoded so it survives an org rename.
-    try:
-        candidates += sorted(home.glob("*/* - Documents/Properties"))
-        candidates += sorted(home.glob("OneDrive*/Properties"))
-        candidates += sorted(home.glob("*/Properties"))
-    except OSError:
-        pass
-    candidates += [home / "Properties"]
-    # Pick by EVIDENCE, not by order. Taking the first candidate that held
-    # ANY folder meant a stray `C:\Properties` with one directory in it beat
-    # the OneDrive root holding every real deal - and the app went on
-    # inferring sale history from county records while the curated files sat
-    # there unread. Score each candidate by how many `sales.json` files it
-    # actually contains, since that file IS the thing we are looking for.
-    seen: set[Path] = set()
-    best: tuple[int, int, Path] | None = None
-    for cand in candidates:
-        if cand in seen:
-            continue
-        seen.add(cand)
-        try:
-            if not cand.is_dir():
-                continue
-            deals = withs = 0
-            for child in cand.iterdir():
-                if not child.is_dir() or child.name.startswith((".", "_")):
-                    continue
-                deals += 1
-                if (child / "sales.json").is_file():
-                    withs += 1
-        except OSError:
-            continue
-        if not deals:
-            continue
-        if best is None or (withs, deals) > (best[0], best[1]):
-            best = (withs, deals, cand)
-    return best[2] if best else classic
-
-
+# ONE fixed location, always (owner directive, 2026-08-15: "Don't choose
+# anything - pick a folder - in the directory I told you - and write to it.
+# Every Time. Don't guess.").
+#
+# Deal folders live in <app>/Properties - C:\WORKBENCH_V5\Properties. No
+# discovery, no scoring, no fallbacks. Every previous variant of this line
+# tried to be clever about WHERE the folders were and every one of them
+# failed differently: a rule relative to the app broke when the app moved, a
+# first-match search picked a decoy folder over the real one. A constant
+# cannot do either. It is created on import so a write never fails for want
+# of a directory.
+#
+# ER_PROPERTIES_ROOT still overrides it - that is explicit configuration, not
+# a guess - but nothing is inferred when it is unset.
 PROPERTIES_ROOT = (
     Path(_props_override).expanduser()
     if _props_override
-    else _discover_properties_root()
+    else Path(__file__).resolve().parent.parent / "Properties"
 )
+try:
+    PROPERTIES_ROOT.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass
 
 # Workbench root (parent of Properties/) — used to compute storage-relative paths.
 _WB_ROOT = PROPERTIES_ROOT.parent

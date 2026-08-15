@@ -397,6 +397,28 @@ wrong number on an underwriting screen, caused by a path rule.
     primary source should have been loud; instead it degraded into guessing
     and the guess reached the screen looking like data.
 
+### Deal folders: C:\WORKBENCH_V5\Properties. Constant. Never inferred. (2026-08-15)
+Owner directive, after three failed attempts to be clever about it: "Don't
+choose anything - pick a folder - in the directory I told you - and write to
+it. Every Time. Don't guess."
+
+The three failures, in order, each shipped as a fix for the last:
+  1. Path relative to the app (`../Properties`). Broke silently when v5 moved
+     into its own folder - the curated sale history went unread and the app
+     fell back to inferring sales from county records, putting one
+     townhouse's deed on a 26-unit complex.
+  2. Search a candidate list, take the first that has folders. A stray
+     Properties folder holding one junk directory beat the OneDrive root
+     holding every real deal.
+  3. Score candidates by sales.json count. Better, still a search, still
+     capable of surprising the owner about where his data is.
+
+The rule now: a location the USER owns is a constant or an explicit setting.
+Never a search, never relative to code, never "smart". If it is missing,
+create it; if it is wrong, the owner changes one setting. Searching for user
+data optimises for the wrong thing - it trades a predictable answer for a
+clever one, and the owner cannot tell where his files went.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

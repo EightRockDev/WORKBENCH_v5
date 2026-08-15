@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.57.0.0.0 — 2026-08-15  ·  One fixed deal folder. No discovery.
+Owner directive: "Don't choose anything - pick a folder - in the directory I
+told you - and write to it. Every Time. Don't guess."
+
+`PROPERTIES_ROOT` is now the constant `<app>/Properties` —
+`C:\WORKBENCH_V5\Properties`. All discovery is deleted: no OneDrive globbing,
+no candidate scoring, no fallbacks. The directory is created on import so a
+write never fails for a missing folder, and `ER_PROPERTIES_ROOT` still
+overrides it because explicit configuration is not a guess.
+
+Every clever version of this line failed differently. A path relative to the
+app broke the moment the app moved into WORKBENCH_V5, silently severing the
+curated sale history and leaving the app to infer sales from county records —
+which is how one townhouse's deed ended up on a 26-unit complex. Replacing it
+with a first-match search then picked a stray Properties folder holding one
+junk directory over the OneDrive root holding every real deal. A constant
+cannot do either. A test asserts the discovery function stays deleted.
+
 ## V5.56.0.0.0 — 2026-08-15  ·  Pick the deal folder by evidence, not by order
 Grand Hampton at Langley has a saved `sales.json` — the owner confirmed it —
 and the card still showed the county-records fallback. Cause: discovery
