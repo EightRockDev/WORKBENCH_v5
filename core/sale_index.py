@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS sale_records (
     state     TEXT,
     apn_norm  TEXT,
     addr_norm TEXT,
+    addr_core TEXT,
     date      TEXT,
     price     REAL,
     grantor   TEXT,
@@ -92,6 +93,18 @@ def build(db_path: Path, *, force: bool = False) -> dict:
         if "source_url" not in cols:
             conn.execute("ALTER TABLE sale_records ADD COLUMN source_url TEXT")
             force = True
+        # 2026-08-15: looser house-number+street-name key, so a vendor's
+        # "3000 S. Cape Henry" still finds the assessor's "3000 CAPE HENRY
+        # AVE". Existing indexes have no such column; add it and rebuild once
+        # so every row gets one.
+        if "addr_core" not in cols:
+            conn.execute("ALTER TABLE sale_records ADD COLUMN addr_core TEXT")
+            force = True
+        # Created here rather than in the schema block: the schema runs before
+        # the migration above, and an index over a column a pre-existing table
+        # does not have yet fails outright.
+        conn.execute("CREATE INDEX IF NOT EXISTS ix_sale_core "
+                     "ON sale_records(market, addr_core)")
         stamp = _muni_stamp(conn)
         prev = conn.execute(
             "SELECT muni_stamp FROM sale_index_meta WHERE id=1").fetchone()
@@ -123,10 +136,11 @@ def build(db_path: Path, *, force: bool = False) -> dict:
             norm = phase0.normalize_record(market or "", state or "", raw)
             apn_n = sale_history._norm_apn(norm.get("apn"))
             addr_n = sale_history._norm_addr(norm.get("address"))
+            core_n = sale_history._addr_core(norm.get("address"))
             if not (apn_n or addr_n):
                 continue
             for r in recs:
-                sales.append((market, state, apn_n, addr_n, r["date"],
+                sales.append((market, state, apn_n, addr_n, core_n, r["date"],
                               r["price"], r["grantor"], r["grantee"],
                               r["notes"], src))
 
@@ -134,8 +148,8 @@ def build(db_path: Path, *, force: bool = False) -> dict:
             conn.execute("DELETE FROM sale_records")
             conn.executemany(
                 "INSERT INTO sale_records (market,state,apn_norm,addr_norm,"
-                "date,price,grantor,grantee,notes,source_url) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "addr_core,date,price,grantor,grantee,notes,source_url) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 sales)
             conn.execute(
                 "INSERT INTO sale_index_meta (id, muni_stamp, built_at) "
@@ -148,7 +162,8 @@ def build(db_path: Path, *, force: bool = False) -> dict:
         conn.close()
 
 
-def lookup(db_path: Path, *, apn_norm: str, addr_norm: str) -> list[dict] | None:
+def lookup(db_path: Path, *, apn_norm: str, addr_norm: str,
+           addr_core: str = "", market: str = "") -> list[dict] | None:
     """Indexed sale lookup. None = index unavailable (caller falls back to
     the live scan); [] = index present, genuinely no sales."""
     if not index_present(db_path):
@@ -172,6 +187,15 @@ def lookup(db_path: Path, *, apn_norm: str, addr_norm: str) -> list[dict] | None
             rows = conn.execute(
                 f"SELECT {cols} FROM sale_records"
                 " WHERE addr_norm = ?", (addr_norm,)).fetchall()
+        # Last resort: house number + street name, within this market only.
+        if not rows and addr_core and market:
+            try:
+                rows = conn.execute(
+                    f"SELECT {cols} FROM sale_records"
+                    " WHERE market = ? AND addr_core = ?",
+                    (market, addr_core)).fetchall()
+            except sqlite3.OperationalError:
+                rows = []      # index predates addr_core; rebuild adds it
         out, seen = [], set()
         for r in rows:
             key = (r["date"], r["price"])

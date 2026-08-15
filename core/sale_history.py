@@ -252,6 +252,43 @@ def last_sale_year_for(prop: dict, *, db_path: Path | None = None) -> int | None
     return None
 
 
+_DIRECTIONS = {"n", "s", "e", "w", "ne", "nw", "se", "sw",
+               "north", "south", "east", "west"}
+_STREET_TYPES = {"st", "street", "ave", "avenue", "rd", "road", "dr", "drive",
+                 "blvd", "boulevard", "ln", "lane", "ct", "court", "cir",
+                 "circle", "pl", "place", "ter", "terrace", "way", "pkwy",
+                 "parkway", "hwy", "highway", "trl", "trail", "run", "loop"}
+
+
+def _addr_core(address: str | None) -> str:
+    """House number + the distinctive street word, and nothing else.
+
+    Exact address equality is too strict to be the only fallback. A vendor
+    writes "3000 S. Cape Henry"; the assessor writes "3000 CAPE HENRY AVE".
+    Both normalize to different strings, so the sale card renders empty while
+    the sale sits in the index. This key keeps the two parts that actually
+    identify a property - the number and the street's own name - and drops
+    the parts the two sources disagree about: leading direction and trailing
+    street type.
+
+    "3000 S Cape Henry Ave" and "3000 Cape Henry" both -> "3000|cape".
+    Returns "" when there is no house number, because without one this is far
+    too loose to be safe.
+    """
+    norm = _norm_addr(address)
+    if not norm:
+        return ""
+    parts = norm.split()
+    if not parts or not parts[0].isdigit():
+        return ""
+    number = parts[0]
+    for tok in parts[1:]:
+        if tok in _DIRECTIONS or tok in _STREET_TYPES or tok.isdigit():
+            continue
+        return f"{number}|{tok}"
+    return ""
+
+
 def _apn_via_crosswalk(prop: dict, path: Path) -> str:
     """Parcel id for a LEGACY property row, resolved through the crosswalk.
 
@@ -320,7 +357,9 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
     # built yet on this box -> fall through to the live scan below.
     from core import sale_index
     indexed = sale_index.lookup(Path(path), apn_norm=want_apn,
-                                addr_norm=want_addr)
+                                addr_norm=want_addr,
+                                addr_core=_addr_core(prop.get("address")),
+                                market=(city or market))
     if indexed is not None:
         return indexed
 
@@ -370,3 +409,44 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
 
     out.sort(key=lambda x: (x.get("date") or ""), reverse=True)
     return out
+
+
+def explain_no_sales(prop: dict, *, db_path: Path | None = None) -> str:
+    """Why this property shows no sales - in the owner's words, not ours.
+
+    Three different situations produced one identical dead-end caption, and
+    they need three different actions: wait for a feed, fix a match, or
+    accept that the parcel genuinely never sold. Never raises; the caller
+    renders whatever comes back.
+    """
+    default = "No sale history available."
+    city = (prop.get("city") or "").strip()
+    try:
+        path = _muni_db_path(db_path)
+        if path is None or not Path(path).exists():
+            return default
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            try:
+                n_city = conn.execute(
+                    "SELECT COUNT(*) FROM sale_records WHERE market = ?",
+                    (city,)).fetchone()[0]
+            except sqlite3.Error:
+                return default          # index not built on this box
+            if not n_city:
+                return (f"No sales loaded for {city or 'this city'} yet — "
+                        "the nightly data pull has not landed this locality's "
+                        "transfer records.")
+            has_key = bool(_norm_apn(prop.get("apn"))
+                           or _apn_via_crosswalk(prop, Path(path)))
+            if not has_key:
+                return (f"{n_city:,} recorded sales loaded for {city}, but "
+                        "this property is not yet tied to a county parcel, "
+                        "so none can be matched to it.")
+            return (f"No recorded sale for this parcel in {city}'s "
+                    f"{n_city:,} transfer records — it may not have sold in "
+                    "the period covered.")
+        finally:
+            conn.close()
+    except Exception:
+        return default

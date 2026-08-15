@@ -12,6 +12,31 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.49.0.0.0 — 2026-08-15  ·  Sale history: match the way addresses actually differ
+Exact address equality was the only fallback once the parcel-id route died,
+and it fails on precisely the two things a vendor address and an assessor
+address always disagree about: a leading direction and a trailing street type.
+"3000 S. Cape Henry" and "3000 CAPE HENRY AVE" are the same building and did
+not match. New key is house number + the street's own distinctive word, scoped
+to the property's own market so a common street name elsewhere can never answer
+for it, and refused entirely when there is no house number (too loose to be
+safe). On three real vendor/assessor pairs, exact matching caught one; this
+catches three.
+
+The empty state also stops being a dead end. "No sale history available" read
+as "we have no data" for three different situations needing three different
+actions. It now says which: no sales loaded for this city yet, or sales loaded
+but this property is not tied to a parcel, or a parcel with genuinely no
+recorded sale in the period — with the count of sales actually on hand for that
+city.
+
+Also hardened the join-key scanner, whose first run confidently proposed
+OBJECTID as a Richmond join key. It is an Esri auto-increment; two independent
+1..N sequences overlap 100% and mean nothing, and wiring it would have attached
+unit counts to unrelated parcels. Row-counter fields are now detected by value
+density and excluded, and the scan prints each source's field names so a column
+hiding under an unfamiliar name is visible.
+
 ## V5.48.0.0.0 — 2026-08-15  ·  Sale history: the legacy path had no parcel id
 "No sale history available" was never a Norfolk problem or a data problem — it
 was every property in every market. The app serves the licensed vendor table

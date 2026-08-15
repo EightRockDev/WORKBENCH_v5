@@ -51,6 +51,30 @@ def _norm(v: object) -> str:
     return s if len(s) >= 4 else ""
 
 
+def _is_sequential(vals: set[str]) -> bool:
+    """True for an auto-increment row number masquerading as an identifier.
+
+    The first run of this scan (2026-08-15) reported OBJECTID <-> OBJECTID_12
+    at "100.0% overlap" and called it a STRONG candidate. Both are Esri
+    auto-increment row numbers - two independent 1..N sequences overlap
+    perfectly and mean nothing. Wiring that as an apn alias would have
+    attached Richmond's unit counts to arbitrary unrelated parcels, which is
+    worse than the missing data it was meant to fix.
+
+    A real parcel id is sparse in integer space. A row counter is dense: its
+    values cover most of the range between its own min and max.
+    """
+    nums = []
+    for v in vals:
+        if not v.isdigit() or len(v) > 9:
+            return False          # any non-numeric member -> not a counter
+        nums.append(int(v))
+    if len(nums) < 20:
+        return False
+    span = max(nums) - min(nums) + 1
+    return span > 0 and (len(nums) / span) > 0.5
+
+
 def _collect(conn, market: str) -> dict[str, dict[str, set]]:
     """source -> field -> set of normalized values."""
     per: dict[str, dict[str, set]] = defaultdict(lambda: defaultdict(set))
@@ -101,17 +125,27 @@ def main() -> int:
     print("\n-- Sources scanned --")
     for src in sorted(per, key=lambda s: -counts[s]):
         print(f"  {counts[src]:>7,} rows  {len(per[src]):>3} fields  {src[:58]}")
+        # The field NAMES are the point: a unit count or a parcel id hiding
+        # under an unfamiliar name is invisible in an overlap table alone.
+        print(f"      {', '.join(sorted(per[src])[:40])}")
 
     # Keep fields that could plausibly be an identifier.
     usable: dict[str, dict[str, set]] = {}
     for src, fields in per.items():
         keep = {}
+        dropped = []
         for f, vals in fields.items():
             if len(vals) < MIN_DISTINCT:
                 continue
             if len(vals) > counts[src] * MAX_CARDINALITY_RATIO:
                 continue
+            if _is_sequential(vals):
+                dropped.append(f)
+                continue
             keep[f] = vals
+        if dropped:
+            print(f"  (ignored {len(dropped)} row-counter field(s) in "
+                  f"{src[-40:]}: {', '.join(sorted(dropped)[:6])})")
         usable[src] = keep
 
     print("\n-- Cross-source field overlap (top candidates) --")

@@ -1198,7 +1198,16 @@ def _render_sales(folder: PropertyFolder | None,
             sales = {"last_3_apartment_sales": auto}
             auto_sourced = True
     if not sales:
-        st.caption("No sale history available.")
+        # "No sale history available." is a dead end - it reads as "we have
+        # no data" when the truth is usually "this city's sales are not
+        # loaded yet" or "we could not tie this address to a parcel". Say
+        # which, so the next question is answerable (owner, 2026-08-15).
+        try:
+            from core import sale_history as _sh
+            why = _sh.explain_no_sales(prop)
+        except Exception:
+            why = "No sale history available."
+        st.caption(why)
         return
     if auto_sourced:
         st.caption("📜 From the county assessor's transfer record — verify "
