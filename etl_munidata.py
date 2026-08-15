@@ -1,4 +1,4 @@
-"""QUARRIE — municipal open-data ETL for the Top-25 expansion markets.
+"""WORKBENCH — municipal open-data ETL for the Top-25 expansion markets.
 
 Pulls free city/county assessor + permit + sales feeds and writes them to a
 `muni_records` enrichment table in workbench.db, keyed so the workbench can
@@ -653,7 +653,7 @@ def run_all(app_token: str | None = None, market: str | None = None,
 
 
 def _main(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(description="QUARRIE municipal-data ETL")
+    ap = argparse.ArgumentParser(description="WORKBENCH municipal-data ETL")
     ap.add_argument("--market", help="Only pull this market")
     ap.add_argument("--list", action="store_true", help="List the feed registry and exit")
     ap.add_argument("--limit", type=int, help="Cap records per feed (testing)")
@@ -676,7 +676,7 @@ def _main(argv: list[str]) -> int:
         print(f"{live} are pull-ready now (status=live, no key beyond optional Socrata token).")
         return 0
 
-    print(f"QUARRIE muni-data ETL — {dt.date.today().isoformat()}")
+    print(f"WORKBENCH muni-data ETL — {dt.date.today().isoformat()}")
     run_all(app_token=args.app_token, market=args.market,
             limit=args.limit, hr_only=args.hr)
     return 0

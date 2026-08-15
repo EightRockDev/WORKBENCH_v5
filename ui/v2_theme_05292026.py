@@ -715,7 +715,19 @@ def _et_clock_now() -> str:
 # is the truth-teller for what code is running, so everything displayed
 # uses the real WORKBENCH_VERSION below. (The pill showing a stale
 # hard-coded "v2.1.4" misled the 2026-07-31 rollout debug.)
-V2_VERSION = "v2.1.4"
+#  v2.1.5   8/15  *** RENAME BACK: the product is "WORKBENCH" again. ***
+#                 Reverses the v2.1.0 rename to QUARRIE (owner, 2026-08-15).
+#                 Topbar wordmark, landing hero, browser tab title and the
+#                 ETL banner all read WORKBENCH; the v2.1.0 entry above is
+#                 left as-is because it is an accurate record of what that
+#                 release did. Backend module names were never renamed in
+#                 either direction, so there is no churn to undo.
+#                 NOTE: the tagline "Where Eight Rock breaks ground." was
+#                 chosen to match QUARRIE (a quarry pun). Left in place —
+#                 renaming the product is not the same as re-writing the
+#                 tagline, and that is the owner's call.
+
+V2_VERSION = "v2.1.5"
 
 from config import WORKBENCH_VERSION as _WB_VERSION
 
@@ -2262,7 +2274,7 @@ def render_v2_topbar(prop: dict | None = None) -> None:
             f'<div class="v2-nav-inline">'
             f'<a href="?home=1" target="_self" class="v2-nav-brand" '
             f'title="Home — browse all properties" style="text-decoration:none">'
-            f'<div class="v2-nav-brand-mark">8R</div><span>QUARRIE</span></a>'
+            f'<div class="v2-nav-brand-mark">8R</div><span>WORKBENCH</span></a>'
             f'<div class="v2-nav-crumbs"><span class="here">{crumb_here}</span></div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -3324,8 +3336,8 @@ def render_v2_cmdk_palette() -> None:
     setTimeout(tagTabs, 400);
     setTimeout(tagTabs, 1200);
     setTimeout(tagTabs, 2500);
-    if (pdoc.__quarrie_kbd) return;            // install listener once per page
-    pdoc.__quarrie_kbd = true;
+    if (pdoc.__workbench_kbd) return;            // install listener once per page
+    pdoc.__workbench_kbd = true;
     pdoc.addEventListener('keydown', function(e){
       // Cmd/Ctrl+K -> focus the in-place search input
       if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
@@ -3799,7 +3811,7 @@ def render_v2_inventory_landing() -> None:
         f'<div class="v2-landing">'
         f'<div class="v2-landing-row">'
         f'<div>'
-        f'<h1 class="v2-landing-title">Quarrie.</h1>'
+        f'<h1 class="v2-landing-title">Workbench.</h1>'
         f'<div class="v2-landing-tagline">Where Eight Rock breaks ground.</div>'
         f'</div>'
         f'<div class="v2-landing-count">'

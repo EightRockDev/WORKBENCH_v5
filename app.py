@@ -699,7 +699,7 @@ small {{
 
 def main() -> None:
     st.set_page_config(
-        page_title="Quarrie Workbench",
+        page_title="Workbench",
         page_icon="🏢",
         layout="wide",
         initial_sidebar_state="expanded",

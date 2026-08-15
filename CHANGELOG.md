@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.46.0.0.0 — 2026-08-15  ·  Product renamed back to WORKBENCH
+Owner directive: the product is WORKBENCH again, reversing the v2.1.0 rename to
+QUARRIE. Changed: the topbar wordmark, the landing hero, the browser tab title
+(which read "Quarrie Workbench" — now just "Workbench", not "Workbench
+Workbench"), the muni-ETL banner and CLI description, and the JS double-install
+guard `__quarrie_kbd`. Theme is v2.1.5.
+
+Deliberately NOT changed: the CHANGELOG entries and the v2.1.0 version-history
+comment that record the original rename — those are accurate records of what
+that release did, and rewriting them would falsify the history rather than
+update the product. Also left alone: the tagline "Where Eight Rock breaks
+ground.", which was written as a quarry pun to match QUARRIE. It still reads
+fine for real estate, but it was chosen for the old name and replacing it is
+the owner's call, not a mechanical consequence of the rename.
+
+Test assertions updated in step (the suite asserted the brand literal in five
+places). Verified against a pre-change baseline: 217 pass / 28 fail before and
+after, with an identical failure set — those 28 need real property data that a
+build box does not have.
+
 ## V5.45.0.0.0 — 2026-08-15  ·  Norfolk sale history + no paths in the UI
 `fix-norfolk-sales.bat` forces the sale index to rebuild on demand instead of
 waiting for the 3 AM cycle, then reports whether Norfolk's sales actually join

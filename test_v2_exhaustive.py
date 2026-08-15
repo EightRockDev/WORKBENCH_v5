@@ -290,7 +290,7 @@ def d1_topbar():
     captured.clear()
     render_v2_topbar(GOOD_PROP)
     out = ''.join(captured)  # v2.1.2 — topbar is now a columns row (multi-markdown)
-    assert 'QUARRIE' in out  # renamed from WORKBENCH in v2.1.0
+    assert 'WORKBENCH' in out  # renamed to QUARRIE in v2.1.0, back to WORKBENCH in v2.1.5
     from config import WORKBENCH_VERSION
     assert WORKBENCH_VERSION in out  # pill shows the REAL workbench version
     assert 'Crossroads Townhomes' in out
@@ -478,7 +478,7 @@ def e13_topbar_none_prop():
     captured.clear()
     render_v2_topbar(None)
     out = ''.join(captured)
-    assert 'QUARRIE' in out  # renamed from WORKBENCH in v2.1.0
+    assert 'WORKBENCH' in out  # renamed to QUARRIE in v2.1.0, back to WORKBENCH in v2.1.5
     assert 'Pick a property' in out
 t("E13: Topbar with None prop", e13_topbar_none_prop)
 
@@ -808,7 +808,7 @@ t("K10: Search is a native input; results link to properties",
 
 def k11_bridge_install_once_guard():
     body = _cmdk_src()
-    assert '__quarrie_kbd' in body, "Bridge must guard against double-install"
+    assert '__workbench_kbd' in body, "Bridge must guard against double-install"
 t("K11: ⌘K bridge guards against double-install", k11_bridge_install_once_guard)
 
 def k12_palette_props_still_searchable():
@@ -3037,15 +3037,15 @@ def dd6_breadcrumb_links_to_home():
     single 'Search' link that opens the ⌘K palette. The ?home=1 reset
     path is still honored when the URL has it (kept for back-compat)."""
     src = open('ui/v2_theme_05292026.py', encoding='utf-8').read()
-    # v2.1.2 — the QUARRIE brand mark is the Home link (?home=1); the
+    # v2.1.2 - the WORKBENCH brand mark is the Home link (?home=1); the
     # ?home=1 reset path stays wired in the query-param handler.
     assert '?home=1' in src or 'qp.get("home")' in src, \
         "Home reset path must still be wired"
     pos_topbar = src.find('def render_v2_topbar(')
     tbar = src[pos_topbar:src.find('\ndef ', pos_topbar + 1)]
-    assert 'href="?home=1"' in tbar and 'QUARRIE' in tbar, \
-        "QUARRIE brand must link to home (?home=1)"
-t("DD6: QUARRIE brand links home (?home=1); reset still wired",
+    assert 'href="?home=1"' in tbar and 'WORKBENCH' in tbar, \
+        "WORKBENCH brand must link to home (?home=1)"
+t("DD6: WORKBENCH brand links home (?home=1); reset still wired",
   dd6_breadcrumb_links_to_home)
 
 
@@ -3522,12 +3522,12 @@ t("II4: V2_VERSION ≥ v2.0.31", ii4_v2_version_bumped_to_31)
 # ============================================================================
 
 def jj1_breadcrumb_search_format():
-    """v2.1.2 — topbar shows the QUARRIE brand (home link) + the current
+    """v2.1.2 - topbar shows the WORKBENCH brand (home link) + the current
     property in the crumb. The search is the input field, not a crumb."""
     src = open('ui/v2_theme_05292026.py', encoding='utf-8').read()
     pos_fn = src.find('def render_v2_topbar(')
     body = src[pos_fn:src.find('\ndef ', pos_fn + 1)]
-    assert 'QUARRIE' in body and 'v2-nav-crumbs' in body and 'crumb_here' in body
+    assert 'WORKBENCH' in body and 'v2-nav-crumbs' in body and 'crumb_here' in body
     # Old "Pipeline" / "Active Deals" links removed
     for needle in ('>Pipeline</a>', '>Active Deals</a>'):
         for line in body.splitlines():
@@ -4229,7 +4229,7 @@ t("M4: Stat bar pending-state fallback when no deal.json", m4_stat_bar_pending_f
 #   QQ4: list_properties state filter + cities IN-list work
 #   QQ5: asset_type tagged (Multifamily default), no nulls in target states
 #   QQ6: live deals (Crossroads) survive the multi-state rebuild
-#   QQ7: V2_VERSION ≥ v2.1.0; product renamed to QUARRIE
+#   QQ7: V2_VERSION >= v2.1.0; product named WORKBENCH
 #   QQ8: ⌘K palette includes Crossroads WITH address tokens (regression)
 # ============================================================================
 
@@ -4301,8 +4301,8 @@ def qq7_version_and_rename():
         f"Expected >= v2.1.0, got {V2_VERSION}"
     captured.clear()
     render_v2_topbar(None)
-    assert "QUARRIE" in ''.join(captured), "Product not renamed to QUARRIE in topbar"
-t("QQ7: V2_VERSION ≥ v2.1.0 + renamed to QUARRIE", qq7_version_and_rename)
+    assert "WORKBENCH" in ''.join(captured), "Product name missing from topbar"
+t("QQ7: V2_VERSION >= v2.1.0 + named WORKBENCH", qq7_version_and_rename)
 
 
 def qq8_palette_includes_crossroads_with_address():
