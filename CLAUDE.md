@@ -378,6 +378,25 @@ the app directory, and v5 lives somewhere else.
     matches. I optimised the fallback for hours without noticing the primary
     source had gone silent.
 
+### User data must be located absolutely, never relative to the app (2026-08-15)
+The deal folders - and the curated sale history inside them - live in a
+OneDrive/SharePoint sync root under the user's profile. Both v2 and v5 located
+them as "one directory above the app", so v5 moving to its own folder silently
+severed the link. The app then fell back to inferring sale history from county
+records, which produced a single townhouse's deed on a 26-unit complex: a
+wrong number on an underwriting screen, caused by a path rule.
+
+  * Anything the USER owns - deal folders, notes, curated files - is located
+    by explicit configuration or by searching for its own contents. Never by
+    walking up from the code's location, which is an assumption that the app
+    never moves.
+  * When several locations are possible, choose by EVIDENCE. pin-deal-folder
+    scores candidates by how many sales.json files each contains rather than
+    by which path looks right.
+  * A silent fallback across this seam is the dangerous part. Losing the
+    primary source should have been loud; instead it degraded into guessing
+    and the guess reached the screen looking like data.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

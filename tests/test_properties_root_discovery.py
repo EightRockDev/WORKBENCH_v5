@@ -52,3 +52,33 @@ def test_falls_back_to_classic_when_nothing_exists(tmp_path):
     """A fresh machine must behave exactly as before - no surprises."""
     app = _mk(tmp_path, "WORKBENCH_V5")
     assert _discover_properties_root(app) == tmp_path / "Properties"
+
+
+def test_finds_the_onedrive_sharepoint_sync_root(tmp_path, monkeypatch):
+    """The real location (owner, 2026-08-15):
+        C:\\Users\\<user>\\<Org>\\<Org> - Documents\\Properties
+    A OneDrive/SharePoint sync root. No rule based on the app's install
+    location can reach it, which is why every candidate came up empty and
+    the app fell back to inferring sale history from county records."""
+    home = tmp_path / "Users" / "brian2"
+    home.mkdir(parents=True)
+    app = tmp_path / "WORKBENCH_V5"
+    app.mkdir()
+    (tmp_path / "Properties").mkdir()          # the empty sibling v5 used
+    real = (home / "Eight Rock Capital Partners"
+            / "Eight Rock Capital Partners - Documents" / "Properties")
+    (real / "Grand-Hampton-at-Langley-136-Hampton").mkdir(parents=True)
+    monkeypatch.setattr("pathlib.Path.home", staticmethod(lambda: home))
+    assert _discover_properties_root(app) == real
+
+
+def test_org_rename_does_not_break_it(tmp_path, monkeypatch):
+    """Globbed, not hardcoded - renaming the org folder must not undo this."""
+    home = tmp_path / "Users" / "b"
+    home.mkdir(parents=True)
+    app = tmp_path / "WORKBENCH_V5"
+    app.mkdir()
+    real = home / "Some Other Org" / "Some Other Org - Documents" / "Properties"
+    (real / "A-Deal-10-Norfolk").mkdir(parents=True)
+    monkeypatch.setattr("pathlib.Path.home", staticmethod(lambda: home))
+    assert _discover_properties_root(app) == real

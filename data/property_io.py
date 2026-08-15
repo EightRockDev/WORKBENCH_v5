@@ -65,14 +65,27 @@ def _discover_properties_root(app_root: Path | None = None) -> Path:
     """
     app_root = app_root or Path(__file__).resolve().parent.parent
     classic = app_root.parent / "Properties"
+    home = Path.home()
     candidates = [
         classic,
         app_root / "Properties",              # inside the app folder
         app_root.parent / "WORKBENCH" / "Properties",
         app_root.parent / "python_workbench" / "Properties",
-        Path.home() / "Properties",
-        Path.home() / "OneDrive" / "Properties",
     ]
+    # Where they ACTUALLY are (owner, 2026-08-15):
+    #   C:\Users\<user>\<Org>\<Org> - Documents\Properties
+    # That is a OneDrive/SharePoint business sync root - a place no rule
+    # based on the app's own location could ever reach, which is why every
+    # "one directory above the app" candidate came up empty and the app fell
+    # back to inferring sale history from county records. Globbed rather than
+    # hardcoded so it survives an org rename.
+    try:
+        candidates += sorted(home.glob("*/* - Documents/Properties"))
+        candidates += sorted(home.glob("OneDrive*/Properties"))
+        candidates += sorted(home.glob("*/Properties"))
+    except OSError:
+        pass
+    candidates += [home / "Properties"]
     seen: set[Path] = set()
     for cand in candidates:
         if cand in seen:

@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.54.0.0.0 — 2026-08-15  ·  Find the deal folders where they actually live
+Owner located them:
+`C:\Users\<user>\<Org>\<Org> - Documents\Properties` — the OneDrive /
+SharePoint sync root, holding "lots" of `sales.json` files. No rule based on
+the app's own install location could ever reach that, which is the whole reason
+the sale card fell back to inferring history from county records and ended up
+showing one townhouse's deed on a 26-unit complex.
+
+Discovery now includes the OneDrive/SharePoint pattern, globbed rather than
+hardcoded so an org rename does not undo it. `pin-deal-folder.bat` makes it
+permanent: it scores every candidate by how many `sales.json` files it actually
+contains — evidence, not guesswork — and pins the winner to
+`ER_PROPERTIES_ROOT` for the account.
+
 ## V5.53.0.0.0 — 2026-08-15  ·  Stop showing one townhouse's deed as a complex's history
 Crossroads Townhomes (26 units) was still showing two individuals buying for
 $313,500 and $121,000. The unit-count guard added in V5.51 never fired: Norfolk
