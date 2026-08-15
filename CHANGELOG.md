@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.46.1.0.0 — 2026-08-15  ·  The updater could leave stale code serving
+Owner reported the app still showing V5.43.0.0.0 and the pre-rename brand after
+running update. Root cause: `sc query` succeeds when a service merely EXISTS,
+running or not. The blue/green services are installed but blocked from starting
+by the Application Control policy, so the updater set service mode, SKIPPED
+killing the running app ("the services keep serving during the sync"), synced
+the code to disk, and then asked deploy-swap to restart services that cannot
+start. Meanwhile the process actually serving was a stray start-workbench
+launch that nothing ever stopped. Every update wrote new code to disk that the
+browser never saw — and the updater reported success.
+
+Three changes: service mode now requires a service in RUNNING state; when the
+services exist but are not running the updater says so, points at
+diagnose-service.ps1, and falls through to the stop-sync-relaunch path so the
+update actually takes effect; and the updater now records which PIDs served the
+app beforehand and, at the end, states plainly whether one of them is still
+serving — an update that leaves stale code running must never report success.
+
 ## V5.46.0.0.0 — 2026-08-15  ·  Product renamed back to WORKBENCH
 Owner directive: the product is WORKBENCH again, reversing the v2.1.0 rename to
 QUARRIE. Changed: the topbar wordmark, the landing hero, the browser tab title

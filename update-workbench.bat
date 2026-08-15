@@ -37,12 +37,40 @@ REM afterwards. The stale-version pill, back through a different door.
 REM In service mode the services keep serving while the code syncs, and
 REM deploy-swap.ps1 restarts them one at a time at the END: zero downtime,
 REM both colours on the new code.
+REM Remember which PIDs serve the app now, in BOTH modes. If one of them
+REM is still listening at the end, the browser is being served stale code.
+REM PIDs are wrapped in pipes so a search for |123| cannot match |1234|.
+set "PREPIDS=|"
+for %%P in (8501 8502) do (
+  for /f "tokens=5" %%I in ('netstat -ano ^| findstr /r /c:":%%P .*LISTENING"') do (
+    call set "PREPIDS=%%PREPIDS%%%%I|"
+  )
+)
+
+REM `sc query` succeeds when a service merely EXISTS, running or not. That
+REM one-word difference silently stranded the owner three releases behind
+REM (2026-08-15): the blue/green services are installed but blocked from
+REM starting by an Application Control policy, so SVCMODE was set, the
+REM updater skipped killing the app, the swap at the end failed to start
+REM anything - and the process actually serving was a stray start-workbench
+REM launch that nothing ever stopped. Code synced to disk every time; the
+REM browser kept showing the old version forever. Require RUNNING.
 set "SVCMODE="
-sc query WorkbenchBlue  >nul 2>&1 && set "SVCMODE=1"
-sc query WorkbenchGreen >nul 2>&1 && set "SVCMODE=1"
+set "SVCEXISTS="
+for %%S in (WorkbenchBlue WorkbenchGreen) do (
+  sc query %%S >nul 2>&1 && set "SVCEXISTS=1"
+  sc query %%S 2>nul | findstr /c:"RUNNING" >nul 2>&1 && set "SVCMODE=1"
+)
 if defined SVCMODE (
-  echo === Blue/green services detected - they keep serving during the sync ===
+  echo === Blue/green services running - they keep serving during the sync ===
   goto :synccode
+)
+if defined SVCEXISTS (
+  echo [warn] The blue/green services are INSTALLED but NOT RUNNING, so they
+  echo        are not what is serving the app. Updating the normal way
+  echo        ^(stop, sync, relaunch^) so this update actually takes effect.
+  echo        To fix the services themselves, run:
+  echo            deploy\windows\diagnose-service.ps1
 )
 
 echo === Stopping any running app so files are not locked ===
@@ -149,5 +177,26 @@ if defined SVCMODE (
   )
 ) else (
   echo Update complete. Double-click start-workbench.bat to launch.
+)
+
+echo.
+echo === Did the running app actually pick up the new code? ===
+set "STALEPID="
+for %%P in (8501 8502) do (
+  for /f "tokens=5" %%I in ('netstat -ano ^| findstr /r /c:":%%P .*LISTENING"') do (
+    REM Quote it: with nothing listening beforehand PREPIDS is a bare "|",
+    REM and an unquoted echo would hand cmd a pipe operator instead of text.
+    echo "%PREPIDS%" | findstr /c:"|%%I|" >nul 2>&1 && set "STALEPID=%%I"
+  )
+)
+if defined STALEPID (
+  echo [STALE] PID %STALEPID% was serving before this update and is STILL
+  echo         serving. It has the OLD code loaded in memory - the version
+  echo         pill in your browser will not change no matter how many
+  echo         times you refresh. Close that window / stop that process,
+  echo         then double-click start-workbench.bat.
+) else (
+  echo [OK] Nothing that predates this update is still serving.
+  echo      Hard-refresh the browser ^(Ctrl+F5^) and check the version pill.
 )
 pause

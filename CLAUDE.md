@@ -292,6 +292,23 @@ reason that never appears in the output. Rule: when a model default changes
 what shares a budget, re-check every number sized against the old default —
 the swap is the easy half.
 
+### "Exists" is not "running", and shipping is not serving (2026-08-15)
+The updater gated its whole strategy on `sc query WorkbenchBlue` succeeding.
+That returns success for a service that exists and cannot start — which is
+exactly the state this machine is in. So the updater took the path that
+assumes the services are serving, skipped killing the real (stray) process,
+and reported success while the owner sat three releases behind looking at a
+renamed product that still showed the old name.
+
+Two rules banked:
+  * A liveness check must assert the state you depend on, not the existence
+    of the thing that would provide it. `sc query` succeeding is not RUNNING;
+    a file existing is not a feed working; a table existing is not populated.
+  * A deploy step must verify the effect, not the action. Code on disk is not
+    code being served. This updater now records what was serving before and
+    names it if it is still serving after — because the whole failure class
+    is invisible from the deploy side and obvious from the browser.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field
