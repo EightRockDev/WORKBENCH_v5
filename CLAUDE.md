@@ -342,6 +342,22 @@ is indistinguishable from not shipping. Derive it at query time and it works on
 restart. Ask of any fix: what has to happen BEFORE this helps, and can I remove
 that precondition?
 
+### Under pressure to "make it work", I made it wrong (2026-08-15)
+Told repeatedly that an empty sale card was unacceptable, I loosened address
+matching until something appeared. Something did: a house's sale history on a
+26-unit apartment building, because the key ignored the directional prefix and
+S. Cape Henry is not N. Cape Henry. The owner caught it in one glance at the
+prices - $313,500 and two individual buyers for a 26-unit building.
+
+  * Filling a card is not the goal; the goal is a number someone can act on.
+    An empty card costs a question. A wrong one costs a decision.
+  * When loosening a match, name what makes two records DIFFERENT and keep
+    every one of those signals. I kept house number and street name and threw
+    away direction and street type - both of which distinguish real addresses.
+  * Free corroboration is worth more than a cleverer key. Unit count already
+    sat on both sides and instantly rejects apartment-matched-to-house; I
+    reached for fuzzier matching before I reached for evidence I already had.
+
 ### Per-user edits, field governance, signup email — SHIPPED V5.25.0.0.0 (2026-08-07)
 Property Card edits now save per-user (`user_property_overrides`, per-user RLS
 like the inbox; shared folder JSON = legacy base + dev-mode fallback). Field

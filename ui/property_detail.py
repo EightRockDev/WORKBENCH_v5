@@ -1210,8 +1210,18 @@ def _render_sales(folder: PropertyFolder | None,
         st.caption(why)
         return
     if auto_sourced:
-        st.caption("📜 From the county assessor's transfer record — verify "
-                   "against the recorded deed for the full chain.")
+        cap = ("📜 From the county assessor's transfer record — verify "
+               "against the recorded deed for the full chain.")
+        parcel = ""
+        try:
+            rows = (sales or {}).get("last_3_apartment_sales") or []
+            parcel = (rows[0].get("matched_parcel") or "") if rows else ""
+        except Exception:
+            parcel = ""
+        if parcel:
+            cap += (f" Matched to county parcel **{parcel}** by address — "
+                    "check this is the right parcel before relying on it.")
+        st.caption(cap)
 
     # Newer auto-pulled shape: dict with `last_3_apartment_sales` list
     if isinstance(sales, dict):

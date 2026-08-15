@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.51.0.0.0 — 2026-08-15  ·  Sale history: accuracy over coverage
+The address bridge shipped in V5.50 matched a 26-unit apartment building to a
+house and displayed its $313,500 sale between two couples as the building's
+history. The key dropped the directional prefix, and "3000 S. Cape Henry" and
+"3000 N. Cape Henry" are different streets. Wrong sale data on an underwriting
+screen is worse than an empty card, and this was worse than the problem it
+replaced.
+
+Three guards, all refusing rather than guessing:
+  * Direction must not CONTRADICT. One side omitting it stays a match (the
+    assessor routinely does); the two naming different directions never match.
+    Applied to both the parcel bridge and the sale lookup.
+  * Unit counts must be plausible. A 26-unit building does not share a parcel
+    with a 1-unit house. Only judges when both sides know their count.
+  * Still refuses on any ambiguity — more than one candidate parcel yields
+    nothing.
+
+And the match is now auditable: an address-derived match names the county
+parcel it landed on, so it can be checked rather than trusted.
+
 ## V5.50.0.0.0 — 2026-08-15  ·  Sale history actually matches now
 The card was reporting 186,843 sales loaded for Norfolk and none matchable,
 because the property carried no parcel id and the crosswalk — which holds only

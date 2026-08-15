@@ -260,6 +260,51 @@ _STREET_TYPES = {"st", "street", "ave", "avenue", "rd", "road", "dr", "drive",
                  "parkway", "hwy", "highway", "trl", "trail", "run", "loop"}
 
 
+def _addr_dir(address: str | None) -> str:
+    """The directional prefix of an address, or "" when it has none.
+
+    Dropping this was a real defect (owner, 2026-08-15: "not accurate").
+    "3000 S. Cape Henry" and "3000 N. Cape Henry" are DIFFERENT STREETS in
+    Norfolk, and a key that ignored the direction happily matched one to the
+    other - producing a 26-unit apartment building whose sale history was a
+    house changing hands between two couples for $313,500.
+    """
+    norm = _norm_addr(address)
+    parts = norm.split()
+    if len(parts) >= 2 and parts[0].isdigit() and parts[1] in _DIRECTIONS:
+        return parts[1][0]        # n/s/e/w - "north" and "n" must agree
+    return ""
+
+
+def _dirs_compatible(a: str | None, b: str | None) -> bool:
+    """True when two addresses do not CONTRADICT each other on direction.
+
+    One side omitting the direction is normal (the assessor often does); the
+    two naming DIFFERENT directions is a different street and must never
+    match.
+    """
+    da, db = _addr_dir(a), _addr_dir(b)
+    return not (da and db and da != db)
+
+
+def _units_compatible(a: object, b: object) -> bool:
+    """True unless two unit counts say these are plainly different buildings.
+
+    The strongest corroboration available for free: a 26-unit apartment does
+    not share a parcel with a 1-unit house. Only judges when BOTH sides know
+    their unit count - an unknown never blocks a match.
+    """
+    try:
+        ua = int(float(a)) if a is not None else None
+        ub = int(float(b)) if b is not None else None
+    except (TypeError, ValueError):
+        return True
+    if not ua or not ub:
+        return True
+    lo, hi = sorted((ua, ub))
+    return hi <= max(lo * 2, lo + 2)
+
+
 def _addr_core(address: str | None) -> str:
     """House number + the distinctive street word, and nothing else.
 
@@ -314,16 +359,28 @@ def _apn_via_address(prop: dict, path: Path) -> str:
     except sqlite3.Error:
         return ""
     try:
+        conn.row_factory = sqlite3.Row
         rows = conn.execute(
-            "SELECT apn, address FROM properties_8r "
+            "SELECT apn, address, units FROM properties_8r "
             " WHERE COALESCE(r8_market, city) = ? AND apn IS NOT NULL "
             "   AND address LIKE ?", (city, f"{number} %")).fetchall()
     except sqlite3.Error:
         return ""
     finally:
         conn.close()
-    hits = {_norm_apn(a) for a, addr in rows if _addr_core(addr) == core}
-    hits.discard("")
+    want_units = prop.get("units")
+    hits = set()
+    for r in rows:
+        addr = r["address"]
+        if _addr_core(addr) != core:
+            continue
+        if not _dirs_compatible(prop.get("address"), addr):
+            continue           # "3000 S Cape Henry" is not "3000 N Cape Henry"
+        if not _units_compatible(want_units, r["units"]):
+            continue           # a 26-unit building is not a 1-unit house
+        a = _norm_apn(r["apn"])
+        if a:
+            hits.add(a)
     return hits.pop() if len(hits) == 1 else ""
 
 
@@ -384,9 +441,12 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
     # No apn means the legacy read path (its table has no parcel column).
     # Resolve one through the crosswalk before giving up on the strong key -
     # address matching alone is why so many cards read "no sale history".
+    bridged = ""
     if not want_apn:
-        want_apn = (_apn_via_crosswalk(prop, Path(path))
-                    or _apn_via_address(prop, Path(path)))
+        want_apn = _apn_via_crosswalk(prop, Path(path))
+        if not want_apn:
+            want_apn = _apn_via_address(prop, Path(path))
+            bridged = want_apn          # matched by address, not by its own id
     if not (want_apn or want_addr):
         return []
 
@@ -400,6 +460,13 @@ def _sale_history_for(prop: dict, db_path: Path | None) -> list[dict]:
                                 addr_core=_addr_core(prop.get("address")),
                                 market=(city or market))
     if indexed is not None:
+        if bridged:
+            # Say HOW this was matched. The property carries no parcel id of
+            # its own, so the tie to these sales was inferred from its
+            # address - and after showing a house's sale history on a 26-unit
+            # building, the owner is owed the parcel number to check against.
+            for rec in indexed:
+                rec["matched_parcel"] = bridged
         return indexed
 
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)

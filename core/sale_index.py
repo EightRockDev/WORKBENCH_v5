@@ -189,11 +189,17 @@ def lookup(db_path: Path, *, apn_norm: str, addr_norm: str,
                 " WHERE addr_norm = ?", (addr_norm,)).fetchall()
         # Last resort: house number + street name, within this market only.
         if not rows and addr_core and market:
+            from core import sale_history as _sh0
             try:
-                rows = conn.execute(
-                    f"SELECT {cols} FROM sale_records"
+                pre = conn.execute(
+                    f"SELECT {cols}, addr_norm FROM sale_records"
                     " WHERE market = ? AND addr_core = ?",
                     (market, addr_core)).fetchall()
+                # Same trap as the parcel bridge: the core key drops the
+                # direction, and "3000 S Cape Henry" is not "3000 N Cape
+                # Henry". Re-check before trusting a stored core match.
+                rows = [r for r in pre
+                        if _sh0._dirs_compatible(addr_norm, r["addr_norm"])]
             except sqlite3.OperationalError:
                 rows = []      # column predates this build
             if not rows:
@@ -213,7 +219,8 @@ def lookup(db_path: Path, *, apn_norm: str, addr_norm: str,
                 except sqlite3.Error:
                     cand = []
                 rows = [r for r in cand
-                        if _sh._addr_core(r["addr_norm"]) == addr_core]
+                        if _sh._addr_core(r["addr_norm"]) == addr_core
+                        and _sh._dirs_compatible(addr_norm, r["addr_norm"])]
         out, seen = [], set()
         for r in rows:
             key = (r["date"], r["price"])
