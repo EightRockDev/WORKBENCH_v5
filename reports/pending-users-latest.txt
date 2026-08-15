@@ -1,4 +1,4 @@
-autopilot pendingusers @ 2026-08-14T19:31:09
+autopilot pendingusers @ 2026-08-14T20:30:59
 
-PENDING APPROVAL: 1
-  - msugg@jhcapitalrva.com <msugg@jhcapitalrva.com>  status=invited  role=trial
+PENDING APPROVAL: 0
+  (none - no users waiting)
