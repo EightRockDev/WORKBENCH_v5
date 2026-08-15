@@ -1,0 +1,54 @@
+autopilot joinkey @ 2026-08-15T05:32:29
+
+====================================================================
+JOIN-KEY SCAN — Richmond
+====================================================================
+
+-- Sources scanned --
+   40,000 rows   57 fields  files:rva.gov/assessor-real-estate
+   40,000 rows   11 fields  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA
+   32,907 rows   72 fields  https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/
+    6,570 rows   38 fields  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/s
+
+-- Cross-source field overlap (top candidates) --
+  100.0% of the smaller side (5,571 values)
+      OBJECTID                     @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      OBJECTID_12                  @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+  100.0% of the smaller side (5,570 values)
+      OBJECTID                     @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      ORIG_FID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+  100.0% of the smaller side (1,874 values)
+      OBJECTID                     @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      AsrLocatio                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+  100.0% of the smaller side (1,868 values)
+      OBJECTID                     @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      AsrLocat_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+  100.0% of the smaller side (236 values)
+      S_FRAC                       @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      OBJECTID_12                  @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+  100.0% of the smaller side (236 values)
+      S_FRAC                       @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      ORIG_FID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+  100.0% of the smaller side (212 values)
+      YEAR_BUILT                   @ files:rva.gov/assessor-real-estate
+      OBJECTID                     @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+  100.0% of the smaller side (68 values)
+      LIVING_AREA                  @ files:rva.gov/assessor-real-estate
+      SQFT_PR_UT                   @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+  100.0% of the smaller side (68 values)
+      SQFT_PR_UT                   @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      OBJECTID_12                  @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+  100.0% of the smaller side (68 values)
+      SQFT_PR_UT                   @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      ORIG_FID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+  100.0% of the smaller side (55 values)
+      PRECINCT                     @ files:rva.gov/assessor-real-estate
+      OBJECTID                     @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+   99.9% of the smaller side (1,831 values)
+      TLA                          @ es/COR_Parcel_Ownership_WFL1/FeatureServer/1
+      OBJECTID_12                  @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+
+-- Verdict --
+  STRONG candidate: OBJECTID <-> OBJECTID_12 (100.0% overlap).
+  Confirm a handful by eye, then map it in core/spine.py the
+  way PTM_ID was - as an apn alias, not a bespoke join.
