@@ -376,6 +376,19 @@ def _apn_via_address(prop: dict, path: Path) -> str:
             continue
         if not _dirs_compatible(prop.get("address"), addr):
             continue           # "3000 S Cape Henry" is not "3000 N Cape Henry"
+        # For a MULTI-UNIT property, an unknown unit count on the candidate
+        # is not good enough. Norfolk publishes unit counts for 3 parcels out
+        # of 866, so "unknown" was letting every apartment building match a
+        # single parcel - and Crossroads Townhomes (26 units) got the sale
+        # history of one townhouse: two individuals, $313,500. A complex
+        # spans many parcels; ONE parcel's deed is not the property's sale
+        # history. Require positive corroboration, or show nothing.
+        try:
+            multi = int(float(want_units or 0)) >= 2
+        except (TypeError, ValueError):
+            multi = False
+        if multi and not r["units"]:
+            continue
         if not _units_compatible(want_units, r["units"]):
             continue           # a 26-unit building is not a 1-unit house
         a = _norm_apn(r["apn"])

@@ -12,6 +12,23 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.53.0.0.0 — 2026-08-15  ·  Stop showing one townhouse's deed as a complex's history
+Crossroads Townhomes (26 units) was still showing two individuals buying for
+$313,500 and $121,000. The unit-count guard added in V5.51 never fired: Norfolk
+publishes unit counts for 3 parcels out of 866, and "unknown" was treated as
+"no objection". So every apartment building matched some single parcel at its
+address, and a 26-unit complex — which spans MANY parcels — was handed one
+townhouse's deed.
+
+A multi-unit property now requires positive corroboration: the candidate parcel
+must state a unit count and it must be plausible. Unknown is no longer good
+enough. In Norfolk that means most apartment buildings will show no county sale
+history at all, which is the correct answer — those individual deeds are not
+the building's sale history.
+
+Also replaces find-my-deal-folders.bat, which inlined multi-line Python into a
+batch file and died on a syntax error. It calls a real script now.
+
 ## V5.52.0.0.0 — 2026-08-15  ·  Find the deal folders v2 left behind
 "This worked fine in V2." It did — and the reason it stopped is not the sale
 matching I spent the day rewriting. Sale history has always come first from a

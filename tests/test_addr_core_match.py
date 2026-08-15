@@ -76,3 +76,28 @@ def test_unit_counts_veto_an_implausible_match():
     assert _units_compatible(26, 28)         # assessor/vendor disagree slightly
     assert _units_compatible(26, None)       # unknown never blocks
     assert _units_compatible(None, None)
+
+
+def test_multi_unit_property_needs_positive_unit_corroboration(tmp_path):
+    """Crossroads Townhomes (26 units) was shown one townhouse's deed -
+    two individuals, $313,500 - because Norfolk publishes unit counts for
+    3 parcels out of 866, so "units unknown" waved every apartment building
+    through. A complex spans many parcels; one parcel's deed is not the
+    property's sale history."""
+    import sqlite3
+    from core import phase0
+    from core.sale_history import _apn_via_address
+    db = tmp_path / "wb.db"
+    conn = sqlite3.connect(db)
+    conn.executescript(phase0._SPINE_SCHEMA)
+    conn.execute(
+        "INSERT INTO properties_8r (property_id, fips, apn, address, city, "
+        "state, zip, units, provenance, built_at) VALUES "
+        "('P','51710','1471','3000 S CAPE HENRY AVE','Norfolk','VA','23504',"
+        "NULL,'8r','x')")
+    conn.commit()
+    conn.close()
+    complex_ = {"address": "3000 S. Cape Henry", "city": "Norfolk", "units": 26}
+    house = {"address": "3000 S. Cape Henry", "city": "Norfolk", "units": 1}
+    assert _apn_via_address(complex_, db) == ""     # refuse
+    assert _apn_via_address(house, db) == "1471"    # single-parcel is fine
