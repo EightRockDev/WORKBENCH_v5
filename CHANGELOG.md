@@ -12,6 +12,20 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.43.1.0.0 — 2026-08-15  ·  Autopilot runs with no console window
+The nightly cycle popped a console window that only ever echoed what
+reports\autopilot.log and reports\autopilot-status.txt already contain, so
+nothing is lost by hiding it. The scheduled task now launches through
+`autopilot-hidden.vbs` (window style 0). A VBS shim rather than Task
+Scheduler's "run whether user is logged on or not": that native option stores
+the account password and moves the task to session 0, where it loses the
+interactive Credential Manager the cycle's `git push` depends on. This keeps
+the same user, token and credentials and changes only the window style.
+`hide-autopilot-window.bat` re-points the existing task in two seconds without
+starting a cycle. autopilot.bat stays visible when double-clicked, for
+debugging, and its failure paths skip their 60-second timeout when hidden -
+a window nobody can see must never park waiting to be read.
+
 ## V5.43.0.0.0 — 2026-08-15  ·  Tell bias from scatter; hunt the Richmond join key
 Two diagnostics, both driven by overnight evidence rather than a guess.
 (1) The rent gate scores `abs(estimate - actual)`, which cannot distinguish a

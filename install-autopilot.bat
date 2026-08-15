@@ -6,7 +6,11 @@ REM  hands-free - no more windows to run or watch.
 REM ===================================================================
 cd /d "%~dp0"
 echo Installing the Eight Rock Workbench Autopilot (nightly 3:00 AM)...
-schtasks /Create /F /TN "EightRockWorkbenchAutopilot" /TR "\"%~dp0autopilot.bat\"" /SC DAILY /ST 03:00
+REM Launch through the VBS shim so no console window appears (owner
+REM 2026-08-15). wscript is a signed System32 binary, so this does not
+REM run into the Application Control block that stops the blue/green
+REM services. The .bat itself stays double-clickable and visible.
+schtasks /Create /F /TN "EightRockWorkbenchAutopilot" /TR "wscript.exe //nologo \"%~dp0autopilot-hidden.vbs\"" /SC DAILY /ST 03:00
 if errorlevel 1 (
   echo Could not create the scheduled task - screenshot this window.
   pause
@@ -22,5 +26,6 @@ echo.
 call "%~dp0autopilot.bat"
 echo.
 echo First cycle done. Log: reports\autopilot.log  (also pushed to GitHub)
-echo From now on it runs every night at 3:00 AM. Nothing else to do.
+echo From now on it runs every night at 3:00 AM, with NO window.
+echo Check progress any time: type reports\autopilot-status.txt
 pause

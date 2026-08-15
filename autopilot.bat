@@ -11,10 +11,19 @@ REM  prior cycle before touching the log, and every failure path keeps
 REM  this window open long enough to read - it never just flashes shut.
 REM ===================================================================
 cd /d "%~dp0"
+REM --hidden is passed by autopilot-hidden.vbs (the scheduled task's real
+REM entry point). Nobody can read a window that is not being shown, so the
+REM banner is skipped and the failure paths must NOT sit on a timeout -
+REM they write reports\autopilot-status.txt and exit. Double-clicking this
+REM .bat still behaves exactly as before.
+set "ER_HIDDEN="
+if /i "%~1"=="--hidden" set "ER_HIDDEN=1"
 title Eight Rock Autopilot - RUNNING
-echo Eight Rock Autopilot is running silently (30-45 min).
-echo Progress log: reports\autopilot.log - this window closes itself when done.
-echo To check from anywhere: type reports\autopilot-status.txt
+if not defined ER_HIDDEN (
+  echo Eight Rock Autopilot is running silently (30-45 min).
+  echo Progress log: reports\autopilot.log - this window closes itself when done.
+  echo To check from anywhere: type reports\autopilot-status.txt
+)
 if not exist reports mkdir reports
 call "%~dp0_find-uv.bat" || goto :fail_uv
 
@@ -44,7 +53,7 @@ exit /b 0
 echo.
 echo !! Could not find or install uv - see the messages above.
 > reports\autopilot-status.txt echo FAILED - uv missing  %date% %time%
-timeout /t 60
+if not defined ER_HIDDEN timeout /t 60
 exit /b 1
 
 :fail_log
@@ -53,5 +62,5 @@ echo !! Cannot write reports\autopilot.log - something still holds it open
 echo !! even after preflight. Preflight report:
 type reports\autopilot-preflight.txt
 > reports\autopilot-status.txt echo FAILED - autopilot.log locked  %date% %time%
-timeout /t 60
+if not defined ER_HIDDEN timeout /t 60
 exit /b 1
