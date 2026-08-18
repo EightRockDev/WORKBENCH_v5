@@ -148,6 +148,32 @@ def _sticky_property_tab(is_v2: bool) -> str:
     return active
 
 
+def _apply_module_qp() -> None:
+    """Consume ``?module=<slug>`` into ``active_module`` session state.
+
+    The workspace nav (V2 top bar) and the sidebar's module switcher are two
+    chromes onto the same five surfaces. The switcher is a set of keyed
+    buttons; a keyed widget reads session_state when it is INSTANTIATED, so
+    this has to run before ``render_sidebar()`` — same ordering rule as
+    ``?goto=``.
+
+    The param is cleared once applied so a later in-app switch isn't dragged
+    back by a stale URL on the next rerun.
+    """
+    from ui.v2_theme_05292026 import MODULE_SLUGS
+    try:
+        slug = st.query_params.get("module")
+    except Exception:
+        return
+    if slug not in MODULE_SLUGS:
+        return
+    st.session_state["active_module"] = slug
+    try:
+        del st.query_params["module"]
+    except Exception:
+        pass
+
+
 def _inject_ghost_kill_css(active_tab: str) -> None:
     """Stop a section switch from ghosting the previous section's content.
 
@@ -809,6 +835,14 @@ def main() -> None:
     from ui import authz as _authz
     _authz.render_preview_picker(user, org_id)
     st.session_state["perms"] = _authz.apply_preview(org_id, perms)
+
+    # `?module=<slug>` — the workspace nav's handle (owner report 2026-08-18:
+    # V2 hides the sidebar that held the only module switcher, so CRM /
+    # Portfolio / GRANITE Loans / Help had no entrance at all). Consumed HERE,
+    # before render_sidebar() instantiates the switcher, for the same reason
+    # `?goto=` is consumed before the section control: a widget reads its
+    # session_state value at instantiation and ignores changes after.
+    _apply_module_qp()
 
     active_module, selected_property_id = render_sidebar()
 

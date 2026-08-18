@@ -1046,6 +1046,49 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` â†’ http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — a CSS `display:none` can delete a whole product surface (2026-08-18)
+
+Owner: "How do I get the left hand sidebar to appear with CRM, Portfolio,
+Loans, Help?" He couldn't. Not from a menu, not from a URL, not from
+anywhere. Four working modules — CRM & Sourcing, Portfolio, GRANITE Loans,
+Help — had no entrance in the UI he runs.
+
+The V2 theme hides V1's sidebar with `section[data-testid="stSidebar"] {
+display:none }`, and that sidebar carried the ONLY module switcher. The hide
+rule was written with an escape hatch — its own comment says "Module nav
+(CRM / Portfolio / Help) is still reachable via Switch-to-V1" — and on
+2026-08-04 that pill was replaced with the who's-online count by a change
+that had nothing to do with navigation. Nothing failed. Nothing logged.
+Every test stayed green, because the modules still *rendered* perfectly
+whenever `active_module` happened to be set.
+
+Rules banked:
+
+* **Hiding a container hides everything inside it, including things that
+  live nowhere else.** Before `display:none` on any region, enumerate what
+  is reachable ONLY from there. The rule that hid the sidebar was reviewed
+  for what it removed from the layout, never for what it removed from the
+  product.
+* **A comment naming an escape hatch is not an escape hatch.** "Still
+  reachable via Switch-to-V1" was true when written and silently false four
+  months later, and it read as reassurance to everyone who looked at that
+  CSS afterwards — including me, twice, this session. If a surface depends
+  on another surface existing, a TEST asserts it, not a comment.
+* **Every surface needs a handle a stylesheet cannot hide.** `?module=<slug>`
+  is that handle now, next to `?admin=1` and `?who=1` — the same reasoning
+  that put Admin in the main pane after the collapsed-sidebar report
+  (2026-08-04). A widget can be hidden by CSS; a URL cannot.
+* **Two chromes onto one set of surfaces need a test that they agree.** The
+  sidebar switcher and the V2 nav list the same five modules;
+  `tests/test_v2_module_nav.py` fails if one gains a module the other lacks,
+  because a surface added to one chrome and forgotten in the other is
+  invisible to every user of the other.
+
+Same family as the deal-folder path bug: both halves were locally correct
+(the sidebar renders a switcher, the theme hides the sidebar) and the defect
+lived in the seam. And the confirmation was the browser, not pytest — the
+suite could not tell "no entrance" from "not currently selected".
+
 ## Lesson — open the page (2026-08-15)
 
 Owner, and he was right: *"Why don't you test these things after you make

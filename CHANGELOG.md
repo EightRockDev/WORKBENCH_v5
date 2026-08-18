@@ -12,6 +12,46 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.61.0.0.0 — 2026-08-18  ·  The workspace has a way back in.
+
+Owner report: "How do I get the left hand sidebar to appear with CRM,
+Portfolio, Loans, Help?" The honest answer was that he couldn't, from
+anywhere. Those four surfaces had no entrance in the UI he runs.
+
+The V2 theme hides V1's left sidebar (`section[data-testid="stSidebar"] {
+display:none }`), and that sidebar held the only module switcher. The rule
+carried a comment saying the modules were "still reachable via Switch-to-V1"
+— true when written, and false since 2026-08-04, when that pill was replaced
+with the who's-online count. Nothing failed, nothing logged; four working
+modules simply stopped having a door, and the comment above the CSS read as
+reassurance to anyone who looked.
+
+**A nav strip in the top bar**, where the eye already is: Deal Analysis ·
+CRM & Sourcing · Portfolio · GRANITE Loans · Help, with the current one
+marked. It renders on every V2 surface, including the deal page, because
+app.py already draws the top bar on all five.
+
+**`?module=<slug>` is the handle.** Each nav item is an ordinary link, and
+app.py consumes the param into `active_module` before the sidebar's keyed
+widgets instantiate — the same ordering `?goto=` needs, for the same reason.
+Consume-once: a sticky param would drag the user back to that module on the
+next rerun. An unknown slug is ignored rather than blanking the workspace.
+
+The two chromes now have a test that asserts they offer the same five
+modules, because a module added to one and forgotten in the other is
+invisible to every user of the other.
+
+Verified in a browser, not just in pytest: all five links present on the
+landing page and on Grand Hampton at Langley, CRM opening its five tabs on
+a click, GRANITE Loans and Portfolio opening from the URL, the active pill
+tracking the current module. 12 tests, all red against the previous build.
+
+- `ui/v2_theme_05292026.py` — `MODULE_NAV`, `render_v2_module_nav()`, `.v2-modnav` styling, rendered from `render_v2_topbar`
+- `app.py` — `_apply_module_qp()`, called before `render_sidebar()`
+- `tests/test_v2_module_nav.py` — top-bar entrance, param round trip, the two chromes agree
+
+---
+
 ## V5.60.0.0.0 — 2026-08-15  ·  Launching the app updates it, and a browser test watches the card.
 
 Confirmed working on the owner's machine: the full transfer chain for Grand

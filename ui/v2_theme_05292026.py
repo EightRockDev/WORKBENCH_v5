@@ -1595,6 +1595,40 @@ body.v2-on-diligence .v2-dd-inspector {{ display: block; }}
 .v2-nav-tag .d {{ width: 6px; height: 6px; border-radius: 50%; background: {v['pos']}; }}
 .v2-avatar {{ width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, {v['ink']}, #1F2937); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }}
 
+/* --- MODULE NAV (owner ask 2026-08-18) ---------------------------------
+   V2 hides V1's left sidebar, and the sidebar was the ONLY way into the
+   CRM / Portfolio / GRANITE Loans / Help modules — so they were
+   unreachable from this chrome. This strip is that nav, in the top bar
+   where the eye already is. Each item is a plain <a href="?module=...">,
+   so it survives any CSS that hides a widget. */
+.v2-modnav {{
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin: 10px 0 2px 0;
+}}
+.v2-modnav a {{
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid {v['line']};
+  background: {v['card']};
+  color: {v['ink_2']};
+  font-size: 12px; font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}}
+.v2-modnav a:hover {{
+  color: {v['gold_deep']};
+  border-color: {v['gold']};
+  background: {v['gold_soft']};
+}}
+.v2-modnav a.on {{
+  color: {v['ink']};
+  border-color: {v['gold']};
+  background: {v['gold_soft']};
+}}
+.v2-modnav a .ic {{ font-size: 12px; line-height: 1; }}
+
 /* --- V2 HERO --- */
 .v2-hero {{ margin: 24px 0 32px 0; }}
 .v2-hero-eyebrow {{
@@ -2249,6 +2283,51 @@ def _gmaps_url(query: str) -> str:
     return f"https://www.google.com/maps/search/?api=1&query={quote_plus(query)}"
 
 
+# The workspace nav. Mirrors ui/sidebar._render_module_switcher — keep the
+# two lists in step; they are the same product surfaces reached from two
+# different chromes (tests/test_v2_module_nav.py asserts they agree).
+MODULE_NAV = (
+    ("deal_analysis", "🏢", "Deal Analysis"),
+    ("crm",           "🎯", "CRM & Sourcing"),
+    ("portfolio",     "📊", "Portfolio"),
+    ("granite_loans", "🏦", "GRANITE Loans"),
+    ("help",          "❓", "Help"),
+)
+
+MODULE_SLUGS = tuple(slug for slug, _icon, _label in MODULE_NAV)
+
+
+def render_v2_module_nav(active: str | None = None) -> None:
+    """Workspace nav strip under the V2 top bar.
+
+    V2 hides V1's left sidebar (see the `stSidebar { display:none }` rule
+    above), and that sidebar held the ONLY module switcher — so CRM,
+    Portfolio, GRANITE Loans and Help had no entrance in this chrome at all
+    (owner report 2026-08-18). This is that entrance.
+
+    Each item is an ordinary link to ``?module=<slug>``; app.py consumes the
+    param into session state before the sidebar's keyed widgets render. A URL
+    handle can't be hidden by a stylesheet, which is exactly the failure this
+    replaces.
+    """
+    if not is_v2():
+        return  # V1 already has the sidebar switcher
+    import streamlit as _st
+
+    active = active or _st.session_state.get("active_module") or "deal_analysis"
+    items = []
+    for slug, icon, label in MODULE_NAV:
+        on = " on" if slug == active else ""
+        items.append(
+            f'<a class="v2-modnav-item{on}" href="?module={slug}" target="_self">'
+            f'<span class="ic">{icon}</span><span>{label}</span></a>'
+        )
+    _st.markdown(
+        f'<div class="v2-modnav">{"".join(items)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def render_v2_topbar(prop: dict | None = None) -> None:
     """V2 topbar with a REAL, in-place global search.
 
@@ -2331,6 +2410,10 @@ def render_v2_topbar(prop: dict | None = None) -> None:
         with r_avatar:
             from ui.theme_panel import render_avatar_button
             render_avatar_button()
+
+    # Workspace nav (Deal Analysis · CRM · Portfolio · GRANITE Loans · Help).
+    # Lives here because V2 hides the sidebar that used to carry it.
+    render_v2_module_nav()
 
     # In-place results dropdown — renders right under the bar when there's a
     # query. Clicking a result opens that property (?prop=<id>).
