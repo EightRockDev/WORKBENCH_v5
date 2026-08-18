@@ -72,6 +72,13 @@ uv run pytest tests/test_pilot_admin.py -v   # Postgres-backed; needs DATABASE_U
 ```
 The Postgres-backed tests auto-skip when `DATABASE_URL` is unset.
 
+**Do NOT pass `-q` yourself.** `pyproject.toml` addopts already carries it, so
+`pytest -q` becomes `-qq` — and the second `-q` suppresses pytest's final
+`N passed, M failed` line entirely. The run still works and still sets the
+right exit code; you just get a FAILED list with no totals under it, which
+reads like a truncated run and cost three full re-runs to chase (2026-08-18).
+Run `uv run pytest` bare.
+
 ## How the owner wants to be worked with (standing, 2026-07-25)
 
 - **Short answers, not build reports.** Make the fix, then say what to test.
