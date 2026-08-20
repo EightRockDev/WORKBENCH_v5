@@ -12475,3 +12475,5 @@ Checked 114 packages in 11ms
 [rentbias] exit 0 -> rent-bias-latest.txt
 [publish] pushed to GitHub
 [validate] exit 0 -> validate-latest.txt
+[publish] pushed to GitHub
+[pendingusers] exit 0 -> pending-users-latest.txt
