@@ -22,6 +22,11 @@ ROOT = Path(__file__).resolve().parent.parent
 REPORTS = ROOT / "reports"
 
 STEPS = (
+    # FIRST, always: the liveness proof. Its per-step publish reaches
+    # GitHub within seconds of the cycle starting, so a silent chain can
+    # never again be mistaken for "machine off" or "nothing to report"
+    # (five days were lost to exactly that inference, 2026-08-15..19).
+    ("heartbeat", ["scripts/heartbeat.py"], "heartbeat.txt"),
     ("discover", ["scripts/discover_feeds.py", "--va"], "discover-latest.txt"),
     # National top-50 metro discovery, self-gated to weekly (owner 2026-08-09).
     ("discover_national", ["scripts/run_national_discovery.py"],

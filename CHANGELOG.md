@@ -12,6 +12,47 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.62.0.0.0 — 2026-08-20  ·  The autopilot can no longer die in silence.
+
+Root cause of the five silent days (15–19 Aug), from the owner's screenshots:
+at 8:35 AM on the 15th a new cycle collided with the previous one still
+writing its last lines, `autopilot.bat` treated the busy log file as fatal and
+quit; every scheduled fire after that failed invisibly (the task had been
+switched to a background session that loses the GitHub sign-in), and nothing
+anywhere said so. Three fixes, shipped together:
+
+- **Overlap stands down instead of dying.** The first log write retries for
+  ~90 seconds (a finishing cycle releases it in seconds); if it is still held,
+  the launcher writes an honest `STANDING DOWN — another cycle is running
+  (normal)` status and exits 0. The hourly trigger is the retry.
+- **The silent launcher leaves evidence.** `autopilot-hidden.vbs` writes
+  `reports\launcher-last.txt` *before* launching and appends the cycle's real
+  exit code after — "did the launcher run, and what did the cycle return?"
+  always has an answer on disk now. It also waits for the cycle, which makes
+  Task Scheduler's own no-second-instance default a free overlap guard.
+  Launcher-level failures push the status file to GitHub best-effort, so a
+  failure before the first publish is no longer local-only.
+- **A heartbeat is the first step of every cycle.** `reports/heartbeat.txt`
+  (timestamp, version, host) publishes within seconds of a cycle starting.
+  The remote rule becomes simple: heartbeat older than ~2 hours = chain down.
+- **The task registration is scripted, never hand-typed.**
+  `fix-autopilot-task.bat` rebuilds the scheduled task exactly right (silent
+  launcher, hourly, run as the logged-on user — the background-session option
+  silently severs the GitHub credentials). `update-workbench.bat`'s
+  ensure-block now registers the same thing instead of the old visible-window
+  action.
+
+Also removed `tests/test_properties_root_discovery.py`, which arrived in
+V5.61 importing a discovery function that was deliberately deleted in V5.57
+(owner: "Don't choose anything — pick a folder") — it broke the whole suite
+on main. Its scenarios are covered by `test_property_seed.py` and
+`test_properties_root_resolves.py`.
+
+Shipped under a scoped lift of the owner's code freeze; the freeze resumes
+with this commit.
+
+---
+
 ## V5.61.0.0.0 — 2026-08-18  ·  The workspace has a way back in.
 
 Owner report: "How do I get the left hand sidebar to appear with CRM,

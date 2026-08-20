@@ -1053,6 +1053,39 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` â†’ http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — a background system must prove it is alive, not be presumed alive (2026-08-20)
+
+The autopilot was silent for five days, and four successive wrong diagnoses
+were made from that silence: machine off, DNS blip, hidden window died,
+scheduled task missing. The actual chain, reconstructed from the owner's
+screenshots: (1) at 8:35 AM on the 15th a new cycle collided with the previous
+one still holding `autopilot.log`, and `:fail_log` treated a transient lock as
+fatal; (2) the task had been switched to "run whether user is logged on or
+not", which moves it to session 0 and severs the Credential Manager the
+publish depends on — a hazard my own `autopilot-hidden.vbs` comment documented
+four days before I told the owner to flip exactly that switch; (3) every
+failure before the first publish wrote to a LOCAL file, so the remote view
+just... stopped, indistinguishable from nothing happening.
+
+Rules now enforced by tests (`test_deploy_scripts.py`):
+
+* **Absence of signal is not signal.** A chain that only reports when working
+  reports nothing precisely when reporting matters. The heartbeat is now the
+  FIRST step of every cycle, and launcher-level failures push the status file.
+* **A transient resource conflict is a stand-down, not a death.** Retry the
+  log append ~90s, then exit 0 with an honest STANDING DOWN status. The
+  hourly trigger is the retry mechanism.
+* **Every link must leave evidence.** The vbs writes its breadcrumb before
+  launching and the cycle's exit code after. "Task Scheduler says success"
+  only ever meant "wscript exited".
+* **Never hand an operator settings to type.** The hand-edited task action
+  and my hand-delivered radio-button advice each broke something. Task
+  registration lives in `fix-autopilot-task.bat` and the updater's
+  ensure-block, which tests force to agree.
+* **Re-read your own design notes before advising.** The session-0/credential
+  trap was written down in this repo. Advice that contradicts a recorded
+  decision should trigger a lookup, not a shrug.
+
 ## Lesson — a CSS `display:none` can delete a whole product surface (2026-08-18)
 
 Owner: "How do I get the left hand sidebar to appear with CRM, Portfolio,

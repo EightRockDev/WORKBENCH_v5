@@ -35,8 +35,21 @@ REM leftover cycle processes + stale git lock BEFORE the first append.
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\autopilot_preflight.ps1" > reports\autopilot-preflight.txt 2>&1
 
 > reports\autopilot-status.txt echo RUNNING - started %date% %time%
+REM A locked log is NORMAL, not fatal (lesson of 2026-08-15: a new launch
+REM collided with the previous cycle writing its last lines, treated the
+REM busy file as a hard failure, and the chain stayed dead for five days).
+REM A finishing cycle releases the log within seconds - retry for ~90s,
+REM then STAND DOWN quietly: the hourly trigger is the retry, exit 0.
+REM (ping is the sleep here: `timeout` dies in a non-interactive session.)
+set /a LOGTRY=0
+:try_log
 echo === Eight Rock Autopilot start %date% %time% === >> reports\autopilot.log
-if errorlevel 1 goto :fail_log
+if not errorlevel 1 goto :log_ok
+set /a LOGTRY+=1
+if %LOGTRY% geq 7 goto :standdown
+ping -n 16 127.0.0.1 >nul
+goto :try_log
+:log_ok
 "%UV%" run python -u scripts/autopilot.py >> reports\autopilot.log 2>&1
 "%UV%" sync >> reports\autopilot.log 2>&1
 "%UV%" run python -u scripts/autopilot_run.py >> reports\autopilot.log 2>&1
@@ -53,14 +66,28 @@ exit /b 0
 echo.
 echo !! Could not find or install uv - see the messages above.
 > reports\autopilot-status.txt echo FAILED - uv missing  %date% %time%
+call :publish_status
 if not defined ER_HIDDEN timeout /t 60
 exit /b 1
 
-:fail_log
+:standdown
+REM Another cycle is genuinely running (the preflight already cleared any
+REM ORPHANS, so a still-held log means a LIVE cycle). That is healthy -
+REM say so honestly instead of crying FAILED, and let the next hourly
+REM fire pick the work up. Exit 0: this is not an error.
 echo.
-echo !! Cannot write reports\autopilot.log - something still holds it open
-echo !! even after preflight. Preflight report:
-type reports\autopilot-preflight.txt
-> reports\autopilot-status.txt echo FAILED - autopilot.log locked  %date% %time%
-if not defined ER_HIDDEN timeout /t 60
-exit /b 1
+echo Another Autopilot cycle is already running - standing down.
+> reports\autopilot-status.txt echo STANDING DOWN - another cycle is running (normal); next hourly run continues  %date% %time%
+call :publish_status
+exit /b 0
+
+REM Best-effort: push the status file so the outside world can see a
+REM launcher-level failure. Five days of silence happened because every
+REM failure before the first publish was written to a LOCAL file only.
+REM Plain git, no uv needed; every step is allowed to fail quietly - a
+REM status publish must never block or crash the launcher itself.
+:publish_status
+git add -f reports\autopilot-status.txt >nul 2>&1
+git commit -m "autopilot launcher status" >nul 2>&1
+git push origin main >nul 2>&1
+exit /b 0

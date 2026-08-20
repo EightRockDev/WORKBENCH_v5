@@ -354,3 +354,94 @@ def test_login_diagnostic_flags_upstream_mismatch():
     d = (ROOT / "diagnose-login.bat").read_text(encoding="utf-8")
     assert "8501" in d and "8502" in d
     assert "MISMATCH" in d
+
+
+# ---------------------------------------------------------------------------
+# The five silent days (2026-08-15..19): overlap was fatal, the launcher
+# left no evidence, and every pre-publish failure was local-only.
+# ---------------------------------------------------------------------------
+
+def test_a_locked_log_stands_down_instead_of_dying():
+    """A new cycle colliding with a finishing one is NORMAL. Treating the
+    busy log file as fatal killed the chain on 2026-08-15 and it stayed
+    dead for five days."""
+    bat = (ROOT / "autopilot.bat").read_text(encoding="utf-8")
+    assert "STANDING DOWN" in bat, "overlap must be named, not called FAILED"
+    assert ":standdown" in bat and ":try_log" in bat
+    # the retry sleeps via ping: `timeout` dies in a non-interactive session
+    assert "ping -n" in bat, "retry loop must not depend on `timeout`"
+    # stand-down is not an error - exit 0 so nothing upstream panics
+    i = bat.index(":standdown")
+    assert "exit /b 0" in bat[i:i + 700], "standing down must exit 0"
+
+
+def test_launcher_failures_reach_github():
+    """Every failure before the first publish used to be written to a LOCAL
+    file only - from outside, indistinguishable from a machine that is off.
+    The launcher now pushes its status file best-effort on every non-DONE
+    path."""
+    bat = (ROOT / "autopilot.bat").read_text(encoding="utf-8")
+    assert ":publish_status" in bat
+    body = bat[bat.index(":publish_status"):]
+    assert "git push origin main" in body
+    # both the uv failure and the stand-down must call it
+    for label in (":fail_uv", ":standdown"):
+        # the LABEL, not a goto that references it
+        i = bat.index("\n" + label) + 1
+        section = bat[i:i + 900]
+        assert "call :publish_status" in section, f"{label} does not publish"
+
+
+def test_the_hidden_launcher_leaves_evidence():
+    """The scheduled task reported 'successfully finished' while the cycle
+    never ran, and nothing on disk said which link broke. The launcher must
+    write its breadcrumb BEFORE starting the cycle and record the cycle's
+    exit code after."""
+    vbs = (ROOT / "autopilot-hidden.vbs").read_text(encoding="utf-8")
+    assert "launcher-last.txt" in vbs
+    assert vbs.index("launcher started") < vbs.index("shell.Run("), (
+        "the breadcrumb must be written before the launch, or a hung "
+        "launch leaves no trace")
+    assert "cycle exited" in vbs
+    # waiting is what makes the exit code real evidence
+    assert ", 0, True)" in vbs, "the launcher must wait for the cycle"
+
+
+def test_the_task_registration_is_scripted_not_hand_typed():
+    """The task's action was hand-typed once and the chain died invisibly.
+    fix-autopilot-task.bat rebuilds it deterministically; the updater's
+    ensure-block must agree with it on every choice that mattered."""
+    fix = (ROOT / "fix-autopilot-task.bat").read_text(encoding="utf-8")
+    upd = (ROOT / "update-workbench.bat").read_text(encoding="utf-8")
+    for src, name in ((fix, "fix-autopilot-task.bat"),
+                      (upd, "update-workbench.bat")):
+        assert "EightRockWorkbenchAutopilot" in src
+        assert "autopilot-hidden.vbs" in src, (
+            f"{name}: the task must start the silent launcher")
+        assert "/SC HOURLY" in src, f"{name}: hourly restart net"
+        assert "/RU" not in src, (
+            f"{name}: the task must run as the logged-on user - session 0 "
+            "loses the GitHub credentials the publish depends on")
+    # the updater must never fall back to the visible-window action
+    ensure = upd[upd.index("Ensuring the Autopilot"):]
+    assert '/TR "wscript.exe' in ensure, (
+        "update-workbench.bat registers autopilot.bat directly - that is "
+        "the popup window and the pre-V5.62 outage path")
+
+
+def test_the_heartbeat_is_the_first_step():
+    """Liveness must be published before any real work, so a dead chain is
+    distinguishable from a slow first step within seconds."""
+    import scripts.autopilot_run as run
+    assert run.STEPS[0][0] == "heartbeat", "heartbeat must run first"
+    assert run.STEPS[0][2] == "heartbeat.txt"
+
+
+def test_the_heartbeat_cannot_fail(capsys):
+    """A heartbeat that can crash poisons the signal it exists to provide."""
+    import scripts.heartbeat as hb
+    assert hb.main() == 0
+    out = capsys.readouterr().out
+    assert "ALIVE" in out
+    assert "fix-autopilot-task.bat" in out, (
+        "the heartbeat must say what to run when it goes stale")

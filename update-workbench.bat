@@ -153,16 +153,21 @@ echo === Current version ===
 findstr /C:"WORKBENCH_VERSION =" config.py
 
 echo.
-echo === Ensuring the nightly Autopilot is installed ===
+echo === Ensuring the Autopilot is installed ===
 schtasks /Query /TN "EightRockWorkbenchAutopilot" >nul 2>&1
 if errorlevel 1 (
-  schtasks /Create /F /TN "EightRockWorkbenchAutopilot" /TR "\"%~dp0autopilot.bat\"" /SC DAILY /ST 03:00
-  echo Autopilot installed - the full data cycle now runs itself nightly
-  echo at 3:00 AM and publishes every report to GitHub for Claude.
+  REM Same registration as fix-autopilot-task.bat, and it must stay that
+  REM way: the SILENT launcher (never autopilot.bat directly - that is
+  REM the popup window), hourly restart net, running as the logged-on
+  REM user so the cycle's GitHub sign-in keeps working.
+  schtasks /Create /F /TN "EightRockWorkbenchAutopilot" /TR "wscript.exe //nologo \"%~dp0autopilot-hidden.vbs\"" /SC HOURLY /MO 1
+  echo Autopilot installed - the data cycle runs itself every hour,
+  echo silently, and publishes every report to GitHub for Claude.
   echo Starting the first cycle in the background now...
-  start "EightRockAutopilot" /min cmd /c "%~dp0autopilot.bat"
+  start "" wscript.exe //nologo "%~dp0autopilot-hidden.vbs"
 ) else (
-  echo Autopilot already installed - runs nightly at 3:00 AM.
+  echo Autopilot already installed. If its reports ever stop for a day,
+  echo run fix-autopilot-task.bat once - it rebuilds the task correctly.
 )
 
 echo.
