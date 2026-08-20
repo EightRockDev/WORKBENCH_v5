@@ -1,0 +1,9 @@
+autopilot heartbeat @ 2026-08-20T17:57:58
+
+ALIVE
+cycle started : 2026-08-20T17:57:58-04:00
+version       : V5.62.1.0.0
+host          : DESKTOP-RINL8AD
+
+If the timestamp above is more than ~2 hours old, the autopilot
+chain is DOWN - run fix-autopilot-task.bat on the office machine.
