@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-11T10:57:55",
+  "generated_at": "2026-08-20T18:15:55",
   "localities": {
     "Alexandria": [],
     "Arlington": [],
@@ -49,7 +49,7 @@
         "columns_hit": {
           "date": "transfer_date",
           "price": "consideration",
-          "parcel": "gpin"
+          "parcel": "parcel_id"
         },
         "score": 95
       },
@@ -62,9 +62,9 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2026-03-17T19:00:35.000Z",
         "columns_hit": {
+          "parcel": "gpin",
           "date": "transfer_date",
-          "price": "consideration",
-          "parcel": "parcel_id"
+          "price": "consideration"
         },
         "score": 95
       },
@@ -77,7 +77,7 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2026-05-13T20:32:14.000Z",
         "columns_hit": {
-          "parcel": "gpin",
+          "parcel": "parcel_id",
           "price": "consideration",
           "date": "transfer_date"
         },
@@ -92,26 +92,11 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2026-05-13T20:33:53.000Z",
         "columns_hit": {
-          "date": "transfer_date",
           "parcel": "parcel_id",
+          "date": "transfer_date",
           "price": "consideration"
         },
         "score": 95
-      },
-      {
-        "method": "socrata-catalog",
-        "adapter": "socrata_stack",
-        "title": "Property Assessment and Sales - FY20",
-        "domain": "data.norfolk.gov",
-        "resource_id": "pdf2-gh9c",
-        "base": "https://data.norfolk.gov/resource/",
-        "updated": "2023-04-03T19:11:38.000Z",
-        "columns_hit": {
-          "parcel": "gpin",
-          "price": "consideration",
-          "date": "transfer_date"
-        },
-        "score": 85
       },
       {
         "method": "socrata-catalog",
@@ -122,9 +107,24 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2023-04-03T19:11:00.000Z",
         "columns_hit": {
-          "price": "consideration",
+          "parcel": "parcel_id",
           "date": "transfer_date",
-          "parcel": "parcel_id"
+          "price": "consideration"
+        },
+        "score": 85
+      },
+      {
+        "method": "socrata-catalog",
+        "adapter": "socrata_stack",
+        "title": "Property Assessment and Sales - FY20",
+        "domain": "data.norfolk.gov",
+        "resource_id": "pdf2-gh9c",
+        "base": "https://data.norfolk.gov/resource/",
+        "updated": "2023-04-03T19:11:38.000Z",
+        "columns_hit": {
+          "date": "transfer_date",
+          "price": "consideration",
+          "parcel": "gpin"
         },
         "score": 85
       },
@@ -137,7 +137,7 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2021-03-01T13:38:08.000Z",
         "columns_hit": {
-          "parcel": "parcel_id",
+          "parcel": "gpin",
           "price": "consideration",
           "date": "transfer_date"
         },
@@ -152,9 +152,9 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2023-04-03T19:11:17.000Z",
         "columns_hit": {
+          "parcel": "parcel_id",
           "price": "consideration",
-          "date": "transfer_date",
-          "parcel": "gpin"
+          "date": "transfer_date"
         },
         "score": 85
       },
@@ -466,8 +466,8 @@
         "title": "Property Sales ",
         "org": "City of Virginia Beach - Online Mapping",
         "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0",
-        "record_count": 594149,
-        "updated": 1786339818935,
+        "record_count": 594521,
+        "updated": 1786944397225,
         "columns_hit": {
           "parcel": "GPIN",
           "price": "Sale_Price",
@@ -481,8 +481,8 @@
         "title": "Property Sales ",
         "org": "City of Virginia Beach - Online Mapping",
         "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0",
-        "record_count": 594149,
-        "updated": 1786339818935,
+        "record_count": 594521,
+        "updated": 1786944397225,
         "columns_hit": {
           "parcel": "GPIN",
           "price": "Sale_Price",
@@ -496,7 +496,7 @@
         "title": "Property Sales [CSV]",
         "org": "Virginia Beach",
         "url": "https://data.virginiabeach.gov/api/download/v1/items/948bc15e637c4bd6a65fb94ae633e052/csv?layers=0",
-        "updated": "2026-08-09T15:00:08.691152",
+        "updated": "2026-08-16T15:00:13.501456",
         "columns_hit": {},
         "score": 35,
         "note": "state mirror - fields sniff on first sized pull"

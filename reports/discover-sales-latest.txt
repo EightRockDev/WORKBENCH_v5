@@ -1,5 +1,93 @@
-autopilot salesdiscovery @ 2026-08-15T08:17:18
+autopilot salesdiscovery @ 2026-08-20T18:15:54
 
-autopilot salesdiscovery @ 2026-08-15T08:17:19
+autopilot salesdiscovery @ 2026-08-20T18:15:55
 
-[sales-discovery] ran within 7d - skipping (ER_SALES_DISCOVERY_FORCE=1 to override)
+[sales-discovery] researching 21 localities across central catalogs (Socrata Discovery / ArcGIS Hub / CKAN-VA / HRGEO) - metadata only, no gated-domain reads
+
+[Alexandria] 0 candidate(s), 0 strong (score>=60)
+
+[Arlington] 0 candidate(s), 0 strong (score>=60)
+
+[Athens] 0 candidate(s), 0 strong (score>=60)
+
+[Atlanta] 0 candidate(s), 0 strong (score>=60)
+
+[Augusta] 0 candidate(s), 0 strong (score>=60)
+
+[Chesapeake] 2 candidate(s), 0 strong (score>=60)
+      5  [socrata-catalog] Transfer Development Rights and Purchase Development Rights
+         no cols  ->  https://opendata.maryland.gov/resource/8ccz-b8qi
+      5  [socrata-catalog] Transfer Development Rights and Purchase Development Rights
+         no cols  ->  https://opendata.maryland.gov/resource/rijg-dmbs
+
+[Decatur] 0 candidate(s), 0 strong (score>=60)
+
+[Durham] 0 candidate(s), 0 strong (score>=60)
+
+[Greensboro] 0 candidate(s), 0 strong (score>=60)
+
+[Greenville] 0 candidate(s), 0 strong (score>=60)
+
+[Hampton] 0 candidate(s), 0 strong (score>=60)
+
+[Nashville] 0 candidate(s), 0 strong (score>=60)
+
+[Newport News] 0 candidate(s), 0 strong (score>=60)
+
+[Norfolk] 28 candidate(s), 8 strong (score>=60)
+     95  [socrata-catalog] Property Assessment and Sales - FY23
+         date=transfer_date, price=consideration, parcel=parcel_id  ->  https://data.norfolk.gov/resource/yvpm-8aid
+     95  [socrata-catalog] Property Assessment and Sales - FY24
+         parcel=gpin, date=transfer_date, price=consideration  ->  https://data.norfolk.gov/resource/9gmp-9x4c
+     95  [socrata-catalog] Property Assessment and Sales - FY25
+         parcel=parcel_id, price=consideration, date=transfer_date  ->  https://data.norfolk.gov/resource/g7sg-tivf
+     95  [socrata-catalog] Property Assessment and Sales - FY26
+         parcel=parcel_id, date=transfer_date, price=consideration  ->  https://data.norfolk.gov/resource/m5ya-5grb
+     85  [socrata-catalog] Property Assessment and Sales - FY19
+         parcel=parcel_id, date=transfer_date, price=consideration  ->  https://data.norfolk.gov/resource/th3n-jr9u
+
+[Portsmouth] 0 candidate(s), 0 strong (score>=60)
+
+[Raleigh] 0 candidate(s), 0 strong (score>=60)
+
+[Richmond] 6 candidate(s), 2 strong (score>=60)
+    100  [arcgis-hub] Property Transfers (2012 to 2016)
+         parcel=PIN, price=AvgSaleAmt, date=SaleDate1 rows=17,391  ->  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Property_Transfers_(2012_to_2016)/FeatureServer/0
+    100  [hrgeo] Property Transfers (2012 to 2016)
+         parcel=PIN, price=AvgSaleAmt, date=SaleDate1 rows=17,391  ->  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Property_Transfers_(2012_to_2016)/FeatureServer/0
+      0  [arcgis-hub] Property Transfers (2012 to 2016)
+         no cols  ->  
+      0  [arcgis-hub] Transfers Since 2018 - Downtown Area
+         no cols  ->  
+      0  [hrgeo] Property Transfers (2012 to 2016)
+         no cols  ->  
+
+[Savannah] 0 candidate(s), 0 strong (score>=60)
+
+[Suffolk] 0 candidate(s), 0 strong (score>=60)
+
+[Virginia Beach] 5 candidate(s), 2 strong (score>=60)
+    100  [arcgis-hub] Property Sales 
+         parcel=GPIN, price=Sale_Price, date=Sales_Date rows=594,521  ->  https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0
+    100  [hrgeo] Property Sales 
+         parcel=GPIN, price=Sale_Price, date=Sales_Date rows=594,521  ->  https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0
+     35  [ckan-va] Property Sales [CSV]
+         no cols  ->  https://data.virginiabeach.gov/api/download/v1/items/948bc15e637c4bd6a65fb94ae633e052/csv?layers=0
+     25  [ckan-va] License Sales Data [XLSX]
+         no cols  ->  https://data.virginia.gov/dataset/7f3500b2-46e5-4e74-872c-fa5d9deafe6c/resource/b3df3517-f2e6-4705-93d0-5fa05d674286/download/license-sales-data.xlsx
+     25  [ckan-va] License Sales Data [XLSX]
+         no cols  ->  https://data.virginia.gov/dataset/7f3500b2-46e5-4e74-872c-fa5d9deafe6c/resource/aee32eca-aedd-46f5-8ce2-df7d9d3e61d3/download/data-dictionary.xlsx
+
+[Winston-Salem] 11 candidate(s), 0 strong (score>=60)
+      0  [arcgis-hub] Parking Availability in Winston-Salem 
+         no cols  ->  
+      0  [arcgis-hub] Winston Salem CR
+         no cols  ->  
+      0  [arcgis-hub] Winston Salem Major Roads
+         no cols  ->  https://services3.arcgis.com/8mRVhBBtAu5eqZUu/arcgis/rest/services/Winston_Salem_Major_Roads/FeatureServer/0
+      0  [arcgis-hub] Winston-Salem Area Greenways
+         no cols  ->  https://storymaps.arcgis.com/stories/335637fd39a7495bb8173f6b33b364b5
+      0  [arcgis-hub] Winston-Salem Spatial Data
+         no cols  ->  
+
+[sales-discovery] wrote sales_feeds_candidates.json - promotion into SALES_SOURCES stays a reviewed edit (verified sources only)
