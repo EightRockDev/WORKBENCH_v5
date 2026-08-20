@@ -1053,6 +1053,26 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` â†’ http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — cmd parses the whole block before running any of it (2026-08-20)
+
+`echo ... (30-45 min).` inside an `if ( ... )` block: the `)` in the TEXT
+closes the block and the stray `.` aborts the file — `. was unexpected at
+this time.`, exit 255. Because the parse error fires when the block is READ,
+the guard's condition is irrelevant: hidden mode and visible mode both died,
+on every launch, from the moment V5.43.1's banner wrap reached the machine.
+
+Three rules:
+* **Echo text and block syntax must never share parentheses.** Keep banner
+  echoes at top level (goto around them), or escape `^(` `^)`. Enforced now by
+  `test_no_batch_echo_text_closes_its_own_block` across every `.bat`.
+* **An instant, file-touching-nothing death is a PARSE failure, not a runtime
+  one.** Exit 255 + zero side effects means cmd never executed the body —
+  look for syntax, not environment.
+* **`cmd /k` is the diagnostic of record for a dying batch file** — the window
+  cannot close, so the parser's own message is always readable. One
+  screenshot ended a six-day hunt that logs could not, because a file that
+  dies at parse time writes no logs.
+
 ## Lesson — a background system must prove it is alive, not be presumed alive (2026-08-20)
 
 The autopilot was silent for five days, and four successive wrong diagnoses

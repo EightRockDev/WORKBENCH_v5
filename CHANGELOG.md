@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.62.1.0.0 — 2026-08-20  ·  The line that killed every launch since the 15th.
+
+Found from the owner's `cmd /k` screenshot: `. was unexpected at this time.`
+The V5.43.1 hide-the-window change wrapped the startup banner in an
+`if not defined ER_HIDDEN ( ... )` block — and the `)` inside the banner's own
+text, `(30-45 min).`, closes that block mid-sentence, leaving a stray `.` that
+aborts the entire file with exit 255. Every launch of `autopilot.bat` on a
+machine carrying that code — hidden or visible, scheduled or double-clicked —
+died on that line before writing a single byte. The banner now sits outside
+any block (a `goto` skips it in hidden mode), where parentheses are just text.
+
+The V5.62 evidence trail is what caught it: `launcher-last.txt` proved the
+task→wscript→launcher chain good and put a number (255) and a timestamp on
+the death, and the visible `cmd /k` run put the parser's own words on screen.
+
+New regression test scans every `.bat` for echo text containing parentheses
+inside a parenthesized block — the whole class, not just this instance.
+
+---
+
 ## V5.62.0.0.0 — 2026-08-20  ·  The autopilot can no longer die in silence.
 
 Root cause of the five silent days (15–19 Aug), from the owner's screenshots:

@@ -445,3 +445,37 @@ def test_the_heartbeat_cannot_fail(capsys):
     assert "ALIVE" in out
     assert "fix-autopilot-task.bat" in out, (
         "the heartbeat must say what to run when it goes stale")
+
+
+def test_no_batch_echo_text_closes_its_own_block():
+    """`echo ... (30-45 min).` inside an `if (...)` block: the ")" in the
+    TEXT closes the block and the stray "." aborts the whole file with
+    '. was unexpected at this time.' - which silently killed every
+    autopilot launch from V5.43.1 to 2026-08-20. Scan every .bat: no echo
+    line inside a parenthesized block may contain an unescaped ")".
+    """
+    offenders = []
+    for bat in sorted(ROOT.glob("*.bat")):
+        depth = 0
+        for n, raw in enumerate(bat.read_text(encoding="utf-8",
+                                              errors="replace").splitlines(), 1):
+            line = raw.strip()
+            if line.upper().startswith("REM"):
+                continue
+            if depth > 0 and re.match(r"(?i)^(echo|>.*echo)\b", line):
+                text = re.sub(r"\^.", "", line)     # drop escaped chars
+                if ")" in text:
+                    offenders.append(f"{bat.name}:{n}: {raw.strip()}")
+                # an unescaped "(" in echo text inside a block is the same
+                # trap one edit later - ban it too
+                if re.search(r"\((?!\s*$)", text):
+                    offenders.append(f"{bat.name}:{n}: {raw.strip()}")
+            # crude but sufficient block tracking for our own scripts:
+            # count parens OUTSIDE echo text
+            if not re.match(r"(?i)^(echo|>.*echo)\b", line):
+                text = re.sub(r"\^.", "", line)
+                depth += text.count("(") - text.count(")")
+                depth = max(depth, 0)
+    assert not offenders, (
+        "echo text inside a ( ) block contains parentheses - cmd will close "
+        "the block mid-text and abort the file:\n  " + "\n  ".join(offenders))

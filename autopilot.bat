@@ -19,11 +19,18 @@ REM .bat still behaves exactly as before.
 set "ER_HIDDEN="
 if /i "%~1"=="--hidden" set "ER_HIDDEN=1"
 title Eight Rock Autopilot - RUNNING
-if not defined ER_HIDDEN (
-  echo Eight Rock Autopilot is running silently (30-45 min).
-  echo Progress log: reports\autopilot.log - this window closes itself when done.
-  echo To check from anywhere: type reports\autopilot-status.txt
-)
+REM The banner lives OUTSIDE any ( ) block, on purpose. Wrapped in
+REM "if not defined ER_HIDDEN ( ... )", the ")" inside "(30-45 min)."
+REM closed the block mid-text and the stray "." aborted the entire file
+REM with ". was unexpected at this time." - every launch, hidden or
+REM visible, died on this line from V5.43.1 until 2026-08-20, found from
+REM the owner's cmd /k screenshot. A goto keeps echo text at top level,
+REM where parentheses are just characters.
+if defined ER_HIDDEN goto :banner_done
+echo Eight Rock Autopilot is running silently (30-45 min).
+echo Progress log: reports\autopilot.log - this window closes itself when done.
+echo To check from anywhere: type reports\autopilot-status.txt
+:banner_done
 if not exist reports mkdir reports
 call "%~dp0_find-uv.bat" || goto :fail_uv
 
