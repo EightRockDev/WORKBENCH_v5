@@ -1,7 +1,3 @@
-autopilot listings @ 2026-08-20T19:17:16
+autopilot listings @ 2026-08-20T20:35:29
 
-  [listings] rentcafe: Eastwyck Village -> not_found
-  [listings] zillow: Eastwyck Village -> success
-  [listings] apartments_com: Eastwyck Village -> not_found
-  [listings] property_site: Eastwyck Village -> not_found
-  [listings] wrote 4 rows (1 successful scrapes)
+  [listings] fresh (pulled within 7 days, 1 favourites, generation 2) - skipping; 333 rent_listings rows on hand
