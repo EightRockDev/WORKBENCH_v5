@@ -1,4 +1,4 @@
-autopilot alerts @ 2026-08-20T23:33:31
+autopilot alerts @ 2026-08-21T00:34:10
 
 alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 10989 - new_mf 10988, units_jump 1
