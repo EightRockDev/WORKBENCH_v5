@@ -12508,3 +12508,5 @@ Checked 114 packages in 11ms
 [heartbeat] exit 0 -> heartbeat.txt
 [publish] pushed to GitHub
 [discover] exit 0 -> discover-latest.txt
+[publish] pushed to GitHub
+[discover_national] exit 0 -> discover-national-latest.txt
