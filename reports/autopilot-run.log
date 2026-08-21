@@ -12587,3 +12587,5 @@ Checked 114 packages in 12ms
 [validate] exit 0 -> validate-latest.txt
 [publish] pushed to GitHub
 [pendingusers] exit 0 -> pending-users-latest.txt
+[publish] pushed to GitHub
+[inboxsync] exit 0 -> inbox-sync-latest.txt
