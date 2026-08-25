@@ -12,6 +12,49 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.63.0.0.0 — 2026-08-25  ·  Property Screener: the whole database behind one Submit button.
+
+Owner spec, verbatim scope: a new nav button between Loans and Help; filters
+on top; press Submit; see every matching property. "If I search 'Dolly' and
+the owner's name is 'Dolly Parton', I want to see records that contain the
+word 'Dolly'."
+
+- **New module `property_screener`** (nav slug in both chromes, sidebar
+  early-return card, app.py dispatch — ungated, like Help, because an
+  unknown perm key would lock every pilot role out).
+- **One search over BOTH pools.** The curated `properties` records and the
+  county `properties_8r` backbone answer the same filter form, each row
+  labelled with its source. The `property_crosswalk` drops every backbone
+  row that already exists as a curated record, so a property in both pools
+  appears once, as its richer version.
+- **Filters:** name, city, state, zip, owner, management company,
+  market/submarket (all case-insensitive CONTAINS, LIKE-wildcards escaped);
+  class multi-pick; unit count, year built and occupancy ranges; last sale
+  price and sale-date ranges. County sales come from `sale_records` joined
+  on normalized APN — latest sale per parcel, priced transfers only. A
+  filter county records cannot answer (name, class, management company,
+  occupancy) excludes them while in use, stated on the form, rather than
+  pretending the data exists.
+- **Click a result row → the property opens in Deal Analysis** (curated
+  rows now; backbone rows after the 8r cutover flips `get_property`).
+  County-row clicks before then explain themselves instead of dying.
+- **Renamed the nav button "GRANITE Loans" → "Loans"** (owner ask). The
+  module slug `granite_loans` and the `granite` permission key are
+  load-bearing and unchanged.
+- Query logic lives in `core/screener.py`, no Streamlit — 17 tests in
+  `tests/test_property_screener.py` cover the Dolly case, dedupe, the
+  latest-sale-wins rule, wildcard escaping, and both renames. Verified in
+  a real browser: filter → Submit → row click → Deal Analysis.
+- An adversarial review before ship confirmed and fixed three data bugs
+  the happy-path tests missed: APN-less county rows borrowing an
+  unrelated address-only sale through a `''=''` join (wrong price on
+  screen, false price-filter positives); date text like "6/1/2015"
+  silently disabling the curated date filter while zeroing the county
+  pool (dates are now real pickers, and the query normalizes ISO and
+  M/D/YYYY the same way for both pools); and a stale table selection
+  surviving Submit, which could crash or open a property the user never
+  clicked (selection now cleared on Submit + bounds-guarded).
+
 ## V5.62.1.0.0 — 2026-08-20  ·  The line that killed every launch since the 15th.
 
 Found from the owner's `cmd /k` screenshot: `. was unexpected at this time.`

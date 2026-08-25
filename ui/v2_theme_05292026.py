@@ -2290,7 +2290,8 @@ MODULE_NAV = (
     ("deal_analysis", "🏢", "Deal Analysis"),
     ("crm",           "🎯", "CRM & Sourcing"),
     ("portfolio",     "📊", "Portfolio"),
-    ("granite_loans", "🏦", "GRANITE Loans"),
+    ("granite_loans", "🏦", "Loans"),
+    ("property_screener", "🔎", "Property Screener"),
     ("help",          "❓", "Help"),
 )
 

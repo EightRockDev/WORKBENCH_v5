@@ -28,7 +28,8 @@ from streamlit.testing.v1 import AppTest
 # into one collection error reading "cannot import MODULE_NAV" — which proves
 # a symbol is missing, not that the owner had no way into CRM. Each test
 # should fail saying what the user cannot do.
-EXPECTED_MODULES = ("deal_analysis", "crm", "portfolio", "granite_loans", "help")
+EXPECTED_MODULES = ("deal_analysis", "crm", "portfolio", "granite_loans",
+                    "property_screener", "help")
 
 
 @pytest.fixture(autouse=True)
@@ -76,7 +77,7 @@ def test_topbar_carries_an_entrance_to_every_module():
 def test_every_module_link_is_labelled():
     html = _html(NAV_SCRIPT)
     for label in ("Deal Analysis", "CRM & Sourcing", "Portfolio",
-                  "GRANITE Loans", "Help"):
+                  "Loans", "Property Screener", "Help"):
         assert label in html, f"{label} link is unlabelled"
 
 
@@ -156,7 +157,7 @@ def test_v2_nav_and_sidebar_switcher_offer_the_same_modules():
     from ui.v2_theme_05292026 import MODULE_SLUGS
 
     src = inspect.getsource(sidebar._render_module_switcher)
-    sidebar_slugs = set(re.findall(r'\("([a-z_]+)",\s+"[^"]*(?:🏢|🎯|📊|🏦|❓)', src))
+    sidebar_slugs = set(re.findall(r'\("([a-z_]+)",\s+"[^"]*(?:🏢|🎯|📊|🏦|🔎|❓)', src))
     assert sidebar_slugs, "could not read the sidebar's module list"
     assert sidebar_slugs == set(MODULE_SLUGS) == set(EXPECTED_MODULES), (
         f"sidebar has {sidebar_slugs}, V2 nav has {set(MODULE_SLUGS)}")

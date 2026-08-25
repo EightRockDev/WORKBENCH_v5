@@ -954,12 +954,22 @@ def main() -> None:
         return
 
     if active_module == "granite_loans":
-        # ---- GRANITE Loans (spec 6.1 Tabs 2-5) ----
+        # ---- Loans (spec 6.1 Tabs 2-5; slug and perm key stay granite) ----
         if _is_v2():
             _v2_topbar(None)
-        if _authz.guard_module("granite", "GRANITE Loans"):
+        if _authz.guard_module("granite", "Loans"):
             from ui.granite_loans import render_granite_loans
             render_granite_loans()
+        return
+
+    if active_module == "property_screener":
+        # ---- Property Screener — both property pools, one filter form.
+        # Ungated like Help and CRM's Inventory tab: an unknown perm key
+        # would lock every pilot role out (can_open is set membership).
+        if _is_v2():
+            _v2_topbar(None)
+        from ui.property_screener import render_property_screener
+        render_property_screener()
         return
 
     if active_module == "help":

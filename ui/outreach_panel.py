@@ -73,7 +73,7 @@ def _render_sweep_queue() -> None:
     if not rows:
         return
     st.markdown(f"**🎯 Sweep queue — {len(rows)} routed targets** "
-                "(from GRANITE Alerts; oldest first)")
+                "(from Loans → Alerts; oldest first)")
     for r in rows[:25]:
         col_a, col_b = st.columns([6, 1])
         with col_a:

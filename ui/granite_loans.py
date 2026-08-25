@@ -27,7 +27,7 @@ def _fmt_money(v) -> str:
 
 def render_granite_loans() -> None:
     c = config.COLORS
-    st.markdown("## 🏦 GRANITE Loans")
+    st.markdown("## 🏦 Loans")
     st.caption("Lender database · loan comps · borrower intelligence — "
                "built from public HMDA records and the Eight Rock backbone.")
 
