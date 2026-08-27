@@ -19,7 +19,9 @@ import pandas as pd
 import streamlit as st
 
 import config
-from core.screener import SOURCE_CURATED, run_screener
+from core.screener import DEFAULT_LIMIT, SOURCE_CURATED, run_screener
+from core.screener_export import (build_csv_bytes, build_xlsx_bytes,
+                                  export_filename)
 from data.db import DB_PATH
 from ui.components import section_card, v2_strip_icon
 
@@ -129,12 +131,47 @@ def _render_filters(c: dict) -> bool:
             for k in _FILTER_KEYS:
                 st.session_state.pop(k, None)
             st.session_state.pop("scr_results", None)
+            st.session_state.pop("scr_results_filters", None)
             st.rerun()
     return submitted
 
 
 def _fmt_money(v) -> str:
     return f"${v:,.0f}" if v else "—"
+
+
+def _render_downloads(c: dict, rows: list[dict]) -> None:
+    """CSV / Excel of exactly these rows — built from the list on screen.
+
+    st.download_button reruns the script when clicked, so both payloads
+    are built on every render of the results. At the 500-row cap that is
+    a few milliseconds and it keeps the file honest: there is no cached
+    copy that can outlive the result set it came from.
+    """
+    filters = st.session_state.get("scr_results_filters")
+    d1, d2, note = st.columns([1, 1, 4])
+    d1.download_button(
+        v2_strip_icon("⬇️ Download CSV"), data=build_csv_bytes(rows),
+        file_name=export_filename("csv"), mime="text/csv",
+        use_container_width=True, key="scr_dl_csv")
+    d2.download_button(
+        v2_strip_icon("⬇️ Download Excel"),
+        data=build_xlsx_bytes(rows, filters=filters),
+        file_name=export_filename("xlsx"),
+        mime=("application/vnd.openxmlformats-officedocument"
+              ".spreadsheetml.sheet"),
+        use_container_width=True, key="scr_dl_xlsx")
+    # The screen itself is capped, so the file is too. Say so here
+    # rather than let a 500-row download read as the whole answer.
+    capped = (" — the screen caps results at "
+              f"{DEFAULT_LIMIT:,}, so the file carries those "
+              f"{DEFAULT_LIMIT:,}. Narrow a filter for the rest."
+              if len(rows) >= DEFAULT_LIMIT else "")
+    note.markdown(
+        f'<div style="color:{c["tx3"]};font-size:12px;padding-top:10px">'
+        f'Downloads these {len(rows):,} rows, with address, market, '
+        f'occupancy and property id added{capped}</div>',
+        unsafe_allow_html=True)
 
 
 def _render_results(c: dict, rows: list[dict]) -> None:
@@ -166,6 +203,8 @@ def _render_results(c: dict, rows: list[dict]) -> None:
         "Owner": r["owner"] or "—",
         "Mgmt Co": r["management_company"] or "—",
     } for r in rows])
+
+    _render_downloads(c, rows)
 
     event = st.dataframe(
         display, use_container_width=True, hide_index=True, height=500,
@@ -214,8 +253,11 @@ def render_property_screener() -> None:
                     "selection": {"rows": [], "columns": [], "cells": []}}
             except Exception:
                 st.session_state.pop("scr_table", None)
+            filters = _filters_from_state()
+            # Kept so the Excel export can name the search that made it.
+            st.session_state["scr_results_filters"] = filters
             st.session_state["scr_results"] = run_screener(
-                _filters_from_state(), db_path=DB_PATH)
+                filters, db_path=DB_PATH)
 
         if "scr_results" in st.session_state:
             _render_results(c, st.session_state["scr_results"])

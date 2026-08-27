@@ -12,6 +12,35 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.63.2.0.0 — 2026-08-27  ·  Property Screener results download to CSV / Excel.
+
+Owner ask: "add a feature to this screen to download the results into
+CSV/Excel." Two buttons sit above the results table and hand back exactly
+the rows on screen.
+
+- **`core/screener_export.py`** builds both files from the SAME row list
+  the table painted — no second query, so a download can never disagree
+  with the screen (the rule `core/excel_export.py` already follows).
+- **Raw values, not display text.** The screen prints "—" for a missing
+  number and "$21,500,000" for a price; the file writes a blank cell and
+  the number 21500000 with a currency format. A "—" in a numeric column
+  is what stops a spreadsheet being a model.
+- **Zip stays text** (`@` format) so 07030 does not become 7030, and the
+  CSV carries a UTF-8 BOM so Excel opens accented names correctly.
+- **Four columns the screen has no room for**: address, market,
+  occupancy % (stored as a fraction, exported as percent) and the
+  property id, which is what makes an exported row traceable back.
+- **The workbook says what search made it** — a second "Filters" sheet
+  lists only the ACTIVE filters plus row count, timestamp and version.
+  An inactive filter left blank there reads as "applied, matched nothing".
+- **The cap is stated.** The screen caps at 500 rows, so the file does
+  too; at the cap the note says so and tells the owner to narrow a filter.
+- Verified in a real browser: both buttons clicked, both files downloaded
+  and re-opened (`property-screener-<stamp>.csv/.xlsx`). 17 new tests,
+  three of which render the actual Streamlit screen.
+
+---
+
 ## V5.63.1.2.0 — 2026-08-27  ·  Recovery must not depend on a privilege the app role was never given.
 
 Second host run: the snapshot succeeded, then `CREATE DATABASE wb_recover`
