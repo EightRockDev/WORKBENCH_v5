@@ -18,13 +18,19 @@ import config
 from data.db import (
     TARGET_STATES,
     city_counts_for_state,
+    delete_property,
     ensure_db_synced,
     list_distinct_states,
     list_management_companies,
     list_properties,
     upsert_property,
 )
-from data.property_io import add_custom_property, load_favorites
+from data.property_io import (
+    add_custom_property,
+    delete_custom_property,
+    load_custom_props,
+    load_favorites,
+)
 from ui.components import v2_strip_icon
 
 
@@ -178,20 +184,28 @@ def _show_add_property_dialog() -> None:
             key="cp_year_built",
         )
 
+    # Coordinates start EMPTY, never at a city centroid. Until 2026-08-27
+    # these defaulted to 36.85 / -76.29 (Norfolk) and a submit with no ZIP
+    # autofill saved that pair as though it were surveyed data: Eastwyk
+    # Village, a Virginia Beach property, sat 5.37 miles from its own address,
+    # which silently corrupted its map pin and every radius comp drawn around
+    # it. `value=None` makes "unknown" expressible, and the submit guard below
+    # refuses to write a property without real coordinates. A widget's default
+    # value is not data.
     col_lat, col_lng = st.columns(2)
     with col_lat:
         latitude = st.number_input(
             "Latitude *", min_value=-90.0, max_value=90.0,
-            value=float(st.session_state.get("cp_lat", 36.85)),
+            value=None,
             format="%.6f", step=0.0001, key="cp_lat",
-            help="Auto-fills from ZIP. Norfolk ≈ 36.85, Hampton ≈ 37.03.",
+            help="Auto-fills when you enter a ZIP. Required - there is no default.",
         )
     with col_lng:
         longitude = st.number_input(
             "Longitude *", min_value=-180.0, max_value=180.0,
-            value=float(st.session_state.get("cp_lng", -76.29)),
+            value=None,
             format="%.6f", step=0.0001, key="cp_lng",
-            help="Hampton Roads is roughly -76.0 to -76.5.",
+            help="Auto-fills when you enter a ZIP. Required - there is no default.",
         )
 
     # Optional underwriting-relevant fields
@@ -223,6 +237,8 @@ def _show_add_property_dialog() -> None:
         if not city.strip(): missing.append("city")
         if not units: missing.append("units")
         if not asset_class: missing.append("class")
+        if latitude is None: missing.append("latitude")
+        if longitude is None: missing.append("longitude")
         if missing:
             st.error(f"Required fields missing: {', '.join(missing)}")
             return
@@ -261,6 +277,10 @@ def _show_add_property_dialog() -> None:
         for k in (
             "cp_name", "cp_address", "cp_zip", "cp_city", "cp_state",
             "cp_owner", "cp_manager", "_cp_last_zip_lookup",
+            # Coordinates MUST be cleared: a keyed widget keeps its value
+            # across reruns, so leaving them set carried the previous
+            # property's pin straight into the next submission.
+            "cp_lat", "cp_lng",
             "_show_add_property_dialog",
         ):
             st.session_state.pop(k, None)
@@ -280,6 +300,107 @@ def maybe_show_add_property_dialog() -> None:
     """
     if st.session_state.get("_show_add_property_dialog"):
         _show_add_property_dialog()
+
+
+@st.dialog("Delete property", width="large")
+def _show_delete_property_dialog() -> None:
+    """Confirm and delete a user-added property. Requires typing DELETE.
+
+    Scoped to CUSTOM properties on purpose. `properties` is a query layer that
+    `legacy_loader.sync()` rebuilds from the licensed export, so deleting an
+    export-sourced row would look like it worked and then reappear on the next
+    rebuild - a delete that silently undoes itself is worse than no delete.
+    A custom property is durable because `_custom_props.json` is its source of
+    truth and both stores are cleared together.
+    """
+    pid = st.session_state.get("_delete_target_pid")
+    if not pid:
+        st.info("Select a property first, then reopen this dialog.")
+        return
+
+    entry = next((p for p in load_custom_props()
+                  if p.get("property_id") == pid), None)
+
+    if entry is None:
+        st.warning(
+            "This property came from the licensed export, not from "
+            "**+ Add custom property**, so it cannot be deleted here.\n\n"
+            "The property list is rebuilt from that export whenever it "
+            "refreshes, which would put the row straight back - a delete that "
+            "quietly undoes itself. Only properties you added by hand can be "
+            "removed."
+        )
+        st.caption(f"property_id: {pid}")
+        if st.button("Close", use_container_width=True):
+            st.session_state.pop("_show_delete_property_dialog", None)
+            st.rerun()
+        return
+
+    st.markdown(f"### {entry.get('name', '(unnamed)')}")
+    st.markdown(
+        f"{entry.get('address') or '-'}, {entry.get('city') or '-'} "
+        f"{entry.get('state') or ''} {entry.get('zip') or ''}  \n"
+        f"**{entry.get('units') or '-'} units** &middot; built "
+        f"{entry.get('year_built') or '-'} &middot; class "
+        f"{entry.get('asset_class') or '-'}"
+    )
+    st.divider()
+    st.warning(
+        "This removes the property from `_custom_props.json` and from the "
+        "property list. It cannot be undone from inside the app."
+    )
+    st.info(
+        "Your deal folder is **not** touched. Any T-12, rent roll, OM or "
+        "photos you uploaded for this property stay on disk - delete those "
+        "yourself if you want them gone."
+    )
+
+    confirm = st.text_input(
+        "Type DELETE to confirm",
+        key="_delete_confirm_text",
+        placeholder="DELETE",
+    )
+    armed = confirm.strip() == "DELETE"
+    if confirm.strip() and not armed:
+        st.caption("Type it exactly, in capitals.")
+
+    col_del, col_cancel = st.columns(2)
+    with col_del:
+        if st.button("Delete permanently", type="primary", disabled=not armed,
+                     use_container_width=True):
+            removed_json = delete_custom_property(pid)
+            removed_rows = delete_property(pid)
+
+            if st.session_state.get("selected_property_id") == pid:
+                st.session_state.pop("selected_property_id", None)
+            for k in ("_show_delete_property_dialog", "_delete_target_pid",
+                      "_delete_confirm_text"):
+                st.session_state.pop(k, None)
+
+            if removed_json or removed_rows:
+                st.success(
+                    f"Deleted `{entry.get('name')}` "
+                    f"(json: {'yes' if removed_json else 'no'}, "
+                    f"db rows: {removed_rows})."
+                )
+            else:
+                st.error("Nothing was deleted - the property was already gone.")
+            st.rerun()
+    with col_cancel:
+        if st.button("Cancel", use_container_width=True):
+            for k in ("_show_delete_property_dialog", "_delete_confirm_text"):
+                st.session_state.pop(k, None)
+            st.rerun()
+
+
+def maybe_show_delete_property_dialog() -> None:
+    """Open the Delete-property modal if the sidebar button set the flag.
+
+    Same rule as the add dialog: MUST be called from `app.py` AFTER
+    `render_sidebar()` returns, outside any `with st.sidebar:` context.
+    """
+    if st.session_state.get("_show_delete_property_dialog"):
+        _show_delete_property_dialog()
 
 
 def _list_filtered_properties(
@@ -617,6 +738,25 @@ def render_sidebar() -> tuple[str, str | None]:
         ):
             st.session_state["_show_add_property_dialog"] = True
             st.rerun()
+
+        # ---- "Delete property" button (opens confirm modal in main pane) ----
+        # Shown whenever a property is selected. The dialog itself decides
+        # whether the property CAN be deleted: custom properties can, export
+        # -sourced rows cannot, and it explains which and why rather than
+        # leaving a dead button.
+        _sel_pid = st.session_state.get("selected_property_id")
+        if _sel_pid:
+            if st.button(
+                "🗑 Delete property",
+                key="delete_property_btn",
+                use_container_width=True,
+                help="Delete the selected property. Only properties you added "
+                     "by hand can be removed; you will be asked to type "
+                     "DELETE to confirm.",
+            ):
+                st.session_state["_delete_target_pid"] = _sel_pid
+                st.session_state["_show_delete_property_dialog"] = True
+                st.rerun()
 
         # Apply filters and fetch.
         # When the user types in Search, treat it as a "find this specific
