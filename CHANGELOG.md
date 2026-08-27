@@ -12,6 +12,31 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.63.1.1.0 — 2026-08-27  ·  The restore script hit the wall its own repo had already documented.
+
+First run on the host stopped at step 1: `pg_dump: error: query would be
+affected by row-level security policy for table "campaigns"`. FORCE ROW
+LEVEL SECURITY applies to the table owner too, so the app's `workbench`
+role cannot dump the protected tables — the exact failure `scripts/run_backup.py`
+hit on 2026-08-08 and CLAUDE.md wrote up on 2026-08-09, with the fix
+already in `.env` as `ER_BACKUP_DATABASE_URL` (the read-only `backup_reader`
+role with BYPASSRLS). The restore script used `DATABASE_URL` instead.
+
+- Snapshot and **all verification counts** now run as the BYPASSRLS role.
+  The counts mattered as much as the dump: under FORCE RLS the app role
+  sees the empty no-context view and reports **0 rows** for a full table,
+  so the before/after comparison would have quietly lied about exactly the
+  tables the incident touched.
+- The script fails fast with the one-time role-creation command when
+  `ER_BACKUP_DATABASE_URL` is missing, instead of dumping half a database.
+- Two new deploy tests: the restore must dump and count with the BYPASSRLS
+  role, and **no PowerShell file may contain a backslash-escaped quote** —
+  `\"` does not escape in PowerShell, it ends the string and the file stops
+  parsing. Written because I put one into this script's own help text while
+  fixing it. The check ignores legitimate `"D:\"` paths.
+- The safety design held: the run aborted before touching anything, and
+  the failure was a clean message rather than a half-restored database.
+
 ## V5.63.1.0.0 — 2026-08-27  ·  The test suite emptied the owner's production database.
 
 Owner, 2026-08-27: *"We had many users - they're gone now. What happened?"*

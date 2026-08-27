@@ -550,3 +550,43 @@ def test_the_restore_restores_service_state_when_a_rename_fails():
     assert "ALTER DATABASE $brokenName RENAME TO $liveDb" in src, (
         "a half-finished swap must put the original database back")
     assert "/ENABLE" in src, "the autopilot must be re-enabled after the swap"
+
+
+def test_no_backslash_escaped_quotes_in_powershell():
+    """PowerShell escapes a quote with a BACKTICK, never a backslash.
+
+    A stray \\" inside a double-quoted string ENDS the string, and the rest
+    of the line becomes garbage the parser rejects — the whole file fails to
+    load, before doing anything. Written after putting exactly that into
+    restore-pilot-db.ps1's help text, in a script whose entire job is to be
+    trustworthy with the last copy of the owner's data.
+    """
+    offenders = []
+    for ps1 in sorted(DEPLOY.glob("*.ps1")):
+        for n, raw in enumerate(_src(ps1.name).split("\n"), start=1):
+            line = raw.strip()
+            if line.startswith("#"):
+                continue
+            # `"D:\"` is a legitimate Windows path whose trailing backslash
+            # sits before the closing quote. The hazard is a backslash-quote
+            # with the string CONTINUING after it: a failed escape attempt.
+            if re.search(r'\\"(?=[A-Za-z0-9])', raw):
+                offenders.append(f"{ps1.name}:{n}: {line[:70]}")
+    assert not offenders, (
+        "backslash-escaped quotes in PowerShell - the string ends early and "
+        "the file will not parse:\n  " + "\n  ".join(offenders))
+
+
+def test_the_restore_dumps_with_the_bypassrls_role():
+    """FORCE RLS applies to the table owner, so the app's role can neither
+    dump the protected tables nor count them honestly (it sees the empty
+    no-context view and reports 0). The nightly backup learned this on
+    2026-08-09; the restore script must not relearn it."""
+    src = _src(RESTORE)
+    assert "ER_BACKUP_DATABASE_URL" in src, (
+        "the restore must use the BYPASSRLS backup role, not DATABASE_URL")
+    assert "& $pgDump -Fc -f $preFile $backupUrl" in src, (
+        "the safety snapshot must be taken with the BYPASSRLS role")
+    assert "$readLiveUrl" in src and "$readScratchUrl" in src, (
+        "verification counts must come from the BYPASSRLS role, or RLS "
+        "tables silently count 0 and the comparison lies")

@@ -86,6 +86,33 @@ $liveDb     = ($noQuery -split '/')[-1]
 $adminUrl   = "$baseUrl/postgres$query"     # a database we never rename
 $scratchUrl = "$baseUrl/$ScratchDb$query"
 
+# FORCE ROW LEVEL SECURITY applies to the table owner too, so the app's own
+# role can neither pg_dump the RLS tables nor COUNT their rows honestly - it
+# sees the empty no-context view and reports 0. That is why the nightly
+# backup runs as the dedicated read-only BYPASSRLS role (CLAUDE.md lesson
+# 2026-08-09), and this script must use it for exactly the same reasons:
+# a truthful dump, and truthful verification counts.
+$bkLine = Get-Content $envFile | Where-Object { $_ -match '^ER_BACKUP_DATABASE_URL=' } | Select-Object -First 1
+$backupUrl = if ($bkLine) { ($bkLine -replace '^ER_BACKUP_DATABASE_URL=', '').Trim() } else { "" }
+if (-not $backupUrl) {
+    Say ""
+    Say "ER_BACKUP_DATABASE_URL is not set in .env." Red
+    Say "pg_dump cannot read the row-level-security tables as the app role," Red
+    Say "so both the safety snapshot and the row counts would be wrong." Red
+    Say "Create the read-only backup role once (as the postgres superuser):" Yellow
+    # Single-quoted: PowerShell escapes quotes with a BACKTICK, never a
+    # backslash, and a stray \" ends the string and breaks the file.
+    Say ('  psql -U postgres -d ' + $liveDb + ' -c "CREATE ROLE backup_reader LOGIN PASSWORD ''<long-random>'' BYPASSRLS; GRANT pg_read_all_data TO backup_reader;"') Gray
+    Say "then add to .env:" Yellow
+    Say ('  ER_BACKUP_DATABASE_URL=postgresql://backup_reader:<long-random>@localhost:5432/' + $liveDb) Gray
+    throw "no BYPASSRLS backup role configured - see CLAUDE.md (2026-08-09)."
+}
+$bkNoQuery    = ($backupUrl -split '\?')[0]
+$bkQuery      = if ($backupUrl -match '\?') { '?' + ($backupUrl -split '\?', 2)[1] } else { '' }
+$bkBase       = $bkNoQuery -replace '/[^/]+$', ''
+$readLiveUrl    = $backupUrl                       # truthful counts, live
+$readScratchUrl = "$bkBase/$ScratchDb$bkQuery"     # truthful counts, scratch
+
 function Get-Count([string]$url, [string]$table) {
     $r = Invoke-Native { & $psql -d $url -tAc "select count(*) from $table" }
     if (-not $r.ok) { return -1 }
@@ -128,7 +155,7 @@ $stamp   = Get-Date -Format "yyyyMMdd-HHmmss"
 $preFile = Join-Path $backupDir "pre-restore-$stamp.dump"
 Say ""
 Say ">> STEP 1  backing up the CURRENT database first ..." Yellow
-$pre = Invoke-Native { & $pgDump -Fc -f $preFile $liveUrl }
+$pre = Invoke-Native { & $pgDump -Fc -f $preFile $backupUrl }
 if (-not $pre.ok -or -not (Test-Path $preFile)) {
     Say $pre.out Red
     throw "could not back up the current database - stopping before any change."
@@ -164,8 +191,8 @@ Say ("{0,-26} {1,10} {2,10}" -f "table", "restored", "live now") Cyan
 $restoredTotal = 0
 $results = @{}
 foreach ($t in $tables) {
-    $r = Get-Count $scratchUrl $t
-    $l = Get-Count $liveUrl $t
+    $r = Get-Count $readScratchUrl $t
+    $l = Get-Count $readLiveUrl $t
     $results[$t] = $r
     if ($r -gt 0) { $restoredTotal += $r }
     $flag = ""
@@ -242,10 +269,10 @@ Say ""
 Say "=== FINAL STATE ===" Cyan
 foreach ($t in @('users','organizations','memberships','deals','crm_contacts',
                  'poc_records','inbox_messages','property_activity')) {
-    Say ("{0,-26} {1,10}" -f $t, (Get-Count $liveUrl $t))
+    Say ("{0,-26} {1,10}" -f $t, (Get-Count $readLiveUrl $t))
 }
 Say ""
-$who = Invoke-Native { & $psql -d $liveUrl -c "select email, display_name, platform_role, status from users order by created_at" }
+$who = Invoke-Native { & $psql -d $readLiveUrl -c "select email, display_name, platform_role, status from users order by created_at" }
 Say $who.out
 Say ""
 Say "Restore complete." Green
