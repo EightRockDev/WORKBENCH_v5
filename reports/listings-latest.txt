@@ -1,3 +1,8 @@
-autopilot listings @ 2026-08-27T15:17:19
+autopilot listings @ 2026-08-27T16:18:15
 
-  [listings] fresh (pulled within 7 days, 2 favourites, generation 2) - skipping; 337 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: Tidewater Gardens -> not_found
+  [listings] zillow: Tidewater Gardens -> not_found
+  [listings] apartments_com: Tidewater Gardens -> not_found
+  [listings] property_site: Tidewater Gardens -> not_found
+  [listings] wrote 4 rows (0 successful scrapes)
