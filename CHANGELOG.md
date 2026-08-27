@@ -12,7 +12,7 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
-## V5.63.2.1.0 — 2026-08-27  ·  Seeded first numbers read the property's OWN record.
+## V5.63.3.2.0 — 2026-08-27  ·  Seeded first numbers read the property's OWN record.
 
 Owner: "If I've favorited a property, I should not see this message." The
 seeded-deal banner called the price a MARKET PLACEHOLDER with "no sale or
@@ -44,6 +44,54 @@ a last sale, a per-unit assessment and that exact average rent.
   the Input tab and asserts the banner is an info naming its evidence.
 
 ---
+## V5.63.3.0.0 — 2026-08-27 — Delete a property; coordinate defaults stop becoming data
+
+**Delete property (owner ask).** A hand-added property can now be removed:
+`🗑 Delete` sits beside `➕ Add property` on the V2 landing, opens a modal
+listing the custom properties, and arms its delete button only once the user
+types `DELETE` in capitals. Removes from BOTH stores the add path writes -
+`Properties/_custom_props.json` (`property_io.delete_custom_property`) and the
+`properties` query layer (`db.delete_property`). The deal FOLDER is never
+touched; the modal says so.
+
+Scoped to custom properties deliberately: `properties` is rebuilt by
+`legacy_loader.sync()` from the licensed export, so deleting an export-sourced
+row would appear to work and reappear on the next rebuild. The modal explains
+that rather than leaving a dead control.
+
+*Shipped into the V1 sidebar first, where the V2 theme's `display:none` made it
+invisible - the same failure as the 2026-08-18 missing-module-nav bug, in a repo
+that already documents it. Any control that exists ONLY in the sidebar does not
+exist.*
+
+**Coordinate defaults (`ui/sidebar.py`).** The add-property modal's lat/lng
+inputs defaulted to `36.85 / -76.29` (Norfolk) and saved that pair whenever the
+ZIP autofill did not fire. Eastwyk Village, a Virginia Beach property, was
+stored 5.37 miles from its own address - corrupting its pin and every radius
+comp around it. Coordinates now start at `value=None`, the submit guard rejects
+a blank, and `cp_lat`/`cp_lng` join the keys cleared after save (a keyed widget
+was carrying the previous property's pin into the next submission). Corrected
+against ALN 133867 via `scripts/patch_custom_props.py`, which merges
+SQLite -> JSON -> patch so `INSERT OR REPLACE` cannot blank a column.
+`occupancy_pct` still has the identical flaw - slider floors at 90.
+
+**Tidewater Gardens added** (46 units, 8522-8528 Chesapeake Blvd, Norfolk,
+1964) via `scripts/add_tidewater_gardens.py`, which uses a deterministic
+`uuid5` so a re-run updates one row - the dialog's per-submit `uuid4` is what
+produced the duplicate Eastwyk pair. Not in the ALN 3/10/2026 export.
+
+**spec-16 badge: not achievable for this property.** `scripts/verify_tidewater_gardens.py`
+surveys the roll before submitting. Norfolk's `parcel_index` carries
+`units=None` for every 85xx Chesapeake Blvd row, so the ±10% check can only
+park as PENDING; and Norfolk APNs there are 10-digit (`1540242676`) - the
+LoopNet id `21378105` is not a parcel number and would have failed the parcel
+check. The script now names both, and pre-checks the write lock instead of
+crashing out of `submit_property` when the app holds `workbench.db`.
+
+**`.gitignore`:** `.env.bak` and five sibling shapes. `setup-db.ps1` rewrites
+`.env.bak` on every run, leaving the live `DATABASE_URL` and every vendor key
+untracked in the repo root, one `git add -A` from GitHub.
+
 
 ## V5.63.2.0.0 — 2026-08-27  ·  Property Screener results download to CSV / Excel.
 

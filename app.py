@@ -57,7 +57,11 @@ from ui.owner_portal import render_owner_portal
 from ui.pipeline import render_pipeline
 from ui.portfolio import render_portfolio
 from ui.property_detail import render_property_detail
-from ui.sidebar import maybe_show_add_property_dialog, render_sidebar
+from ui.sidebar import (
+    maybe_show_add_property_dialog,
+    maybe_show_delete_property_dialog,
+    render_sidebar,
+)
 from ui.underwriting import render_underwriting
 from ui.waterfall_view import render_waterfall
 # V2 "Quiet Operator" theme — activated by ER_THEME=v2 env var. When
@@ -895,6 +899,7 @@ def main() -> None:
     # inside `with st.sidebar:` don't render reliably. We open it here, in
     # the main script flow, so the modal pops cleanly over the content area.
     maybe_show_add_property_dialog()
+    maybe_show_delete_property_dialog()
 
     # Module-driven tab structure (per Brian 2026-05-08):
     #

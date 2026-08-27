@@ -955,6 +955,35 @@ def add_custom_property(
     return prop["property_id"]
 
 
+def delete_custom_property(
+    property_id: str,
+    properties_root: Path = PROPERTIES_ROOT,
+) -> bool:
+    """Remove one user-added property from `_custom_props.json`.
+
+    Returns True if an entry was removed. Only custom properties live in this
+    file, so a property sourced from the licensed export is never touched here -
+    see `data.db.delete_property` for why deleting one of those does not stick.
+
+    The deal FOLDER (`Properties/<Name>-<units>-<City>/`) is deliberately left
+    alone: it holds the T-12, rent roll and OM the analyst uploaded, and those
+    outlive a mistaken row in a list. Caller deletes the record; the human
+    deletes documents.
+    """
+    from core.storage import get_storage
+    storage = get_storage()
+
+    existing = load_custom_props(properties_root)
+    remaining = [p for p in existing if p.get("property_id") != property_id]
+    if len(remaining) == len(existing):
+        return False
+    storage.write_text(
+        f"{_rel(properties_root)}/_custom_props.json",
+        json.dumps(remaining, indent=2),
+    )
+    return True
+
+
 def load_favorites(
     properties_root: Path = PROPERTIES_ROOT,
 ) -> set[str]:

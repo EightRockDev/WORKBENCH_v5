@@ -17,6 +17,18 @@ desktop.ini
 
 .env
 
+# Copies and backups of the secrets file. `.env` alone does not cover these,
+# and setup-db.ps1 writes `.env.bak` every time it runs - so an untracked file
+# holding the live DATABASE_URL and every vendor API key sits in the repo root
+# waiting for one `git add -A` to publish it. Found 2026-08-27.
+.env.bak
+.env.*.bak
+.env.local
+.env.save
+.env.old
+.env.backup
+!.env.example
+
 # --- v5.0 pilot: secrets & runtime (Section 9.1/9.2 — never commit or sync) ---
 .streamlit/secrets.toml
 *.dump

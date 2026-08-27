@@ -449,6 +449,29 @@ def upsert_property(
         conn.commit()
 
 
+def delete_property(
+    property_id: str,
+    db_path: Path = DB_PATH,
+) -> int:
+    """Delete one row from the `properties` query layer. Returns rows removed.
+
+    DURABILITY WARNING, and the reason the UI only offers this for custom
+    properties: `properties` is a query layer rebuilt by
+    `legacy_loader.sync()` from the licensed export whenever the DB is missing
+    or an export is newer. Deleting an export-sourced row here removes it
+    until the next rebuild puts it straight back. A custom property is
+    durable because its source of truth is `Properties/_custom_props.json`,
+    and `delete_custom_property` removes it from there in the same breath.
+    """
+    if not property_id:
+        raise ValueError("delete_property requires a non-empty property_id")
+    with get_connection(db_path) as conn:
+        cur = conn.execute("DELETE FROM properties WHERE property_id = ?",
+                           (property_id,))
+        conn.commit()
+        return cur.rowcount
+
+
 def get_property(
     property_id: str,
     db_path: Path = DB_PATH,

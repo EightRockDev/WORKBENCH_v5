@@ -3919,7 +3919,7 @@ def render_v2_inventory_landing() -> None:
         '<div class="v2-landing-search-wrap"></div>',
         unsafe_allow_html=True,
     )
-    col_search, col_add = st.columns([5, 1])
+    col_search, col_add, col_del = st.columns([5, 1, 1])
     with col_search:
         search = st.text_input(
             "Find a property by name, address, or city",
@@ -3932,6 +3932,19 @@ def render_v2_inventory_landing() -> None:
                      use_container_width=True,
                      help="Create a property we don't have on record yet"):
             st.session_state["_show_add_property_dialog"] = True
+            st.rerun()
+    with col_del:
+        # Same reasoning as the Add button above, and the same mistake made
+        # once more on 2026-08-27: the delete control shipped into the V1
+        # sidebar, which this theme hides with `display:none`, so it was
+        # invisible to the only person who uses the app. Any control that
+        # exists ONLY in the sidebar does not exist. The dialog itself lists
+        # the hand-added properties and asks the user to type DELETE.
+        if st.button("🗑 Delete", key="v2-landing-delete-property",
+                     use_container_width=True,
+                     help="Remove a property you added by hand"):
+            st.session_state.pop("_delete_target_pid", None)
+            st.session_state["_show_delete_property_dialog"] = True
             st.rerun()
     search_clean = (search or "").strip()
 
