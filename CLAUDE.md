@@ -1070,6 +1070,39 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` â†’ http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — a seed that ignores its own record is a constant in disguise (2026-08-27)
+
+Owner: *"If I've favorited a property, I should not see this message."* The
+message told him the price was a MARKET PLACEHOLDER because there was "no sale
+or assessed value on this parcel", and that NOI came from a "$1,159/mo market
+placeholder - no rent estimate for this asset".
+
+Both sentences were false about data already on the row. `core/deal_seed.py`
+read only the county-sourced keys — `assessed_value` and the deed index — while
+the curated `properties` table stores `last_sold_amount`, `last_sold_year` and
+`assessed_value_per_unit`, and the $1,159 it was *printing* came from that same
+row's `avg_rent` (no `rent_source` column there, so the basis defaulted to
+"fallback" and the caption denied the number beside it).
+
+* **A caption that names an absence must check every place the value could
+  live.** Two pools, two column vocabularies — the same mistake shape as the
+  `SPINE_READ_SOURCE` seam (a read path that swaps the table swaps its columns).
+* **A number on screen with a caption denying it exists is worse than either
+  alone.** The self-contradiction is what made it read as broken.
+* **Bridge before you fall back.** Most curated rows are matched to a backbone
+  parcel through `property_crosswalk`, where the assessment already sits —
+  `core.sale_history` was already using that bridge for the parcel id. The data
+  was in hand; the seed just never asked.
+
+### Streamlit renders `$...$` as LaTeX — escape money in every markdown surface
+
+The tell was in the owner's own bug report: he pasted "46 units × 130,000
+market /unit". The dollar signs were not missing from his message, they were
+missing from the page — `$130,000 market $/unit` is an inline maths run, and
+Streamlit ate both signs plus the styling in between. Any money string bound
+for `st.info` / `st.warning` / `st.markdown` needs `\$`
+(`deal_seed.seed_caption_md`). Plain-text callers keep the unescaped form.
+
 ## Lesson — cmd parses the whole block before running any of it (2026-08-20)
 
 `echo ... (30-45 min).` inside an `if ( ... )` block: the `)` in the TEXT

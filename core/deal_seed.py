@@ -11,12 +11,26 @@ This module picks the best available ANCHOR for price, in priority order,
 and reports which one it used so the UI can say so inline:
 
   1. recent_sale   - the property's own arm's-length transfer, trended to
-                     today. It actually traded; nothing beats that.
-  2. assessed      - assessor total value / assessment ratio. Assessors
-                     target market value at a published ratio, so this is
-                     a real per-asset number, not a market constant.
+                     today. It actually traded; nothing beats that. Taken
+                     from the county deed index, or from the last-sold
+                     columns on the property's own record.
+  2. assessed      - assessor value / assessment ratio. Assessors target
+                     market value at a published ratio, so this is a real
+                     per-asset number, not a market constant. The curated
+                     records carry it PER UNIT, the backbone carries a
+                     total; both are read.
   3. ppu           - the legacy units x $/unit fallback, for rows carrying
                      neither. Explicitly labelled as a market placeholder.
+
+Correction 2026-08-27 (owner: "if I've favorited a property, I should not
+see this message"). The seed only ever looked at the county-sourced keys -
+`assessed_value` and the deed index - so a property in the owner's OWN
+records was told "no sale or assessed value on this parcel" while its row
+carried `last_sold_amount`, `last_sold_year` and `assessed_value_per_unit`,
+and its real `avg_rent` was captioned "market placeholder - no rent
+estimate for this asset". Both statements were false about data already on
+the screen. A seed that ignores the record it claims to be seeded from is
+worse than no seed: it is a market constant wearing the record's clothes.
 
 Every result is a SEED, never an underwrite: the basis string is rendered
 next to the field so the number is never mistaken for analysis.
@@ -62,7 +76,7 @@ class DealSeed:
     units_assumed: bool = False
     price_basis: str = "ppu"          # recent_sale | assessed | ppu
     price_note: str = ""              # human-readable, rendered inline
-    rent_basis: str = "fallback"      # listings | hud_fmr | fallback
+    rent_basis: str = "fallback"      # listings | hud_fmr | record | fallback
     rent_note: str = ""
     evidence: list = field(default_factory=list)
 
@@ -106,17 +120,104 @@ def _price_from_sale(prop: dict, db_path: Path | None) -> tuple | None:
     return None
 
 
-def _price_from_assessment(prop: dict) -> tuple | None:
+def _price_from_record_sale(prop: dict) -> tuple | None:
+    """The last sale on the property's OWN record (curated pool).
+
+    `properties` stores a sale YEAR, not a date, so this cannot be folded
+    into the deed-index reader above — but it is the same evidence, and
+    it is the sale the screener already shows the owner in the Last Sale
+    column. Ignoring it while printing "no sale on this parcel" is the
+    bug this function exists to close.
+    """
     try:
-        av = float(prop.get("assessed_value") or 0)
+        price = float(prop.get("last_sold_amount") or 0)
+    except (TypeError, ValueError):
+        return None
+    year = _year_of(prop.get("last_sold_year"))
+    if price < 50_000 or year is None:
+        return None
+    age = dt.date.today().year - year
+    if age < 0 or age > MAX_SALE_AGE_Y:
+        return None
+    trended = price * ((1 + TREND_PER_YEAR) ** age)
+    note = (f"last sale ${price:,.0f} ({year}) on the property record"
+            + (f", trended +{TREND_PER_YEAR:.0%}/yr to today" if age else ""))
+    return trended, note, {"kind": "sale", "price": price, "year": year,
+                           "from": "record"}
+
+
+def _price_from_assessment(prop: dict) -> tuple | None:
+    def _f(key: str) -> float:
+        try:
+            return float(prop.get(key) or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    av = _f("assessed_value")
+    per_unit = _f("assessed_value_per_unit")
+    detail = ""
+    if av < 50_000 and per_unit > 0:
+        # The curated pool stores assessment PER UNIT (data/legacy_loader).
+        try:
+            units = int(prop.get("units") or 0)
+        except (TypeError, ValueError):
+            units = 0
+        if units > 0:
+            av = per_unit * units
+            detail = f" ({units:,} units × ${per_unit:,.0f}/unit assessed)"
+    if av < 50_000:
+        return None
+    est = av / ASSESSMENT_RATIO
+    note = (f"assessed ${av:,.0f}{detail} ÷ {ASSESSMENT_RATIO:.0%} "
+            "assessment ratio")
+    return est, note, {"kind": "assessed", "assessed_value": av}
+
+
+def _assessed_from_backbone(prop: dict, db_path) -> tuple | None:
+    """The assessor's value off the county row this property is matched to.
+
+    The curated records carry no `assessed_value` column, but most of them
+    ARE matched to a backbone parcel through `property_crosswalk` — which
+    is where the assessment already sits, pulled nightly. Same bridge
+    `core.sale_history` uses for the parcel id: the data is in hand, this
+    is a read, not a new source.
+    """
+    legacy_id = prop.get("property_id")
+    if not legacy_id:
+        return None
+    import sqlite3
+
+    from core.sale_history import _muni_db_path
+    try:
+        path = _muni_db_path(db_path)
+    except Exception:
+        return None
+    if path is None or not Path(path).exists():
+        return None
+    try:
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return None
+    try:
+        row = conn.execute(
+            "SELECT p.assessed_value FROM property_crosswalk x "
+            "  JOIN properties_8r p ON p.property_id = x.r8_property_id "
+            " WHERE x.legacy_property_id = ?", (str(legacy_id),)).fetchone()
+    except sqlite3.Error:
+        return None        # no crosswalk/backbone on this box - pre-Phase 0
+    finally:
+        conn.close()
+    try:
+        av = float(row[0]) if row and row[0] else 0.0
     except (TypeError, ValueError):
         return None
     if av < 50_000:
         return None
-    est = av / ASSESSMENT_RATIO
-    note = (f"assessed ${av:,.0f} ÷ {ASSESSMENT_RATIO:.0%} "
-            "assessment ratio")
-    return est, note, {"kind": "assessed", "assessed_value": av}
+    note = (f"assessed ${av:,.0f} on the matched county parcel ÷ "
+            f"{ASSESSMENT_RATIO:.0%} assessment ratio")
+    return av / ASSESSMENT_RATIO, note, {"kind": "assessed",
+                                         "assessed_value": av,
+                                         "from": "backbone"}
 
 
 def build_seed(prop: dict, *, db_path: Path | None = None,
@@ -143,7 +244,19 @@ def build_seed(prop: dict, *, db_path: Path | None = None,
         basis = "recent_sale"
         evidence.append(ev)
     if price is None:
+        hit = _price_from_record_sale(prop)
+        if hit is not None:
+            price, note, ev = hit
+            basis = "recent_sale"
+            evidence.append(ev)
+    if price is None:
         hit = _price_from_assessment(prop)
+        if hit is not None:
+            price, note, ev = hit
+            basis = "assessed"
+            evidence.append(ev)
+    if price is None:
+        hit = _assessed_from_backbone(prop, db_path)
         if hit is not None:
             price, note, ev = hit
             basis = "assessed"
@@ -166,9 +279,16 @@ def build_seed(prop: dict, *, db_path: Path | None = None,
     if rent <= 0:
         rent = FALLBACK_RENT
         rent_basis = "fallback"
+    elif rent_basis == "fallback":
+        # An avg_rent with no rent_source came off the property's own
+        # record (the curated pool has no rent_source column). It is the
+        # asset's own number - captioning it "no rent estimate for this
+        # asset" contradicted the figure printed beside it.
+        rent_basis = "record"
     rent_note = {
         "listings": f"${rent:,.0f}/mo from scraped listings",
         "hud_fmr": f"${rent:,.0f}/mo HUD FMR county blend",
+        "record": f"${rent:,.0f}/mo average rent on the property record",
     }.get(rent_basis, f"${rent:,.0f}/mo market placeholder - no rent "
                       "estimate for this asset")
 
@@ -194,3 +314,15 @@ def seed_caption(seed: DealSeed) -> str:
             f"NOI seeded from {seed.rent_note}, "
             f"{'assumed ' if seed.units_assumed else ''}{seed.units:,} units. "
             "Seeded values are a starting point, not underwriting.")
+
+
+def seed_caption_md(seed: DealSeed) -> str:
+    """`seed_caption` escaped for a Streamlit markdown surface.
+
+    Streamlit renders `$...$` as LaTeX, so "…$4,200,000 (2024)… NOI seeded
+    from $1,159/mo…" silently became one italic maths run with BOTH dollar
+    signs eaten — which is how the owner's report of this caption reached
+    us reading "46 units × 130,000 market /unit" (2026-08-27). Any money
+    string bound for st.info/st.warning/st.markdown needs this.
+    """
+    return seed_caption(seed).replace("$", r"\$")

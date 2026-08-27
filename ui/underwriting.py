@@ -1864,7 +1864,7 @@ def render_underwriting(
         from core import deal_seed
         _seed = build_seed_for(prop)
         _msg = ("No saved dial yet — "
-                f"{deal_seed.seed_caption(_seed)} Adjust sliders to save.")
+                f"{deal_seed.seed_caption_md(_seed)} Adjust sliders to save.")
         (st.info if _seed.is_anchored else st.warning)(_msg)
 
     # Load sources for T-12 inputs (if available)
