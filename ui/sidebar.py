@@ -379,12 +379,6 @@ def _show_delete_property_dialog() -> None:
         "This removes the property from the list permanently. It cannot be "
         "undone from inside the app."
     )
-    st.info(
-        "Your deal folder is **not** touched. Any T-12, rent roll, OM or "
-        "photos you uploaded for this property stay on disk - delete those "
-        "yourself if you want them gone."
-    )
-
     confirm = st.text_input(
         "Type DELETE to confirm",
         key="_delete_confirm_text",
