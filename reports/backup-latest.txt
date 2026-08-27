@@ -1,3 +1,5 @@
-autopilot backup @ 2026-08-26T21:44:24
+autopilot backup @ 2026-08-26T22:33:53
 
-[backup] fresh (newest dump workbench-20260825-223350.dump is under 24h old) - skipping
+[backup] dumping to D:\Backup\8rw\workbench-20260826-223353.dump
+[backup] wrote workbench-20260826-223353.dump (0.1 MB)
+[backup] off-site copy -> C:\Users\brian2\OneDrive - Eight Rock Capital Partners\SERVER BACKUP
