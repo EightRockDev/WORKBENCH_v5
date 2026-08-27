@@ -162,24 +162,44 @@ if (-not $pre.ok -or -not (Test-Path $preFile)) {
 }
 Say "   saved: $preFile" Green
 
+# --- Count a table straight out of the archive file, no database needed ----
+# This is the verification that survives when the app role cannot create a
+# scratch database: read the dump itself and count its data rows.
+function Get-DumpCount([string]$dump, [string]$table) {
+    $probe = Invoke-Native { & $pgRestore --data-only -t $table -f - $dump }
+    $rows = @(($probe.out -split "`n") | Where-Object {
+        $_.Trim() -ne '' -and $_ -notmatch '^(--|SET |SELECT |COPY |\\)' })
+    return $rows.Count
+}
+
 # --- STEP 2: rebuild into a scratch database and verify --------------------
 Say ""
 Say ">> STEP 2  rebuilding the backup into '$ScratchDb' (nothing live is touched) ..." Yellow
 
+$InPlace = $false
 $drop = Invoke-Admin "DROP DATABASE IF EXISTS $ScratchDb"
-if (-not $drop.ok) {
-    Say "   ! could not create databases as this role:" Red
-    Say "     $($drop.out)" Red
-    Say "     Grant it once, as the postgres superuser:" Red
-    Say "       ALTER ROLE workbench CREATEDB;" Red
-    throw "insufficient privileges to build the scratch database."
+$mk = if ($drop.ok) { Invoke-Admin "CREATE DATABASE $ScratchDb" } else { $drop }
+if (-not $mk.ok) {
+    # The app role has no CREATEDB (it does not need one to run the app, and
+    # granting it is not worth a superuser hunt mid-incident). Fall back to
+    # verifying the ARCHIVE FILE and restoring in place. The pre-restore
+    # snapshot above is what makes that safe - it already succeeded.
+    Say ""
+    Say "   ! this role cannot create a scratch database:" Yellow
+    Say "     $($mk.out)" Gray
+    Say "   Falling back to verifying the backup FILE and restoring in place." Yellow
+    Say "   Safe because STEP 1 already snapshotted the current database to:" Gray
+    Say "     $preFile" Gray
+    Say "   (To use the scratch-database path instead, run this once as the" Gray
+    Say "    postgres superuser:  ALTER ROLE workbench CREATEDB;)" Gray
+    $InPlace = $true
 }
-$mk = Invoke-Admin "CREATE DATABASE $ScratchDb"
-if (-not $mk.ok) { Say $mk.out Red; throw "could not create $ScratchDb." }
 
-# pg_restore returns non-zero on benign notices; the row counts below are
-# the real verification, not the exit code.
-$null = Invoke-Native { & $pgRestore -d $scratchUrl --no-owner --no-privileges $BackupFile }
+if (-not $InPlace) {
+    # pg_restore returns non-zero on benign notices; the row counts below
+    # are the real verification, not the exit code.
+    $null = Invoke-Native { & $pgRestore -d $scratchUrl --no-owner --no-privileges $BackupFile }
+}
 
 $tables = @('users','organizations','memberships','audit_log','deals',
             'crm_contacts','poc_records','inbox_messages','outreach_touches',
@@ -187,11 +207,12 @@ $tables = @('users','organizations','memberships','audit_log','deals',
             'mailbox_connections','api_keys','campaigns','relationship_edges')
 
 Say ""
-Say ("{0,-26} {1,10} {2,10}" -f "table", "restored", "live now") Cyan
+$sourceLabel = if ($InPlace) { "in backup" } else { "restored" }
+Say ("{0,-26} {1,10} {2,10}" -f "table", $sourceLabel, "live now") Cyan
 $restoredTotal = 0
 $results = @{}
 foreach ($t in $tables) {
-    $r = Get-Count $readScratchUrl $t
+    $r = if ($InPlace) { Get-DumpCount $BackupFile $t } else { Get-Count $readScratchUrl $t }
     $l = Get-Count $readLiveUrl $t
     $results[$t] = $r
     if ($r -gt 0) { $restoredTotal += $r }
@@ -202,23 +223,33 @@ foreach ($t in $tables) {
 
 Say ""
 if ($results['users'] -lt 2) {
-    throw "verification FAILED: the scratch copy has $($results['users']) user(s). Nothing was changed."
+    throw "verification FAILED: the source has $($results['users']) user(s). Nothing was changed."
 }
 if ($restoredTotal -le 0) {
-    throw "verification FAILED: the scratch copy is empty. Nothing was changed."
+    throw "verification FAILED: the source is empty. Nothing was changed."
 }
-Say ">> VERIFIED: $($results['users']) users and $restoredTotal rows restored into '$ScratchDb'." Green
+if ($InPlace) {
+    Say ">> VERIFIED: the backup file holds $($results['users']) users and $restoredTotal rows." Green
+} else {
+    Say ">> VERIFIED: $($results['users']) users and $restoredTotal rows restored into '$ScratchDb'." Green
+}
 
 if (-not $Swap) {
     Say ""
     Say "Stopping here - no live change was made. Re-run with -Swap to promote it." Yellow
-    Say "The scratch copy stays in place so the numbers above can be re-checked." Gray
+    if (-not $InPlace) {
+        Say "The scratch copy stays in place so the numbers above can be re-checked." Gray
+    }
     exit 0
 }
 
 # --- STEP 3: promote the verified copy -------------------------------------
 Say ""
-Say ">> STEP 3  promoting '$ScratchDb' to '$liveDb' ..." Yellow
+if ($InPlace) {
+    Say ">> STEP 3  restoring the backup directly into '$liveDb' ..." Yellow
+} else {
+    Say ">> STEP 3  promoting '$ScratchDb' to '$liveDb' ..." Yellow
+}
 
 Say "   pausing the autopilot ..."
 $null = Invoke-Native { & schtasks /Change /TN "EightRockWorkbenchAutopilot" /DISABLE }
@@ -240,6 +271,45 @@ Start-Sleep -Seconds 3
 
 # Terminate anything still attached, or RENAME fails with "is being accessed".
 $null = Invoke-Admin "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname IN ('$liveDb','$ScratchDb') AND pid <> pg_backend_pid()"
+
+if ($InPlace) {
+    # --clean --if-exists drops and recreates each object as it goes. The
+    # app role owns them all, so no elevated rights are needed. pg_restore
+    # loads data BEFORE it re-applies row-level security (policies live in
+    # the archive's post-data section), so RLS cannot block the load.
+    # Non-zero exit is expected here - --clean emits "does not exist"
+    # notices on a first pass - so the row counts afterwards are the
+    # verdict, exactly as they are on the scratch path.
+    $rest = Invoke-Native { & $pgRestore --clean --if-exists --no-owner --no-privileges -d $liveUrl $BackupFile }
+    Say ""
+    Say "=== FINAL STATE ===" Cyan
+    $restoredUsers = Get-Count $readLiveUrl "users"
+    foreach ($t in @('users','organizations','memberships','deals','crm_contacts',
+                     'poc_records','inbox_messages','property_activity')) {
+        Say ("{0,-26} {1,10}" -f $t, (Get-Count $readLiveUrl $t))
+    }
+    if ($restoredUsers -lt 2) {
+        Say ""
+        Say "RESTORE DID NOT TAKE - the live database still has $restoredUsers user(s)." Red
+        Say $rest.out Gray
+        Say "Your pre-restore snapshot is safe at: $preFile" Yellow
+        throw "in-place restore failed; nothing further was attempted."
+    }
+    Say ""
+    $who = Invoke-Native { & $psql -d $readLiveUrl -c "select email, display_name, platform_role, status from users order by created_at" }
+    Say $who.out
+    Say ""
+    Say "   restarting ..." Gray
+    foreach ($svc in @("WorkbenchBlue", "WorkbenchGreen")) {
+        $null = Invoke-Native { & sc.exe start $svc }
+    }
+    $null = Invoke-Native { & schtasks /Change /TN "EightRockWorkbenchAutopilot" /ENABLE }
+    Say ""
+    Say "Restore complete." Green
+    Say "If the blue/green services are not in use, start the app with start-workbench.bat." Gray
+    Say "Kept for safety: pre-restore snapshot $preFile" Gray
+    exit 0
+}
 
 $brokenName = "${liveDb}_broken_$stamp"
 $r1 = Invoke-Admin "ALTER DATABASE $liveDb RENAME TO $brokenName"

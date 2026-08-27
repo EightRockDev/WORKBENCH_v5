@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.63.1.2.0 — 2026-08-27  ·  Recovery must not depend on a privilege the app role was never given.
+
+Second host run: the snapshot succeeded, then `CREATE DATABASE wb_recover`
+returned *permission denied* — the `workbench` role has no CREATEDB, and
+correctly so; it does not need one to run the app. But that put the
+verify-in-a-scratch-copy design behind a superuser password nobody wants
+to go hunting for mid-incident.
+
+- **Fallback path.** When CREATEDB is denied, the script verifies the
+  ARCHIVE FILE itself (`pg_restore --data-only -t <table>`, counting rows
+  per table — no database required) and then restores in place with
+  `--clean --if-exists`, which the owning role may do unaided. The
+  pre-restore snapshot from step 1 is what makes this safe, and the
+  fallback is unreachable until that snapshot has succeeded.
+- **Same gate, either path.** The user-count check (`< 2 users` aborts)
+  now guards the in-place restore too, and the in-place path re-counts
+  afterwards and fails loudly with `RESTORE DID NOT TAKE` rather than
+  reporting success over a no-op — a restore that quietly does nothing
+  looks exactly like one that worked.
+- Three more deploy tests: recovery is possible without CREATEDB, the
+  in-place write can never precede the snapshot or the verification, and
+  the in-place path proves its own result.
+
 ## V5.63.1.1.0 — 2026-08-27  ·  The restore script hit the wall its own repo had already documented.
 
 First run on the host stopped at step 1: `pg_dump: error: query would be

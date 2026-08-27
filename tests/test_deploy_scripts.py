@@ -590,3 +590,31 @@ def test_the_restore_dumps_with_the_bypassrls_role():
     assert "$readLiveUrl" in src and "$readScratchUrl" in src, (
         "verification counts must come from the BYPASSRLS role, or RLS "
         "tables silently count 0 and the comparison lies")
+
+
+def test_the_restore_can_recover_without_createdb_rights():
+    """The app role has no CREATEDB (found on the host, 2026-08-27), so the
+    scratch-database path is unavailable exactly when it is needed. The
+    fallback must still VERIFY before writing - by counting rows in the
+    archive file - and must never run before the snapshot succeeded."""
+    src = _src(RESTORE)
+    assert "Get-DumpCount" in src, (
+        "no way to verify a backup without a scratch database")
+    snapshot_at = src.index("& $pgDump -Fc -f $preFile")
+    fallback_at = src.index("$InPlace = $true")
+    inplace_at = src.index("--clean --if-exists")
+    assert snapshot_at < fallback_at < inplace_at, (
+        "the in-place path must come after the snapshot and the fallback "
+        "decision, never before")
+    verify_at = src.index("verification FAILED")
+    assert verify_at < inplace_at, (
+        "the in-place restore must be gated by the same user-count check")
+
+
+def test_the_in_place_restore_proves_it_worked():
+    """A restore that silently does nothing looks identical to success.
+    The in-place path must re-count users afterwards and fail loudly."""
+    src = _src(RESTORE)
+    assert "RESTORE DID NOT TAKE" in src
+    assert "$restoredUsers -lt 2" in src
+    assert src.index("--clean --if-exists") < src.index("RESTORE DID NOT TAKE")
