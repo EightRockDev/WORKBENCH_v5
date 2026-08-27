@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-27T16:18:58
+autopilot phase0 @ 2026-08-27T18:20:24
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,273,030
@@ -63,10 +63,10 @@ Attribute keys with NO mapping yet (add aliases in core/phase0.py):
 
 P0-1 GATE PASSED.
 
-P0-2 shadow parity: comparing against 13,661 legacy rows...
+P0-2 shadow parity: comparing against 13,660 legacy rows...
 
-legacy multifamily rows:  642
-matched to the 8R backbone: 274 (42.7%)  [100 by address, 136 by lat/lng, 38 by proximity]
+legacy multifamily rows:  641
+matched to the 8R backbone: 273 (42.6%)  [100 by address, 135 by lat/lng, 38 by proximity]
 unit counts agree:        78/95
 year built agrees:        0/2
 
@@ -75,12 +75,12 @@ avg comp-set overlap:     63.4%  (gate >= 90%)
 avg-rent delta:           31.8%  [signed +26.2%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
 
 P0-2 GATE: not met yet
-crosswalk persisted:      274 legacy->8R mappings (property_crosswalk)
+crosswalk persisted:      273 legacy->8R mappings (property_crosswalk)
 (+12 unit disagreements resolved by multi-parcel footprint totals)
 match rate, covered cities only: 83.4%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
-  Virginia Beach    175 ->     3 |      0 |      0   <- feed has no usable multifamily data
+  Virginia Beach    174 ->     2 |      0 |      0   <- feed has no usable multifamily data
   Norfolk           126 ->    87 |    865 |    210
   Newport News      121 ->   119 |    243 |    243
   Hampton            75 ->     0 |      0 |      0   <- feed has no usable multifamily data
@@ -99,11 +99,11 @@ Largest unit-count disagreements (check these matches):
   Pebblestone Gardens: legacy 168 vs 8R 120
 
 Learning apartment use codes from matched properties:
-  Chesapeake: 69 known-MF parcels matched
-      [ACCEPT] code '3352': on 27 MF parcels, 62/92,581 citywide (0.1%) - 39% of known MF, only 0.1% of the roll
+  Chesapeake: 68 known-MF parcels matched
+      [ACCEPT] code '3352': on 27 MF parcels, 62/92,581 citywide (0.1%) - 40% of known MF, only 0.1% of the roll
       [reject] code '3346': on 11 MF parcels, 40/92,581 citywide (0.0%) - only 16% of this city's known MF, need 25%
       [reject] code '1010': on 5 MF parcels, 50,388/92,581 citywide (54.4%) - only 7% of this city's known MF, need 25%
-      [reject] code '1060': on 5 MF parcels, 7,870/92,581 citywide (8.5%) - only 7% of this city's known MF, need 25%
+      [reject] code '1060': on 4 MF parcels, 7,870/92,581 citywide (8.5%) - only 6% of this city's known MF, need 25%
       [reject] code '2010': on 2 MF parcels, 7,292/92,581 citywide (7.9%) - only 2 supporting parcel(s), need 3
       [reject] code '4406': on 2 MF parcels, 354/92,581 citywide (0.4%) - only 2 supporting parcel(s), need 3
       [reject] code '4344': on 2 MF parcels, 235/92,581 citywide (0.3%) - only 2 supporting parcel(s), need 3

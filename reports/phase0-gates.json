@@ -5,10 +5,10 @@
   "rent_delta": 0.3175796933542539,
   "rent_delta_signed": 0.2620955982492504,
   "rent_pairs": 174,
-  "match_rate": 0.42679127725856697,
+  "match_rate": 0.42589703588143524,
   "covered_match_rate": 0.8340080971659919,
   "comp_subjects": 166,
-  "crosswalk_rows": 274,
+  "crosswalk_rows": 273,
   "p0_2_passed": false,
   "rents_stamped": 12090,
   "rents_from_listings": 2
