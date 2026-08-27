@@ -71,7 +71,7 @@ def render_input(prop: dict[str, Any], folder: PropertyFolder | None) -> None:
             from core import deal_seed
             _seed = deal_seed.build_seed(prop)
             _msg = ("No deal saved yet — the fields below are seeded from "
-                    f"the property record. {deal_seed.seed_caption(_seed)} "
+                    f"the property record. {deal_seed.seed_caption_md(_seed)} "
                     "Adjust and Save to create the deal.")
             (st.info if _seed.is_anchored else st.warning)(_msg)
         with st.form("input_first_numbers"):

@@ -105,3 +105,168 @@ def test_seed_never_raises_on_a_junk_record(no_sales):
         seed = deal_seed.build_seed(bad)
         assert seed.purchase_price > 0
         assert deal_seed.seed_caption(seed)
+
+
+# --- The record's own evidence (owner report 2026-08-27) -------------------
+# "If I've favorited a property, I should not see this message." The message
+# said "no sale or assessed value on this parcel" and "no rent estimate for
+# this asset" about a property whose own row carried a last sale, a per-unit
+# assessment and an average rent. The seed was reading only the county-
+# sourced keys.
+
+RECORD = {"units": 46, "avg_rent": 1159, "last_sold_amount": 4_200_000,
+          "last_sold_year": dt.date.today().year - 3,
+          "assessed_value_per_unit": 62_000}
+
+
+def test_the_records_own_last_sale_anchors_the_price(no_sales):
+    seed = deal_seed.build_seed(RECORD)
+    assert seed.price_basis == "recent_sale" and seed.is_anchored
+    # 4.2M trended +3%/yr for 3 years.
+    assert seed.purchase_price == pytest.approx(4_589_000, abs=1_000)
+    assert "property record" in seed.price_note
+    assert "no sale or assessed value" not in deal_seed.seed_caption(seed)
+
+
+def test_a_rent_on_the_record_is_not_called_a_market_placeholder(no_sales):
+    seed = deal_seed.build_seed(RECORD)
+    assert seed.rent_basis == "record"
+    caption = deal_seed.seed_caption(seed)
+    assert "$1,159/mo average rent on the property record" in caption
+    # The exact sentence the owner objected to, about a number the record
+    # supplied — it must not be reachable from this state.
+    assert "no rent estimate for this asset" not in caption
+
+
+def test_per_unit_assessment_anchors_when_there_is_no_sale(no_sales):
+    prop = {k: v for k, v in RECORD.items() if not k.startswith("last_sold")}
+    seed = deal_seed.build_seed(prop)
+    assert seed.price_basis == "assessed" and seed.is_anchored
+    assert seed.purchase_price == pytest.approx(
+        46 * 62_000 / deal_seed.ASSESSMENT_RATIO, abs=1_000)
+    assert "46 units × $62,000/unit assessed" in seed.price_note
+
+
+def test_a_stale_or_junk_record_sale_is_still_not_an_anchor(no_sales):
+    stale = deal_seed.build_seed(
+        {"units": 46, "last_sold_amount": 4_200_000,
+         "last_sold_year": dt.date.today().year - deal_seed.MAX_SALE_AGE_Y - 1})
+    assert stale.price_basis == "ppu"
+    junk = deal_seed.build_seed(
+        {"units": 46, "last_sold_amount": 10,
+         "last_sold_year": dt.date.today().year})
+    assert junk.price_basis == "ppu"
+    # A sale year with no amount, and an amount with no year, are both
+    # half a fact — neither may seed a price.
+    for half in ({"last_sold_year": dt.date.today().year},
+                 {"last_sold_amount": 4_200_000}):
+        assert deal_seed.build_seed({"units": 46, **half}).price_basis == "ppu"
+
+
+def test_the_county_deed_index_still_outranks_the_record(monkeypatch):
+    """Both are the asset's own sale; the deed has the exact date."""
+    year = dt.date.today().year
+    monkeypatch.setattr(
+        "core.sale_history.sale_history_for",
+        lambda prop, db_path=None: [{"date": f"{year}-06-01",
+                                     "price": 5_000_000}])
+    seed = deal_seed.build_seed(RECORD)
+    assert seed.purchase_price == pytest.approx(5_000_000, abs=1_000)
+    assert "on the property record" not in seed.price_note
+
+
+def test_a_property_with_nothing_on_record_still_says_so(no_sales):
+    """The warning is right when it IS a constant — don't launder that."""
+    caption = deal_seed.seed_caption(deal_seed.build_seed({"units": 46}))
+    assert "MARKET PLACEHOLDER" in caption
+    assert "no sale or assessed value on this parcel" in caption
+    assert "no rent estimate for this asset" in caption
+
+
+def test_the_matched_county_parcels_assessment_is_used(no_sales, tmp_path):
+    """The curated pool has no assessed_value column — the parcel it is
+    crosswalked to does, and that row is already pulled nightly."""
+    import sqlite3
+
+    db = tmp_path / "workbench.db"
+    conn = sqlite3.connect(db)
+    conn.executescript("""
+        CREATE TABLE properties_8r (property_id TEXT PRIMARY KEY,
+                                    assessed_value REAL);
+        CREATE TABLE property_crosswalk (legacy_property_id TEXT PRIMARY KEY,
+                                         r8_property_id TEXT);
+        INSERT INTO properties_8r VALUES ('8R-A', 3400000);
+        INSERT INTO property_crosswalk VALUES ('P1', '8R-A');
+    """)
+    conn.commit()
+    conn.close()
+
+    seed = deal_seed.build_seed({"property_id": "P1", "units": 46,
+                                 "avg_rent": 1159}, db_path=db)
+    assert seed.price_basis == "assessed" and seed.is_anchored
+    assert seed.purchase_price == pytest.approx(
+        3_400_000 / deal_seed.ASSESSMENT_RATIO, abs=1_000)
+    assert "matched county parcel" in seed.price_note
+
+    # An unmatched property falls through to the placeholder, honestly.
+    other = deal_seed.build_seed({"property_id": "P9", "units": 46},
+                                 db_path=db)
+    assert other.price_basis == "ppu"
+
+
+def test_a_missing_backbone_never_raises(no_sales, tmp_path):
+    """Pre-Phase-0 boxes have no crosswalk; seeding must not care."""
+    empty = tmp_path / "nothing.db"
+    empty.write_bytes(b"")
+    assert deal_seed.build_seed({"property_id": "P1", "units": 46},
+                                db_path=empty).price_basis == "ppu"
+    assert deal_seed.build_seed({"property_id": "P1", "units": 46},
+                                db_path=tmp_path / "absent.db"
+                                ).price_basis == "ppu"
+
+
+# --- The screen the owner was looking at ----------------------------------
+
+def test_the_input_tab_banner_states_the_evidence_and_stops_warning():
+    import textwrap
+
+    from streamlit.testing.v1 import AppTest
+
+    script = textwrap.dedent("""
+        import sys
+        sys.path.insert(0, %r)
+        from ui.input_tab import render_input
+        render_input({"name": "Bayview Terrace", "address": "1 Main St",
+                      "city": "Norfolk", "state": "VA", "units": 46,
+                      "avg_rent": 1159, "last_sold_amount": 4_200_000,
+                      "last_sold_year": %d}, None)
+    """) % (str(__import__("pathlib").Path(__file__).resolve().parent.parent),
+            dt.date.today().year - 1)
+    at = AppTest.from_string(script, default_timeout=60).run()
+    assert not at.exception
+    # Anchored seed -> an INFO that names its evidence, not a warning.
+    assert not at.warning
+    banner = " ".join(str(i.value) for i in at.info)
+    assert r"last sale \$4,200,000" in banner   # escaped, so it renders
+    assert "average rent on the property record" in banner
+    assert "MARKET PLACEHOLDER" not in banner
+    assert "no rent estimate for this asset" not in banner
+
+
+def test_money_survives_streamlit_markdown(no_sales):
+    """Streamlit reads $...$ as LaTeX and eats both signs — which is how
+    the owner's own bug report read "46 units × 130,000 market /unit"."""
+    seed = deal_seed.build_seed(RECORD)
+    md = deal_seed.seed_caption_md(seed)
+    assert r"\$4,200,000" in md and r"\$1,159/mo" in md
+    # Every dollar sign escaped: no bare $ can open a maths run.
+    assert "$" not in md.replace("\\$", "")
+    # Plain-text callers are untouched.
+    assert "\\" not in deal_seed.seed_caption(seed)
+
+
+def test_both_seed_banners_escape_their_money():
+    for path in ("ui/input_tab.py", "ui/underwriting.py"):
+        src = open(path, encoding="utf-8").read()
+        assert "seed_caption_md(_seed)" in src, path
+        assert "seed_caption(_seed)" not in src, path

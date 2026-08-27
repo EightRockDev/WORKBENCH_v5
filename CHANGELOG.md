@@ -12,6 +12,38 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.63.3.2.0 — 2026-08-27  ·  Seeded first numbers read the property's OWN record.
+
+Owner: "If I've favorited a property, I should not see this message." The
+seeded-deal banner called the price a MARKET PLACEHOLDER with "no sale or
+assessed value on this parcel", and the NOI "a $1,159/mo market placeholder
+- no rent estimate for this asset" — about a property whose own row carried
+a last sale, a per-unit assessment and that exact average rent.
+
+- **The record's own last sale anchors price** (`last_sold_amount` +
+  `last_sold_year`, same >=$50k / <=7-year credibility filters as the deed
+  index, trended +3%/yr). The county deed index still outranks it — it has
+  the exact date — but a record sale beats a market constant.
+- **Per-unit assessments are read.** The curated pool stores
+  `assessed_value_per_unit`; only the backbone stores a total. Both now
+  anchor, and the note shows the arithmetic.
+- **The matched county parcel's assessment is used** when the record has
+  none, through `property_crosswalk` — the same bridge `core.sale_history`
+  already uses for the parcel id. A read of data already pulled, not a new
+  source; an absent crosswalk/backbone degrades silently to the placeholder.
+- **A rent on the record is evidence** (`rent_basis="record"`), captioned
+  "$1,159/mo average rent on the property record" instead of denying its
+  own number. The placeholder wording still appears when the rent really
+  IS the $1,500 constant.
+- **An anchored seed shows as an info, not a warning** — the banner styling
+  already keyed off `is_anchored`; now the anchors actually fire.
+- **Money survives markdown.** Streamlit reads `$...$` as LaTeX and ate both
+  dollar signs — visible in the owner's report as "46 units × 130,000 market
+  /unit". `seed_caption_md` escapes them; both banner sites use it.
+- 10 new tests (three fail against the previous code, checked); one renders
+  the Input tab and asserts the banner is an info naming its evidence.
+
+---
 ## V5.63.3.0.0 — 2026-08-27 — Delete a property; coordinate defaults stop becoming data
 
 **Delete property (owner ask).** A hand-added property can now be removed:
