@@ -12,6 +12,64 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.63.1.0.0 — 2026-08-27  ·  The test suite emptied the owner's production database.
+
+Owner, 2026-08-27: *"We had many users - they're gone now. What happened?"*
+The Admin page showed one account. It had shown six on Aug 18.
+
+**Cause.** `tests/conftest.py` loads `.env` so the pilot suites can find
+Postgres. On the owner's SERVER `.env` is the LIVE connection, and six
+suites (`test_pilot_admin`, `test_multitenancy`, `test_inbox`,
+`test_skiptrace`, `test_outreach`, `test_compliance`) open every test with
+`TRUNCATE users, organizations, audit_log RESTART IDENTITY CASCADE`. So
+`uv run pytest` on that machine emptied production. The cascade took
+everything hanging off those tables: **5 user accounts, both
+organizations, 3 memberships, 3 deals, 37 CRM contacts, 41 paid
+skip-trace records, 81 inbox messages, 53 property-activity rows, 6
+relationship edges, a term sheet, a mailbox connection, 17 audit
+entries.** The owner's own account was re-created by his next login as a
+first-user bootstrap — which is why it presented as "the users vanished"
+rather than a wipe, and why he was left as the sole admin.
+
+The one guard in `conftest.py` — the superuser check — waved it through,
+because production correctly connects as a NON-superuser. It was written
+to stop RLS false-failures and read like data safety.
+
+- **`tests/pgguard.py`** — a destructive suite may only run against a
+  database whose NAME says it is disposable (`wb_test`, `*_test`,
+  `scratch*`, `wb_recover`). `workbench` matches none of them.
+- **`conftest.py`** neutralizes a live `DATABASE_URL` at import, before any
+  fixture or reachability cache sees it, so every Postgres suite SKIPS
+  instead of truncating — and announces it through the terminal reporter,
+  because `addopts = "-q"` suppresses the report header and an import-time
+  print is swallowed by capture. A guard nobody can see is how the last
+  one hid.
+- **Every truncating fixture calls `assert_scratch_db()`** first, as a
+  second line of defence.
+- **`tests/test_db_safety.py`** (19 tests) — the guard's behaviour, the
+  neutralization, that the warning survives `-q` (asserted through a real
+  subprocess), and two source scans so a future test file cannot
+  reintroduce an unguarded `TRUNCATE`.
+- **`deploy/windows/restore-pilot-db.ps1`** — recovery: snapshots the
+  current database first, rebuilds a chosen backup into a scratch database
+  and counts every table, and only on a clean verification renames the
+  live database aside and promotes the copy. Verify-only by default;
+  `-Swap` performs the promotion. It never drops the wiped database. Its
+  backup picker skips dumps holding a single user, since every dump from
+  Aug 20 on would faithfully restore the damage.
+- Deploy tests extended with seven checks on the restore script (backup
+  precedes rename, verification precedes promotion, no live change without
+  `-Swap`, no `DROP DATABASE` of anything but the scratch copy, service
+  state restored on a failed rename). Two real defects were caught by the
+  existing rules while writing it: non-ASCII characters, and `2>$null` on
+  native commands, which under `$ErrorActionPreference = "Stop"` becomes a
+  terminating `NativeCommandError` — the bug that killed both installers
+  on 2026-08-02.
+
+Not affected: the property backbone (`properties`, `properties_8r`,
+`sale_records`) is a separate SQLite database the tests never touch, and
+deal folders on disk were untouched.
+
 ## V5.63.0.0.0 — 2026-08-25  ·  Property Screener: the whole database behind one Submit button.
 
 Owner spec, verbatim scope: a new nav button between Loans and Help; filters

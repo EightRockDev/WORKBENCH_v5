@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import pytest
 
+from tests.pgguard import assert_scratch_db
+
 from data import pg
 
 pytestmark = pytest.mark.skipif(not pg.is_reachable(),
@@ -22,10 +24,12 @@ pytestmark = pytest.mark.skipif(not pg.is_reachable(),
 @pytest.fixture()
 def clean_db():
     """Reset the pilot tables to a known-empty state around each test."""
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE users, organizations, audit_log RESTART IDENTITY CASCADE")
         conn.commit()
     yield
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE users, organizations, audit_log RESTART IDENTITY CASCADE")
         conn.commit()

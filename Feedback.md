@@ -204,3 +204,27 @@
   sweep deleted all ~477K sales-puller rows as "retired" every cycle
   (nightly full re-download; a one-night host outage would have made the
   review run with silent holes).
+- **2026-08-27 (production data loss, self-inflicted):** Owner: *"We had many
+  users - they're gone now. What happened?"* `uv run pytest` on the OWNER'S
+  SERVER emptied the live pilot database on 2026-08-18. `tests/conftest.py`
+  loads `.env` so the Postgres suites can find a connection; on that machine
+  `.env` IS production, and six suites open each test with `TRUNCATE users,
+  organizations, audit_log ... CASCADE`. Lost: 5 user accounts, both orgs, 3
+  deals, 37 CRM contacts, 41 *paid* skip-trace records, 81 inbox messages, 53
+  activity rows, 17 audit entries. The owner's own login re-bootstrapped him
+  as the first user, so it looked like "the users vanished", not a wipe.
+  Fixed by `tests/pgguard.py` (a destructive suite may only run against a
+  database whose NAME says it is disposable) + `restore-pilot-db.ps1`.
+  Three process lessons, all costlier than the code fix:
+  1. **Never run the test suite on the owner's machine.** The server runs the
+     app. Tests run here, or against a scratch database, never both.
+  2. **Do not state an inference as a finding.** Asked on 8/26 where the users
+     were, I answered "nobody else has ever signed up" - I had verified only
+     that the list was unfiltered. The rows had been deleted. That guess cost
+     a day and told the owner his memory was wrong when it wasn't. Say what
+     was checked, and what remains unchecked, separately.
+  3. **When printing a config file, print the line needed - not the file.**
+     Asking for `secrets.toml` to read one database URL dumped the live Auth0
+     client secret and cookie secret into a chat transcript; both had to be
+     rotated. Mask by default, request the narrowest thing that answers the
+     question.

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import pytest
 
+from tests.pgguard import assert_scratch_db
+
 from core.inbox import classify as clf
 from core.inbox import engine, providers
 from core.inbox import extract as ex
@@ -131,6 +133,7 @@ pg_only = pytest.mark.skipif(not pg.is_reachable(), reason="Postgres not configu
 @pytest.fixture()
 def org_user():
     """(org_id, user_id) — raw mail is per-user private, so tests need both."""
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE organizations, users RESTART IDENTITY CASCADE")
         cur.execute("INSERT INTO organizations (name) VALUES ('T') RETURNING id")
@@ -141,6 +144,7 @@ def org_user():
         uid = str(cur.fetchone()["id"])
         conn.commit()
     yield oid, uid
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE organizations, users RESTART IDENTITY CASCADE")
         conn.commit()
@@ -293,6 +297,7 @@ def test_graph_falls_back_to_mock_without_token(monkeypatch):
 @pytest.fixture()
 def two_users():
     """One org, two colleagues. Their mail must be mutually invisible."""
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE organizations, users RESTART IDENTITY CASCADE")
         cur.execute("INSERT INTO organizations (name) VALUES ('T') RETURNING id")
@@ -304,6 +309,7 @@ def two_users():
         rows = cur.fetchall()
         conn.commit()
     yield oid, str(rows[0]["id"]), str(rows[1]["id"])   # brian, peter
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE organizations, users RESTART IDENTITY CASCADE")
         conn.commit()

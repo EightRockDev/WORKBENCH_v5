@@ -14,6 +14,8 @@ import datetime as dt
 
 import pytest
 
+from tests.pgguard import assert_scratch_db
+
 from core.compliance import ledger, rules
 from core.outreach import engine
 from data import pg
@@ -40,12 +42,14 @@ def _phone(**over):
 
 @pytest.fixture()
 def org():
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE organizations RESTART IDENTITY CASCADE")
         cur.execute("INSERT INTO organizations (name) VALUES ('T') RETURNING id")
         oid = str(cur.fetchone()["id"])
         conn.commit()
     yield oid
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE organizations RESTART IDENTITY CASCADE")
         conn.commit()

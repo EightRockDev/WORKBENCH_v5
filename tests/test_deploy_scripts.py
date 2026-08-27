@@ -479,3 +479,74 @@ def test_no_batch_echo_text_closes_its_own_block():
     assert not offenders, (
         "echo text inside a ( ) block contains parentheses - cmd will close "
         "the block mid-text and abort the file:\n  " + "\n  ".join(offenders))
+
+
+# ---------------------------------------------------------------------------
+# restore-pilot-db.ps1 — the recovery script for the 2026-08-18 wipe
+# ---------------------------------------------------------------------------
+# There is no pwsh in CI, and this script's failure mode is destroying the
+# last copy of the owner's data. So assert the SHAPE of its safety: back up
+# first, verify before promoting, never drop, keep the old database.
+
+RESTORE = "restore-pilot-db.ps1"
+
+
+def test_the_restore_backs_up_before_it_changes_anything():
+    src = _src(RESTORE)
+    dump_at = src.index("& $pgDump -Fc")
+    rename_at = src.index("ALTER DATABASE $liveDb RENAME TO")
+    assert dump_at < rename_at, (
+        "the script renames the live database before taking its snapshot - "
+        "a failure would leave no way back")
+    assert "throw \"could not back up the current database" in src, (
+        "a failed pre-restore backup must stop the script, not be ignored")
+
+
+def test_the_restore_never_drops_the_live_database():
+    """Only the scratch copy may be dropped. The wiped database is RENAMED
+    aside and kept, so a wrong call is reversible."""
+    src = _src(RESTORE)
+    drops = re.findall(r"DROP DATABASE[^\"']*", src)
+    for d in drops:
+        assert "$ScratchDb" in d, f"dangerous drop: {d!r}"
+    assert "_broken_$stamp" in src, "the wiped database must be kept, not dropped"
+
+
+def test_the_restore_verifies_before_it_promotes():
+    src = _src(RESTORE)
+    verify_at = src.index("verification FAILED")
+    promote_at = src.index("ALTER DATABASE $ScratchDb RENAME TO")
+    assert verify_at < promote_at
+    assert "if ($results['users'] -lt 2)" in src, (
+        "restoring a copy that has no users back would repeat the incident")
+
+
+def test_the_restore_makes_no_live_change_without_the_swap_flag():
+    src = _src(RESTORE)
+    gate_at = src.index("if (-not $Swap)")
+    exit_at = src.index("exit 0", gate_at)
+    rename_at = src.index("ALTER DATABASE $liveDb RENAME TO")
+    assert gate_at < exit_at < rename_at, (
+        "the verify-only path must return before any live change")
+
+
+def test_the_restore_picks_a_backup_from_before_the_wipe():
+    """Newest-first would restore the damage: every dump from 2026-08-20 on
+    holds the single re-bootstrapped account."""
+    src = _src(RESTORE)
+    assert "$rows.Count -gt 1" in src, (
+        "the script must skip dumps that carry only the post-wipe user")
+
+
+def test_the_restore_avoids_powershells_reserved_pid_variable():
+    """`$pid` is read-only in PowerShell; assigning it aborts the script at
+    the exact moment it is stopping the app."""
+    src = _src(RESTORE)
+    assert not re.search(r"\$pid\b", src, re.I), "use $processId, not $pid"
+
+
+def test_the_restore_restores_service_state_when_a_rename_fails():
+    src = _src(RESTORE)
+    assert "ALTER DATABASE $brokenName RENAME TO $liveDb" in src, (
+        "a half-finished swap must put the original database back")
+    assert "/ENABLE" in src, "the autopilot must be re-enabled after the swap"

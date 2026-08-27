@@ -18,6 +18,8 @@ import datetime as dt
 
 import pytest
 
+from tests.pgguard import assert_scratch_db
+
 from core.skiptrace import pipeline, providers
 from data import pg
 
@@ -138,12 +140,14 @@ pg_only = pytest.mark.skipif(not pg.is_reachable(), reason="Postgres not configu
 
 @pytest.fixture()
 def org():
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE organizations, poc_records, skiptrace_spend RESTART IDENTITY CASCADE")
         cur.execute("INSERT INTO organizations (name) VALUES ('T') RETURNING id")
         oid = str(cur.fetchone()["id"])
         conn.commit()
     yield oid
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE organizations, poc_records, skiptrace_spend RESTART IDENTITY CASCADE")
         conn.commit()

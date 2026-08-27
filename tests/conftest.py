@@ -4,10 +4,20 @@ The app loads .env at startup via app.py; pytest does not run app.py, so we load
 it here. This lets `uv run pytest` find the Postgres connection written by
 deploy/windows/setup-db.ps1 (or deploy/install.sh) without exporting env vars by
 hand. Harmless when no .env exists.
+
+That convenience had a second, unintended half. On the owner's SERVER the
+`.env` this loads holds the LIVE database, and the pilot suites TRUNCATE
+users/organizations/audit_log to get a clean slate — so `uv run pytest`
+there emptied production (2026-08-18; diagnosed 2026-08-27). The block
+below closes that: a DATABASE_URL that does not name a disposable database
+is neutralized for the whole session, so every Postgres suite SKIPS instead
+of truncating. See tests/pgguard.py.
 """
 
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -18,6 +28,57 @@ try:
     load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 except ImportError:  # python-dotenv always present in this project, but be safe
     pass
+
+
+# ---------------------------------------------------------------------------
+# Guard: destructive suites must never meet a live database
+# ---------------------------------------------------------------------------
+# Runs at IMPORT time, before any fixture or `pg.is_reachable()` cache can
+# see the live URL. Clearing the env var is what makes every pg-gated suite
+# skip; the fixtures also call assert_scratch_db() as a second line.
+_LIVE_DB_NEUTRALIZED: str | None = None
+
+def _neutralize_live_database_url() -> None:
+    global _LIVE_DB_NEUTRALIZED
+    from tests.pgguard import database_name, is_scratch_db
+
+    url = os.environ.get("DATABASE_URL", "").strip()
+    if url and not is_scratch_db(url):
+        _LIVE_DB_NEUTRALIZED = database_name(url) or "(unnamed)"
+        os.environ["DATABASE_URL"] = ""
+        os.environ["ER_BACKUP_DATABASE_URL"] = ""
+        # The visible announcement happens in pytest_configure below, where
+        # it survives -q and pytest's capture.
+
+
+try:                                   # never let the guard itself break collection
+    _neutralize_live_database_url()
+except Exception:                      # pragma: no cover - defensive
+    os.environ["DATABASE_URL"] = ""    # fail CLOSED: no URL, no truncation
+
+
+def _guard_banner() -> str:
+    return (f"[db-guard] Postgres suites SKIPPED: DATABASE_URL named "
+            f"{_LIVE_DB_NEUTRALIZED!r}, which is not a disposable test "
+            f"database. Nothing in it was touched. (tests/pgguard.py)")
+
+
+def pytest_configure(config):
+    """Say it out loud, through the terminal reporter.
+
+    Not `pytest_report_header`: pyproject sets addopts = "-q", which
+    suppresses headers, and an import-time print is swallowed by capture.
+    The reporter's own writer survives both — a guard nobody can see is how
+    the previous one (the superuser check) read like safety while the live
+    database was being emptied.
+    """
+    if not _LIVE_DB_NEUTRALIZED:
+        return
+    reporter = config.pluginmanager.get_plugin("terminalreporter")
+    if reporter is not None:
+        reporter.write_line(_guard_banner(), red=True, bold=True)
+    else:                                        # pragma: no cover
+        print(_guard_banner(), file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------

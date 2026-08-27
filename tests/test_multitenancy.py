@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import pytest
 
+from tests.pgguard import assert_scratch_db
+
 from core import orgs
 from core.permissions import (
     FIELD_LP_PII, FIELD_PURCHASE_PRICE, FIELD_RETURNS_IRR, FIELD_WATERFALL_PROMOTE,
@@ -29,10 +31,12 @@ pytestmark = pytest.mark.skipif(not pg.is_reachable(),
 
 @pytest.fixture()
 def clean_db():
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE users, organizations, audit_log RESTART IDENTITY CASCADE")
         conn.commit()
     yield
+    assert_scratch_db()
     with pg.connection() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE users, organizations, audit_log RESTART IDENTITY CASCADE")
         conn.commit()

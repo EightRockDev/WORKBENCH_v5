@@ -13,6 +13,8 @@ import uuid
 
 import pytest
 
+from tests.pgguard import assert_scratch_db
+
 from core import property_overrides as po
 from data import pg
 
@@ -82,6 +84,7 @@ def pg_org_with_two_users():
     try:
         yield org_id, users[0], users[1]
     finally:
+        assert_scratch_db()
         with pg.connection() as conn, conn.cursor() as cur:
             cur.execute("DELETE FROM organizations WHERE id = %s", (org_id,))
             for u in users:

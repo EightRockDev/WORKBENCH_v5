@@ -26,6 +26,23 @@ engine (Python/Streamlit), which this repo was seeded from.
 
 ## Hard rules
 
+- **NEVER run the test suite on the owner's server.** `uv run pytest` there
+  destroyed production on 2026-08-18 (found 2026-08-27): `tests/conftest.py`
+  loads `.env`, which on that machine is the LIVE database, and six pilot
+  suites open each test with `TRUNCATE users, organizations, audit_log ...
+  CASCADE`. It cost 5 user accounts, both organizations, 3 deals, 37 CRM
+  contacts, 41 *paid* skip-trace records, 81 inbox messages, 53 activity
+  rows and 17 audit entries. `tests/pgguard.py` now refuses any database
+  whose name is not disposable, but the rule stands on its own: the server
+  runs the app, not the tests.
+  - Three lessons worth more than the fix. **A guard that reads like safety
+    can be neither** — the superuser check in `conftest.py` sat directly
+    above the damage and was built for a different hazard (RLS false
+    failures) entirely. **A convenience that finds credentials will find
+    production credentials**; loading `.env` "so the tests can find
+    Postgres" is the whole bug. **State inferences as inferences** — asked
+    where the users were, I said nobody had ever signed up, which was a
+    guess dressed as a finding and cost a day before the backups were read.
 - **This is a separate repo from GRANITE.** Never build v5.0 work into GRANITE.
   Repo: `github.com/EightRockDev/WORKBENCH_v5`, default branch `main`.
 - **PowerShell scripts must be pure ASCII.** Windows PowerShell 5.1 reads `.ps1`
