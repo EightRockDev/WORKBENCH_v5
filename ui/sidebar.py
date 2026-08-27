@@ -304,7 +304,7 @@ def maybe_show_add_property_dialog() -> None:
 
 @st.dialog("Delete property", width="large")
 def _show_delete_property_dialog() -> None:
-    """Confirm and delete a user-added property. Requires typing DELETE.
+    """Pick a hand-added property, type DELETE, remove it from both stores.
 
     Scoped to CUSTOM properties on purpose. `properties` is a query layer that
     `legacy_loader.sync()` rebuilds from the licensed export, so deleting an
@@ -312,29 +312,59 @@ def _show_delete_property_dialog() -> None:
     rebuild - a delete that silently undoes itself is worse than no delete.
     A custom property is durable because `_custom_props.json` is its source of
     truth and both stores are cleared together.
+
+    Opens either with a property already chosen (`_delete_target_pid`, set by
+    the V1 sidebar button) or with none, in which case it shows a picker - the
+    V2 landing has no notion of a "selected" property, and a control that only
+    works after selecting something is a control most people never find.
     """
+    customs = load_custom_props()
     pid = st.session_state.get("_delete_target_pid")
-    if not pid:
-        st.info("Select a property first, then reopen this dialog.")
-        return
 
-    entry = next((p for p in load_custom_props()
-                  if p.get("property_id") == pid), None)
+    def _close(*extra: str) -> None:
+        for k in ("_show_delete_property_dialog", "_delete_target_pid",
+                  "_delete_confirm_text", *extra):
+            st.session_state.pop(k, None)
 
-    if entry is None:
-        st.warning(
-            "This property came from the licensed export, not from "
-            "**+ Add custom property**, so it cannot be deleted here.\n\n"
-            "The property list is rebuilt from that export whenever it "
-            "refreshes, which would put the row straight back - a delete that "
-            "quietly undoes itself. Only properties you added by hand can be "
-            "removed."
+    if not customs:
+        st.info(
+            "There are no hand-added properties to delete.\n\n"
+            "Only properties created with **➕ Add property** can be removed. "
+            "Everything else comes from the licensed export and is rebuilt "
+            "from it whenever that data refreshes."
         )
-        st.caption(f"property_id: {pid}")
         if st.button("Close", use_container_width=True):
-            st.session_state.pop("_show_delete_property_dialog", None)
+            _close()
             st.rerun()
         return
+
+    if pid is None:
+        labels = {
+            (f"{p.get('name') or '(unnamed)'} - {p.get('address') or '-'}, "
+             f"{p.get('city') or '-'} ({p.get('units') or '-'} units)"): p
+            for p in customs
+        }
+        chosen = st.selectbox("Which property do you want to delete?",
+                              list(labels), key="_delete_pick")
+        entry = labels.get(chosen)
+        pid = entry.get("property_id") if entry else None
+    else:
+        entry = next((p for p in customs
+                      if p.get("property_id") == pid), None)
+        if entry is None:
+            st.warning(
+                "This property came from the licensed export, not from "
+                "**➕ Add property**, so it cannot be deleted here.\n\n"
+                "The property list is rebuilt from that export whenever it "
+                "refreshes, which would put the row straight back - a delete "
+                "that quietly undoes itself. Only properties you added by "
+                "hand can be removed."
+            )
+            st.caption(f"property_id: {pid}")
+            if st.button("Close", use_container_width=True):
+                _close()
+                st.rerun()
+            return
 
     st.markdown(f"### {entry.get('name', '(unnamed)')}")
     st.markdown(
@@ -346,8 +376,8 @@ def _show_delete_property_dialog() -> None:
     )
     st.divider()
     st.warning(
-        "This removes the property from `_custom_props.json` and from the "
-        "property list. It cannot be undone from inside the app."
+        "This removes the property from the list permanently. It cannot be "
+        "undone from inside the app."
     )
     st.info(
         "Your deal folder is **not** touched. Any T-12, rent roll, OM or "
@@ -368,28 +398,22 @@ def _show_delete_property_dialog() -> None:
     with col_del:
         if st.button("Delete permanently", type="primary", disabled=not armed,
                      use_container_width=True):
+            name = entry.get("name")
             removed_json = delete_custom_property(pid)
             removed_rows = delete_property(pid)
 
             if st.session_state.get("selected_property_id") == pid:
                 st.session_state.pop("selected_property_id", None)
-            for k in ("_show_delete_property_dialog", "_delete_target_pid",
-                      "_delete_confirm_text"):
-                st.session_state.pop(k, None)
+            _close("_delete_pick")
 
             if removed_json or removed_rows:
-                st.success(
-                    f"Deleted `{entry.get('name')}` "
-                    f"(json: {'yes' if removed_json else 'no'}, "
-                    f"db rows: {removed_rows})."
-                )
+                st.success(f"Deleted `{name}`.")
             else:
                 st.error("Nothing was deleted - the property was already gone.")
             st.rerun()
     with col_cancel:
         if st.button("Cancel", use_container_width=True):
-            for k in ("_show_delete_property_dialog", "_delete_confirm_text"):
-                st.session_state.pop(k, None)
+            _close("_delete_pick")
             st.rerun()
 
 
