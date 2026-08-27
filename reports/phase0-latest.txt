@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-08-27T18:20:24
+autopilot phase0 @ 2026-08-27T19:28:35
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,273,030
@@ -9,7 +9,7 @@ Assessor feeds present (Hampton Roads):
   Norfolk            74,331  .../data.norfolk.gov/resource/qva7-tzrf.json
 
 Building the Eight Rock property backbone (properties_8r)...
-  [rent-signal] listings ingest: 23 success rows -> 6 properties, 4 with usable rents, 2 in crosswalk -> 2 stamped
+  [rent-signal] listings ingest: 24 success rows -> 6 properties, 4 with usable rents, 2 in crosswalk -> 2 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b, a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
 
 muni records scanned:      2,330,223
