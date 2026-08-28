@@ -1,6 +1,6 @@
-autopilot pull @ 2026-08-27T23:17:45
+autopilot pull @ 2026-08-28T00:17:53
 
-WORKBENCH muni-data ETL — 2026-08-27
+WORKBENCH muni-data ETL — 2026-08-28
   discovered feeds loaded from data/feeds_extra.json: 10
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/0
