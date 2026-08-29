@@ -12,6 +12,35 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.63.4.0.0 — 2026-08-29  ·  Reuniting the two halves of the pilot database.
+
+The 2026-08-27 restore brought back the Aug 18 accounts and deals, but
+`pg_restore --clean` recreated each table, discarding the rows the app and
+the autopilot had written on top of the wipe between Aug 18 and Aug 27
+(inbox_messages went 83 -> 81). The good data ended up split across two
+artifacts: the Aug 18 content now live, and the post-wipe content alive
+only inside the pre-restore snapshot the restore script took first.
+
+`scripts/recover_post_restore.py` merges them. Report-only by default; it
+writes nothing without `--apply`.
+
+- **Identity remapping.** The post-wipe rows point at the account and
+  organization created AFTER the wipe, and the restore replaced both with
+  the originals. A plain row-diff would fail every foreign key, so user
+  and org references are remapped by email and by name — the two things
+  that survived the re-creation. A row whose owner has no restored
+  counterpart is skipped and reported, never silently reassigned.
+- **Additive only.** A primary key that already exists is skipped, and
+  every insert carries `ON CONFLICT DO NOTHING`; the restored Aug 18 row
+  always wins. This adds what was lost, it does not re-run the restore.
+- **Reads through the BYPASSRLS role**, because the app role cannot see
+  FORCE-RLS rows — the same blindness that made the 2026-08-27 damage
+  table under-report live data and led me to tell the owner there had
+  been no activity since the wipe, which was wrong.
+- 12 tests in `tests/test_recover_post_restore.py`, including one that
+  parses `db/pilot_schema.sql` for every column referencing `users(id)`
+  and fails if the remap list has missed one.
+
 ## V5.63.3.2.0 — 2026-08-27  ·  Seeded first numbers read the property's OWN record.
 
 Owner: "If I've favorited a property, I should not see this message." The

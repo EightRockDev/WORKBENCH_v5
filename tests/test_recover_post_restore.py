@@ -1,0 +1,181 @@
+"""The post-restore merge must add what was lost and touch nothing else.
+
+Context: the 2026-08-27 in-place restore brought back the Aug 18 accounts
+and deals, but `pg_restore --clean` discarded the rows written between the
+2026-08-18 wipe and the restore (inbox_messages 83 -> 81). Those rows exist
+only in the pre-restore snapshot, and they point at identities the restore
+replaced — Brian's re-bootstrapped user id, the org created after the wipe.
+
+The parsing and remapping are pure functions precisely so they can be
+tested without a Postgres server; that is the same split that let
+core/screener.py be tested honestly.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+from pathlib import Path
+
+import pytest
+
+_spec = importlib.util.spec_from_file_location(
+    "recover_post_restore",
+    Path(__file__).resolve().parent.parent / "scripts" / "recover_post_restore.py")
+rpr = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(rpr)
+
+
+# The ids from the real incident, so the fixtures read like the event.
+SNAP_BRIAN = "200d51ca-3921-4906-837e-8f179c5edcc2"   # post-wipe bootstrap
+LIVE_BRIAN = "ed0c71a7-4a1a-4fbf-a4e3-c5e9e3550e9c"   # restored Aug 18 record
+SNAP_ORG = "5df1b2fd-393c-44ac-a075-01f19fccc232"
+LIVE_ORG = "aaaaaaaa-0000-0000-0000-000000000001"
+
+
+@pytest.fixture()
+def maps():
+    return {SNAP_BRIAN: LIVE_BRIAN}, {SNAP_ORG: LIVE_ORG}
+
+
+# ---------------------------------------------------------------------------
+# COPY parsing
+# ---------------------------------------------------------------------------
+
+def test_null_and_escapes_round_trip():
+    r"""COPY writes NULL as \N and escapes tabs/newlines. Treating \N as the
+    literal string would write the text "\N" into a restored row."""
+    assert rpr._unescape(r"\N") is None
+    assert rpr._unescape("plain") == "plain"
+    assert rpr._unescape(r"two\tcols") == "two\tcols"
+    assert rpr._unescape(r"line\nbreak") == "line\nbreak"
+    assert rpr._unescape(r"back\\slash") == "back\\slash"
+
+
+def test_read_table_parses_a_dump_section(monkeypatch):
+    payload = (
+        "--\n-- PostgreSQL database dump\n--\n\n"
+        "SET statement_timeout = 0;\n\n"
+        "COPY public.inbox_messages (id, org_id, subject, body) FROM stdin;\n"
+        "m1\t" + SNAP_ORG + "\tOffering memo\tsee attached\n"
+        "m2\t" + SNAP_ORG + "\tRe: 611 Michigan\t\\N\n"
+        "\\.\n\n\n"
+        "-- PostgreSQL database dump complete\n")
+
+    class _Proc:
+        stdout = payload
+        returncode = 0
+
+    monkeypatch.setattr(rpr.subprocess, "run", lambda *a, **k: _Proc())
+    cols, rows = rpr.read_table("pg_restore", Path("x.dump"), "inbox_messages")
+
+    assert cols == ["id", "org_id", "subject", "body"]
+    assert len(rows) == 2, "the terminator or the header leaked into the rows"
+    assert rows[0] == ["m1", SNAP_ORG, "Offering memo", "see attached"]
+    assert rows[1][3] is None
+
+
+def test_a_table_absent_from_the_dump_yields_nothing(monkeypatch):
+    class _Proc:
+        stdout = "--\n-- nothing here\n--\n"
+        returncode = 1
+
+    monkeypatch.setattr(rpr.subprocess, "run", lambda *a, **k: _Proc())
+    assert rpr.read_table("pg_restore", Path("x.dump"), "deals") == ([], [])
+
+
+# ---------------------------------------------------------------------------
+# Identity remapping — the reason a plain diff would fail
+# ---------------------------------------------------------------------------
+
+def test_user_and_org_references_are_rewritten(maps):
+    user_map, org_map = maps
+    cols = ["id", "org_id", "owner_user_id", "subject"]
+    row = ["m1", SNAP_ORG, SNAP_BRIAN, "Offering memo"]
+
+    out, why = rpr.remap_row(cols, row, user_map, org_map)
+    assert why == ""
+    assert out == ["m1", LIVE_ORG, LIVE_BRIAN, "Offering memo"], (
+        "the row still points at identities the restore deleted - every "
+        "insert would fail its foreign key")
+
+
+def test_rows_referencing_a_vanished_identity_are_skipped_not_guessed(maps):
+    """A post-wipe row belonging to an account with no restored counterpart
+    has nowhere to go. Dropping the reference would silently reassign
+    someone's work; skipping and reporting is the honest answer."""
+    user_map, org_map = maps
+    cols = ["id", "org_id", "user_id"]
+    row = ["x1", SNAP_ORG, "99999999-0000-0000-0000-000000000000"]
+
+    out, why = rpr.remap_row(cols, row, user_map, org_map)
+    assert out is None
+    assert "user" in why
+
+
+def test_null_references_are_left_alone(maps):
+    """audit_log.actor_user_id is nullable — a NULL is not a broken link."""
+    user_map, org_map = maps
+    cols = ["id", "org_id", "actor_user_id"]
+    out, why = rpr.remap_row(cols, ["a1", SNAP_ORG, None], user_map, org_map)
+    assert why == "" and out == ["a1", LIVE_ORG, None]
+
+
+def test_every_user_foreign_key_column_is_covered():
+    """A column this list forgets is a column that keeps a dead id and
+    fails at insert time, mid-merge."""
+    schema = (Path(__file__).resolve().parent.parent
+              / "db" / "pilot_schema.sql").read_text(encoding="utf-8")
+    referencing = set()
+    for line in schema.splitlines():
+        m = __import__("re").match(
+            r"\s*(\w+)\s+uuid[^,]*REFERENCES\s+users\(", line)
+        if m:
+            referencing.add(m.group(1))
+    missed = referencing - set(rpr.USER_FK_COLUMNS)
+    assert not missed, (
+        f"these columns reference users(id) but are never remapped: {missed}")
+
+
+def test_organizations_and_users_are_not_themselves_merged():
+    """The restored Aug 18 identities are authoritative. Re-inserting the
+    post-wipe user/org rows would resurrect the duplicate accounts the
+    remap exists to avoid — and collide on the UNIQUE email."""
+    assert "users" not in rpr.MERGE_TABLES
+    assert "organizations" not in rpr.MERGE_TABLES
+    assert "memberships" not in rpr.MERGE_TABLES
+
+
+def test_parents_are_merged_before_children():
+    """deals and crm_contacts are referenced by later tables; inserting a
+    child first fails its foreign key."""
+    order = list(rpr.MERGE_TABLES)
+    assert order.index("deals") < order.index("term_sheets")
+    assert order.index("crm_contacts") < order.index("relationship_edges")
+
+
+def test_report_only_is_the_default():
+    """The owner asked for read-only until he approves. Assert the flag
+    exists and that nothing writes without it."""
+    src = (Path(__file__).resolve().parent.parent
+           / "scripts" / "recover_post_restore.py").read_text(encoding="utf-8")
+    assert 'ap.add_argument("--apply", action="store_true"' in src
+    apply_gate = src.index("if not args.apply:")
+    first_insert = src.index("INSERT INTO")
+    assert apply_gate < first_insert, (
+        "the insert path is reachable without --apply")
+
+
+def test_inserts_never_overwrite_an_existing_row():
+    src = (Path(__file__).resolve().parent.parent
+           / "scripts" / "recover_post_restore.py").read_text(encoding="utf-8")
+    assert "ON CONFLICT DO NOTHING" in src, (
+        "a merge that can overwrite is a second restore, not a merge")
+
+
+def test_it_reads_through_the_bypassrls_role():
+    """FORCE RLS hides rows from the app role, which is what made the
+    2026-08-27 damage table under-report. A comparison that cannot see the
+    rows would 'recover' rows that are already there."""
+    src = (Path(__file__).resolve().parent.parent
+           / "scripts" / "recover_post_restore.py").read_text(encoding="utf-8")
+    assert "ER_BACKUP_DATABASE_URL" in src
