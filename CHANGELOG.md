@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.64.0.0.0 — 2026-08-29  ·  Git-delivered KB intake lane
+
+`data\inbox_kb_intake\` (tracked) is the cloud-session delivery lane into
+the KB. Cloud Claude sessions COMMIT per-email JSONs (same shape as the drop
+folder); the autopilot's `update` step pulls them and `inboxsync` ingests them
+via `kb_drop.ingest_git_intake()` — no device-bridge folder grant, no zip, no
+owner click. This closes the loop that has cost a manual unzip on every sweep
+since 2026-08-11 (16 days, ten un-landed zips, 127 records finally hand-copied
+on 2026-08-29).
+
+Non-destructive by design: tracked files are never moved or deleted (the
+updater's force-checkout would resurrect them, and `shutil.move` onto an
+existing Windows path raises). Idempotency rides a content-hash ledger at
+`data\inbox_kb\.intake_seen.json` (untracked), so a re-pull of identical
+files is a no-op and an edited file re-ingests. Corrupt files are recorded
+once and never grind. `ER_INBOX_KB_INTAKE_DIR` overrides the location.
+
+The interactive drop folder `data\inbox_kb\` is unchanged and still works
+for the owner's own tooling; both lanes feed the same `_ingest_record` path
+and dedupe on `external_id`. 5 new tests (`tests/test_inbox_kb_intake.py`),
+mutation-checked — disabling the ledger fails the idempotency test.
+
+---
+
 ## V5.63.4.0.0 — 2026-08-29  ·  Reuniting the two halves of the pilot database.
 
 The 2026-08-27 restore brought back the Aug 18 accounts and deals, but

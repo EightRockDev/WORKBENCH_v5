@@ -53,6 +53,17 @@ def main() -> int:
               "(one JSON per ingested email; see core/inbox/kb_drop.py "
               "docstring for the accepted shape)")
 
+    gi = kb_drop.ingest_git_intake()
+    if gi.files or gi.notes:
+        print(f"[inbox-sync] git intake ({kb_drop.intake_dir()}): {gi.files} "
+              f"new file(s), {gi.records} record(s), {gi.ingested} ingested, "
+              f"{gi.linked} linked to deals/properties, {gi.failed} failed")
+        for n in gi.notes[:10]:
+            print(f"[inbox-sync]   note: {n}")
+    else:
+        print(f"[inbox-sync] git intake ({kb_drop.intake_dir()}): "
+              "no new files (cloud sessions commit per-email JSONs here)")
+
     if not pg.is_reachable():
         print("inbox-sync: Postgres not reachable - mailbox sync skipped")
         return 0

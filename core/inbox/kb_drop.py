@@ -135,6 +135,20 @@ def _resolve_org_and_owner() -> tuple[str | None, str | None]:
         return None, None
 
 
+def _pg_context(res: KbResult):
+    """(use_pg, org, owner) shared by every sweep flavor."""
+    from data import pg
+    use_pg = pg.is_reachable()
+    org = owner = None
+    if use_pg:
+        org, owner = _resolve_org_and_owner()
+        use_pg = bool(org)
+        if not use_pg:
+            res.notes.append("Postgres up but no organization row - deals "
+                             "skipped, property data still ingested")
+    return use_pg, org, owner
+
+
 def ingest_dir(directory: Path | None = None) -> KbResult:
     """Sweep the drop folder once. Idempotent: processed files are moved
     aside; re-dropped duplicates dedupe on external_id in the engine."""
@@ -150,15 +164,7 @@ def ingest_dir(directory: Path | None = None) -> KbResult:
     (d / "processed").mkdir(exist_ok=True)
     (d / "failed").mkdir(exist_ok=True)
 
-    from data import pg
-    use_pg = pg.is_reachable()
-    org = owner = None
-    if use_pg:
-        org, owner = _resolve_org_and_owner()
-        use_pg = bool(org)
-        if not use_pg:
-            res.notes.append("Postgres up but no organization row - deals "
-                             "skipped, property data still ingested")
+    use_pg, org, owner = _pg_context(res)
 
     for path in files:
         res.files += 1
@@ -208,3 +214,89 @@ def _ingest_record(rec, path, idx, use_pg, org, owner, res) -> bool:
     if pid:
         res.linked += 1
     return bool(pid) or bool(e.fields)
+
+
+# --- git-delivered intake (cloud sessions -> repo -> host) -----------------
+#
+# The device-bridge folder grant is interactive and flaky; git is the proven
+# delivery channel to the host (CLAUDE.md operator-loop lesson 1). Cloud
+# sessions COMMIT per-email JSONs (same shape as the drop folder) into the
+# TRACKED folder data/inbox_kb_intake/; the autopilot update step pulls them
+# and this sweep ingests. Tracked files are never moved or deleted (the
+# updater's force-checkout would resurrect them and shutil.move would
+# collide) - idempotency comes from a content-hash ledger kept in the
+# UNTRACKED drop folder, so a re-pull re-seeing identical files is a no-op
+# and an edited/fixed file (new hash) re-ingests.
+
+def intake_dir(root: Path | None = None) -> Path:
+    env = os.environ.get("ER_INBOX_KB_INTAKE_DIR", "").strip()
+    if env:
+        return Path(env)
+    base = root or Path(__file__).resolve().parent.parent.parent
+    return base / "data" / "inbox_kb_intake"
+
+
+def _seen_path(d: Path | None = None) -> Path:
+    return (d or kb_dir()) / ".intake_seen.json"
+
+
+def _load_seen(path: Path) -> dict:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def ingest_git_intake(directory: Path | None = None,
+                      seen_file: Path | None = None) -> KbResult:
+    """Sweep the git-tracked intake folder once, non-destructively."""
+    d = directory or intake_dir()
+    res = KbResult()
+    if not d.is_dir():
+        return res
+    files = sorted(p for p in d.iterdir()
+                   if p.suffix.lower() == ".json" and p.is_file())
+    if not files:
+        return res
+    sp = seen_file or _seen_path()
+    seen = _load_seen(sp)
+    use_pg = org = owner = None  # resolved lazily on the first fresh file
+
+    for path in files:
+        raw = path.read_bytes()
+        digest = hashlib.sha256(raw).hexdigest()
+        entry = seen.get(path.name)
+        if entry and entry.get("sha256") == digest:
+            continue  # already ingested (or recorded failed) at this content
+        res.files += 1
+        if use_pg is None:
+            use_pg, org, owner = _pg_context(res)
+        status = "ok"
+        try:
+            payload = json.loads(raw.decode("utf-8-sig"))
+            recs = _records_in(payload)
+            if not recs:
+                raise ValueError("no records in file")
+        except Exception as exc:
+            res.failed += 1
+            status = "failed"
+            res.notes.append(f"intake {path.name}: unparseable ({exc})")
+            recs = []
+        for i, rec in enumerate(recs):
+            res.records += 1
+            try:
+                if _ingest_record(rec, path, i, use_pg, org, owner, res):
+                    res.ingested += 1
+            except Exception as exc:      # one record never sinks the sweep
+                res.failed += 1
+                status = "partial"
+                res.notes.append(f"intake {path.name}[{i}]: {exc!r}")
+        seen[path.name] = {"sha256": digest, "status": status,
+                           "records": len(recs)}
+
+    if res.files:
+        sp.parent.mkdir(parents=True, exist_ok=True)
+        sp.write_text(json.dumps(seen, indent=1, sort_keys=True),
+                      encoding="utf-8")
+    return res
