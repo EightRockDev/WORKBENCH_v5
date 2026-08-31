@@ -35,7 +35,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import config
-from core.calc import DebtTerms, build_cashflow, build_debt_schedule
+from core.calc import DebtTerms, build_cashflow, build_debt_schedule, replan_rent_growth
 from core.irr import lp_irr, project_irr
 from core.sensitivity import SensitivityBase
 from core.waterfall import run_waterfall
@@ -143,6 +143,10 @@ def _run_case(base: SensitivityBase, *, vacancy: float, rent_growth: float,
         hold_years=base.hold_years,
         exit_cap=exit_cap,
         equity_raise=base.equity_raise,
+        # Same rule as the sensitivity grid: the plan's lift must grow at
+        # the OVERLAY's rent growth, not the base case it was built with.
+        reno=replan_rent_growth(base.reno, base.hold_years, rent_growth),
+        reno_capex_funding=base.reno_capex_funding,
     )
     annual_pots = [r.cash_flow for r in cf.rows[:-1]]
     annual_pots.append(cf.rows[-1].cash_flow + cf.exit_proceeds_net)

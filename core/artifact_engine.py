@@ -287,6 +287,8 @@ def _build_briefing(
         equity_raise=deal.equity_raise,
         stabilized_vacancy_pct=deal.vacancy_frac,
         stabilization_year_break=1 if deal.stabilization_months <= 12 else 2,
+        reno=deal.renovation_plan(),
+        reno_capex_funding=deal.reno_capex_funding,
     )
 
     # ---- Headline metrics ----

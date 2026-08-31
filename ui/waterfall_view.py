@@ -177,6 +177,8 @@ def render_waterfall(
         hold_years=deal.hp,
         exit_cap=deal.exit_cap,
         equity_raise=deal.equity_raise,
+        reno=deal.renovation_plan(),
+        reno_capex_funding=deal.reno_capex_funding,
     )
 
     # Build annual pots: years 1..N-1 = operating CF, year N = combined operating + sale

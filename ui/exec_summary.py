@@ -159,6 +159,8 @@ def _build_summary_data(prop: dict[str, Any], folder: PropertyFolder | None):
         hold_years=deal.hp,
         exit_cap=deal.exit_cap,
         equity_raise=deal.equity_raise,
+        reno=deal.renovation_plan(),
+        reno_capex_funding=deal.reno_capex_funding,
     )
     pots = [r.cash_flow for r in cf.rows[:-1]] + [
         cf.rows[-1].cash_flow + cf.exit_proceeds_net
@@ -192,6 +194,8 @@ def _build_summary_data(prop: dict[str, Any], folder: PropertyFolder | None):
         amort_months=config.AMORT_MONTHS, io_years=deal.io,
         hold_years=deal.hp, exit_cap=deal.exit_cap,
         equity_raise=deal.equity_raise,
+        reno=deal.renovation_plan(),
+        reno_capex_funding=deal.reno_capex_funding,
     )
     sens = build_sensitivity(sens_base)
 

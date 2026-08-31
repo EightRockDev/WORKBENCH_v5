@@ -21,7 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import config
-from core.calc import DebtTerms, build_cashflow, build_debt_schedule
+from core.calc import DebtTerms, build_cashflow, build_debt_schedule, replan_rent_growth
 from core.irr import lp_irr, project_irr
 from core.waterfall import run_waterfall
 
@@ -52,6 +52,11 @@ class SensitivityBase:
 
     # Equity (LP raise — denominator for CoC, IRR, EM)
     equity_raise: float
+
+    # Value-add renovation program. Default None keeps every legacy caller
+    # working; the UI always passes deal.renovation_plan().
+    reno: object | None = None
+    reno_capex_funding: str = "raise"
 
 
 @dataclass(frozen=True)
@@ -93,6 +98,11 @@ def _evaluate_cell(
         hold_years=base.hold_years,
         exit_cap=base.exit_cap,
         equity_raise=base.equity_raise,
+        # Rebuild the plan at THIS cell's rent growth - the lift schedule
+        # bakes in the growth it was built with, and a stressed cell must
+        # not let renovated units keep growing at the base-case rate.
+        reno=replan_rent_growth(base.reno, base.hold_years, rent_growth),
+        reno_capex_funding=base.reno_capex_funding,
     )
 
     # Assemble waterfall pots: years 1..N-1 = operating CF, year N = combined

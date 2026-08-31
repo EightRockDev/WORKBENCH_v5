@@ -12,6 +12,81 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.65.1.0.0 — 2026-08-31  ·  Value-Add CAPEX wired into the returns engine
+
+The renovation panel was a closed-form display calculator: it wrote
+`value_add_capex.json`, nothing read it back, and `build_cashflow` had no
+renovation parameter. Owner repro (Linden at Forrest Pines, 110 units):
+changing the schedule 2/2/2/2/2 → 2/2/10/10/10 left every header figure
+bit-identical, and the "$ per $1 of CAPEX" tile was pinned at $2.30 — a
+per-unit ratio in disguise (unit count cancels out of
+`(bump × 12 ÷ exit_cap) ÷ cost_per_unit`).
+
+The program now lives on `DealState` (`reno_units_by_year`,
+`reno_cost_per_unit`, `reno_monthly_rent_bump`, `reno_capex_funding`) and
+`core.calc.build_cashflow` takes a `RenovationPlan`:
+
+- **Rent lift enters GPR** (vacancy, AM fee and expense ratio all see it),
+  half a year in the placement year (mid-year convention), growing at
+  `rent_growth` once placed, and flows into the year N+1 exit NOI.
+- **CAPEX funding is exclusive**: `"raise"` (default) escrows it at close —
+  it joins `tracked_raise`/`equity_raise` and the IRR denominator;
+  `"operations"` deducts each year's spend from that year's levered cash
+  flow. Both modes land in `total_uses` (return-on-cost basis). Debt is
+  still sized off purchase price alone.
+- All **8** `build_cashflow` call sites pass the plan (underwriting ×2,
+  V2 headline, exec summary, waterfall, artifact engine, sensitivity,
+  stress overlays) — an AST guard test fails the build if a ninth site
+  ever drops it.
+- New `core/renovation.py::renovation_impact` runs the deal with and
+  without the program; the panel's tiles are now Δ project IRR, Δ equity
+  multiple and profit per CAPEX dollar, measured by the engine
+  (funding-mode-invariant profit is the internal correctness check).
+- Panel persists through `deal.json` via the standard
+  `model_copy` + `save_deal(expected_version=…)` path; legacy
+  `value_add_capex.json` is imported once (empty destination only) and
+  renamed `.migrated`.
+
+Anchors (Forrest Pines): control 11.20% IRR / 1.72x EM unchanged;
+2/2/2/2/2 → raise $4,360,554, IRR 11.70%; 2/2/10/10/10 → raise
+$4,720,554, IRR 12.46% (+0.76 pts for the owner's exact edit; 0.00 before);
+ops-funded → raise stays $4,210,554, IRR 13.40%. Profit per CAPEX dollar
+$1.72 front-loaded vs $1.56 back-loaded.
+
+A 43-agent adversarial review of the diff (5 lenses → dedupe → 2-lens
+refutation per finding) confirmed and drove these hardening fixes before
+ship:
+- negative/garbage `reno_units_by_year` entries in a hand-edited deal.json
+  now sanitize instead of crashing every surface (the model no longer
+  accepts what the plan builder rejects);
+- a legacy pinned `raise_amount` (the pre-2026-08-13 bug's residue) no
+  longer flips to a custom override the moment a reno program is added —
+  `_migrate_legacy_raise` matches both the with-CAPEX and pre-CAPEX
+  implied figures (verified repro: the flip silently dropped the escrow
+  from the raise, forever);
+- hold-dial A→B→A no longer destroys the schedule's tail
+  (`_merge_schedule` overlays widget years onto the stored list), and
+  merely viewing the tab no longer writes deal.json;
+- a deliberately saved $0 cost-per-unit survives (no `or`-fallback
+  resurrection of the $15,000 default), including through migration;
+- sensitivity cells and stress overlays rebuild the plan at each cell's
+  rent growth (`replan_rent_growth`) instead of letting renovated units
+  grow at the base-case rate under stress;
+- the panel renders before the metrics compute and returns the updated
+  deal, so a schedule edit reaches sensitivity/refi/verdict in the same
+  run; custom-raise deals get a panel that agrees with the header
+  (an overridden raise is documented as CAPEX-inclusive);
+- the AST seam guard also catches attribute-form `calc.build_cashflow`
+  calls; the dial-board raise caption escapes its dollars.
+
+32 new tests (`tests/test_value_add_capex.py`), the original 27 proven to
+fail against pre-fix code.
+
+(Shipped same-day as V5.65.0.0.0, which took the next number first; this
+release renumbered from V5.64.1.0.0 during the rebase.)
+
+---
+
 ## V5.65.0.0.0 — 2026-08-31  ·  Richmond's parcels arrive twice; now they leave once.
 
 Freeze lifted for the unit-count bridge (owner, 2026-08-31). Richmond has
@@ -70,6 +145,8 @@ parcels are currently counted as multifamily purely because their use code
 says so, with no unit count. Merging real counts in means the ones under
 10 units are now correctly pruned. This buys accuracy first; the count
 follows the truth.
+
+---
 
 ## V5.64.0.0.0 — 2026-08-29  ·  Git-delivered KB intake lane
 

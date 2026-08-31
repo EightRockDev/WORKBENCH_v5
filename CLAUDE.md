@@ -1070,6 +1070,38 @@ plaintext. Setup steps live in `docs/INBOX-SETUP.md`.
 **How to launch locally (host):** `uv run streamlit run app.py` â†’ http://localhost:8501.
 Set `$env:ER_DEV_LOGIN=1` first to exercise the admin panel before OIDC is wired.
 
+## Lesson — a metric that refuses to move is a per-unit ratio in disguise (2026-08-31)
+
+The Value-Add CAPEX panel's "$ per $1 of CAPEX" read $2.30 for a 10-unit
+schedule and for a 34-unit one. Not a bug in the formula — the formula was
+`(bump × 12 ÷ exit_cap) ÷ cost_per_unit`, from which unit count cancels
+entirely. Every closed-form tile the panel computed was tab-local: nothing
+it wrote (`value_add_capex.json`) was ever read back, so the owner's
+schedule edits could not reach IRR, EM, the raise, or DSCR by construction.
+
+The fix (V5.64.1.0.0) is the 2026-08-13 rule applied again: capital-stack
+logic belongs on the MODEL. `DealState` now carries the renovation program,
+`build_cashflow(reno=…)` prices it (lift into GPR, mid-year first-year
+convention, escrow-vs-operations funding, exit NOI carry), and the panel
+reports `core.renovation.renovation_impact` — the deal run twice through
+the engine, with and without the program. Rules banked:
+
+* **When a displayed metric ignores its own inputs, check for cancellation
+  before checking for stale data.** A ratio built from per-unit constants
+  divided by per-unit constants cannot respond to counts.
+* **A tab that persists its own sidecar file is a fork of the deal.** State
+  every surface must agree on goes on DealState, through the one
+  `model_copy` + `save_deal(expected_version=…)` path.
+* **Guard N call sites with an AST test, not a grep.**
+  `test_every_build_cashflow_call_site_passes_a_renovation_plan` walks every
+  non-test module; the grep during the build missed `artifact_engine.py`
+  and `stress_overlays.py` — the test cannot. (The adversarial review then
+  hardened the guard itself: it only matched bare-name calls, so
+  `calc.build_cashflow(...)` would have evaded it. A guard is code too.)
+* **Funding-mode invariance is a free correctness check**: escrowed vs
+  cash-flow-funded CAPEX must change IRR timing but never total profit;
+  asserting that equality catches a double charge or a missed charge.
+
 ## Lesson — a seed that ignores its own record is a constant in disguise (2026-08-27)
 
 Owner: *"If I've favorited a property, I should not see this message."* The

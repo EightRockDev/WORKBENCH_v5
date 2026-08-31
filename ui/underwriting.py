@@ -499,21 +499,26 @@ def _render_dials(
                  "return-on-cost) but excluded from LP invested capital, "
                  "so LP IRR / EM / CoC are not penalised. Never in NOI.")
 
-    # LP equity raise. TRACKS the dials (down payment + closing costs)
-    # until the analyst deliberately overrides it - owner decision
-    # 2026-08-13. The old code inferred "custom" from `raise_amount is not
-    # None`, and a keyed number_input keeps its own state across reruns, so
-    # the first dial move silently pinned the raise and every later IRR was
-    # computed against a frozen denominator (item 8).
-    tracked_raise = pp * (dp / 100.0) + float(closing_costs)
+    # LP equity raise. TRACKS the dials (down payment + closing costs +
+    # escrowed renovation CAPEX, 2026-08-31) until the analyst deliberately
+    # overrides it - owner decision 2026-08-13. The old code inferred
+    # "custom" from `raise_amount is not None`, and a keyed number_input
+    # keeps its own state across reruns, so the first dial move silently
+    # pinned the raise and every later IRR was computed against a frozen
+    # denominator (item 8). The formula must match DealState.tracked_raise
+    # (pp/dp come from live widgets, the reno program from the saved deal).
+    reno_escrow = deal.reno_capex_in_raise
+    tracked_raise = pp * (dp / 100.0) + float(closing_costs) + reno_escrow
     raise_key = f"dial_raise_input_{pid}"
     override = st.checkbox(
         "Override LP equity raise",
         value=bool(deal.raise_is_custom),
         key=f"dial_raise_custom_{pid}",
-        help="Off: the raise follows the down payment + closing costs, so "
-             "the model stays a pure function of the dials. On: type an "
-             "exact figure (e.g. extra for reserves) and it stays put.")
+        help="Off: the raise follows the down payment + closing costs + "
+             "escrowed renovation CAPEX, so the model stays a pure function "
+             "of the dials. On: type an exact figure (e.g. extra for "
+             "reserves) and it stays put — include any escrowed renovation "
+             "CAPEX yourself; an overridden raise is taken as all-inclusive.")
     if not override:
         # A keyed widget ignores `value=` after first registration, so
         # tracking has to WRITE session state before the widget renders.
@@ -531,12 +536,16 @@ def _render_dials(
     )
     if not override:
         raise_amount = tracked_raise
+    # Dollars escaped (\$): Streamlit renders paired $...$ as LaTeX and
+    # eats every sign in between.
     st.caption(
-        f"**${int(raise_amount):,}**"
+        f"**\\${int(raise_amount):,}**"
         + ("" if override else
-           f"  ·  down payment ${pp * (dp / 100.0):,.0f}"
-           + (f" + closing ${float(closing_costs):,.0f}"
-              if closing_costs else "")))
+           f"  ·  down payment \\${pp * (dp / 100.0):,.0f}"
+           + (f" + closing \\${float(closing_costs):,.0f}"
+              if closing_costs else "")
+           + (f" + reno CAPEX \\${reno_escrow:,.0f}"
+              if reno_escrow else "")))
 
     # Post-sale expense adjustments (Beardsley) — surface as a small
     # toggle row so the analyst sees what's being applied to year-1 opex.
@@ -897,6 +906,8 @@ def _render_metrics(
         stabilized_vacancy_pct=deal.vacancy_frac,
         # If stabilization completes within year 1, year-2+ uses stabilized vac.
         stabilization_year_break=1 if deal.stabilization_months <= 12 else 2,
+        reno=deal.renovation_plan(),
+        reno_capex_funding=deal.reno_capex_funding,
     )
 
     # Headline metrics
@@ -1650,6 +1661,8 @@ def _render_cashflow_table(
         stabilized_vacancy_pct=deal.vacancy_frac,
         # If stabilization completes within year 1, year-2+ uses stabilized vac.
         stabilization_year_break=1 if deal.stabilization_months <= 12 else 2,
+        reno=deal.renovation_plan(),
+        reno_capex_funding=deal.reno_capex_funding,
     )
 
     # Build dataframe: rows = line items, columns = years
@@ -1727,6 +1740,8 @@ def _render_sensitivity(
         hold_years=deal.hp,
         exit_cap=deal.exit_cap,
         equity_raise=deal.equity_raise,
+        reno=deal.renovation_plan(),
+        reno_capex_funding=deal.reno_capex_funding,
     )
     grid = build_sensitivity(base)
 
@@ -1874,18 +1889,20 @@ def render_underwriting(
     with section_card("Deal Dials", icon="🎛️"):
         deal = _render_dials(deal, folder, prop)
 
-    # Year-1 KPIs MOVED to the top of the Returns tab per Brian 5/29 v2.0.18.
-    # We still need the metrics dict here for downstream sections (sensitivity,
-    # verdict, refi-exit test), so compute-without-render via render=False.
-    metrics = _render_metrics(deal, sources, units, city=city, render=False)
-
     # Brian 5/29 v2.0.23 — Value-Add CAPEX moved UP under Deal Dials. The
     # renovation schedule drives a lot of analyst intuition about how the
     # rent forecast lands; surfacing it early keeps the Underwriting tab's
     # narrative coherent (dials → CAPEX plan → unit-level reality →
     # incremental levers → amortization → sensitivity → stress → verdict).
+    # Renders BEFORE the metrics compute and returns the updated deal, so a
+    # schedule edit reaches sensitivity/refi/verdict in the SAME run.
     with section_card():
-        _render_value_add_capex(deal, folder)
+        deal = _render_value_add_capex(deal, folder, units=units, city=city)
+
+    # Year-1 KPIs MOVED to the top of the Returns tab per Brian 5/29 v2.0.18.
+    # We still need the metrics dict here for downstream sections (sensitivity,
+    # verdict, refi-exit test), so compute-without-render via render=False.
+    metrics = _render_metrics(deal, sources, units, city=city, render=False)
 
     # Rent roll directly under live metrics — analyst sees the dials AND
     # the unit-level reality on the same screen. Vacant/Notice rows are

@@ -269,6 +269,8 @@ class YearRow:
     debt_service: float
     cash_flow: float
     coc: float
+    reno_rent_lift: float = 0.0   # GPR uplift from renovations, inside `gpr`
+    reno_capex: float = 0.0       # renovation dollars spent this year
 
 
 @dataclass(frozen=True)
@@ -281,6 +283,131 @@ class CashFlowProjection:
     final_year_total_distribution: float  # year-N CF + exit_proceeds_net (project-level)
     total_distributions: float       # sum(year CFs) + exit_proceeds_net
     equity_multiple: float           # total_distributions / equity_raise
+    reno_total_capex: float = 0.0    # renovation dollars over the hold
+    reno_capex_funding: str = "raise"  # 'raise' | 'operations'
+
+
+@dataclass(frozen=True)
+class RenovationPlan:
+    """A value-add renovation program, expressed in the terms the cash flow needs.
+
+    Built by `build_renovation_plan` from the three numbers the analyst types
+    on the Value-Add CAPEX panel (units/year, cost/unit, monthly rent bump).
+    Every field is an ANNUAL dollar figure aligned to hold years 1..N.
+    """
+
+    units_by_year: list[int]
+    capex_by_year: list[float]        # dollars spent in each hold year
+    rent_lift_by_year: list[float]    # annual GPR uplift recognized in each year
+    exit_rent_lift: float             # uplift embedded in the year N+1 exit NOI
+    total_capex: float
+    total_units: int
+    cost_per_unit: float
+    monthly_rent_bump: float
+
+    @property
+    def is_empty(self) -> bool:
+        return self.total_units == 0 or self.total_capex <= 0
+
+
+EMPTY_RENOVATION_PLAN = RenovationPlan(
+    units_by_year=[], capex_by_year=[], rent_lift_by_year=[],
+    exit_rent_lift=0.0, total_capex=0.0, total_units=0,
+    cost_per_unit=0.0, monthly_rent_bump=0.0,
+)
+
+
+def build_renovation_plan(
+    *,
+    renovations_per_year: list[int] | None,
+    cost_per_unit: float,
+    monthly_rent_bump: float,
+    hold_years: int,
+    rent_growth: float = 0.0,
+    first_year_factor: float = 0.5,
+) -> RenovationPlan:
+    """Turn a renovation schedule into per-year CAPEX and GPR uplift.
+
+    Conventions (locked 2026-08-31):
+      - A unit renovated in year k earns `first_year_factor` of a full year of
+        bumped rent in year k (0.5 = the standard mid-year convention: units
+        turn throughout the year), then a full year from k+1 onward.
+      - The bump itself grows at `rent_growth` once placed — a renovated unit's
+        rent escalates like every other unit.
+      - `exit_rent_lift` is the uplift present in the year N+1 NOI the exit cap
+        is applied to: every renovated unit, a full year, grown one more year.
+
+    The list is padded/truncated to exactly `hold_years` entries so a hold-period
+    change can never index out of range.
+    """
+    if hold_years <= 0:
+        raise ValueError(f"hold_years must be positive, got {hold_years}")
+    if not 0.0 <= first_year_factor <= 1.0:
+        raise ValueError(
+            f"first_year_factor must be in [0, 1], got {first_year_factor}"
+        )
+
+    units = [int(u or 0) for u in (renovations_per_year or [])][:hold_years]
+    units += [0] * (hold_years - len(units))
+    if any(u < 0 for u in units):
+        raise ValueError("renovations_per_year cannot contain negative counts")
+
+    cost_per_unit = max(0.0, float(cost_per_unit or 0.0))
+    monthly_rent_bump = max(0.0, float(monthly_rent_bump or 0.0))
+    annual_per_unit = monthly_rent_bump * 12.0
+
+    capex_by_year = [u * cost_per_unit for u in units]
+
+    rent_lift_by_year: list[float] = []
+    for year in range(1, hold_years + 1):
+        lift = 0.0
+        for k in range(1, year + 1):
+            factor = first_year_factor if k == year else 1.0
+            lift += (
+                units[k - 1] * annual_per_unit * factor
+                * (1.0 + rent_growth) ** (year - k)
+            )
+        rent_lift_by_year.append(lift)
+
+    exit_rent_lift = sum(
+        units[k - 1] * annual_per_unit * (1.0 + rent_growth) ** (hold_years + 1 - k)
+        for k in range(1, hold_years + 1)
+    )
+
+    return RenovationPlan(
+        units_by_year=units,
+        capex_by_year=capex_by_year,
+        rent_lift_by_year=rent_lift_by_year,
+        exit_rent_lift=exit_rent_lift,
+        total_capex=float(sum(capex_by_year)),
+        total_units=int(sum(units)),
+        cost_per_unit=cost_per_unit,
+        monthly_rent_bump=monthly_rent_bump,
+    )
+
+
+def replan_rent_growth(
+    plan: "RenovationPlan | None",
+    hold_years: int,
+    rent_growth: float,
+) -> "RenovationPlan | None":
+    """Rebuild a plan's lift under a different rent-growth assumption.
+
+    The lift schedule bakes in the growth rate it was built with, so a
+    sweep that flexes rent growth (sensitivity grid, stress overlays) must
+    rebuild the plan per cell — otherwise the renovated units' rent grows
+    at the base-case rate while everything else is stressed. None in,
+    None out.
+    """
+    if plan is None:
+        return None
+    return build_renovation_plan(
+        renovations_per_year=plan.units_by_year,
+        cost_per_unit=plan.cost_per_unit,
+        monthly_rent_bump=plan.monthly_rent_bump,
+        hold_years=hold_years,
+        rent_growth=rent_growth,
+    )
 
 
 def effective_year1_vacancy(
@@ -323,6 +450,8 @@ def build_cashflow(
     equity_raise: float,
     stabilized_vacancy_pct: float | None = None,
     stabilization_year_break: int = 1,
+    reno: RenovationPlan | None = None,
+    reno_capex_funding: str = "raise",
 ) -> CashFlowProjection:
     """Build the year-by-year cash flow projection for the hold period.
 
@@ -340,6 +469,18 @@ def build_cashflow(
 
     This split lets us model a reposition disruption: year 1 carries the
     going-in vacancy spike, year 2+ runs at the stabilized rate.
+
+    Renovations (`reno`, from `build_renovation_plan`):
+      - `reno.rent_lift_by_year[i]` is ADDED to that year's GPR, so vacancy,
+        the AM fee and the expense ratio all see it, and it carries into the
+        year N+1 exit NOI via `reno.exit_rent_lift`.
+      - `reno_capex_funding` decides where the spend lands:
+          'raise'      — escrowed at close. Callers must have already added
+                         `reno.total_capex` to `equity_raise`; annual cash
+                         flow is untouched. (Eight Rock default.)
+          'operations' — funded out of the property's cash flow; each year's
+                         CAPEX is deducted from that year's levered cash flow.
+        Charging both would double-count the same dollars.
     """
     if hold_years <= 0:
         raise ValueError(f"hold_years must be positive, got {hold_years}")
@@ -347,6 +488,16 @@ def build_cashflow(
         raise ValueError(
             f"debt schedule covers {len(debt.annual_payment)} years, "
             f"need {hold_years}"
+        )
+    if reno_capex_funding not in ("raise", "operations"):
+        raise ValueError(
+            f"reno_capex_funding must be 'raise' or 'operations', "
+            f"got {reno_capex_funding!r}"
+        )
+    if reno is not None and len(reno.capex_by_year) != hold_years:
+        raise ValueError(
+            f"renovation plan covers {len(reno.capex_by_year)} years, "
+            f"need {hold_years} — rebuild it with build_renovation_plan()"
         )
 
     stab_vac = stabilized_vacancy_pct if stabilized_vacancy_pct is not None else year1_vacancy_pct
@@ -363,20 +514,28 @@ def build_cashflow(
         # Year-1 vacancy (with reposition spike) for the first
         # `stabilization_year_break` years; stabilized vac thereafter.
         vac_for_year = year1_vacancy_pct if year <= stabilization_year_break else stab_vac
-        vacancy_loss = gpr * vac_for_year
-        egi = gpr - vacancy_loss
+
+        # Renovation uplift joins GPR, so vacancy and the AM fee both see it.
+        reno_lift = reno.rent_lift_by_year[year - 1] if reno else 0.0
+        reno_capex = reno.capex_by_year[year - 1] if reno else 0.0
+        gpr_total = gpr + reno_lift
+
+        vacancy_loss = gpr_total * vac_for_year
+        egi = gpr_total - vacancy_loss
         noi = egi - expenses
-        am_fee = am_fee_for_year(gpr, year, hold_years, am_fee_pct)
+        am_fee = am_fee_for_year(gpr_total, year, hold_years, am_fee_pct)
         noi_after_am = noi - am_fee
         debt_service = debt.annual_payment[year - 1]
         cf = noi_after_am - debt_service
+        if reno_capex_funding == "operations":
+            cf -= reno_capex
         coc = cash_on_cash(cf, equity_raise)
 
         rows.append(
             YearRow(
                 year=year,
                 is_io=debt.is_io_year(year),
-                gpr=gpr,
+                gpr=gpr_total,
                 vacancy_loss=vacancy_loss,
                 egi=egi,
                 expenses=expenses,
@@ -386,6 +545,8 @@ def build_cashflow(
                 debt_service=debt_service,
                 cash_flow=cf,
                 coc=coc,
+                reno_rent_lift=reno_lift,
+                reno_capex=reno_capex,
             )
         )
 
@@ -393,7 +554,7 @@ def build_cashflow(
     # convention. Buyer underwrites to next year's NOI. Use the STABILIZED
     # vacancy (post-reposition) for exit since the buyer takes over after
     # any reposition is complete.
-    exit_gpr = gpr * (1.0 + rent_growth)
+    exit_gpr = gpr * (1.0 + rent_growth) + (reno.exit_rent_lift if reno else 0.0)
     exit_expenses = expenses * (1.0 + expense_growth)
     exit_vac_loss = exit_gpr * stab_vac
     exit_egi = exit_gpr - exit_vac_loss
@@ -416,4 +577,6 @@ def build_cashflow(
         final_year_total_distribution=final_year_total,
         total_distributions=total_dist,
         equity_multiple=em,
+        reno_total_capex=(reno.total_capex if reno else 0.0),
+        reno_capex_funding=reno_capex_funding,
     )

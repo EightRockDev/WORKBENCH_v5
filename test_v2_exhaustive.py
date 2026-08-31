@@ -2060,29 +2060,28 @@ def w1_value_add_capex_section_exists():
     fn_start = uw.find('def render_underwriting(')
     body = uw[fn_start:]
     pos_dials = body.find('section_card("Deal Dials"')
-    pos_capex = body.find('_render_value_add_capex(deal, folder)')
+    pos_capex = body.find('_render_value_add_capex(deal, folder')
     assert 0 < pos_dials < pos_capex, \
         "CAPEX must render AFTER Deal Dials"
 t("W1: Value-Add CAPEX section wired into Underwriting tab", w1_value_add_capex_section_exists)
 
 
-def w2_capex_math_uses_divide_by_exit_cap():
-    """Value at exit = annual_rent_increase ÷ exit_cap. The Brian-warning
-    caption ("NOT × exit cap...") was removed in v2.0.20 — just verify
-    the math is right."""
+def w2_capex_headline_is_engine_measured():
+    """2026-08-31: the closed-form headline is GONE — it reduced to a
+    per-unit ratio (unit count cancelled) and read $2.30 for any schedule.
+    The panel must measure the program with the returns engine instead."""
     src = open('ui/value_add.py', encoding='utf-8').read()
     fn_start = src.find('def _render_value_add_capex(')
     fn_end = src.find('\ndef ', fn_start + 1)
     body = src[fn_start:fn_end if fn_end > 0 else len(src)]
-    assert 'stabilized_annual_rent_inc / exit_cap' in body, \
-        "Wrong formula for value_at_exit — must DIVIDE by exit cap"
-    assert '÷ exit cap' in body, "Formula sanity-check caption missing"
-    # Brian asked to drop the parenthetical warning in v2.0.20
-    assert 'NOT × exit cap' not in body, \
-        "Warning text should have been removed in v2.0.20"
-    assert 'would shrink the number' not in body, \
-        "Warning text should have been removed in v2.0.20"
-t("W2: CAPEX value-at-exit = rent ÷ exit_cap; warning text removed", w2_capex_math_uses_divide_by_exit_cap)
+    assert 'renovation_impact(' in body, \
+        "Panel must measure the program via core.renovation.renovation_impact"
+    assert 'value_at_exit / total_capex' not in body, \
+        "Closed-form $/CAPEX headline must not return — it is a per-unit ratio"
+    assert 'stabilized_annual_rent_inc / exit_cap' not in body, \
+        "Closed-form value-at-exit must not return — the engine owns the math"
+t("W2: CAPEX headline is engine-measured (no closed form)",
+  w2_capex_headline_is_engine_measured)
 
 
 def w3_capex_plan_persisted_with_defaults():
@@ -2622,7 +2621,7 @@ def aa4_underwriting_tab_reorder():
     fn_end = src.find('\ndef ', fn_start + 1)
     body = src[fn_start:fn_end if fn_end > 0 else len(src)]
     pos_dials   = body.find('section_card("Deal Dials"')
-    pos_capex   = body.find('_render_value_add_capex(deal, folder)')
+    pos_capex   = body.find('_render_value_add_capex(deal, folder')
     pos_rent    = body.find('render_rent_roll(folder, section_title="Rent Roll"')
     pos_gap     = body.find('_render_unit_rent_gap(folder)')
     pos_levers  = body.find('_render_value_add_levers(')

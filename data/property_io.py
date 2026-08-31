@@ -196,6 +196,27 @@ class DealState(BaseModel):
         description=("One-time closing costs (dollars). Owner decision "
                      "2026-08-13: funded by the equity raise, so they raise "
                      "LP invested capital and depress LP IRR / EM / CoC."))
+    # --- value-add renovation program (2026-08-31) --------------------
+    # Lives on the MODEL, not the panel: every cash-flow build reads it, so
+    # the Underwriting header, Returns tab, V2 headline, exec summary,
+    # waterfall and sensitivity grid can never disagree about it.
+    reno_units_by_year: list[int] = Field(
+        default_factory=list, alias="s-reno-units",
+        description=("Units renovated in each hold year. Padded/truncated to "
+                     "the hold period by build_renovation_plan()."))
+    reno_cost_per_unit: float = Field(
+        15_000.0, alias="s-reno-cost", ge=0,
+        description="Renovation cost per unit (dollars).")
+    reno_monthly_rent_bump: float = Field(
+        0.0, alias="s-reno-bump", ge=0,
+        description=("Monthly rent premium a renovated unit commands over a "
+                     "classic unit (dollars/month)."))
+    reno_capex_funding: str = Field(
+        "raise", alias="s-reno-funding",
+        description=("'raise' = CAPEX is escrowed at close and raised from "
+                     "LPs (Eight Rock default; it enters sources and uses "
+                     "and the IRR denominator). 'operations' = funded out of "
+                     "property cash flow year by year."))
     vacancy_source: str = Field(
         "record",
         description=(
@@ -280,6 +301,32 @@ class DealState(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
+    def _normalize_reno_units(cls, data: Any) -> Any:
+        """Sanitize the renovation schedule from disk.
+
+        deal.json is user-editable; build_renovation_plan rejects negative
+        counts, and since equity_raise -> tracked_raise -> renovation_plan(),
+        an unsanitized entry would crash every surface that loads the deal.
+        Same hardening stance as _normalize_reno_funding: coerce, don't raise.
+        """
+        if isinstance(data, dict):
+            for key in ("s-reno-units", "reno_units_by_year"):
+                if key in data:
+                    raw = data[key]
+                    if not isinstance(raw, list):
+                        data[key] = []
+                        continue
+                    cleaned = []
+                    for u in raw:
+                        try:
+                            cleaned.append(max(0, int(u or 0)))
+                        except (TypeError, ValueError):
+                            cleaned.append(0)
+                    data[key] = cleaned
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
     def _migrate_stale_amf(cls, data: Any) -> Any:
         """Migration shim: legacy `s-amf` was a $0-50,000 dollar value before
         the slider was converted to 0-5%. Reset stale values to the locked
@@ -338,13 +385,47 @@ class DealState(BaseModel):
         """The down payment itself — price × dp%, no fees."""
         return self.pp * self.down_payment_frac
 
+    def renovation_plan(self):
+        """The value-add program as `core.calc.RenovationPlan`.
+
+        Always aligned to THIS deal's hold period and rent growth, so a change
+        to either dial reshapes the plan on the next render. Returns a plan
+        with `is_empty` True when no renovation is scheduled.
+        """
+        from core.calc import build_renovation_plan
+        return build_renovation_plan(
+            renovations_per_year=self.reno_units_by_year,
+            cost_per_unit=self.reno_cost_per_unit,
+            monthly_rent_bump=self.reno_monthly_rent_bump,
+            hold_years=self.hp,
+            rent_growth=self.rent_growth,
+        )
+
+    @property
+    def reno_total_capex(self) -> float:
+        """Total renovation dollars over the hold. 0 when nothing is scheduled."""
+        return self.renovation_plan().total_capex
+
+    @property
+    def reno_capex_in_raise(self) -> float:
+        """The slice of renovation CAPEX the equity raise has to fund.
+
+        Zero under 'operations' funding, where the spend comes out of the
+        property's own cash flow instead — charging both would double-count.
+        """
+        if self.reno_capex_funding != "raise":
+            return 0.0
+        return self.reno_total_capex
+
     @property
     def tracked_raise(self) -> float:
         """What the LP raise is when it TRACKS the dials: the down payment
         plus the closing costs the equity has to fund (owner decision
-        2026-08-13). A pure function of the dials - that is the property
+        2026-08-13), plus any renovation CAPEX escrowed at close
+        (2026-08-31). A pure function of the dials - that is the property
         that makes A->B->A reproduce."""
-        return self.down_payment_dollars + self.closing_costs
+        return (self.down_payment_dollars + self.closing_costs
+                + self.reno_capex_in_raise)
 
     @property
     def equity_raise(self) -> float:
@@ -364,10 +445,12 @@ class DealState(BaseModel):
 
     @property
     def total_uses(self) -> float:
-        """All-in capitalisation at close: price + closing costs + GP fee.
-        The basis for return-on-cost. NOT the loan basis - debt is still
-        sized off the purchase price alone."""
-        return self.pp + self.closing_costs + self.gp_fee
+        """All-in capitalisation: price + closing costs + GP fee + renovation
+        CAPEX (both funding modes - a return-on-cost that ignores renovation
+        dollars flatters the deal, 2026-08-31). NOT the loan basis - debt is
+        still sized off the purchase price alone."""
+        return (self.pp + self.closing_costs + self.gp_fee
+                + self.reno_total_capex)
 
     @property
     def project_equity(self) -> float:
@@ -375,6 +458,17 @@ class DealState(BaseModel):
         the year-0 outflow for PROJECT IRR; LP-level metrics use
         `equity_raise` instead."""
         return self.equity_raise + self.gp_fee
+
+    @model_validator(mode="after")
+    def _normalize_reno_funding(self):
+        """Coerce an unknown funding mode to the default rather than raising.
+
+        deal.json is user-editable on disk; a typo there must not take down
+        the Underwriting tab.
+        """
+        if self.reno_capex_funding not in ("raise", "operations"):
+            object.__setattr__(self, "reno_capex_funding", "raise")
+        return self
 
     @model_validator(mode="after")
     def _migrate_legacy_raise(self):
@@ -390,9 +484,19 @@ class DealState(BaseModel):
         """
         if self.raise_is_custom or not self.raise_amount:
             return self
-        implied = self.pp * self.down_payment_frac + self.closing_costs
-        tol = max(1_000.0, implied * 0.01)
-        if abs(self.raise_amount - implied) > tol:
+        # A pinned copy can match either today's implied raise (with reno
+        # CAPEX) or the pre-2026-08-31 formula (without it) - every file
+        # written before CAPEX joined the raise stored the capex-less
+        # figure, and adding a reno program later must not reclassify that
+        # stale copy as a deliberate override (verified repro 2026-08-31:
+        # it silently pinned the raise WITHOUT the escrow, forever).
+        implied_now = (self.pp * self.down_payment_frac + self.closing_costs
+                       + self.reno_capex_in_raise)
+        implied_pre_reno = self.pp * self.down_payment_frac + self.closing_costs
+        gap = min(abs(self.raise_amount - implied_now),
+                  abs(self.raise_amount - implied_pre_reno))
+        tol = max(1_000.0, implied_now * 0.01)
+        if gap > tol:
             object.__setattr__(self, "raise_is_custom", True)
         return self
 

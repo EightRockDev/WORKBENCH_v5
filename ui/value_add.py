@@ -588,26 +588,23 @@ def _render_cost_seg_hook(deal, units: int | None) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Value-Add CAPEX (Short Hold) — per Brian 5/29 v2.0.19
+# Value-Add CAPEX (Short Hold) — engine-wired as of 2026-08-31
 # ---------------------------------------------------------------------------
 #
-# Inputs:
-#   • Year-by-year unit renovation count (5 years)
-#   • Cost per renovated unit ($)
-#   • Monthly rent bump per renovated unit ($)
-#   • Exit cap rate (pulled from deal.json)
+# The renovation program lives on `DealState` (reno_units_by_year /
+# reno_cost_per_unit / reno_monthly_rent_bump / reno_capex_funding), and every
+# `build_cashflow` call site passes `deal.renovation_plan()` — so the header
+# tiles, the Returns tab, the exec summary and this panel all see the same
+# program. The panel's headline is measured by `core.renovation.
+# renovation_impact` (the deal run twice through the engine, with and without
+# the plan), never by a closed-form formula: the old `value_at_exit /
+# total_capex` tile reduced to a per-unit ratio — the unit count cancelled,
+# so it read $2.30 for 2 units or 200 (owner repro, Forrest Pines 2026-08-31).
 #
-# Math:
-#   • Total CAPEX            = sum(units_per_year) × cost_per_unit
-#   • Cumulative units yr N  = running sum through year N
-#   • Annual rent ↑ (yr N)   = cumulative_units(N) × monthly_bump × 12
-#   • Value created at exit  = stabilized_annual_rent_↑ ÷ exit_cap
-#   • $ value per $1 CAPEX   = value_at_exit ÷ total_capex
-#
-# Brian's sanity-check note: his off-the-cuff formula was `4800 × exit_cap`
-# but value-at-exit is `annual_rent_increase ÷ exit_cap` (capitalization).
-# Multiplying by the cap rate would yield ~$264 instead of ~$87K — the
-# inverse of what we want.
+# `value_add_capex.json` is LEGACY: read once to migrate an old plan into
+# deal.json, then renamed to `.migrated`. `_load_capex_plan` /
+# `_save_capex_plan` remain only for that migration and the standalone
+# `test_v2_exhaustive.py` checks.
 
 _CAPEX_PLAN_FILENAME = "value_add_capex.json"
 
@@ -637,34 +634,125 @@ def _save_capex_plan(folder_path, plan: dict[str, Any]) -> None:
     fp.write_text(json.dumps(plan, indent=2), encoding="utf-8")
 
 
-def _render_value_add_capex(deal, folder: PropertyFolder | None) -> None:
-    """Per Brian 5/29 v2.0.19 — placeholder calculator that models a
-    year-by-year unit-renovation ramp and projects the value created at
-    exit from the resulting rent bumps."""
+def _merge_schedule(stored: list, edited: list[int], hp: int) -> list[int]:
+    """Overlay the widget-edited years onto the stored schedule.
+
+    The widgets only show years 1..hp, so persisting the widget list alone
+    would DELETE any stored years beyond the current hold — and a hold-dial
+    round trip (5 -> 3 -> 5) would silently destroy the program's tail.
+    build_renovation_plan already truncates non-destructively at compute
+    time, so the stored list keeps its tail and survives A -> B -> A.
+    """
+    tail = [int(u or 0) for u in (stored or [])][hp:]
+    return [int(u) for u in edited[:hp]] + tail
+
+
+def _legacy_plan_values(legacy: dict) -> tuple[list[int], float, float]:
+    """Coerce a legacy value_add_capex.json into (units, cost, bump).
+
+    `x or default` would resurrect the default over a deliberate 0 —
+    only an ABSENT value falls back. Negatives clamp to the model's floor.
+    """
+    units = [max(0, int(u or 0))
+             for u in (legacy.get("renovations_per_year") or [])]
+    legacy_cost = legacy.get("cost_per_unit")
+    legacy_bump = legacy.get("monthly_rent_increase_per_unit")
+    cost = 15_000.0 if legacy_cost is None else max(0.0, float(legacy_cost))
+    bump = 0.0 if legacy_bump is None else max(0.0, float(legacy_bump))
+    return units, cost, bump
+
+
+def _migrate_legacy_capex_plan(deal, folder: PropertyFolder):
+    """One-time import of a legacy `value_add_capex.json` into deal.json.
+
+    Fills an EMPTY destination only, never overwrites (the
+    test_property_seed pattern): runs only when the legacy file exists and
+    the deal carries no renovation schedule yet. On success the file is
+    renamed to `.migrated` — never deleted — so the import cannot repeat.
+    Returns the (possibly updated) deal.
+    """
+    import json
+
+    fp = folder.path / _CAPEX_PLAN_FILENAME
+    if not fp.exists() or deal.reno_units_by_year:
+        return deal
+    try:
+        legacy = json.loads(fp.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return deal
+    if not isinstance(legacy, dict):
+        return deal
+
+    from data.property_io import save_deal
+    units, cost, bump = _legacy_plan_values(legacy)
+    updated = deal.model_copy(update={
+        "reno_units_by_year": units,
+        "reno_cost_per_unit": cost,
+        "reno_monthly_rent_bump": bump,
+    })
+    result = save_deal(folder.path, updated,
+                       expected_version=deal.row_version)
+    if not result.ok:
+        return deal  # concurrent editor holds the file; retry next render
+    try:
+        fp.rename(fp.with_name(fp.name + ".migrated"))
+    except OSError:
+        pass  # rename is best-effort; reno_units_by_year now gates the import
+    # Overwrite any already-registered widget state (a conflicted first
+    # attempt leaves widgets registered at the pre-migration zeros, and a
+    # keyed widget ignores value= after first registration - the stale
+    # zeros would auto-save right back over the migration).
+    fk = folder.folder_name
+    for idx, u in enumerate(units, start=1):
+        st.session_state[f"capex_renov_yr{idx}_{fk}"] = int(u)
+    st.session_state[f"capex_cost_{fk}"] = float(cost)
+    st.session_state[f"capex_bump_{fk}"] = float(bump)
+    return updated.model_copy(update={"row_version": result.version})
+
+
+def _render_value_add_capex(
+    deal,
+    folder: PropertyFolder | None,
+    units: int | None = None,
+    city: str | None = None,
+):
+    """Value-add renovation program, wired into the returns engine.
+
+    The schedule lives on `DealState` and is measured by running the deal
+    twice through `build_cashflow` (`core.renovation.renovation_impact`) —
+    once with the program, once without — so every figure here is the same
+    engine the header tiles read. No closed-form headline survives: the old
+    `$ per $1 of CAPEX` tile was a per-unit ratio in disguise (unit count
+    cancelled) and read $2.30 regardless of the schedule.
+
+    Returns the (possibly updated) deal so the caller's downstream sections
+    render this run's edits instead of lagging one rerun behind.
+    """
     c = config.COLORS
 
-    if folder is None:
+    if folder is None or deal is None:
         st.info(
             "Open a property first — your CAPEX plan saves automatically "
             "for each property."
         )
-        return
+        return deal
 
     st.markdown(v2_strip_icon("##### 🛠️ Value-Add CAPEX (Short Hold)"))
     st.caption(
         "Enter how many units you'll renovate each year, the cost per "
-        "unit, and the resulting monthly rent bump. The model rolls "
-        "rent forward cumulatively and capitalizes the stabilized lift "
-        "at the deal's exit cap to estimate value created at sale."
+        "unit, and the resulting monthly rent bump. The program flows "
+        "into the deal's cash flow — GPR, NOI, exit value, the equity "
+        "raise and the IRR all move with it."
     )
 
-    plan = _load_capex_plan(folder.path)
+    # One-time migration from the legacy per-property JSON (2026-08-31).
+    deal = _migrate_legacy_capex_plan(deal, folder)
+
     folder_key = folder.folder_name
 
-    # Brian 5/29 v2.0.28 — year count is now DYNAMIC to the deal's
-    # hold period. Hold=5 → 5 boxes. Hold=7 → 7 boxes. Hold=10 → 10
-    # boxes. Read from the live deal slider, default to 5 if missing,
-    # clamp to a reasonable [1, 15] range.
+    # Brian 5/29 v2.0.28 — year count is DYNAMIC to the deal's hold
+    # period. Hold=5 → 5 boxes. Hold=7 → 7 boxes. Read from the live
+    # deal slider, default to 5 if missing, clamp to [1, 15].
     hp = int(getattr(deal, "hp", 5) or 5)
     hp = max(1, min(15, hp))
 
@@ -678,7 +766,7 @@ def _render_value_add_capex(deal, folder: PropertyFolder | None) -> None:
             f'letter-spacing:0.4px">Renovation Schedule ({hp}-year hold)</div>',
             unsafe_allow_html=True,
         )
-        existing = list(plan.get("renovations_per_year") or [])
+        existing = [int(u or 0) for u in (deal.reno_units_by_year or [])]
         # Pad to hp years (preserves prior values for years that still
         # exist; truncates entries past the new hold if hold shrank).
         while len(existing) < hp:
@@ -706,11 +794,14 @@ def _render_value_add_capex(deal, folder: PropertyFolder | None) -> None:
             f'letter-spacing:0.4px">Per-Unit Economics</div>',
             unsafe_allow_html=True,
         )
+        # No `or`-fallbacks here: `deal.reno_cost_per_unit or 15_000` would
+        # resurrect the default over a deliberately saved $0 and auto-save
+        # it back. The model's own field defaults are the only fallback.
         cost_per = st.number_input(
             "Cost per renovated unit ($)",
             min_value=0.0,
             max_value=500_000.0,
-            value=float(plan.get("cost_per_unit") or 15_000.0),
+            value=float(deal.reno_cost_per_unit),
             step=1_000.0,
             key=f"capex_cost_{folder_key}",
         )
@@ -718,56 +809,139 @@ def _render_value_add_capex(deal, folder: PropertyFolder | None) -> None:
             "Monthly rent bump per renovated unit ($)",
             min_value=0.0,
             max_value=10_000.0,
-            value=float(plan.get("monthly_rent_increase_per_unit") or 200.0),
+            value=float(deal.reno_monthly_rent_bump),
             step=25.0,
             key=f"capex_bump_{folder_key}",
         )
 
-    # Persist whenever the user touches a value (the rerun captures
-    # whatever's in the widgets — no Save button needed).
-    new_plan = {
-        "cost_per_unit": float(cost_per),
-        "monthly_rent_increase_per_unit": float(rent_bump),
-        "renovations_per_year": new_renov,
-    }
-    if new_plan != plan:
-        try:
-            _save_capex_plan(folder.path, new_plan)
-        except OSError as exc:
-            st.warning(f"Could not save CAPEX plan: {exc}")
+    funding_choice = st.radio(
+        "Fund CAPEX from",
+        ["LP equity raise (escrowed at close)", "Property cash flow"],
+        index=0 if deal.reno_capex_funding == "raise" else 1,
+        horizontal=True,
+        key=f"capex_funding_{folder_key}",
+    )
+    new_funding = (
+        "raise" if funding_choice.startswith("LP equity") else "operations"
+    )
+    st.caption(
+        "Escrowed CAPEX joins the equity raise and the IRR denominator. "
+        "Cash-flow funding reduces annual distributions instead."
+    )
 
-    # ---- Per-year ramp table ----
+    # Persist through the SAME save path as the dial board
+    # (model_copy + save_deal with expected_version) — never a fresh
+    # model_validate of a subset, which is the 2026-08-13 infinite-rerun
+    # bug. No st.rerun(): the widget interaction already reran.
+    # The comparison baseline is `existing` (the padded/truncated VIEW of
+    # the stored list), not the raw stored list — otherwise merely viewing
+    # a deal whose stored schedule length differs from the hold period
+    # would fire a write, and a hold-dial round trip would persist the
+    # truncation. The saved list overlays the edit onto the stored tail
+    # (_merge_schedule) so years beyond the current hold survive.
+    if (
+        new_renov != existing
+        or float(cost_per) != float(deal.reno_cost_per_unit)
+        or float(rent_bump) != float(deal.reno_monthly_rent_bump)
+        or new_funding != deal.reno_capex_funding
+    ):
+        from data.property_io import save_deal
+        updated = deal.model_copy(update={
+            "reno_units_by_year": _merge_schedule(
+                deal.reno_units_by_year, new_renov, hp),
+            "reno_cost_per_unit": float(cost_per),
+            "reno_monthly_rent_bump": float(rent_bump),
+            "reno_capex_funding": new_funding,
+        })
+        result = save_deal(folder.path, updated,
+                           expected_version=deal.row_version)
+        if result.ok:
+            deal = updated.model_copy(update={"row_version": result.version})
+        else:
+            st.warning(
+                f"Not saved — {result.conflict_by or 'someone else'} changed "
+                "this deal since you loaded it. Reload to pick up their edits."
+            )
+
+    plan = deal.renovation_plan()
+
+    # ---- Per-year ramp table (engine figures, not the cumulative naive roll) ----
     cumulative_units = 0
     cumulative_capex = 0.0
     rows = []
-    for yr_idx, units_this_yr in enumerate(new_renov, start=1):
-        cumulative_units += int(units_this_yr)
-        capex_this_yr = float(units_this_yr) * float(cost_per)
-        cumulative_capex += capex_this_yr
-        annual_rent_inc = cumulative_units * float(rent_bump) * 12.0
+    for yr_idx in range(hp):
+        units_this_yr = plan.units_by_year[yr_idx]
+        cumulative_units += units_this_yr
+        cumulative_capex += plan.capex_by_year[yr_idx]
         rows.append({
-            "Year": yr_idx,
-            "Units renovated": int(units_this_yr),
-            "Cumulative units": int(cumulative_units),
-            "CAPEX this year": f"${capex_this_yr:,.0f}",
+            "Year": yr_idx + 1,
+            "Units renovated": units_this_yr,
+            "Cumulative units": cumulative_units,
+            "CAPEX this year": f"${plan.capex_by_year[yr_idx]:,.0f}",
             "Cumulative CAPEX": f"${cumulative_capex:,.0f}",
-            "Annual rent ↑ (cum.)": f"${annual_rent_inc:,.0f}",
+            "Rent ↑ recognized": f"${plan.rent_lift_by_year[yr_idx]:,.0f}",
         })
 
     st.markdown('<div style="margin-top:10px"></div>', unsafe_allow_html=True)
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.caption(
+        "Units renovated during a year earn half a year of the bump in "
+        "that year."
+    )
 
-    # ---- Summary callout ----
-    total_units = sum(new_renov)
-    total_capex = float(total_units) * float(cost_per)
-    stabilized_annual_rent_inc = float(total_units) * float(rent_bump) * 12.0
-    exit_cap = getattr(deal, "exit_cap", 0.055) or 0.055
-    value_at_exit = (
-        stabilized_annual_rent_inc / exit_cap if exit_cap > 0 else 0.0
+    # ---- Engine-measured impact: the deal WITH vs WITHOUT the program ----
+    from core.calc import DebtTerms, build_debt_schedule, effective_year1_vacancy
+    from core.renovation import renovation_impact
+    from ui.underwriting import _derive_year1_inputs  # lazy: avoids circular import
+
+    sources = load_sources(folder.path)
+    gpr, expenses = _derive_year1_inputs(deal, sources, units, city=city)
+    debt_sched = build_debt_schedule(
+        DebtTerms(
+            loan_amount=deal.loan_amount,
+            annual_rate=deal.interest_rate,
+            amort_months=config.AMORT_MONTHS,
+            io_years=deal.io,
+        ),
+        deal.hp,
     )
-    value_per_capex = (
-        value_at_exit / total_capex if total_capex > 0 else 0.0
+    year1_eff_vac = effective_year1_vacancy(
+        base_vac=deal.vacancy_frac,
+        spike_pp=deal.vac_spike_pp / 100.0,
+        stabilization_months=deal.stabilization_months,
     )
+    # The live raise carries the escrowed CAPEX — via tracked_raise when
+    # tracking, and BY CONVENTION inside a custom (analyst-typed) raise
+    # too. Strip it back out so renovation_impact adds it to the with-case
+    # only; equity_with then equals deal.equity_raise on BOTH paths, so
+    # the panel's IRR always agrees with the header tiles.
+    equity_without = max(0.0, deal.equity_raise - deal.reno_capex_in_raise)
+    impact = renovation_impact(
+        plan=plan,
+        capex_funding=deal.reno_capex_funding,
+        equity_without_reno=equity_without,
+        project_equity_without_reno=equity_without + deal.gp_fee,
+        year1_gpr=gpr,
+        year1_vacancy_pct=year1_eff_vac,
+        year1_expenses=expenses,
+        rent_growth=deal.rent_growth,
+        expense_growth=deal.expense_growth,
+        am_fee_pct=deal.am_fee_pct,
+        debt=debt_sched,
+        hold_years=deal.hp,
+        exit_cap=deal.exit_cap,
+        stabilized_vacancy_pct=deal.vacancy_frac,
+        stabilization_year_break=1 if deal.stabilization_months <= 12 else 2,
+    )
+
+    irr_delta_txt = (
+        f"{impact.irr_delta * 100:+.2f} pts" if impact.irr_delta is not None else "—"
+    )
+    irr_delta_color = (
+        c["gn"] if (impact.irr_delta or 0) >= 0 else c["rd"]
+    )
+    em_delta_color = c["gn"] if impact.em_delta >= 0 else c["rd"]
+    ppd_color = c["gn"] if impact.profit_per_capex_dollar >= 1.0 else c["rd"]
 
     st.markdown(
         f'<div style="background:{c["bg3"]};border:1px solid {c["bdr"]};'
@@ -778,47 +952,48 @@ def _render_value_add_capex(deal, folder: PropertyFolder | None) -> None:
         f'text-transform:uppercase;letter-spacing:0.4px">Total CAPEX</div>'
         f'<div style="font-size:22px;font-weight:700;color:{c["tx"]};'
         f'font-variant-numeric:tabular-nums;margin-top:2px">'
-        f'${total_capex:,.0f}</div>'
+        f'${impact.total_capex:,.0f}</div>'
         f'<div style="font-size:10px;color:{c["tx3"]};margin-top:4px">'
-        f'{total_units} units × ${cost_per:,.0f}/unit</div></div>'
+        f'{plan.total_units} units × ${plan.cost_per_unit:,.0f}/unit</div></div>'
         f'<div><div style="font-size:11px;color:{c["tx3"]};'
-        f'text-transform:uppercase;letter-spacing:0.4px">Stabilized Annual Rent ↑</div>'
-        f'<div style="font-size:22px;font-weight:700;color:{c["tx"]};'
+        f'text-transform:uppercase;letter-spacing:0.4px">Δ Project IRR</div>'
+        f'<div style="font-size:22px;font-weight:700;color:{irr_delta_color};'
         f'font-variant-numeric:tabular-nums;margin-top:2px">'
-        f'${stabilized_annual_rent_inc:,.0f}</div>'
+        f'{irr_delta_txt}</div>'
         f'<div style="font-size:10px;color:{c["tx3"]};margin-top:4px">'
-        f'{total_units} units × ${rent_bump:.0f}/mo × 12</div></div>'
+        f'vs the same deal with no renovation</div></div>'
         f'<div><div style="font-size:11px;color:{c["tx3"]};'
-        f'text-transform:uppercase;letter-spacing:0.4px">Value Created at Exit</div>'
-        f'<div style="font-size:22px;font-weight:700;color:{c["gn"]};'
+        f'text-transform:uppercase;letter-spacing:0.4px">Δ Equity Multiple</div>'
+        f'<div style="font-size:22px;font-weight:700;color:{em_delta_color};'
         f'font-variant-numeric:tabular-nums;margin-top:2px">'
-        f'${value_at_exit:,.0f}</div>'
+        f'{impact.em_delta:+.2f}x</div>'
         f'<div style="font-size:10px;color:{c["tx3"]};margin-top:4px">'
-        f'= rent ↑ ÷ exit cap ({exit_cap * 100:.2f}%)</div></div>'
+        f'vs the same deal with no renovation</div></div>'
         f'<div><div style="font-size:11px;color:{c["tx3"]};'
-        f'text-transform:uppercase;letter-spacing:0.4px">$ per $1 of CAPEX</div>'
-        f'<div style="font-size:22px;font-weight:700;color:{c["gn"]};'
+        f'text-transform:uppercase;letter-spacing:0.4px">Profit per $1 of CAPEX</div>'
+        f'<div style="font-size:22px;font-weight:700;color:{ppd_color};'
         f'font-variant-numeric:tabular-nums;margin-top:2px">'
-        f'${value_per_capex:,.2f}</div>'
+        f'${impact.profit_per_capex_dollar:,.2f}</div>'
         f'<div style="font-size:10px;color:{c["tx3"]};margin-top:4px">'
-        f'$1 spent → ${value_per_capex:,.2f} at sale</div></div>'
+        f'net of the equity the program consumes</div></div>'
         f'</div></div>',
         unsafe_allow_html=True,
     )
 
-    # Formula correction note for Brian
-    per_unit_value = (
-        (float(rent_bump) * 12.0) / exit_cap if exit_cap > 0 else 0.0
+    # The engine's own story — replaces the closed-form "formula sanity
+    # check". Dollars escaped (\$): Streamlit renders $...$ as LaTeX.
+    irr_from = (
+        f"{impact.irr_without:.2%}" if impact.irr_without is not None else "n/a"
     )
-    per_unit_return = (
-        per_unit_value / float(cost_per) if cost_per > 0 else 0.0
+    irr_to = (
+        f"{impact.irr_with:.2%}" if impact.irr_with is not None else "n/a"
     )
     st.caption(
-        f"**Formula sanity check:** value created at exit = "
-        f"`annual rent ↑ ÷ exit cap`. At "
-        f"${rent_bump:.0f}/mo × 12 = ${rent_bump * 12:,.0f}/unit/yr of "
-        f"rent bump and a {exit_cap * 100:.2f}% exit cap, **each renovated "
-        f"unit creates ${per_unit_value:,.0f} of value at sale on "
-        f"${cost_per:,.0f} of CAPEX → a {per_unit_return:.2f}× return "
-        f"on CAPEX**."
+        f"Running this deal with and without the program: the renovation "
+        f"adds \\${impact.exit_value_delta:,.0f} of sale value at the "
+        f"{deal.exit_cap * 100:.2f}% exit cap and "
+        f"\\${impact.profit_delta:,.0f} of investor profit on "
+        f"\\${impact.total_capex:,.0f} of CAPEX, moving project IRR from "
+        f"{irr_from} to {irr_to}."
     )
+    return deal

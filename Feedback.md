@@ -184,6 +184,18 @@
   Counts shown to the owner must be filtered on primary evidence (units),
   with coverage printed next to them.
 
+## Closed-form headlines vs the engine (2026-08-31)
+
+- **A panel that computes its own closed-form headline will disagree with
+  the engine, and the tell is a metric that refuses to move** — check
+  whether the number is a per-unit ratio in disguise before believing it.
+  The Value-Add CAPEX tile read $2.30/CAPEX-dollar for 2 units or 200
+  because unit count cancelled out of its formula; the owner's schedule
+  edits moved nothing in the header. The fix is never a better formula in
+  the tab: put the state on the model (DealState), teach the engine
+  (build_cashflow), and make the panel report the engine's own with/without
+  difference. Guard the seam with an AST test over every call site.
+
 ## Session log (append-only, date-stamped)
 
 - **2026-08-11:** File created (owner directive). Seeded with the standing
@@ -204,6 +216,10 @@
   sweep deleted all ~477K sales-puller rows as "retired" every cycle
   (nightly full re-download; a one-night host outage would have made the
   review run with silent holes).
+- **2026-08-31:** Value-Add CAPEX wired into the returns engine
+  (V5.64.1.0.0) — the closed-form-headline lesson above; renovation plan
+  moved onto DealState, all 8 build_cashflow call sites pass it, AST seam
+  guard added, 27 tests proven red against pre-fix code.
 - **2026-08-27 (production data loss, self-inflicted):** Owner: *"We had many
   users - they're gone now. What happened?"* `uv run pytest` on the OWNER'S
   SERVER emptied the live pilot database on 2026-08-18. `tests/conftest.py`

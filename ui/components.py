@@ -241,13 +241,15 @@ SECTION_HELP: dict[str, tuple[str, str]] = {
         "- Units renovated each year (Y1–Y5)\n"
         "- Cost per renovated unit\n"
         "- Monthly rent bump per renovated unit\n\n"
-        "**Math:**\n"
-        "- Total CAPEX = Σ(units × cost/unit)\n"
-        "- Stabilized annual rent ↑ = Σ(units) × $bump × 12\n"
-        "- **Value at exit = rent ↑ ÷ exit cap** (capitalization)\n"
-        "- $ value per $1 CAPEX = value at exit ÷ total CAPEX\n\n"
-        "Saved per-property to `value_add_capex.json` — survives reruns + "
-        "syncs across V1↔V2."
+        "- How the CAPEX is funded (escrowed in the LP raise, or from "
+        "property cash flow)\n\n"
+        "**Math:** the deal is run twice through the returns engine — once "
+        "with the program, once without. The tiles report the difference: "
+        "Δ project IRR, Δ equity multiple, and profit per CAPEX dollar. "
+        "The rent lift joins GPR (vacancy and the AM fee see it) and flows "
+        "into the exit NOI; escrowed CAPEX joins the equity raise.\n\n"
+        "Saved per-property to `deal.json` — the same record every other "
+        "tab reads, so the header tiles always agree with this panel."
     ),
     "5-Year Cash Flow": (
         "Year-by-year GPR → NOI → Cash Flow projection.",
