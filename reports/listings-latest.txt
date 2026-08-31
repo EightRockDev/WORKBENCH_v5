@@ -1,3 +1,12 @@
-autopilot listings @ 2026-08-31T14:19:17
+autopilot listings @ 2026-08-31T15:19:15
 
-  [listings] fresh (pulled within 7 days, 4 favourites, generation 2) - skipping; 349 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: Oyster Point Place -> not_found
+  [listings] rentcafe: Wyndham at Hampton -> not_found
+  [listings] zillow: Oyster Point Place -> not_found
+  [listings] zillow: Wyndham at Hampton -> not_found
+  [listings] apartments_com: Oyster Point Place -> not_found
+  [listings] apartments_com: Wyndham at Hampton -> not_found
+  [listings] property_site: Oyster Point Place -> not_found
+  [listings] property_site: Wyndham at Hampton -> not_found
+  [listings] wrote 8 rows (0 successful scrapes)
