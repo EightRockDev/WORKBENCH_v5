@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-08-31T14:33:56
+autopilot richmondreview @ 2026-08-31T15:33:25
 
 ================================================================
-RICHMOND REVIEW  @ 2026-08-31T14:33:58
+RICHMOND REVIEW  @ 2026-08-31T15:33:28
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
