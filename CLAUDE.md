@@ -2317,3 +2317,26 @@ Applies to every autopilot/analysis session that sweeps mail, on every run. Not 
 **Land.** `C:\WORKBENCH_V5\data\inbox_kb\` on the host. Lanes in order: (1) device-bridge grant on `C:\WORKBENCH_V5` then commit files into `data\inbox_kb\` — note the grant cannot be requested programmatically and cannot be added mid-session in a cloud task; (2) git intake lane — commit JSONs to `data/inbox_kb_intake/` on origin/main, `ingest_git_intake` V5.38.3.0.0+ lands them host-side; (3) if neither lane is live, package the JSONs and hand them to the owner as a file. Never leave records only in a session workspace.
 
 **Verify, every run.** Read `reports/inbox-sync-latest.txt` and report the counts in the run summary (files / records / ingested / linked / failed). Processed files move to `inbox_kb\processed\`. If mailbox connectors are unavailable to the session, say so plainly rather than skipping silently. Append delivery status to project doc `claude/inbox-kb-log.md`.
+
+### Matching things by position (2026-08-31)
+
+The Richmond unit bridge merges two records of one parcel by centroid
+proximity (`core/geo_bridge.py`). Three lessons, each found by review
+AFTER the code looked right and its tests were green:
+
+- **A spatial grid sized in degrees is not square.** Cells were
+  `radius / 111320` on BOTH axes, so at Richmond's latitude the 3x3
+  search window was ~19.8 m wide against a 25 m radius. The lost matches
+  were the small harm; the real one was that the hidden candidate was the
+  RUNNER-UP, so the ambiguity rule declared a coin flip certain. A guard
+  reading from an incomplete candidate set does not fail loudly — it
+  approves.
+- **Geometry alone cannot tell "same thing twice" from "two things near
+  each other."** Without a rule requiring different parcel-id schemes, a
+  marina handed its 92 boat slips to the house 18 m away. Proximity is
+  evidence of adjacency, never of identity; identity needs a second,
+  non-geometric reason.
+- **Filling a field is not the same as merging a record.** Copying the
+  unit count onto the twin left BOTH rows counted, doubling the city's
+  multifamily entities and putting a building's duplicate in its own comp
+  set. When two rows are one thing, one of them has to go.

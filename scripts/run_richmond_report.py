@@ -262,9 +262,12 @@ def main() -> int:
                     "Units and values sit on different parcel-id schemes AND "
                     "no unit-bearing source maps a usable address - so "
                     "neither an alias nor an address crosswalk can bridge "
-                    "them. Next axis is geometry (the COR layer is an Esri "
-                    "feature service; its centroid can point-in-polygon onto "
-                    "the parcel layer). See the coverage lines above.")
+                    "them. The geometry bridge now runs on every spine build "
+                    "(core/geo_bridge.py): read 'units bridged by geometry' "
+                    "and its rejection breakdown in phase0-latest.txt. If "
+                    "everything there is 'rejected (too far)', the two feeds' "
+                    "centroids do not land in the same place and a wider "
+                    "radius is the wrong fix - check the projection.")
             if unit_src and addr_by_src[unit_src]["units"]:
                 u_addrs = addr_by_src[unit_src]["units"]
                 print("  address-crosswalk candidates (the unit-bearing "

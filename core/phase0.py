@@ -358,6 +358,9 @@ class CoverageReport:
     provisional_ids: int = 0
     units_from_points: int = 0
     units_from_points_skipped: int = 0   # non-residential parcels (marinas...)
+    units_from_geometry: int = 0         # counts carried across id schemes
+    geo_bridge: object | None = None     # core.geo_bridge.BridgeReport
+    geo_bridge_by_city: dict = field(default_factory=dict)
     pruned_sub10: int = 0                # rows dropped: KNOWN unit count < 10
     coords_backfilled: int = 0           # MF rows given coords by address match
     rents_stamped: int = 0               # MF rows given a HUD-FMR rent estimate
@@ -396,6 +399,11 @@ class CoverageReport:
             f"provisional (no-APN) ids:  {self.provisional_ids:,}",
             f"units derived from address points: {self.units_from_points:,}"
             f"  (skipped non-residential: {self.units_from_points_skipped:,})",
+            f"units bridged by geometry: {self.units_from_geometry:,}"
+            + (("  (" + ", ".join(f"{c} {n:,}" for c, n in
+                                  sorted(self.geo_bridge_by_city.items(),
+                                         key=lambda kv: -kv[1])) + ")")
+               if self.geo_bridge_by_city else ""),
             f"coords backfilled by address (multifamily): {self.coords_backfilled:,}",
             f"rent estimates stamped (HUD FMR blend): {self.rents_stamped:,}"
             + ("" if self.rents_stamped else "  (ETL db with hud_fmr not found)"),
@@ -411,6 +419,17 @@ class CoverageReport:
             "Multifamily by city: " + ", ".join(
                 f"{c} {n:,}" for c, n in self.mf_by_city.most_common()) ,
         ]
+        # Why the geometry bridge carried what it did. A run that matches
+        # nothing must say WHICH rule refused every candidate - "0 bridged"
+        # alone cannot distinguish "the feeds don't overlap" from "the
+        # coordinates are in the wrong projection" from "it never ran".
+        gb = self.geo_bridge
+        if gb is not None:
+            lines.append("")
+            lines.append("Geometry unit bridge (counts carried across "
+                         "parcel-id schemes):")
+            for line in gb.lines():
+                lines.append(f"  {line}")
         if self.mf_use_codes:
             lines.append("")
             lines.append("Top use codes classified multifamily (wrong codes here = bad aliasing):")
@@ -801,6 +820,24 @@ def build_spine(db_path: Path,
         report.units_from_points = derived
         report.units_from_points_skipped = skipped_nonres
 
+        # Geometry bridge: carry unit counts between parcel-id schemes.
+        # Richmond arrives as two disjoint halves - the COR layer holds
+        # 2,365 unit counts on numeric PINs, the rva.gov workbook holds the
+        # assessed values on letter PINs, no attribute joins them, and no
+        # Richmond feed maps a usable address. Both carry centroids, so
+        # position is the only bridge left (core/geo_bridge.py holds the
+        # three rules that stop it guessing).
+        #
+        # Placed HERE deliberately: before the multifamily count and before
+        # prune_backbone, so a bridged count is classified and pruned like
+        # any other. Stamping units after the prune would leave a bridged
+        # 4-unit parcel sitting on the backbone as multifamily forever.
+        from core.geo_bridge import merge_duplicate_parcels
+        bridged, bridge_report, bridged_by_city = merge_duplicate_parcels(conn)
+        report.units_from_geometry = bridged
+        report.geo_bridge = bridge_report
+        report.geo_bridge_by_city = bridged_by_city
+
         # Address-based coordinate backfill: some feeds carry no geometry at
         # all (Norfolk's Socrata assessor), leaving a whole city's
         # multifamily backbone coordinate-blind - every comp subject there
@@ -898,7 +935,7 @@ def build_spine(db_path: Path,
 # aliasing, prune logic...) so an unchanged-inputs skip cannot pin an old
 # spine under new code. Same pattern, same reason as listings
 # PULL_GENERATION: a fix that cannot run is indistinguishable from no fix.
-SPINE_BUILD_GENERATION = 1
+SPINE_BUILD_GENERATION = 2
 
 
 def spine_input_fingerprint(db_path: Path) -> str:

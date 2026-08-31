@@ -12,6 +12,65 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.65.0.0.0 — 2026-08-31  ·  Richmond's parcels arrive twice; now they leave once.
+
+Freeze lifted for the unit-count bridge (owner, 2026-08-31). Richmond has
+108,033 parcels on the backbone and 140 unit counts between them, while the
+COR feed holds 2,365 counts the workbench could not reach: the feeds use
+different parcel-id schemes, no attribute joins them, and no Richmond
+source maps a usable address. Every feed does carry a centroid.
+
+**It is a de-duplication, not a copy.** Both halves of a Richmond lot are
+already on the backbone as separate properties. Copying the count across
+would have left two multifamily entities two metres apart — inflating the
+property count and putting a building's own twin in its comp set. Instead
+the value-bearing row absorbs what only the COR row knows (units, owner,
+year built, sqft) and the duplicate is deleted. `properties_8r` is rebuilt
+from `muni_records` every cycle, so a merge is never destructive.
+
+Five rules must all hold before two rows are treated as one building: same
+city; **different parcel-id shape** (`405010001` is 9 digits,
+`C0010124002` is a letter and 10 digits — two ids of the same shape are two
+different lots, however close); within 25 m; mutually nearest; and
+unambiguous, by both a ratio and an absolute 4 m margin. It runs before
+`prune_backbone`, so a merged sub-10 count is dropped like any other.
+
+**An adversarial review of the first version found three ways it was
+wrong, all now regression-tested:**
+
+- **The grid was sized in degrees of latitude and applied to both axes**,
+  giving a ~19.8 m east/west search window against a 25 m radius at
+  Richmond's latitude. That did not merely lose matches: it hid the
+  runner-up, so the ambiguity rule passed a coin flip as certain. A
+  reviewer reproduced a true twin 24 m west being invisible while a
+  different lot 24 m east received the 48 units, with
+  `rejected_ambiguous = 0`. Cells are now sized per axis from the worst
+  latitude in the set.
+- **Nothing required the two rows to come from different feeds.** A
+  Chesapeake marina handed its 92 boat slips to the single-family house
+  18 m away — the same failure `derivation_allowed` already guards on the
+  address-point path. Hence the id-shape rule.
+- **It copied and left both rows**, doubling Richmond's multifamily
+  entities. Hence the merge.
+
+Also: the ambiguity rule was disabled below 3 m, exactly where stacked
+condo parcels live; the winner of a tie depended on sqlite row order; the
+rejection breakdown was suppressed when nothing matched, which is when it
+is worth reading; the whole 2.3M-row backbone was loaded into memory for
+one city's problem (now per-city, and only for cities holding both
+halves); and `SPINE_BUILD_GENERATION` was not bumped, so the host would
+have skipped the rebuild as "inputs unchanged" and none of this would ever
+have run.
+
+27 tests in `tests/test_geo_bridge.py`, including a compass sweep asserting
+nothing inside the radius is unreachable in any direction.
+
+**Expect the property count to fall, not rise.** About 6,300 Richmond
+parcels are currently counted as multifamily purely because their use code
+says so, with no unit count. Merging real counts in means the ones under
+10 units are now correctly pruned. This buys accuracy first; the count
+follows the truth.
+
 ## V5.64.0.0.0 — 2026-08-29  ·  Git-delivered KB intake lane
 
 `data\inbox_kb_intake\` (tracked) is the cloud-session delivery lane into
