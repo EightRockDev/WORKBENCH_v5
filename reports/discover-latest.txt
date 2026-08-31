@@ -1,4 +1,4 @@
-autopilot discover @ 2026-08-31T13:00:16
+autopilot discover @ 2026-08-31T14:00:19
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
