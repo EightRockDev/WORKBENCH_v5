@@ -12,6 +12,21 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.66.0.3.0 — 2026-09-01  ·  The recovery writer now says whose rows it is writing.
+
+`--apply` stopped at the first insert: "new row violates row-level
+security policy for table deals". Correct behavior by the database - RLS
+guards WRITES too, and the connection carried no tenant context, so
+every org table's WITH CHECK refused it. Nothing was written (single
+transaction).
+
+Each insert is now preceded by the same two GUCs the app itself sets
+(`app.current_org_id`, `app.current_user_id`), read off the row being
+inserted - org from org_id, user from user_id/owner_user_id
+(actor_user_id is an audit pointer, deliberately not used as identity).
+Two tests: the context precedes the insert, and ownership is read off
+the correct columns.
+
 ## V5.66.0.2.0 — 2026-09-01  ·  A curly quote hid the owner's lost emails from the recovery report.
 
 The first live run of the recovery report listed 54 recoverable rows and

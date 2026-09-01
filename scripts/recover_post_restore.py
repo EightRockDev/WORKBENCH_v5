@@ -192,6 +192,22 @@ def remap_row(columns: list[str], row: list, user_map: dict, org_map: dict
     return out, ""
 
 
+def row_context(columns: list[str], row: list) -> tuple[str | None, str | None]:
+    """(org_id, user_id) a row belongs to, read off the row itself.
+
+    The org comes from org_id; the user from the row's ownership column
+    (user_id or owner_user_id - actor_user_id is an audit reference, not
+    ownership, and must not impersonate a tenant context).
+    """
+    org = user = None
+    for i, col in enumerate(columns):
+        if col == "org_id" and row[i]:
+            org = str(row[i])
+        elif col in ("user_id", "owner_user_id") and row[i] and user is None:
+            user = str(row[i])
+    return org, user
+
+
 # ---------------------------------------------------------------------------
 
 def main() -> int:
@@ -298,6 +314,15 @@ def main() -> int:
     # A single transaction: all of it lands or none of it does. Inserts use
     # ON CONFLICT DO NOTHING as a second guard against the race where a row
     # appeared between the read above and this write.
+    #
+    # Row-level security applies to WRITES too: every org table has an
+    # org_isolation WITH CHECK, and the per-user tables (inbox_messages,
+    # user_property_overrides, mailbox_connections) additionally check
+    # current_user_id(). The first --apply run died on exactly this
+    # ("new row violates row-level security policy for table deals",
+    # 2026-09-01) because the connection carried no tenant context. So:
+    # before each insert, declare WHOSE row this is, from the row itself,
+    # with the same GUCs the app sets (data/pg.py org/user_connection).
     write_url = pg.database_url() or url
     inserted = 0
     with psycopg.connect(write_url) as conn:
@@ -308,6 +333,11 @@ def main() -> int:
                 sql = (f'INSERT INTO {table} ({collist}) VALUES ({marks}) '
                        f'ON CONFLICT DO NOTHING')
                 for r in rows:
+                    org_ctx, user_ctx = row_context(cols, r)
+                    cur.execute(
+                        "SELECT set_config('app.current_org_id', %s, false),"
+                        "       set_config('app.current_user_id', %s, false)",
+                        (org_ctx or "", user_ctx or ""))
                     cur.execute(sql, r)
                     inserted += cur.rowcount
         conn.commit()

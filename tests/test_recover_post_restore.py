@@ -231,3 +231,29 @@ def test_utf8_content_survives_a_cp1252_locale(tmp_path, monkeypatch):
 
     assert cols == ["id", "body"], "the UTF-8 COPY block failed to parse"
     assert len(rows) == 1 and "memo" in rows[0][1]
+
+
+def test_each_insert_declares_whose_row_it_is():
+    """--apply died live on 'new row violates row-level security policy
+    for table deals': the write connection carried no tenant context, so
+    every org table's WITH CHECK refused it. The writer must set the same
+    GUCs the app sets, per row, from the row itself."""
+    from pathlib import Path
+
+    src = (Path(__file__).resolve().parent.parent
+           / "scripts" / "recover_post_restore.py").read_text(encoding="utf-8")
+    ctx_at = src.index("set_config('app.current_org_id'")
+    insert_at = src.index("cur.execute(sql, r)")
+    assert ctx_at < insert_at, (
+        "the tenant context is set after (or never before) the insert")
+    assert "app.current_user_id" in src, (
+        "per-user tables (inbox_messages...) also check current_user_id()")
+
+
+def test_row_context_reads_ownership_off_the_row():
+    cols = ["id", "org_id", "owner_user_id", "actor_user_id", "subject"]
+    row = ["m1", "org-9", "user-7", "auditor-3", "hello"]
+    assert rpr.row_context(cols, row) == ("org-9", "user-7")
+    # actor_user_id is an audit pointer, not ownership.
+    assert rpr.row_context(["id", "actor_user_id"], ["a", "x"]) == (None, None)
+    assert rpr.row_context(["id"], ["a"]) == (None, None)
