@@ -1,8 +1,10 @@
-autopilot alerts @ 2026-09-01T11:36:23
+autopilot alerts @ 2026-09-01T13:38:17
 
 alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 10989 - new_mf 10988, units_jump 1
-  showing the 25 most recent of 10989
+OPEN alerts (carried forward): 10988 - new_mf 10987, units_jump 1
+  showing the 25 most recent of 10988
+  [new_mf] New multifamily on the backbone: 3701 JONESBORO RD SE  (73 units · Atlanta)
+  [new_mf] New multifamily on the backbone: 3300 PEACHTREE RD NE  (439 units · Atlanta)
   [new_mf] New multifamily on the backbone: 0 CENTRAL PARK DR  (12 units · Atlanta)
   [new_mf] New multifamily on the backbone: 1190 WOODLAND AVE NE  (18 units · Atlanta)
   [new_mf] New multifamily on the backbone: 0 LAKESIDE DR NE  (54 units · Atlanta)
@@ -26,5 +28,3 @@ OPEN alerts (carried forward): 10989 - new_mf 10988, units_jump 1
   [new_mf] New multifamily on the backbone: 8R-51760-04fb4aa2a218  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-e70817c095de  (? units · Richmond)
   [new_mf] New multifamily on the backbone: 8R-51760-524887b2e86c  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-f6dcaaabd202  (? units · Richmond)
-  [new_mf] New multifamily on the backbone: 8R-51760-6aff95b0588b  (? units · Richmond)
