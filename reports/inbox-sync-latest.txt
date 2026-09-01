@@ -1,4 +1,4 @@
-autopilot inboxsync @ 2026-09-01T00:34:18
+autopilot inboxsync @ 2026-09-01T01:34:26
 
 [inbox-sync] KB drop (C:\WORKBENCH_V5\data\inbox_kb): empty - point the Cowork outlook-connector at this folder (one JSON per ingested email; see core/inbox/kb_drop.py docstring for the accepted shape)
 [inbox-sync] git intake (C:\WORKBENCH_V5\data\inbox_kb_intake): no new files (cloud sessions commit per-email JSONs here)
