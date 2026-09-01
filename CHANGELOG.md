@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.66.0.0.0 — 2026-09-01  ·  Workbench Metrics: the count, defined, on the screener page.
+
+Owner ask: a metrics box at the bottom of the Property Screener that says
+what a "property" is, why the workbench collects them, and how many sit
+in each market and submarket.
+
+- **`core/screener_metrics.py`** counts with the SPINE'S OWN classifier
+  (`is_mf_ten_plus_for_city`, learned use codes included), so the box
+  shows the exact number the daily brief and phase0-latest.txt show. Two
+  definitions of "property" in one product is how the 2026-08-11 review
+  claimed 102,232 Richmond multifamily overnight.
+- The box explains the threshold in plain English (an apartment building
+  with 10+ rental units per the county assessor; houses and plexes stay
+  in the parcel roll but do not count) and the why (Eight Rock buys
+  20-400 unit Class B/C; county records, no data vendor).
+- Per-market table: properties, how many carry a REAL unit count vs
+  qualifying by the assessor's building code alone, known units, top
+  submarkets. The with-units column is the honest split behind every
+  "why is the number flat" conversation.
+- One backbone walk per hour per app process (`st.cache_data` keyed on
+  the database file's mtime, so an autopilot rebuild busts the cache
+  immediately).
+- Found live in the browser before ship: a backbone from an older build
+  (missing a column) crashed the whole page - now degrades to "rebuilds
+  on next update" instead. Regression-tested.
+
+10 tests in tests/test_screener_metrics.py.
+
 ## V5.65.3.0.0 — 2026-09-01  ·  Richmond diagnosed and re-bridged: the unit feed has no geometry at all.
 
 The instrument shipped this morning answered within one cycle: Richmond's

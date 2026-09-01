@@ -267,3 +267,68 @@ def render_property_screener() -> None:
                 f'padding:12px 0">Set any filters above and press '
                 f'<b>Submit</b>. Submit with no filters to browse '
                 f'everything.</div>', unsafe_allow_html=True)
+
+    _render_metrics_box(c)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def _cached_breakdown(db_mtime: float):
+    """One walk of the 3M-row backbone per hour per app process.
+
+    Keyed on the database file's mtime, so the hour-long cache still
+    refreshes the moment the autopilot rebuilds the spine.
+    """
+    from core.screener_metrics import market_breakdown
+    return market_breakdown()
+
+
+def _render_metrics_box(c: dict) -> None:
+    """Owner ask 2026-09-01: what a property IS, why we pull them, and the
+    count per market/submarket — at the bottom of the screener."""
+    import os
+
+    from core.phase0 import find_workbench_db
+    from core.screener_metrics import definition_text
+
+    with section_card("Workbench Metrics", icon="📊",
+                      subtitle="What is in the database, and why"):
+        st.markdown(definition_text())
+
+        db = find_workbench_db()
+        mtime = 0.0
+        try:
+            if db is not None:
+                mtime = os.path.getmtime(db)
+        except OSError:
+            pass
+        bd = _cached_breakdown(mtime)
+        if bd.error:
+            st.info(bd.error)
+            return
+
+        st.markdown(
+            f'<div style="color:{c["tx2"]};font-size:14px;margin:8px 0">'
+            f'<b>{bd.total:,}</b> apartment properties on the backbone, '
+            f'out of <b>{bd.total_records:,}</b> county parcel records, '
+            f'plus <b>{bd.curated:,}</b> of your own property records.'
+            f'</div>', unsafe_allow_html=True)
+
+        rows = []
+        for m in bd.markets:
+            subs = ", ".join(f"{k} ({v:,})" for k, v in
+                             sorted(m.submarkets.items(),
+                                    key=lambda kv: -kv[1])[:6])
+            rows.append({
+                "Market": m.market,
+                "Properties": m.count,
+                "With unit counts": m.with_units,
+                "Known units": m.units_total,
+                "Submarkets": subs or "—",
+            })
+        st.dataframe(pd.DataFrame(rows), use_container_width=True,
+                     hide_index=True)
+        st.caption(
+            '"With unit counts" is how many carry a real unit number from '
+            "county records; the rest qualify by the assessor's own "
+            '"multifamily" building code while their exact count is still '
+            "being pulled. Coverage grows as the nightly data cycles run.")
