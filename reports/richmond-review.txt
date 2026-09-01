@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-09-01T03:35:14
+autopilot richmondreview @ 2026-09-01T05:35:14
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-01T03:35:16
+RICHMOND REVIEW  @ 2026-09-01T05:35:16
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
@@ -20,12 +20,16 @@ Multifamily (units>=10): 140
 -- 2b. Field mapping per source (spine-visible attributes) --
   files:rva.gov/assessor-real-estate
     rows=76,976  apn=76,976 (sample: C0010124002)  units=0  assessed_value=76,765  use_code=76,976
+    coords=0  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_B
     rows=76,739  apn=76,739 (sample: C0010124008)  units=0  assessed_value=0  use_code=0
+    coords=76,739  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/se
     rows=32,907  apn=32,907 (sample: 405010001)  units=2,365  assessed_value=0  use_code=32,767
+    coords=0  units+coords=0  apn shapes=['5d4a', '6d3a', '9d']
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
+    coords=6,570  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   rva.gov-files join health: 76,715 of 76,976 workbook parcels match an API-feed parcel
   address coverage per source (usable normalized addresses / with units):
     NONE - no Richmond assessor source maps an address at all
