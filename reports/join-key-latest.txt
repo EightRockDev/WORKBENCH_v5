@@ -1,4 +1,4 @@
-autopilot joinkey @ 2026-09-01T11:36:01
+autopilot joinkey @ 2026-09-01T13:37:54
 
 ====================================================================
 JOIN-KEY SCAN — Richmond
@@ -15,8 +15,8 @@ JOIN-KEY SCAN — Richmond
       AsrLocat_1, AsrLocatio, Assessme_1, Assessment, DwellingVa, Dwelling_1, LandSqFt, LandSqFt_1, LandUse, LandUse_1, LandValu_1, LandValue, Locality, MailAddr_1, MailAddres, MailCity, MailCity_1, MailZip, MailZip_1, OBJECTID, OBJECTID_12, ORIG_FID, ObjectID_1, OwnerNam_1, OwnerName, PIN, PIN_1, ParcelID, ParcelID_1, Property_1, Property_3, Shape_Ar_1, Shape_Le_1, Shape_Leng, TotalVal_1, TotalValue, geo_lat, geo_lng
   (ignored 2 row-counter field(s) in OR_Parcel_Ownership_WFL1/FeatureServer/1: OBJECTID, S_ZIP_EXT)
   (ignored 1 row-counter field(s) in files:rva.gov/assessor-real-estate: PID)
-  (ignored 1 row-counter field(s) in A_Base_Layers/VA_Parcels/FeatureServer/0: OBJECTID)
   (ignored 2 row-counter field(s) in arcels_Richmond_Virginia/FeatureServer/0: OBJECTID_12, ORIG_FID)
+  (ignored 1 row-counter field(s) in A_Base_Layers/VA_Parcels/FeatureServer/0: OBJECTID)
 
 -- Cross-source field overlap (top candidates) --
   100.0% of the smaller side (68 values)
