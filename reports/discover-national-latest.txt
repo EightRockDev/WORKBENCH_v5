@@ -1,4 +1,4 @@
-autopilot discover_national @ 2026-09-01T11:11:24
+autopilot discover_national @ 2026-09-01T12:11:30
 
 [national-discovery] probing top-50 metros for free parcel feeds...
 Probing GIS portals for unit-bearing parcel layers (50 national metros)...
@@ -111,7 +111,7 @@ Raleigh: 2 candidate layer(s)
 
 Richmond: 2 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      VGIN statewide fallback: FIPS = '51760'; 76,739 records; fields ['apn']
+      VGIN statewide fallback: UPPER(LOCALITY) = 'RICHMOND CITY'; 76,739 records; fields ['apn']
    https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
       auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_address', 'owner_city', 'owner_name', 'owner_state', 'owner_zip', 'use_code']; 6,570 records; NAMED as a subset - demoted
 
