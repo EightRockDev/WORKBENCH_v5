@@ -244,3 +244,11 @@
      client secret and cookie secret into a chat transcript; both had to be
      rotated. Mask by default, request the narrowest thing that answers the
      question.
+- **2026-09-01 (owner notes):** (1) Auth0 client secret + cookie secret
+  ROTATED by the owner - never mention that exposure again. (2) "Row
+  recovery report" meant nothing to him - I had named a deliverable after
+  its mechanism instead of its outcome. Name things by what they do for
+  him ("get back the emails the restore overwrote"), never by internal
+  plumbing. (3) The Suffolk FOIA deadline check is expected to keep
+  running until records arrive - the one-shot fired 8/28, so the daily
+  brief carries the Suffolk question forward until resolved.
