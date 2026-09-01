@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-09-01T03:19:53
+autopilot phase0 @ 2026-09-01T05:19:53
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,454,329
@@ -39,6 +39,13 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   rejected (same id form): 145,911
   rejected (not mutual)  : 658
   rejected (ambiguous)   : 395
+  Atlanta          sources 320,840  targets  67,405  merged    92   refused: far 252,544 / same-id 67,152 / not-mutual 657 / ambiguous 395
+  Hampton          sources     209  targets  51,339  merged     1   refused: far 28 / same-id 179 / not-mutual 1 / ambiguous 0
+  Raleigh          sources 367,742  targets 133,093  merged     1   refused: far 296,821 / same-id 70,920 / not-mutual 0 / ambiguous 0
+  Winston-Salem    sources       6  targets 167,348  merged     1   refused: far 5 / same-id 0 / not-mutual 0 / ambiguous 0
+  Durham           sources       4  targets 129,190  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0
+  Newport News     sources  46,669  targets   7,676  merged     0   refused: far 39,017 / same-id 7,652 / not-mutual 0 / ambiguous 0
+  Portsmouth       sources       7  targets  36,591  merged     0   refused: far 3 / same-id 4 / not-mutual 0 / ambiguous 0
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Richmond: R-48 Multi Family x2364, R-63 Multi Family Urban Res. x1952, R-53 Multi Family x1548, R-73 Multi Family x257, R-43 Multi Family x202
