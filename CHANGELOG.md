@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.66.0.1.0 — 2026-09-01  ·  The recovery script could not find the app it lives in.
+
+`uv run python scripts/recover_post_restore.py` on the host died with
+`ModuleNotFoundError: data` — running a file under `scripts/` puts
+`scripts/`, not the repo root, on Python's path. Every autopilot script
+carries the two-line bootstrap for exactly this; the recovery script
+shipped without it, so the first command the owner ran to see his lost
+emails crashed. Fixed, plus a test that runs the script exactly as he
+runs it and requires the friendly missing-file message, not an import
+crash.
+
 ## V5.66.0.0.0 — 2026-09-01  ·  Workbench Metrics: the count, defined, on the screener page.
 
 Owner ask: a metrics box at the bottom of the Property Screener that says

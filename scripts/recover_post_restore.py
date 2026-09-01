@@ -45,6 +45,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+# `python scripts/foo.py` puts scripts/ (not the repo root) on sys.path, so
+# `from data import pg` fails on the host. Every autopilot script carries
+# this bootstrap; this one shipped without it (owner hit it 2026-09-01).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # Order matters: parents before children, so an inserted row's references
 # already exist. organizations/users themselves are NOT merged - the
 # restored Aug 18 identities are authoritative and the remap points at them.

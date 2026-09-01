@@ -179,3 +179,24 @@ def test_it_reads_through_the_bypassrls_role():
     src = (Path(__file__).resolve().parent.parent
            / "scripts" / "recover_post_restore.py").read_text(encoding="utf-8")
     assert "ER_BACKUP_DATABASE_URL" in src
+
+
+def test_the_script_runs_from_the_repo_root_like_the_owner_runs_it():
+    """`uv run python scripts/recover_post_restore.py` on the host failed
+    with ModuleNotFoundError: data - scripts/ was on sys.path, the repo
+    root was not. Run it exactly that way and require a clean argparse
+    failure, not an import crash."""
+    import subprocess
+    import sys as _sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    proc = subprocess.run(
+        [_sys.executable, "scripts/recover_post_restore.py",
+         "--snapshot", "does-not-exist.dump"],
+        cwd=str(root), capture_output=True, text=True, timeout=120)
+
+    assert "ModuleNotFoundError" not in proc.stderr, proc.stderr[-400:]
+    assert "snapshot not found" in proc.stdout, (
+        f"expected the friendly missing-file message, got:\n"
+        f"{proc.stdout[-200:]}{proc.stderr[-200:]}")
