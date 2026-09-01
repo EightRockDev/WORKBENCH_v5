@@ -12,6 +12,50 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.65.3.0.0 — 2026-09-01  ·  Richmond diagnosed and re-bridged: the unit feed has no geometry at all.
+
+The instrument shipped this morning answered within one cycle: Richmond's
+ONLY unit-bearing source — the COR ownership table — carries **zero
+coordinates** on all 32,907 rows. It is a geometry-less table, so the
+position bridge could never reach it, by construction, at any radius. My
+"leading suspicion" (the rva.gov workbook) was the wrong feed; the report
+named the right one.
+
+The same diagnostic run exposed what CAN join it, and this ships all
+three, strongest first — each guarded so a wrong guess matches nothing:
+
+- **`FRM_PRCL` as a shape-gated apn alias.** The COR table names the
+  parcel each account was carved FROM; on apartment accounts that is
+  plausibly the parent's letter PIN — the exact id the rva.gov/VDEM rows
+  key on. The alias sits dead last and only takes over through the
+  existing Richmond shape rule, i.e. only when the value actually matches
+  `[A-Z]\d{10}`. If it is the letter PIN, COR rows land on the SAME
+  property id and units merge by COALESCE with no bridge at all.
+- **The address axis, un-blinded.** "No Richmond source maps a usable
+  address" (2026-08-27) was an ALIAS gap: the rva.gov workbook's situs
+  lives in `PARCEL_LOCATION`, the COR table's in `N_STR_NBR/N_STR_NM/
+  N_STR_SUF/N_FRAC/N_ZIP` — none aliased. Now mapped, both sides carry
+  street addresses.
+- **An address-equality merge pass** in the bridge, for feeds geometry
+  can never reach: same city, DIFFERENT apn shape, exact normalized
+  situs match with a street number required, one-to-one on BOTH sides
+  (a shared address is a condo stack — refused), and refused when both
+  rows carry coordinates that disagree by >150 m. Runs before the
+  geometry pass; reported per city alongside it.
+- The city gate no longer requires coordinates (it re-created the exact
+  blindness being fixed: Richmond had zero coordinate-bearing sources,
+  so the merge loop never entered the city).
+- The Richmond review now prints **two raw records verbatim** from the
+  unit-bearing source. The whole detour happened because reports showed
+  field NAMES and never one VALUE — guessing from names is how "APN"
+  turned out to be a numeric account id.
+- `SPINE_BUILD_GENERATION` 2 → 3 so the host actually rebuilds.
+
+11 new tests: the alias promotions (and non-promotion of a non-PIN
+value), the geometry-less merge, shared-address refusal, coordinate
+contradiction, no street number = no match, same-scheme refusal on the
+address axis too.
+
 ## V5.65.2.0.0 — 2026-09-01  ·  The bridge merged 92 in Atlanta and 0 in Richmond. Find out why.
 
 First live run: 95 merges, none of them in the city the bridge was written

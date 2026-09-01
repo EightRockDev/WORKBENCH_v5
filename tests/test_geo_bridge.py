@@ -414,3 +414,149 @@ def test_each_city_reports_its_own_refusals(tmp_path):
     assert "merged     0" in richmond or "merged      0" in richmond
     assert "far 1" in richmond, (
         f"Richmond's line does not name the rule that refused it: {richmond}")
+
+
+# ---------------------------------------------------------------------------
+# The address pass — for the feed geometry can never reach
+# ---------------------------------------------------------------------------
+# 2026-09-01: Richmond's ONLY unit-bearing source (the COR ownership table)
+# turned out to carry no geometry at all — coords=0 on all 32,907 rows —
+# so the position bridge matched nothing there by construction. These
+# rows DO carry a situs address, and so does the rva.gov workbook once
+# PARCEL_LOCATION is aliased. Exact address equality, one-to-one both
+# ways, is the join that works for a geometry-less feed.
+
+def _addr_db(tmp_path, rows):
+    conn = sqlite3.connect(tmp_path / "wb.db")
+    conn.execute("""CREATE TABLE properties_8r (
+        property_id TEXT PRIMARY KEY, fips TEXT, apn TEXT, address TEXT,
+        city TEXT, state TEXT, zip TEXT, units INTEGER, year_built INTEGER,
+        sqft REAL, use_code TEXT, r8_form TEXT, r8_market TEXT,
+        r8_submarket TEXT, assessed_value REAL, owner_name TEXT,
+        owner_address TEXT, lat REAL, lng REAL, provenance TEXT,
+        built_at TEXT)""")
+    conn.executemany(
+        "INSERT INTO properties_8r (property_id, fips, apn, address, city, "
+        "units, assessed_value, lat, lng) VALUES (?,?,?,?,?,?,?,?,?)", rows)
+    conn.commit()
+    return conn
+
+
+def test_a_geometryless_unit_row_merges_by_exact_address(tmp_path):
+    """The COR shape: units + address, NO coordinates. Its twin has the
+    value and the coords. Same address, different id scheme -> one row."""
+    conn = _addr_db(tmp_path, [
+        ("8R-COR", "51760", COR_APN, "611 MICHIGAN DR", "Richmond",
+         48, None, None, None),
+        ("8R-PIN", "51760", PIN_APN, "611 Michigan Drive", "Richmond",
+         None, 4_200_000, LAT, LNG),
+    ])
+    merged, rep, by_city = merge_duplicate_parcels(conn)
+
+    assert merged == 1, rep.lines()
+    assert rep.merged_by_address == 1
+    rows = conn.execute("SELECT property_id, units, assessed_value, lat "
+                        "FROM properties_8r").fetchall()
+    assert len(rows) == 1
+    pid, units, value, lat = rows[0]
+    assert pid == "8R-PIN" and units == 48 and value == 4_200_000
+    assert lat == LAT, "the survivor lost its coordinates"
+
+
+def test_a_shared_address_is_refused_not_split(tmp_path):
+    """Two condo rows at one address vs one target: a coin flip, refused."""
+    conn = _addr_db(tmp_path, [
+        ("8R-C1", "51760", COR_APN, "611 MICHIGAN DR", "Richmond",
+         24, None, None, None),
+        ("8R-C2", "51760", "405010002", "611 MICHIGAN DR", "Richmond",
+         24, None, None, None),
+        ("8R-PIN", "51760", PIN_APN, "611 MICHIGAN DR", "Richmond",
+         None, 1, LAT, LNG),
+    ])
+    merged, rep, _by = merge_duplicate_parcels(conn)
+
+    assert rep.merged_by_address == 0
+    assert rep.rejected_addr_ambiguous >= 1
+    assert conn.execute("SELECT count(*) FROM properties_8r").fetchone()[0] == 3
+
+
+def test_matching_addresses_with_contradicting_coords_are_refused(tmp_path):
+    """Same street address, coordinates 900 m apart: a data smear, not a
+    building. Neither row may be touched."""
+    conn = _addr_db(tmp_path, [
+        ("8R-COR", "51760", COR_APN, "611 MICHIGAN DR", "Richmond",
+         48, None, LAT, LNG),
+        ("8R-PIN", "51760", PIN_APN, "611 MICHIGAN DR", "Richmond",
+         None, 1, north(900), LNG),
+    ])
+    merged, rep, _by = merge_duplicate_parcels(conn)
+
+    assert rep.merged_by_address == 0
+    assert rep.rejected_addr_conflict == 1
+    assert conn.execute("SELECT count(*) FROM properties_8r").fetchone()[0] == 2
+
+
+def test_an_address_without_a_street_number_never_matches(tmp_path):
+    """"MAIN ST" alone matches half a city - it is not an identity."""
+    conn = _addr_db(tmp_path, [
+        ("8R-COR", "51760", COR_APN, "MICHIGAN DR", "Richmond",
+         48, None, None, None),
+        ("8R-PIN", "51760", PIN_APN, "MICHIGAN DR", "Richmond",
+         None, 1, LAT, LNG),
+    ])
+    merged, rep, _by = merge_duplicate_parcels(conn)
+    assert merged == 0 and rep.merged_by_address == 0
+
+
+def test_same_scheme_rows_never_merge_by_address_either(tmp_path):
+    """The marina rule holds on this axis too."""
+    conn = _addr_db(tmp_path, [
+        ("8R-A", "51760", "405010001", "611 MICHIGAN DR", "Richmond",
+         48, None, None, None),
+        ("8R-B", "51760", "405010009", "611 MICHIGAN DR", "Richmond",
+         None, 1, LAT, LNG),
+    ])
+    merged, _rep, _by = merge_duplicate_parcels(conn)
+    assert merged == 0
+    assert conn.execute("SELECT count(*) FROM properties_8r").fetchone()[0] == 2
+
+
+# ---------------------------------------------------------------------------
+# The Richmond aliases that make the address pass possible
+# ---------------------------------------------------------------------------
+
+def test_richmond_cor_record_promotes_frm_prcl_to_the_letter_pin():
+    """FRM_PRCL holds the parent parcel's letter PIN on carve-out
+    accounts; the Richmond shape rule promotes it over the numeric APN -
+    and ONLY when the value actually looks like a letter PIN."""
+    from core.phase0 import normalize_record
+
+    r = normalize_record("Richmond", "VA", {
+        "APN": "405010001", "FRM_PRCL": "N0001746010",
+        "LivingUnits": 48, "N_STR_NBR": "611", "N_STR_NM": "MICHIGAN",
+        "N_STR_SUF": "DR", "N_ZIP": "23669"})
+    assert r.get("apn") == "N0001746010"
+    assert r.get("address") == "611 MICHIGAN DR"
+    assert r.get("units") == 48
+    assert r.get("zip") == "23669"
+
+    r2 = normalize_record("Richmond", "VA",
+                          {"APN": "405010001", "FRM_PRCL": "99999"})
+    assert r2.get("apn") == "405010001", (
+        "a non-letter-PIN FRM_PRCL value must never take over the apn")
+
+
+def test_rva_workbook_parcel_location_maps_to_the_address():
+    from core.phase0 import normalize_record
+
+    r = normalize_record("Richmond", "VA", {
+        "PID": "N0001746010", "PARCEL_LOCATION": "611 MICHIGAN DR"})
+    assert r.get("apn") == "N0001746010"
+    assert r.get("address") == "611 MICHIGAN DR"
+
+
+def test_the_generation_was_bumped_for_the_alias_change():
+    from core import phase0
+    assert phase0.SPINE_BUILD_GENERATION >= 3, (
+        "aliases changed but SPINE_BUILD_GENERATION did not - the host "
+        "will skip the rebuild and Richmond stays unbridged")

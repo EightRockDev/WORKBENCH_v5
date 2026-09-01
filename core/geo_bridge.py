@@ -108,6 +108,9 @@ class BridgeReport:
     rejected_not_mutual: int = 0
     rejected_ambiguous: int = 0
     rejected_same_scheme: int = 0
+    merged_by_address: int = 0
+    rejected_addr_ambiguous: int = 0
+    rejected_addr_conflict: int = 0
     by_city: dict = field(default_factory=dict)   # city -> its own report
 
     def lines(self) -> list[str]:
@@ -119,6 +122,9 @@ class BridgeReport:
             f"rejected (same id form): {self.rejected_same_scheme:,}",
             f"rejected (not mutual)  : {self.rejected_not_mutual:,}",
             f"rejected (ambiguous)   : {self.rejected_ambiguous:,}",
+            f"merged by address      : {self.merged_by_address:,}",
+            f"addr rejected (shared) : {self.rejected_addr_ambiguous:,}",
+            f"addr rejected (coords) : {self.rejected_addr_conflict:,}",
         ]
 
     def city_lines(self) -> list[str]:
@@ -131,7 +137,10 @@ class BridgeReport:
                 f"  merged {r.matched:>5,}   refused: far {r.rejected_far:,}"
                 f" / same-id {r.rejected_same_scheme:,}"
                 f" / not-mutual {r.rejected_not_mutual:,}"
-                f" / ambiguous {r.rejected_ambiguous:,}")
+                f" / ambiguous {r.rejected_ambiguous:,}"
+                f"   by-address {r.merged_by_address:,}"
+                f" (shared {r.rejected_addr_ambiguous:,}"
+                f", coords {r.rejected_addr_conflict:,})")
         return out
 
 
@@ -325,10 +334,15 @@ def merge_duplicate_parcels(conn) -> tuple[int, BridgeReport, dict[str, int]]:
     if os.environ.get("ER_NO_GEO_BRIDGE") == "1":
         return 0, BridgeReport(), {}
 
+    # No lat requirement HERE: the address pass exists precisely for
+    # unit-bearing feeds with no geometry (Richmond COR, coords=0 on all
+    # 32,907 rows). Requiring lat in the city gate re-created the very
+    # blindness being fixed - Richmond had 0 eligible sources and never
+    # entered the loop.
     cities = [r[0] for r in conn.execute(
         "SELECT city FROM properties_8r "
         " WHERE city IS NOT NULL AND city <> '' "
-        "   AND lat IS NOT NULL AND apn IS NOT NULL AND apn <> '' "
+        "   AND apn IS NOT NULL AND apn <> '' "
         " GROUP BY city "
         "HAVING sum(CASE WHEN units > 0 THEN 1 ELSE 0 END) > 0 "
         "   AND sum(CASE WHEN units IS NULL THEN 1 ELSE 0 END) > 0")]
@@ -354,8 +368,20 @@ def merge_duplicate_parcels(conn) -> tuple[int, BridgeReport, dict[str, int]]:
                         "   AND lat IS NOT NULL AND lng IS NOT NULL "
                         "   AND apn IS NOT NULL AND apn <> ''", (city,))]
 
+        addr_merged = _merge_by_address(conn, city, cols)
+        report_addr_merged = addr_merged[0]
+        merged += report_addr_merged
+        if report_addr_merged:          # a bare += 0 still creates the key,
+            per_city[city] += report_addr_merged   # polluting by-city output
+
         matches, report = bridge_units(_points("units IS NOT NULL AND units > 0"),
                                        _points("units IS NULL"))
+        report.merged_by_address = report_addr_merged
+        report.rejected_addr_ambiguous = addr_merged[1]
+        report.rejected_addr_conflict = addr_merged[2]
+        total.merged_by_address += report_addr_merged
+        total.rejected_addr_ambiguous += addr_merged[1]
+        total.rejected_addr_conflict += addr_merged[2]
         total.sources += report.sources
         total.targets += report.targets
         total.matched += report.matched
@@ -390,3 +416,96 @@ def merge_duplicate_parcels(conn) -> tuple[int, BridgeReport, dict[str, int]]:
             per_city[city] += 1
 
     return merged, total, dict(per_city)
+
+
+# ---------------------------------------------------------------------------
+# Address-equality merge - for unit-bearing feeds that carry NO geometry
+# ---------------------------------------------------------------------------
+
+# Two rows claiming the same situs address can still be different lots if
+# both carry coordinates that disagree wildly (a data-entry collision).
+ADDR_COORD_CONFLICT_M = 150.0
+
+
+def _merge_by_address(conn, city: str, cols: str) -> tuple[int, int, int]:
+    """Merge unit-bearing rows onto their twin by EXACT situs address.
+
+    Richmond's COR ownership table is a geometry-less table (coords=0 on
+    every row, 2026-09-01), so the position bridge can never reach it. But
+    it carries the situs street address, and so does the rva.gov workbook
+    once PARCEL_LOCATION is aliased. An exact normalized-address equality
+    is stronger identity evidence than proximity - buildings do not share
+    a street number - PROVIDED it is one-to-one both ways:
+
+      * the address maps to exactly ONE unit-bearing row and exactly ONE
+        unit-less row in the city (a shared address on either side is a
+        condo stack or a data smear - refuse);
+      * the apn shapes differ (same-feed rows are different lots);
+      * if BOTH rows do carry coordinates, they must not contradict the
+        claimed identity by more than ADDR_COORD_CONFLICT_M.
+
+    Returns (merged, rejected_shared_address, rejected_coord_conflict).
+    """
+    from core.phase0_parity import normalize_address
+
+    def _rows(where: str):
+        return conn.execute(
+            "SELECT property_id, address, apn, lat, lng, units "
+            "  FROM properties_8r "
+            f" WHERE city = ? AND {where} "
+            "   AND address IS NOT NULL AND address <> '' "
+            "   AND apn IS NOT NULL AND apn <> ''", (city,)).fetchall()
+
+    def _by_addr(rows):
+        table: dict[str, list] = {}
+        for r in rows:
+            a = normalize_address(str(r[1]))
+            # Require a street number: "MAIN ST" alone matches half a city.
+            if not a or not any(ch.isdigit() for ch in a):
+                continue
+            table.setdefault(a, []).append(r)
+        return table
+
+    sources = _by_addr(_rows("units IS NOT NULL AND units > 0"))
+    targets = _by_addr(_rows("units IS NULL"))
+
+    merged = shared = conflict = 0
+    for addr, srcs in sorted(sources.items()):
+        tgts = targets.get(addr)
+        if not tgts:
+            continue
+        if len(srcs) > 1 or len(tgts) > 1:
+            shared += 1
+            continue
+        (s_id, _sa, s_apn, s_lat, s_lng, _su) = srcs[0]
+        (t_id, _ta, t_apn, t_lat, t_lng, _tu) = tgts[0]
+        sa, ta = apn_shape(s_apn), apn_shape(t_apn)
+        if not sa or not ta or sa == ta:
+            continue
+        if (s_lat is not None and s_lng is not None
+                and t_lat is not None and t_lng is not None
+                and metres_between(s_lat, s_lng, t_lat, t_lng)
+                > ADDR_COORD_CONFLICT_M):
+            conflict += 1
+            continue
+        src = conn.execute(
+            f"SELECT {cols} FROM properties_8r WHERE property_id = ?",
+            (s_id,)).fetchone()
+        tgt = conn.execute(
+            f"SELECT {cols} FROM properties_8r WHERE property_id = ?",
+            (t_id,)).fetchone()
+        if src is None or tgt is None:
+            continue
+        sets, vals = [], []
+        for i, field_name in enumerate(MERGE_FIELDS):
+            if tgt[i] is None and src[i] is not None:
+                sets.append(f"{field_name} = ?")
+                vals.append(src[i])
+        if sets:
+            conn.execute(
+                f"UPDATE properties_8r SET {', '.join(sets)} "
+                " WHERE property_id = ?", (*vals, t_id))
+        conn.execute("DELETE FROM properties_8r WHERE property_id = ?",
+                     (s_id,))
+        merged += 1
+    return merged, shared, conflict

@@ -178,6 +178,37 @@ def main() -> int:
             print(f"    coords={d['coords']:,}  "
                   f"units+coords={d['units_and_coords']:,}  "
                   f"apn shapes={sorted(d['shapes'])[:3] or 'NONE'}")
+        # Two RAW records from the unit-bearing source, keys and values
+        # verbatim. 2026-09-01: the fix hinged on what FRM_PRCL and
+        # PARCEL_LOCATION actually contain, and no report showed a single
+        # raw value - the field lists said what columns exist, never what
+        # is in them. Guessing from field NAMES is how the apn alias
+        # picked a numeric account id.
+        unit_src2 = max(per.items(), key=lambda kv: kv[1]["units"],
+                        default=(None, None))[0]
+        if unit_src2 and per[unit_src2]["units"]:
+            print(f"  -- 2 raw records from the unit-bearing source "
+                  f"({unit_src2[:48]}) --")
+            shown = 0
+            for src3, rec3 in conn.execute(
+                    "SELECT source_url, record FROM muni_records "
+                    "WHERE market='Richmond' AND kind LIKE 'assessor%' "
+                    "AND source_url = ?", (unit_src2,)):
+                raw3 = phase0._decode_muni_record(rec3)
+                if not raw3:
+                    continue
+                m3 = phase0.normalize_record("Richmond", "VA", raw3)
+                if not m3.get("units"):
+                    continue
+                shown += 1
+                for k in sorted(raw3):
+                    v = str(raw3[k])
+                    if v not in ("", "None", "null"):
+                        print(f"      {k} = {v[:48]}")
+                print("      " + "-" * 40)
+                if shown >= 2:
+                    break
+
         files_src = next((s for s in per if s.startswith("files:")), None)
         if files_src:
             fset = per[files_src]["apns"]
