@@ -54,3 +54,15 @@ hampton-roads-etl/.env
 # Never commit them: owner names, financials and notes, and this repo is
 # pushed to GitHub.
 /Properties/
+
+# Eight Rock ingest - local only
+logs/
+data/deal_docs/
+*.bak-*
+my-deals.txt
+schema-report.txt
+ingest-report.txt
+ingest-fix-report.txt
+ingest-harden-report.txt
+cloudflare-report.txt
+ingest-service-report.txt

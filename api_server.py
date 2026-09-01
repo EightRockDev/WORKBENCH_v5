@@ -130,3 +130,8 @@ def get_sales(property_id: str, key: keys.ApiKey = Depends(_auth)) -> dict:
     records = sale_history.sale_history_for(prop, db_path=db)
     return {"property_id": property_id, "count": len(records),
             "results": records}
+
+
+# --- deal ingest (added by setup-ingest.bat) ---
+from ingest_routes import include_ingest_routes
+include_ingest_routes(app)
