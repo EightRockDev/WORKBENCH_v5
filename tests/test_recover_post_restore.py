@@ -200,3 +200,34 @@ def test_the_script_runs_from_the_repo_root_like_the_owner_runs_it():
     assert "snapshot not found" in proc.stdout, (
         f"expected the friendly missing-file message, got:\n"
         f"{proc.stdout[-200:]}{proc.stderr[-200:]}")
+
+
+def test_utf8_content_survives_a_cp1252_locale(tmp_path, monkeypatch):
+    """On the host, an email body with byte 0x9d (a Windows curly quote)
+    crashed the cp1252 reader thread and inbox_messages vanished from the
+    report without an error. The read must be pinned to UTF-8."""
+    import subprocess as sp
+    import sys as _sys
+
+    # A stand-in pg_restore that emits a COPY block containing the exact
+    # byte sequence that broke: written raw to stdout, no encoding help.
+    stub = tmp_path / "fake_pg_restore.py"
+    stub.write_text(
+        "import sys\n"
+        "out = sys.stdout.buffer\n"
+        "out.write(b'COPY public.inbox_messages (id, body) FROM stdin;\\n')\n"
+        "out.write(b'm1\\t' + 'offering \\u2019memo\\u2019'.encode('utf-8')"
+        " + b'\\n')\n"
+        "out.write(b'\\\\.\\n')\n", encoding="utf-8")
+
+    real_run = sp.run
+
+    def run_via_python(cmd, **kw):
+        return real_run([_sys.executable, str(stub)] + list(cmd[1:]), **kw)
+
+    monkeypatch.setattr(rpr.subprocess, "run", run_via_python)
+    cols, rows = rpr.read_table("ignored", tmp_path / "x.dump",
+                                "inbox_messages")
+
+    assert cols == ["id", "body"], "the UTF-8 COPY block failed to parse"
+    assert len(rows) == 1 and "memo" in rows[0][1]

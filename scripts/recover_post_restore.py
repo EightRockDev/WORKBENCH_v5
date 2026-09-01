@@ -100,9 +100,13 @@ def _unescape(v: str):
 def read_table(pg_restore: str, dump: Path, table: str
                ) -> tuple[list[str], list[list]]:
     """Return (columns, rows) for one table straight out of the archive."""
+    # encoding pinned: pg_restore emits UTF-8, but text=True on Windows
+    # decodes with cp1252, and one curly quote (byte 0x9d) in an email
+    # body killed the reader thread - which silently dropped
+    # inbox_messages, the exact table the owner wanted back (2026-09-01).
     proc = subprocess.run(
         [pg_restore, "--data-only", "-t", table, "-f", "-", str(dump)],
-        capture_output=True, text=True)
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
     out = proc.stdout or ""
     m = re.search(r"^COPY [^(]*\(([^)]*)\) FROM stdin;$", out, re.M)
     if not m:

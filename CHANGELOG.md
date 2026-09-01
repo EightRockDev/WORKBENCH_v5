@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.66.0.2.0 — 2026-09-01  ·  A curly quote hid the owner's lost emails from the recovery report.
+
+The first live run of the recovery report listed 54 recoverable rows and
+silently omitted inbox_messages — the table the whole exercise exists
+for. `subprocess` with `text=True` decodes with the Windows default
+codepage (cp1252), and byte 0x9d (a right curly quote inside an email
+body) is undefined there; the reader thread died mid-read and the table
+quietly dropped out. Decoding is now pinned to UTF-8 with
+errors=replace, and a test replays the exact failing byte sequence
+through the real reader.
+
 ## V5.66.0.1.0 — 2026-09-01  ·  The recovery script could not find the app it lives in.
 
 `uv run python scripts/recover_post_restore.py` on the host died with
