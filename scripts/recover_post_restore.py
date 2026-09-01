@@ -88,13 +88,52 @@ def find_pg_restore() -> str | None:
 # Reading a table out of a custom-format dump, without a database
 # ---------------------------------------------------------------------------
 
+_COPY_ESCAPES = {"n": "\n", "t": "\t", "r": "\r",
+                 "b": "\b", "f": "\f", "v": "\v", "\\": "\\"}
+
+
 def _unescape(v: str):
-    r"""COPY text format -> Python. `\N` is NULL, and the escapes are the
-    small fixed set COPY emits."""
+    r"""COPY text format -> Python, scanned LEFT TO RIGHT.
+
+    Sequential str.replace was wrong in exactly one case that real data
+    hits constantly: a literal backslash followed by 'n'. JSON columns are
+    full of two-character ``\n`` escapes; COPY doubles the backslash to
+    ``\\n``, and replace(r"\n", newline) matched the SECOND backslash
+    plus the n first - producing backslash+REAL-newline, which is invalid
+    JSON. Postgres refused the whole restore over it (2026-09-01:
+    'Escape sequence "\<newline>" is invalid'). Only a scanner knows the
+    first backslash owns the second.
+    """
     if v == r"\N":
         return None
-    return (v.replace(r"\r", "\r").replace(r"\n", "\n")
-             .replace(r"\t", "\t").replace("\\\\", "\\"))
+    if "\\" not in v:
+        return v
+    out = []
+    i, n = 0, len(v)
+    while i < n:
+        ch = v[i]
+        if ch != "\\":
+            out.append(ch)
+            i += 1
+            continue
+        i += 1
+        if i >= n:                      # trailing lone backslash - keep it
+            out.append("\\")
+            break
+        nxt = v[i]
+        if nxt in _COPY_ESCAPES:
+            out.append(_COPY_ESCAPES[nxt])
+            i += 1
+        elif nxt.isdigit():             # octal \ooo (COPY accepts, rarely emits)
+            j = i
+            while j < n and j - i < 3 and v[j] in "01234567":
+                j += 1
+            out.append(chr(int(v[i:j], 8)) if j > i else nxt)
+            i = j if j > i else i + 1
+        else:                           # unknown escape: keep the char
+            out.append(nxt)
+            i += 1
+    return "".join(out)
 
 
 def read_table(pg_restore: str, dump: Path, table: str
@@ -338,7 +377,13 @@ def main() -> int:
                         "SELECT set_config('app.current_org_id', %s, false),"
                         "       set_config('app.current_user_id', %s, false)",
                         (org_ctx or "", user_ctx or ""))
-                    cur.execute(sql, r)
+                    try:
+                        cur.execute(sql, r)
+                    except Exception as exc:
+                        rid = r[cols.index("id")] if "id" in cols else "?"
+                        raise RuntimeError(
+                            f"insert failed in {table}, row id {rid}: "
+                            f"{exc}") from exc
                     inserted += cur.rowcount
         conn.commit()
 

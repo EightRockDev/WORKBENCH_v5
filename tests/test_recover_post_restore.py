@@ -257,3 +257,25 @@ def test_row_context_reads_ownership_off_the_row():
     # actor_user_id is an audit pointer, not ownership.
     assert rpr.row_context(["id", "actor_user_id"], ["a", "x"]) == (None, None)
     assert rpr.row_context(["id"], ["a"]) == (None, None)
+
+
+def test_a_json_backslash_escape_survives_the_copy_decoder():
+    r"""The bug that stopped --apply run 2: JSON evidence text contains a
+    two-character \n escape; COPY writes it as \\n, and the sequential
+    replace turned it into backslash + REAL newline - invalid JSON that
+    Postgres refused. A scanner must give the first backslash its pair."""
+    import json
+
+    # chars: { " a " :   " x \ n y " }  as COPY writes them: \ doubled.
+    copy_text = r'{"evidence": ["\'208\\nunits\'"], "fields": {"u": 208}}'
+    decoded = rpr._unescape(copy_text)
+    assert "\n" not in decoded, "a JSON escape became a literal newline"
+    json.loads(decoded)   # must be valid JSON again
+
+    assert rpr._unescape(r"a\\nb") == "a\\nb".replace("\\\\", "\\"), (
+        "backslash-backslash-n must decode to backslash+n, never to "
+        "backslash+newline")
+    # And the plain escapes still work.
+    assert rpr._unescape(r"tab\there") == "tab\there"
+    assert rpr._unescape(r"line\nbreak") == "line\nbreak"
+    assert rpr._unescape(r"\N") is None

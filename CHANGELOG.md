@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.66.0.4.0 — 2026-09-01  ·  A backslash owned by a backslash: the COPY decoder becomes a scanner.
+
+--apply run 2 got past RLS and died on JSON: 'Escape sequence "\<newline>"
+is invalid'. The recovery reader decoded COPY text with sequential
+str.replace, and on the sequence backslash-backslash-n (how COPY writes a
+JSON ``\n`` escape) the replace matched the SECOND backslash plus the n,
+turning valid JSON into backslash + a real newline. Rewritten as a
+left-to-right scanner (the first backslash owns the second), octal
+escapes handled, and a failed insert now names its table and row id
+instead of an "unnamed portal parameter". Nothing was written on either
+failed run - the single transaction held.
+
 ## V5.66.0.3.0 — 2026-09-01  ·  The recovery writer now says whose rows it is writing.
 
 `--apply` stopped at the first insert: "new row violates row-level
