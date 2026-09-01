@@ -18,7 +18,7 @@ from __future__ import annotations
 # *** BUMP THIS ON EVERY CHANGE and add a CHANGELOG.md entry (owner directive). ***
 # ---------------------------------------------------------------------------
 
-WORKBENCH_VERSION = "V5.66.0.4.0"
+WORKBENCH_VERSION = "V5.66.0.5.0"
 
 
 # ---------------------------------------------------------------------------

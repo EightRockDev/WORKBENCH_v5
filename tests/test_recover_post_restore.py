@@ -160,9 +160,11 @@ def test_report_only_is_the_default():
            / "scripts" / "recover_post_restore.py").read_text(encoding="utf-8")
     assert 'ap.add_argument("--apply", action="store_true"' in src
     apply_gate = src.index("if not args.apply:")
-    first_insert = src.index("INSERT INTO")
-    assert apply_gate < first_insert, (
-        "the insert path is reachable without --apply")
+    # Anchor on the write CONNECTION, not the text "INSERT INTO" - the
+    # _insert_sql helper legitimately contains that string above the gate.
+    first_write = src.index("psycopg.connect(write_url)")
+    assert apply_gate < first_write, (
+        "the write path is reachable without --apply")
 
 
 def test_inserts_never_overwrite_an_existing_row():
@@ -279,3 +281,27 @@ def test_a_json_backslash_escape_survives_the_copy_decoder():
     assert rpr._unescape(r"tab\there") == "tab\there"
     assert rpr._unescape(r"line\nbreak") == "line\nbreak"
     assert rpr._unescape(r"\N") is None
+
+
+def test_identity_columns_are_overridden_and_resequenced():
+    """--apply run 3 hit 'cannot insert a non-DEFAULT value into column
+    id' on property_activity (GENERATED ALWAYS). Keeping the original ids
+    is what makes re-runs skip instead of duplicate, so the writer must
+    override - and then push the sequence past max(id), or the app's own
+    next activity row collides with a restored one."""
+    from pathlib import Path
+
+    sql = rpr._insert_sql("property_activity", ["id", "org_id"], True)
+    assert "OVERRIDING SYSTEM VALUE" in sql
+    assert sql.index("(\"id\", \"org_id\")") < sql.index("OVERRIDING") < \
+        sql.index("VALUES"), "clause order matters to Postgres"
+
+    plain = rpr._insert_sql("deals", ["id"], False)
+    assert "OVERRIDING" not in plain, (
+        "the clause is a syntax error on tables without identity columns")
+
+    src = (Path(__file__).resolve().parent.parent
+           / "scripts" / "recover_post_restore.py").read_text(encoding="utf-8")
+    assert "attidentity" in src, "identity detection must come from the catalog"
+    assert "pg_get_serial_sequence" in src and "setval" in src, (
+        "without resequencing, the app's next insert reuses a restored id")

@@ -12,6 +12,18 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.66.0.5.0 — 2026-09-01  ·  Identity columns: override, then advance the sequence.
+
+--apply run 3: 'cannot insert a non-DEFAULT value into column "id"' -
+property_activity's id is GENERATED ALWAYS. The original ids must be
+kept (they are what lets a re-run skip already-restored rows instead of
+duplicating them), so the writer now detects identity columns from the
+catalog (pg_attribute.attidentity), adds OVERRIDING SYSTEM VALUE only on
+tables that need it (the clause is a syntax error elsewhere), and then
+advances the sequence past max(id) - without that, the app's own next
+activity row would collide with a restored one weeks later, far from any
+context that explains it.
+
 ## V5.66.0.4.0 — 2026-09-01  ·  A backslash owned by a backslash: the COPY decoder becomes a scanner.
 
 --apply run 2 got past RLS and died on JSON: 'Escape sequence "\<newline>"

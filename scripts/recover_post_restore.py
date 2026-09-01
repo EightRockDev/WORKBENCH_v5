@@ -231,6 +231,17 @@ def remap_row(columns: list[str], row: list, user_map: dict, org_map: dict
     return out, ""
 
 
+def _insert_sql(table: str, cols: list[str], overriding: bool) -> str:
+    """The insert, with OVERRIDING SYSTEM VALUE only where an identity
+    column demands it - the clause is a syntax error on tables without
+    one, so it cannot simply be added everywhere."""
+    collist = ", ".join(f'"{c}"' for c in cols)
+    marks = ", ".join(["%s"] * len(cols))
+    over = "OVERRIDING SYSTEM VALUE " if overriding else ""
+    return (f'INSERT INTO {table} ({collist}) {over}VALUES ({marks}) '
+            f'ON CONFLICT DO NOTHING')
+
+
 def row_context(columns: list[str], row: list) -> tuple[str | None, str | None]:
     """(org_id, user_id) a row belongs to, read off the row itself.
 
@@ -367,10 +378,19 @@ def main() -> int:
     with psycopg.connect(write_url) as conn:
         with conn.cursor() as cur:
             for table, (cols, rows) in plan.items():
-                collist = ", ".join(f'"{c}"' for c in cols)
-                marks = ", ".join(["%s"] * len(cols))
-                sql = (f'INSERT INTO {table} ({collist}) VALUES ({marks}) '
-                       f'ON CONFLICT DO NOTHING')
+                # GENERATED ALWAYS identity columns (property_activity.id,
+                # 2026-09-01) refuse explicit values without an override.
+                # The original ids MUST be kept - they are what makes a
+                # re-run skip already-restored rows instead of duplicating
+                # them - so override, and afterwards advance the sequence
+                # past max(id) or the APP's next insert collides with a
+                # restored row.
+                idents = {r[0] for r in cur.execute(
+                    "SELECT attname FROM pg_attribute "
+                    " WHERE attrelid = %s::regclass AND attidentity = 'a'",
+                    (table,)).fetchall()}
+                overriding = bool(idents & set(cols))
+                sql = _insert_sql(table, cols, overriding)
                 for r in rows:
                     org_ctx, user_ctx = row_context(cols, r)
                     cur.execute(
@@ -385,6 +405,11 @@ def main() -> int:
                             f"insert failed in {table}, row id {rid}: "
                             f"{exc}") from exc
                     inserted += cur.rowcount
+                if overriding and "id" in cols:
+                    cur.execute(
+                        f"SELECT setval(pg_get_serial_sequence(%s, 'id'),"
+                        f" (SELECT COALESCE(MAX(id), 1) FROM {table}))",
+                        (table,))
         conn.commit()
 
     print()
