@@ -1,15 +1,15 @@
 {
   "coverage": 1.0,
   "p0_1_passed": true,
-  "comp_overlap": 0.6340726542533767,
-  "rent_delta": 0.3180218795673094,
-  "rent_delta_signed": 0.26253778446230586,
-  "rent_pairs": 174,
-  "match_rate": 0.42589703588143524,
-  "covered_match_rate": 0.8340080971659919,
-  "comp_subjects": 166,
-  "crosswalk_rows": 273,
+  "comp_overlap": 0.3665237905369484,
+  "rent_delta": 0.3181662321531508,
+  "rent_delta_signed": 0.2629991890201759,
+  "rent_pairs": 175,
+  "match_rate": 0.6021840873634945,
+  "covered_match_rate": 0.8540372670807453,
+  "comp_subjects": 152,
+  "crosswalk_rows": 386,
   "p0_2_passed": false,
-  "rents_stamped": 12090,
-  "rents_from_listings": 2
+  "rents_stamped": 12092,
+  "rents_from_listings": 3
 }
