@@ -1,4 +1,4 @@
-autopilot rentbias @ 2026-09-01T18:38:31
+autopilot rentbias @ 2026-09-01T19:33:16
 
 ================================================================
 RENT BIAS — observed market rent vs the HUD FMR blend
