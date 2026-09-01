@@ -51,7 +51,7 @@ import math
 import os
 import re
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 # Two surveys of the same lot put its centroid metres apart, not tens of
 # metres. Generous for that, still well inside a city block.
@@ -108,6 +108,7 @@ class BridgeReport:
     rejected_not_mutual: int = 0
     rejected_ambiguous: int = 0
     rejected_same_scheme: int = 0
+    by_city: dict = field(default_factory=dict)   # city -> its own report
 
     def lines(self) -> list[str]:
         return [
@@ -119,6 +120,19 @@ class BridgeReport:
             f"rejected (not mutual)  : {self.rejected_not_mutual:,}",
             f"rejected (ambiguous)   : {self.rejected_ambiguous:,}",
         ]
+
+    def city_lines(self) -> list[str]:
+        """One line per city: what it had, what it got, what refused it."""
+        out = []
+        for city, r in sorted(self.by_city.items(),
+                              key=lambda kv: -kv[1].matched):
+            out.append(
+                f"{city:<16} sources {r.sources:>7,}  targets {r.targets:>7,}"
+                f"  merged {r.matched:>5,}   refused: far {r.rejected_far:,}"
+                f" / same-id {r.rejected_same_scheme:,}"
+                f" / not-mutual {r.rejected_not_mutual:,}"
+                f" / ambiguous {r.rejected_ambiguous:,}")
+        return out
 
 
 def metres_between(a_lat: float, a_lng: float,
@@ -323,6 +337,10 @@ def merge_duplicate_parcels(conn) -> tuple[int, BridgeReport, dict[str, int]]:
     merged = 0
     per_city: dict[str, int] = defaultdict(int)
     cols = ", ".join(MERGE_FIELDS)
+    # Per-city, because a global total cannot answer the only question
+    # worth asking after a run: "why did the city this was built for get
+    # nothing?" (Richmond merged 0 while Atlanta merged 92, 2026-09-01).
+    total.by_city = {}
 
     for city in cities:
         def _points(where: str) -> list[GeoPoint]:
@@ -345,6 +363,7 @@ def merge_duplicate_parcels(conn) -> tuple[int, BridgeReport, dict[str, int]]:
         total.rejected_not_mutual += report.rejected_not_mutual
         total.rejected_ambiguous += report.rejected_ambiguous
         total.rejected_same_scheme += report.rejected_same_scheme
+        total.by_city[city] = report
 
         for m in matches:
             src = conn.execute(

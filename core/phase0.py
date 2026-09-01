@@ -430,6 +430,8 @@ class CoverageReport:
                          "parcel-id schemes):")
             for line in gb.lines():
                 lines.append(f"  {line}")
+            for line in getattr(gb, "city_lines", lambda: [])():
+                lines.append(f"  {line}")
         if self.mf_use_codes:
             lines.append("")
             lines.append("Top use codes classified multifamily (wrong codes here = bad aliasing):")

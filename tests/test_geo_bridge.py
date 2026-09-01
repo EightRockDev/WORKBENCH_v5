@@ -388,3 +388,29 @@ def test_the_rejection_breakdown_is_never_hidden():
 
     assert "Geometry unit bridge" in body, (
         "the diagnostic block vanishes exactly when nothing matched")
+
+
+def test_each_city_reports_its_own_refusals(tmp_path):
+    """Richmond merged 0 while Atlanta merged 92 (2026-09-01), and the
+    global totals could not say why. A per-city line must name the rule
+    that refused the city this was built for."""
+    conn = _spine_db(tmp_path, [
+        # Richmond: both halves, but 900 m apart — refused as too far.
+        ("8R-R1", "51760", COR_APN, "Richmond", 48, None, None, LAT, LNG),
+        ("8R-R2", "51760", PIN_APN, "Richmond", None, None, None,
+         north(900), LNG),
+        # Atlanta: a clean pair that merges.
+        ("8R-A1", "13121", "14 0055 LL1234", "Atlanta", 60, None, None,
+         north(5000), LNG),
+        ("8R-A2", "13121", "17001500010", "Atlanta", None, None, None,
+         north(5002), LNG),
+    ])
+    merged, rep, by_city = merge_duplicate_parcels(conn)
+
+    assert merged == 1 and by_city == {"Atlanta": 1}
+    lines = "\n".join(rep.city_lines())
+    assert "Richmond" in lines and "Atlanta" in lines
+    richmond = [ln for ln in rep.city_lines() if ln.startswith("Richmond")][0]
+    assert "merged     0" in richmond or "merged      0" in richmond
+    assert "far 1" in richmond, (
+        f"Richmond's line does not name the rule that refused it: {richmond}")

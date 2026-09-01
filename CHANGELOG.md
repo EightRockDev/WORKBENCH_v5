@@ -12,6 +12,32 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.65.2.0.0 — 2026-09-01  ·  The bridge merged 92 in Atlanta and 0 in Richmond. Find out why.
+
+First live run: 95 merges, none of them in the city the bridge was written
+for. Richmond still shows 140 unit counts against 108,033 parcels. The
+totals could not explain it — 588,418 "too far" and 145,911 "same id form"
+across every city at once say nothing about Richmond specifically.
+
+So this release adds no capability. It adds the two readings that turn
+"0 merged" into a diagnosis:
+
+- **Per-city bridge lines** in `phase0-latest.txt`: sources, targets,
+  merges, and the count refused by each of the four rules, per city. If
+  Richmond's refusals are all "far", the two feeds' centroids do not land
+  in the same place; if they are all "same-id", the feeds are not the two
+  schemes they are believed to be.
+- **Coordinate and id-shape coverage per source** in the Richmond review:
+  how many rows of each feed carry a coordinate, how many carry BOTH a
+  coordinate and a unit count (the only rows that can ever be a bridge
+  source), and the parcel-id shapes each feed actually emits. The rva.gov
+  Public Data Set is a workbook, not a map service — if it carries no
+  coordinates, it can never be reached by geometry and the honest answer
+  is that this axis is closed for that feed.
+
+A number with no explanation next to it is how the 2026-08-11 review
+looked complete while 76,976 rows sat orphaned.
+
 ## V5.65.1.0.0 — 2026-08-31  ·  Value-Add CAPEX wired into the returns engine
 
 The renovation panel was a closed-form display calculator: it wrote

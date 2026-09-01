@@ -143,8 +143,18 @@ def main() -> int:
             m = phase0.normalize_record("Richmond", "VA", raw)
             d = per.setdefault(src or "?", {
                 "n": 0, "apn": 0, "units": 0, "val": 0, "use": 0,
+                "coords": 0, "units_and_coords": 0, "shapes": set(),
                 "sample": None, "apns": set()})
             d["n"] += 1
+            # Coordinate coverage per source, because the geometry bridge
+            # can only pair sources that BOTH carry one. Richmond merged
+            # zero on 2026-09-01 while Atlanta merged 92, and nothing in
+            # this report said which Richmond feed was coordinate-blind.
+            has_xy = (m.get("lat") is not None and m.get("lng") is not None)
+            if has_xy:
+                d["coords"] += 1
+                if m.get("units"):
+                    d["units_and_coords"] += 1
             apn_norm = spine.normalize_apn(str(m.get("apn") or ""))
             if apn_norm:
                 d["apn"] += 1
@@ -153,6 +163,9 @@ def main() -> int:
                     d["sample"] = str(m.get("apn"))
             if m.get("units"):
                 d["units"] += 1
+            if apn_norm:
+                from core.geo_bridge import apn_shape
+                d["shapes"].add(apn_shape(str(m.get("apn") or "")))
             if m.get("assessed_value"):
                 d["val"] += 1
             if m.get("use_code"):
@@ -162,6 +175,9 @@ def main() -> int:
             print(f"    rows={d['n']:,}  apn={d['apn']:,} "
                   f"(sample: {d['sample'] or 'NONE'})  units={d['units']:,}  "
                   f"assessed_value={d['val']:,}  use_code={d['use']:,}")
+            print(f"    coords={d['coords']:,}  "
+                  f"units+coords={d['units_and_coords']:,}  "
+                  f"apn shapes={sorted(d['shapes'])[:3] or 'NONE'}")
         files_src = next((s for s in per if s.startswith("files:")), None)
         if files_src:
             fset = per[files_src]["apns"]
