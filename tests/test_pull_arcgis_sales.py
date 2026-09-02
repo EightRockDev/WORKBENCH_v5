@@ -225,14 +225,30 @@ def test_landbook_empty_parse_touches_nothing(monkeypatch):
     assert conn.execute("SELECT count(*) FROM muni_records").fetchone()[0] == 1
 
 
-# ------------------------------------- Richmond parcels via Esri REST API
+# --------------------------- assessor layers via the Esri REST adapter
+#
+# These used to read SALES_SOURCES["Richmond-parcels"], but that feed was
+# Richmond CALIFORNIA and got quarantined (V5.66.1.0.0). The mechanics the
+# tests pin - market/kind override, replace-not-append, stale-generation
+# sweep - are adapter behavior any future assessor layer rides, so they
+# now run against a synthetic cfg.
+
+def _assessor_cfg() -> dict:
+    return {
+        "type": "arcgis",
+        "url": ("https://example.invalid/arcgis/rest/services/"
+                "Assessor_Roll/FeatureServer/0"),
+        "state": "VA", "county": "Testville",
+        "market": "Richmond", "kind": "assessor", "where": "1=1",
+        "refresh_d": 7,
+    }
+
 
 def test_arcgis_kind_and_market_override(monkeypatch):
-    """Richmond-parcels rides the arcgis adapter with kind='assessor' and
-    market='Richmond' (not the dict key) so phase0 sees an assessor roll."""
+    """An assessor layer rides the arcgis adapter with kind='assessor' and
+    market from cfg (not the dict key) so phase0 sees an assessor roll."""
     m = _mod()
-    cfg = m.SALES_SOURCES["Richmond-parcels"]
-    assert cfg["kind"] == "assessor" and cfg["where"] == "1=1"
+    cfg = _assessor_cfg()
     monkeypatch.setattr(m, "count_sales", lambda url, where="": 2)
     monkeypatch.setattr(
         m, "iter_features",
@@ -240,7 +256,7 @@ def test_arcgis_kind_and_market_override(monkeypatch):
             [{"PIN": "W0001", "LandUse": "Multi-Family", "TotalValue": 1.0},
              {"PIN": "W0002", "LandUse": "Single Family", "TotalValue": 2.0}]))
     conn = _mk_db()
-    assert m.pull_market(conn, "Richmond-parcels", cfg) == 2
+    assert m.pull_market(conn, "Assessor-roll", cfg) == 2
     rows = conn.execute(
         "SELECT DISTINCT market, kind FROM muni_records").fetchall()
     assert rows == [("Richmond", "assessor")]
@@ -253,18 +269,18 @@ def test_arcgis_assessor_repull_replaces_and_then_skips(monkeypatch):
     kind='assessor'. A repeat pull must REPLACE, and once stamped the next
     cycle must skip."""
     m = _mod()
-    cfg = m.SALES_SOURCES["Richmond-parcels"]
+    cfg = _assessor_cfg()
     monkeypatch.setattr(m, "count_sales", lambda url, where="": 2)
     monkeypatch.setattr(
         m, "iter_features",
         lambda url, total, where="": iter(
             [{"PIN": "W0001"}, {"PIN": "W0002"}]))
     conn = _mk_db()
-    m._ADAPTERS["arcgis"](conn, "Richmond-parcels", cfg)  # bypass freshness:
-    m._ADAPTERS["arcgis"](conn, "Richmond-parcels", cfg)  # two forced pulls
+    m._ADAPTERS["arcgis"](conn, "Assessor-roll", cfg)  # bypass freshness:
+    m._ADAPTERS["arcgis"](conn, "Assessor-roll", cfg)  # two forced pulls
     n = conn.execute("SELECT count(*) FROM muni_records").fetchone()[0]
     assert n == 2, "second pull appended instead of replacing"
-    assert m.pull_market(conn, "Richmond-parcels", cfg) == 0   # fresh - skip
+    assert m.pull_market(conn, "Assessor-roll", cfg) == 0   # fresh - skip
     assert conn.execute(
         "SELECT count(*) FROM muni_records").fetchone()[0] == 2
 
@@ -276,7 +292,7 @@ def test_stale_generation_sweep_drains_prior_duplicates():
     whole refresh window."""
     import datetime as dt
     m = _mod()
-    cfg = m.SALES_SOURCES["Richmond-parcels"]
+    cfg = _assessor_cfg()
     conn = _mk_db()
     now = dt.datetime.now().isoformat(timespec="seconds")
     for stamp, pin in (("2026-08-10T04:20:00", "W0001"),
@@ -286,7 +302,7 @@ def test_stale_generation_sweep_drains_prior_duplicates():
             "INSERT INTO muni_records (market,state,county,kind,source_url,"
             "pulled_at,record) VALUES ('Richmond','VA','Richmond','assessor',"
             "?,?,?)", (cfg["url"], stamp, json.dumps({"PIN": pin})))
-    assert m.pull_market(conn, "Richmond-parcels", cfg) == 0   # fresh - skip
+    assert m.pull_market(conn, "Assessor-roll", cfg) == 0   # fresh - skip
     rows = conn.execute("SELECT pulled_at FROM muni_records").fetchall()
     assert len(rows) == 2 and all(r[0] == now for r in rows)
 
