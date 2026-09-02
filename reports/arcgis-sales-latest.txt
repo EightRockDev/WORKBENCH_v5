@@ -1,9 +1,8 @@
-autopilot arcgissales @ 2026-09-02T04:18:36
+autopilot arcgissales @ 2026-09-02T05:14:41
 
 [sales:Virginia Beach] fresh (<7d) - skip
 [sales:Norfolk] fresh (<3d) - skip
 [sales:Chesapeake] fresh (<30d) - skip
-[sales:Richmond-parcels] fresh (<7d) - skip
 [sales:Richmond-files] fresh (<7d) - skip
 [sales:Chicago] fresh (<7d) - skip
-[sales] done: 0 rows across 6 source(s)
+[sales] done: 0 rows across 5 source(s)
