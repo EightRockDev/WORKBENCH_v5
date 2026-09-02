@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-09-02T03:18:44
+autopilot phase0 @ 2026-09-02T05:22:42
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,454,594
+Assessor records available: 3,421,687
 
 Assessor feeds present (Hampton Roads):
   Chesapeake         92,677  .../OpenData/MapServer/15
@@ -15,32 +15,32 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 24 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      2,511,787
-parcels normalized:        2,511,787
-multifamily (>= 10 units): 12,113
-written to properties_8r:  2,511,787
+muni records scanned:      2,478,880
+parcels normalized:        2,478,880
+multifamily (>= 10 units): 11,974
+written to properties_8r:  2,478,880
 provisional (no-APN) ids:  1,371
-units derived from address points: 407  (skipped non-residential: 3,952)
-units bridged by geometry: 105  (Atlanta 100, Richmond 2, Hampton 1, Raleigh 1, Winston-Salem 1)
+units derived from address points: 390  (skipped non-residential: 3,951)
+units bridged by geometry: 103  (Atlanta 100, Hampton 1, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 211
-rent estimates stamped (HUD FMR blend): 12,051
+rent estimates stamped (HUD FMR blend): 11,912
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 734,084  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 731,842  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Richmond 6,475, Atlanta 1,981, Raleigh 1,619, Norfolk 866, Greensboro 860, Newport News 244, Chesapeake 62, Winston-Salem 3, Hampton 2, Durham 1
+Multifamily by city: Richmond 6,336, Atlanta 1,981, Raleigh 1,619, Norfolk 866, Greensboro 860, Newport News 244, Chesapeake 62, Winston-Salem 3, Hampton 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 735,540
-  candidate parcels      : 669,699
+  unit-bearing parcels   : 735,538
+  candidate parcels      : 592,571
   merged                 : 82
   rejected (too far)     : 588,476
-  rejected (same id form): 145,936
+  rejected (same id form): 145,934
   rejected (not mutual)  : 652
   rejected (ambiguous)   : 394
-  merged by address      : 23
-  addr rejected (shared) : 1,170
+  merged by address      : 21
+  addr rejected (shared) : 801
   addr rejected (coords) : 171
   Atlanta          sources 320,840  targets  67,384  merged    79   refused: far 252,555 / same-id 67,161 / not-mutual 651 / ambiguous 394   by-address 21 (shared 684, coords 16)
   Hampton          sources     209  targets  51,339  merged     1   refused: far 28 / same-id 179 / not-mutual 1 / ambiguous 0   by-address 0 (shared 0, coords 0)
@@ -50,10 +50,9 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Newport News     sources  46,669  targets   7,676  merged     0   refused: far 39,019 / same-id 7,650 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
   Norfolk          sources       0  targets       0  merged     0   refused: far 0 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 1, coords 0)
   Portsmouth       sources       7  targets  36,591  merged     0   refused: far 3 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
-  Richmond         sources       2  targets  77,128  merged     0   refused: far 0 / same-id 2 / not-mutual 0 / ambiguous 0   by-address 2 (shared 369, coords 0)
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
-  Richmond: R-48 Multi Family x2364, R-63 Multi Family Urban Res. x1951, R-53 Multi Family x1548, R-73 Multi Family x257, R-43 Multi Family x202
+  Richmond: R-48 Multi Family x2364, R-63 Multi Family Urban Res. x1952, R-53 Multi Family x1548, R-73 Multi Family x257, R-43 Multi Family x202
   Norfolk: Apartment x866
   Greensboro: MULTI-FAMILY<4 x839, MULTI-FAMILY5> x21
   Atlanta: C3 x808, C4 x641, C5 x278, C1 x62, R3 x52
@@ -69,7 +68,7 @@ Cities with parcels but NO multifamily found - their top use codes:
   Portsmouth: (blank) x36602
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
-  Richmond: code only (no units): 6,335, units>=10: 140
+  Richmond: code only (no units): 6,336
   Norfolk: code only (no units): 863, units>=10: 3
   Greensboro: code only (no units): 860
   Atlanta: units>=10: 1,981
@@ -81,7 +80,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Hampton: units>=10: 2
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
-  Richmond: PRECINCT, DISTRICT, LEGAL_DESC, GIS_ID, ASSESSMENT_DATE_1, ASSESSMENT_CHG_DESC_1, PROP_TYPE_2, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, VGIN_QPID, LOCALITY, ASSESSMENT_DATE_2, ASSESSMENT_CHG_DESC_2, ASSESSMENT_DATE_3, ASSESSMENT_CHG_DESC_3, ASSESSMENT_DATE_4, ASSESSMENT_CHG_DESC_4, ASSESSMENT_DATE_5, ASSESSMENT_CHG_DESC_5, STYLE, HVAC, ASSOC_NAME, full_address_display
+  Richmond: PRECINCT, DISTRICT, LEGAL_DESC, GIS_ID, ASSESSMENT_DATE_1, ASSESSMENT_CHG_DESC_1, PROP_TYPE_2, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, VGIN_QPID, LOCALITY, ASSESSMENT_DATE_2, ASSESSMENT_CHG_DESC_2, ASSESSMENT_DATE_3, ASSESSMENT_CHG_DESC_3, ASSESSMENT_DATE_4, ASSESSMENT_CHG_DESC_4, ASSESSMENT_DATE_5, ASSESSMENT_CHG_DESC_5, STYLE, HVAC, ASSOC_NAME, OWNER2
   Greensboro: CentroidXCoordinate, CentroidYCoordinat, NumberOfParts, INSIDE_X, INSIDE_Y, ORIG_FID, Owner_History, Total_Building_Value, DEED_DATE, Short_Parcel_ID, PARCEL_PK, Condo, LOCATION_ADDR, Plat, Lot_Size, PROPERTY_DESCR, Total_Land_Value, TOTAL_DEFERRED_VALUE, Total_Out_Building_Value, BLDG_CARD, Appraisal_Model_Code, GRADE, Structure_Size, Bathrooms
   Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, TotAssess, TotAppr, ImprAppr, AddrNumber, LandAssess, ImprAssess, LandAppr, OwnerAddr1, OwnerAddr2, LandAcres, AddrSuffix, ExCode, SITECITY, SITESTATE, LOWPARCELID, CNTASSDVAL, CVTTXCD, PSTLADDRESS
   Winston-Salem: BLKCNTRL, BLK, LOT, BLKLOT, TBLCNTRL, CNTRL, TAXPIN, TAXPIN_N, PINMAP, PINBLK, PINLOT, PINLOT_A, CALCULATEDACREAGE, TAXPIN16, PINLOT16, MLOT, PARCEL_PK, BLOCKLOT, REID_1, CURRENTOWNERADDRESS, CURRENTDEEDDATE, CURRENTDEEDSTAMPS, ASSESSMENTMETHOD, LASTQUALIFIEDSALEPRICE
