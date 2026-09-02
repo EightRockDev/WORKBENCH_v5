@@ -618,3 +618,40 @@ def test_the_in_place_restore_proves_it_worked():
     assert "RESTORE DID NOT TAKE" in src
     assert "$restoredUsers -lt 2" in src
     assert src.index("--clean --if-exists") < src.index("RESTORE DID NOT TAKE")
+
+
+def test_the_california_richmond_never_returns():
+    """2026-09-02: three weeks were spent chasing 2,365 apartment unit
+    counts that belonged to Richmond, CALIFORNIA - an AGOL org hand-added
+    as 'the Richmond GeoHub' on the strength of its name, bypassing the
+    bbox check that exists for exactly this look-alike trap. The org id
+    may appear only in quarantine/warning context, never as a live feed."""
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    bad_org = "il6vO1TutlF580Ku"
+    for rel in ("scripts/pull_arcgis_sales.py", "scripts/discover_feeds.py",
+                "scripts/run_richmond_report.py", "etl_munidata.py"):
+        src = (root / rel).read_text(encoding="utf-8")
+        for i, line in enumerate(src.splitlines(), 1):
+            if bad_org in line:
+                stripped = line.strip()
+                ok = (stripped.startswith("#")
+                      or "QUARANTINED" in src[max(0, src.find(line) - 400):
+                                             src.find(line)]
+                      or "%" in stripped)   # the purge LIKE pattern
+                assert ok, (f"{rel}:{i} references the California org as "
+                            f"live config: {stripped[:70]}")
+
+
+def test_quarantined_sources_are_purged_every_run():
+    src = _src_root("scripts/pull_arcgis_sales.py")
+    assert "QUARANTINED_SOURCES" in src
+    assert "purge_quarantined(conn)" in src, (
+        "the purge must actually be called from main, or old rows outlive "
+        "the adapter that pulled them")
+
+
+def _src_root(rel: str) -> str:
+    import pathlib
+    return (pathlib.Path(__file__).resolve().parent.parent / rel).read_text(
+        encoding="utf-8")

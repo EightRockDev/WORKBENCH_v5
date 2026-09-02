@@ -252,3 +252,15 @@
   plumbing. (3) The Suffolk FOIA deadline check is expected to keep
   running until records arrive - the one-shot fired 8/28, so the daily
   brief carries the Suffolk question forward until resolved.
+
+- **2026-09-02 (the Richmond that wasn't):** Three weeks of unit-count work
+  targeted a feed that turned out to be Richmond, CALIFORNIA - added by
+  name ("Richmond GeoHub") without ever reading one raw record. The
+  jurisdiction proof was in every row the whole time (Cal-Fire FHSZ codes,
+  Contra Costa APNs, Illinois mailing addresses). Lessons: (1) NEVER admit
+  a data source by its name - verify a raw record's jurisdiction (coords
+  in the city bbox, state-specific fields) before ingesting; the bbox
+  check existed and the org walk bypassed it. (2) When a join keeps
+  failing against expectations, read the RAW DATA before building a
+  cleverer join - the geometry bridge, the apn shapes, and the address
+  pass were all correct engineering against the wrong-city premise.

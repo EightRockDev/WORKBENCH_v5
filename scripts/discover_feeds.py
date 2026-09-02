@@ -134,7 +134,12 @@ KNOWN_ROOTS: dict[str, list[str]] = {
     # the host verify field vocab (use_code/units) instead of guessing.
     "Richmond": [
         "https://gis.richmondgov.com/arcgis/rest/services",
-        "https://services6.arcgis.com/il6vO1TutlF580Ku/arcgis/rest/services",
+        # The AGOL org il6vO1TutlF580Ku was walked here 2026-08-11 as "the
+        # Richmond GeoHub". It is the City of Richmond, CALIFORNIA (its
+        # records carry Cal-Fire FHSZ codes and Contra Costa APNs) - the
+        # exact look-alike trap the bbox check below exists for, bypassed
+        # because org walks skip that check. Never re-add an org here
+        # without verifying a RAW RECORD's coordinates/jurisdiction first.
     ],
 }
 

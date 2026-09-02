@@ -145,21 +145,15 @@ SALES_SOURCES: dict[str, dict] = {
     # monthly with changing URLs - so the adapter scrapes the page for
     # spreadsheet links each run instead of hardcoding any.
     # Richmond PATH 3 (owner 2026-08-11 "you should [use an API]"): the
-    # Assessor's own published parcel layer on the city's AGOL org - the
-    # Office of the Assessor GeoHub site's "Parcels" dataset IS this layer,
-    # so it's the authoritative Esri REST API for parcel/ownership data.
-    # where=1=1 (no sale-field filter - this is an assessor roll, not a
-    # sales layer); kind=assessor feeds phase0 MF classification directly.
-    "Richmond-parcels": {
-        "type": "arcgis",
-        "url": ("https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/"
-                "services/COR_Parcel_Ownership_WFL1/FeatureServer/1"),
-        "market": "Richmond",
-        "state": "VA", "county": "Richmond",
-        "kind": "assessor",
-        "where": "1=1",
-        "refresh_d": 7,
-    },
+    # "Richmond-parcels" REMOVED 2026-09-02. The COR_Parcel_Ownership_WFL1
+    # layer on AGOL org il6vO1TutlF580Ku is the City of Richmond,
+    # CALIFORNIA - proven by its own raw records (FHSZ, a Cal-Fire fire
+    # hazard field; Contra Costa 9-digit APNs; N_CTY_ST mailing cities in
+    # Illinois). It was added 2026-08-11 as "the Richmond GeoHub" on the
+    # strength of its NAME, ingested 32,907 California parcels under
+    # market='Richmond' VA, and its 2,365 apartment unit counts were
+    # chased for three weeks as the missing Richmond VA unit source.
+    # QUARANTINED_SOURCES below purges its rows every run.
     "Richmond-files": {
         "type": "html_files",
         "page": "https://www.rva.gov/assessor-real-estate/data-request",
@@ -799,6 +793,26 @@ def pull_market(conn: sqlite3.Connection, market: str, cfg: dict) -> int:
     return _ADAPTERS[cfg["type"]](conn, market, cfg)
 
 
+# Sources ingested by mistake and evicted. Every run deletes their rows,
+# so a stale database heals no matter when it last pulled. Never reuse a
+# tag here for a live feed.
+QUARANTINED_SOURCES = (
+    "%il6vO1TutlF580Ku%",     # City of Richmond CALIFORNIA, not Virginia
+)
+
+
+def purge_quarantined(conn) -> int:
+    n = 0
+    for pat in QUARANTINED_SOURCES:
+        cur = conn.execute(
+            "DELETE FROM muni_records WHERE source_url LIKE ?", (pat,))
+        n += cur.rowcount
+    if n:
+        conn.commit()
+        print(f"[quarantine] purged {n:,} rows from evicted sources")
+    return n
+
+
 def main(argv: list[str] | None = None) -> int:
     only = {m.strip() for m in
             os.environ.get("ER_ARCGIS_SALES_MARKETS", "").split(",") if m.strip()}
@@ -808,6 +822,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     conn = sqlite3.connect(db)
     try:
+        purge_quarantined(conn)
         # muni_records ships with no index at all; every freshness check,
         # sweep and generation delete was a full-table scan. One-time cost
         # is a few seconds on the host db, then all of those are instant.

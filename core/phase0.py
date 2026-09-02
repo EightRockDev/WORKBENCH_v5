@@ -69,14 +69,11 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
             # priority on purpose - they only take over via the
             # _APN_FORMAT_BY_CITY shape rule when the priority winner
             # (VGIN's short numeric id) is not the city's real parcel id.
-            "ptmid", "pin1",
-            # frmprcl: Richmond COR_Parcel_Ownership carries the parcel it
-            # was carved FROM. On apartment/condo accounts that is the
-            # parent's letter PIN - the exact id the rva.gov/VDEM rows key
-            # on. LAST on purpose: it only takes over via the Richmond
-            # shape rule below, i.e. only when its value actually LOOKS
-            # like a letter PIN. A wrong guess never activates.
-            "frmprcl"),
+            "ptmid", "pin1"),
+            # (frmprcl was briefly aliased here 2026-09-01 on the theory it
+            # held Richmond VA parent letter PINs. Its feed turned out to be
+            # Richmond CALIFORNIA - quarantined in pull_arcgis_sales - and
+            # the field held Contra Costa numerics. Removed.)
     "address": ("address", "situsaddress", "situs", "propertyaddress",
                 "siteaddress", "locationaddress", "location", "fulladdress",
                 "fulladdr", "propaddress", "propertystreet", "streetaddress",
@@ -87,21 +84,19 @@ _FIELD_ALIASES: dict[str, tuple[str, ...]] = {
                 "parcellocation"),
     # Some feeds (Norfolk) split the address into number + name + type.
     "address_number": ("propertystreetnumber", "streetnumber", "housenumber",
-                       "stnum", "situsnumber", "stnumber", "strnum",
-                       "nstrnbr"),   # Richmond COR N_STR_NBR
+                       "stnum", "situsnumber", "stnumber", "strnum"),
     "address_street": ("propertystreetname", "streetname", "situsstreet",
-                       "stname", "strname", "nstrnm"),  # COR N_STR_NM
+                       "stname", "strname"),
     "address_suffix": ("propertystreettype", "streettype", "stsuffix",
-                       "streetsuffix", "sttype", "strtype", "suffixtype",
-                       "nstrsuf"),   # COR N_STR_SUF
+                       "streetsuffix", "sttype", "strtype", "suffixtype"),
     "address_direction": ("propertystreetdirection", "streetdirection",
                           "stdir", "predirection", "stprefix"),
     "address_number_suffix": ("propertystreetnumbersuffix",
                               "streetnumbersuffix", "addnumwsuffix",
-                              "addrnumsuffix", "nfrac"),  # COR N_FRAC
+                              "addrnumsuffix"),
     "city": ("city", "situscity", "propertycity", "municipality", "stcity"),
     "zip": ("zip", "zipcode", "situszip", "propertyzip", "postalcode",
-            "addresszip", "stzipcode", "sitezip", "nzip"),
+            "addresszip", "stzipcode", "sitezip"),
     "units": ("units", "livunit", "livingunits", "numunits", "unitcount",
               "dwellingunits", "totalunits", "resunits", "apartments",
               "numberofunits", "livunits"),
@@ -950,7 +945,7 @@ def build_spine(db_path: Path,
 # aliasing, prune logic...) so an unchanged-inputs skip cannot pin an old
 # spine under new code. Same pattern, same reason as listings
 # PULL_GENERATION: a fix that cannot run is indistinguishable from no fix.
-SPINE_BUILD_GENERATION = 3
+SPINE_BUILD_GENERATION = 4
 
 
 def spine_input_fingerprint(db_path: Path) -> str:

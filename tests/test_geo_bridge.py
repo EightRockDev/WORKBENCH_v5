@@ -525,25 +525,21 @@ def test_same_scheme_rows_never_merge_by_address_either(tmp_path):
 # The Richmond aliases that make the address pass possible
 # ---------------------------------------------------------------------------
 
-def test_richmond_cor_record_promotes_frm_prcl_to_the_letter_pin():
-    """FRM_PRCL holds the parent parcel's letter PIN on carve-out
-    accounts; the Richmond shape rule promotes it over the numeric APN -
-    and ONLY when the value actually looks like a letter PIN."""
+def test_the_california_feeds_fields_no_longer_map():
+    """2026-09-02: FRM_PRCL and the N_STR_* columns belong to the City of
+    Richmond CALIFORNIA feed (quarantined), and N_STR_* was the OWNER's
+    mailing address, not a situs. None of them may map to spine fields -
+    an owner's Illinois mailing address as a property address would
+    poison every address crosswalk it touched."""
     from core.phase0 import normalize_record
 
     r = normalize_record("Richmond", "VA", {
         "APN": "405010001", "FRM_PRCL": "N0001746010",
-        "LivingUnits": 48, "N_STR_NBR": "611", "N_STR_NM": "MICHIGAN",
-        "N_STR_SUF": "DR", "N_ZIP": "23669"})
-    assert r.get("apn") == "N0001746010"
-    assert r.get("address") == "611 MICHIGAN DR"
-    assert r.get("units") == 48
-    assert r.get("zip") == "23669"
-
-    r2 = normalize_record("Richmond", "VA",
-                          {"APN": "405010001", "FRM_PRCL": "99999"})
-    assert r2.get("apn") == "405010001", (
-        "a non-letter-PIN FRM_PRCL value must never take over the apn")
+        "N_STR_NBR": "1808", "N_STR_NM": "SWIFT", "N_STR_SUF": "DR",
+        "N_ZIP": "60523"})
+    assert r.get("apn") == "405010001", "FRM_PRCL must not steer the apn"
+    assert not r.get("address"), "owner mailing components mapped as situs"
+    assert r.get("zip") != "60523", "an Illinois mailing zip as property zip"
 
 
 def test_rva_workbook_parcel_location_maps_to_the_address():

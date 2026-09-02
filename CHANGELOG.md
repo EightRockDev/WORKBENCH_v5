@@ -12,6 +12,43 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.66.1.0.0 — 2026-09-02  ·  The "Richmond unit source" was Richmond, California.
+
+The raw-record dump added in V5.65.3.0.0 settled it in one read: the
+COR_Parcel_Ownership_WFL1 layer on AGOL org il6vO1TutlF580Ku — hand-added
+2026-08-11 as "the Richmond GeoHub" and chased for three weeks as the
+missing Richmond VA unit source — belongs to the City of Richmond,
+CALIFORNIA. Its records carry Cal-Fire FHSZ fire-zone codes, Contra
+Costa 9-digit APNs, and owner mailing addresses in Illinois. Its 32,907
+parcels have sat on the backbone under market='Richmond' VA since
+mid-August; its 2,365 apartment unit counts were never Virginia
+buildings. The org walk bypassed the bbox look-alike check that exists
+for exactly this trap.
+
+- The Richmond-parcels adapter is REMOVED and the org id added to a new
+  `QUARANTINED_SOURCES` purge that deletes its rows on every arcgissales
+  run, so any stale database heals regardless of when it last pulled.
+- The org is dropped from discover_feeds' Richmond walk with a warning
+  comment; a deploy test asserts the id can never reappear as live
+  config in any pull/discovery script.
+- The FRM_PRCL apn alias and the N_STR_* address aliases (added
+  yesterday on the CA feed's field names) are removed — N_STR_* was the
+  OWNER's mailing address, and mapping it as a situs would poison every
+  address crosswalk it touched. `parcellocation` stays: that one is the
+  genuine rva.gov VA situs column.
+- SPINE_BUILD_GENERATION 3 → 4: the next spine build drops all
+  California rows. EXPECT Richmond's totals and the headline property
+  count to FALL — every removed row is a building we were never going to
+  buy in a state we do not cover.
+- Also 2026-09-01, now visible in per-city bridge lines: the merge is
+  WORKING where the data is real — Atlanta deduplicated 100 twin
+  parcels by geometry and address.
+
+Richmond VA's unit coverage remains the open problem, now with a clean
+slate: the real feeds are rva.gov files (values, use codes, situs
+addresses via PARCEL_LOCATION), VDEM (geometry), and gis.richmondgov.com
+— and none of them carries a unit count yet.
+
 ## V5.66.0.5.0 — 2026-09-01  ·  Identity columns: override, then advance the sequence.
 
 --apply run 3: 'cannot insert a non-DEFAULT value into column "id"' -
