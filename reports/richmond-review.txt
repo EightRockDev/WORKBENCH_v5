@@ -1,20 +1,17 @@
-autopilot richmondreview @ 2026-09-02T03:34:43
+autopilot richmondreview @ 2026-09-02T05:38:05
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-02T03:34:45
+RICHMOND REVIEW  @ 2026-09-02T05:38:08
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
-Richmond properties total: 108,031
-  with unit data:  140
-Multifamily (units>=10): 140
-  units:          n=140  min=10  median=26  max=1,090
-  year built:     1901-2022
+Richmond properties total: 77,391
+  with unit data:  0
+Multifamily (units>=10): 0
 
 -- 2. Raw Richmond assessor rows on hand --
     76,976  2026-08-27T20:19:02  files:rva.gov/assessor-real-estate
     76,739  2026-09-01T12:19:33  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
-    32,907  2026-08-27T20:18:27  https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/services/COR_Parcel_Ow
      6,570  2026-09-02T01:17:47  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
 
 -- 2b. Field mapping per source (spine-visible attributes) --
@@ -24,235 +21,12 @@ Multifamily (units>=10): 140
   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_B
     rows=76,739  apn=76,739 (sample: C0010124008)  units=0  assessed_value=0  use_code=0
     coords=76,739  units+coords=0  apn shapes=['1a10d', '1a10d1a']
-  https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS/rest/se
-    rows=32,907  apn=32,907 (sample: 405010001)  units=2,365  assessed_value=0  use_code=32,767
-    coords=0  units+coords=0  apn shapes=['5d4a', '6d3a', '9d']
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
     coords=6,570  units+coords=0  apn shapes=['1a10d', '1a10d1a']
-  -- 2 raw records from the unit-bearing source (https://services6.arcgis.com/il6vO1TutlF580Ku/Ar) --
-      ACREAGE = 44.29
-      AMENITY = N
-      APN = 405030055
-      APN_CHECK = 9
-      AREA_ACRES = 45.349991015611046
-      AR_SWP_DT = 20250905
-      BATHS = 0
-      BLDG_SQFT = 707820
-      BLDNG_NBR = 1
-      CITY_LIMIT = Y
-      COUNCIL_DIST = 2
-      C_DED_DT = 20200923
-      C_DED_DateStr = 09/23/2020
-      C_DED_FG = R
-      C_DED_FG2 = N
-      C_DED_FG3 = N
-      C_DED_NBR = 20214365
-      C_DED_PCT = 100
-      C_DED_PCT2 = 25
-      C_DED_PCT3 = 30
-      C_DED_SN = +
-      C_DED_SN2 = +
-      C_DED_SN3 = +
-      DDRA2 = 0
-      DDRA3 = 0
-      DDRA_SN2 = +
-      DDRA_SN3 = +
-      DEED_TYPE2 = 0 
-      DEED_TYPE3 = 0 
-      DESC_ = 51 LSM 31 POR PCL 2 & T8414 POR L1-L3
-      Description = Industrial Park (with improvements)
-      FHSZ = 1
-      FRM_PRCL = 4050300310
-      GR_LND_AR = 1929272
-      GlobalID = 2e6727ef-ee70-4fda-9a2a-47cb17a2e7fc
-      IMP_PEN = 0
-      IMP_PEN_SN = +
-      IMP_VAL = 108243216
-      IMP_VAL_SN = +
-      LAND_VALUE = 50447832
-      LIEN_YEAR = 2026
-      LND_PEN = 0
-      LND_PEN_SN = +
-      LND_VAL_SN = +
-      MISC_BLDG = N
-      NBR_BLDNGS = 1
-      NET_RNT_AR = 707820
-      NUISANCE2 = N
-      N_CTY_ST = OAK BROOK IL
-      N_ODD_EVN = E
-      N_STR_NBR = 1808
-      N_STR_NM = SWIFT
-      N_STR_SUF = DR
-      N_ZIP = 60523
-      N_ZIP_EXT = 1573
-      OBJECTID = 23
-      OS_CODE = U
-      OS_PRCNT = 100
-      OWNER_GRP = PVT
-      PER_PRPTY = 0
-      PER_PRP_SN = +
-      POOL = N
-      PRP_PEN = 0
-      PRP_PEN_SN = +
-      PSI_PEN = 0
-      PSI_PEN_SN = +
-      PSI_VAL = 0
-      PSI_VAL_SN = +
-      P_DED_DT = 20200911
-      P_DED_DT2 = 20200317
-      P_DED_NBR = 20202212
-      P_DED_NBR2 = 20050135
-      P_OWNER_NM = CENTERPOINT PROPERTIES TRUST
-      RESP_CODE = 5
-      RJCT_CODE = 0
-      RTRD_DT = 0
-      STALLS2 = 0
-      STORIES = 1
-      S_CTY_ABBR = RCHMD
-      S_STR_NBR = 2995
-      S_STR_NM = ATLAS
-      S_STR_SUF = RD  
-      S_ZIP = 94806
-      S_ZIP_EXT = 1167
-      Shape__Area = 296081.06248381734
-      Shape__Length = 2689.799185749793
-      TAX_DESC = TX
-      TRA = 08003
-      TRA_CH_YR = 1994
-      TYPE_1 = O
-      UNITS = 1
-      USE_CODE = 51
-      USE_DESC = Industrial Park (with structures)
-      USE_TYPE = Industrial
-      VAL_CH_CD = IF  
-      VIEW_ = N
-      XMP_AMT1 = 0
-      XMP_AMT2 = 0
-      XMP_AMT3 = 0
-      XMP_NBR1 = 0
-      XMP_NBR2 = 0
-      XMP_NBR3 = 0
-      YR_BUILT = 2017
-      assr_url = gis.cccounty.us/HTML5/assessorPDF/405p03x0.pdf
-      full_address_display = 2995 ATLAS RD   - RICHMOND
-      full_address_search = 2995 ATLAS RD  
-      full_n_address = 1808 SWIFT DR
-      parcel_dashes = 405-030-055
-      s_city = RICHMOND
-      ----------------------------------------
-      ACREAGE = 21.3
-      AMENITY = N
-      APN = 405050087
-      APN_CHECK = 7
-      AREA_ACRES = 21.289877367958976
-      AR_SWP_DT = 20250905
-      BATHS = 0
-      BEDS_1 = 216
-      BEDS_2 = 216
-      BLDG_SQFT = 459003
-      BLDNG_NBR = 1
-      CARPORT2 = N
-      CITY_LIMIT = Y
-      COR_NEIGHBORHOOD = CCV
-      COUNCIL_DIST = 2
-      C_DED_DT = 20000901
-      C_DED_DateStr = 09/01/2000
-      C_DED_FG = R
-      C_DED_NBR = 00189947
-      C_DED_PCT = 100
-      C_DED_SN = +
-      C_DED_SN2 = +
-      C_DED_SN3 = +
-      DDRA2 = 0
-      DDRA3 = 0
-      DDRA_SN2 = +
-      DDRA_SN3 = +
-      DESC_ = T176PM40 POR PCLS 2 & 3
-      Description = Apartments, 60 units or more
-      FHSZ = 0
-      FRM_PRCL = 4050500869
-      GARAGE2 = G
-      GR_LND_AR = 927828
-      GlobalID = ff164d19-21bb-4bfd-bcf3-e9574d065285
-      IMP_PEN = 0
-      IMP_PEN_SN = +
-      IMP_VAL = 65891993
-      IMP_VAL_SN = +
-      LAND_VALUE = 23186866
-      LIEN_YEAR = 2026
-      LND_PEN = 0
-      LND_PEN_SN = +
-      LND_PROB2 = N
-      LND_VAL_SN = +
-      MISC_BLDG = N
-      NBR_BLDNGS = 1
-      NET_RNT_AR = 408366
-      NUISANCE2 = N
-      N_CTY_ST = OAK BROOK IL
-      N_STR_NM = PO BOX 4747
-      N_ZIP = 60522
-      N_ZIP_EXT = 4747
-      OBJECTID = 51
-      OS_CODE = P
-      OS_PRCNT = 100
-      OWNER_GRP = PVT
-      OWN_ID_2ND = C
-      OWN_NM_2ND = GRANT THORNTON LLP
-      PER_PRPTY = 530194
-      PER_PRP_SN = +
-      POOL = N
-      PRP_PEN = 0
-      PRP_PEN_SN = +
-      PSI_PEN = 0
-      PSI_PEN_SN = +
-      PSI_VAL = 0
-      PSI_VAL_SN = +
-      P_OWNER_NM = RICHMOND ESSEX LP
-      RESP_CODE = 2
-      RTRD_DT = 0
-      SQFT_PR_UT = 945
-      STALLS2 = 432
-      STORIES = 3
-      S_CTY_ABBR = RCHMD
-      S_STR_NBR = 2601
-      S_STR_NM = HILLTOP
-      S_STR_SUF = DR  
-      S_ZIP = 94806
-      S_ZIP_EXT = 5783
-      Shape__Area = 138947.0553560257
-      Shape__Length = 2014.6170610431643
-      TAX_DESC = TX
-      TOPO_2 = L
-      TRA = 08003
-      TRA_CH_YR = 1996
-      TYPE_1 = O
-      UNITS = 432
-      USE_CODE = 28
-      USE_DESC = Apartments, 60 units or more
-      USE_TYPE = Multiple
-      VAL_CH_CD = IF  
-      VIEW_ = N
-      XMP_AMT1 = 0
-      XMP_AMT2 = 0
-      XMP_AMT3 = 0
-      XMP_NBR1 = 0
-      XMP_NBR2 = 0
-      XMP_NBR3 = 0
-      YR_BUILT = 2000
-      assr_url = gis.cccounty.us/HTML5/assessorPDF/405p05x0.pdf
-      full_address_display = 2601 HILLTOP DR   - RICHMOND
-      full_address_search = 2601 HILLTOP DR  
-      full_n_address = PO BOX 4747 
-      parcel_dashes = 405-050-087
-      s_city = RICHMOND
-      ----------------------------------------
   rva.gov-files join health: 76,715 of 76,976 workbook parcels match an API-feed parcel
   address coverage per source (usable normalized addresses / with units):
      76,063 addrs        0 of them carry units   files:rva.gov/assessor-real-estate
-     26,383 addrs    1,753 of them carry units   https://services6.arcgis.com/il6vO1TutlF580K
-  address-crosswalk candidates (the unit-bearing source is https://services6.arcgis.com/il6vO1TutlF580Ku/ArcGIS, 1,753 parcels with units and a usable address):
-         2 ( 0.1%) of unit-bearing addresses also appear in files:rva.gov/assessor-real-estate
 
 -- 3. Richmond sales (muni_records kind='sales') --
 sale rows: 84,148
@@ -267,7 +41,8 @@ sale rows: 84,148
 -- 4. Estimated real-estate tax (rate $1.20/$100 assessed; ER_RICHMOND_TAX_RATE) --
 
 -- 5. GAPS (each names its unblock) --
-  [GAP] Unit coverage is thin: 140 of 108,031 parcels carry unit counts - the COR ownership layer has none, so units depend on the rva.gov Public Data Set files or a discover-sales-latest candidate (no token chases - owner 2026-08-11).
-  [GAP] Richmond units and values sit on DIFFERENT parcel-id schemes (COR numeric vs letter PIN) and no attribute bridges them - see the address-crosswalk candidate lines above. A high overlap there is the go-ahead to merge COR units onto the value-bearing parcels by normalized address; a low one means the crosswalk needs geometry.
+  [GAP] Unit coverage is thin: 0 of 77,391 parcels carry unit counts - the COR ownership layer has none, so units depend on the rva.gov Public Data Set files or a discover-sales-latest candidate (no token chases - owner 2026-08-11).
+  [GAP] Unit counts: no Richmond MF rows carry units - unit data must come from a richer assessor layer (rva.gov files / discover-sales-latest candidates).
+  [GAP] Units and values sit on different parcel-id schemes AND no unit-bearing source maps a usable address - so neither an alias nor an address crosswalk can bridge them. The geometry bridge now runs on every spine build (core/geo_bridge.py): read 'units bridged by geometry' and its rejection breakdown in phase0-latest.txt. If everything there is 'rejected (too far)', the two feeds' centroids do not land in the same place and a wider radius is the wrong fix - check the projection.
   [GAP] The rva.gov Public Data Set maps NO unit counts - check section 2b and the phase0 unmapped-keys list for the workbook's unit column, or promote a units-bearing candidate from discover-sales-latest.txt.
   [GAP] Tax estimates: blocked on assessed values (needs the assessments feed above).
