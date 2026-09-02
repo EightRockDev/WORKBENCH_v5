@@ -1,4 +1,4 @@
-autopilot joinkey @ 2026-09-02T11:04:31
+autopilot joinkey @ 2026-09-02T12:39:42
 
 ====================================================================
 JOIN-KEY SCAN — Richmond
@@ -7,53 +7,53 @@ JOIN-KEY SCAN — Richmond
 -- Sources scanned --
    40,000 rows   57 fields  files:rva.gov/assessor-real-estate
       AREA_TAX, ASSESSMENT_CHG_DESC_1, ASSESSMENT_CHG_DESC_2, ASSESSMENT_CHG_DESC_3, ASSESSMENT_CHG_DESC_4, ASSESSMENT_CHG_DESC_5, ASSESSMENT_DATE_1, ASSESSMENT_DATE_2, ASSESSMENT_DATE_3, ASSESSMENT_DATE_4, ASSESSMENT_DATE_5, ASSOC_NAME, ASSSESS_IMP_VALUE_1, ASSSESS_IMP_VALUE_2, ASSSESS_IMP_VALUE_3, ASSSESS_IMP_VALUE_4, ASSSESS_IMP_VALUE_5, ASSSESS_LAND_VALUE_1, ASSSESS_LAND_VALUE_2, ASSSESS_LAND_VALUE_3, ASSSESS_LAND_VALUE_4, ASSSESS_LAND_VALUE_5, ASSSESS_TOTAL_VALUE_1, ASSSESS_TOTAL_VALUE_2, ASSSESS_TOTAL_VALUE_3, ASSSESS_TOTAL_VALUE_4, ASSSESS_TOTAL_VALUE_5, DEPTH, EXEMPT_CODE, FRONTAGE, GIS_ID, HVAC, LAND_ADJ_1_CODE, LEGAL_AC, LEGAL_DESC, LIVING_AREA, MAIL_ADDR, MAIL_CITY, MAIL_ZIP, MODEL
+   40,000 rows   11 fields  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA
+      FIPS, LASTUPDATE, LOCALITY, OBJECTID, PARCELID, PTM_ID, Shape__Area, Shape__Length, VGIN_QPID, geo_lat, geo_lng
     6,570 rows   38 fields  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/s
       AsrLocat_1, AsrLocatio, Assessme_1, Assessment, DwellingVa, Dwelling_1, LandSqFt, LandSqFt_1, LandUse, LandUse_1, LandValu_1, LandValue, Locality, MailAddr_1, MailAddres, MailCity, MailCity_1, MailZip, MailZip_1, OBJECTID, OBJECTID_12, ORIG_FID, ObjectID_1, OwnerNam_1, OwnerName, PIN, PIN_1, ParcelID, ParcelID_1, Property_1, Property_3, Shape_Ar_1, Shape_Le_1, Shape_Leng, TotalVal_1, TotalValue, geo_lat, geo_lng
-    6,570 rows   39 fields  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/s
-      AsrLocat_1, AsrLocatio, Assessme_1, Assessment, DwellingVa, Dwelling_1, LandSqFt, LandSqFt_1, LandUse, LandUse_1, LandValu_1, LandValue, Locality, MailAddr_1, MailAddres, MailCity, MailCity_1, MailZip, MailZip_1, OBJECTID, OBJECTID_12, ObjectID_1, OwnerNam_1, OwnerName, PIN, PIN_1, ParcelID, ParcelID_1, Property_1, Property_3, Shape_Ar_1, Shape_Le_1, Shape_Leng, Shape__Area, Shape__Length, TotalVal_1, TotalValue, geo_lat, geo_lng
   (ignored 1 row-counter field(s) in files:rva.gov/assessor-real-estate: PID)
   (ignored 2 row-counter field(s) in arcels_Richmond_Virginia/FeatureServer/0: OBJECTID_12, ORIG_FID)
-  (ignored 1 row-counter field(s) in arcels_Richmond_Virginia/FeatureServer/1: OBJECTID_12)
+  (ignored 1 row-counter field(s) in A_Base_Layers/VA_Parcels/FeatureServer/0: OBJECTID)
 
 -- Cross-source field overlap (top candidates) --
-  100.0% of the smaller side (6,569 values)
-      PIN                          @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      PIN                          @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,525 values)
-      Shape_Leng                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      Shape_Leng                   @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,519 values)
-      PIN                          @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      PIN_1                        @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,519 values)
-      PIN_1                        @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      PIN_1                        @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,500 values)
-      Shape_Ar_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      Shape_Ar_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,496 values)
-      Shape_Le_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      Shape_Le_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,479 values)
-      OBJECTID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      OBJECTID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,470 values)
-      ParcelID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      ParcelID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,470 values)
-      ParcelID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      ParcelID_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,470 values)
-      ParcelID_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      ParcelID                     @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,470 values)
-      ParcelID_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      ParcelID_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/1
-  100.0% of the smaller side (6,437 values)
-      ObjectID_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
-      ObjectID_1                   @ ed_Parcels_Richmond_Virginia/FeatureServer/1
+   98.4% of the smaller side (63 values)
+      ASSSESS_TOTAL_VALUE_2        @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   98.4% of the smaller side (63 values)
+      ASSSESS_IMP_VALUE_1          @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   96.9% of the smaller side (62 values)
+      ASSSESS_TOTAL_VALUE_3        @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   96.9% of the smaller side (62 values)
+      ASSSESS_TOTAL_VALUE_4        @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   96.9% of the smaller side (62 values)
+      ASSSESS_IMP_VALUE_2          @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   96.9% of the smaller side (62 values)
+      ASSSESS_IMP_VALUE_3          @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   95.3% of the smaller side (61 values)
+      ASSSESS_TOTAL_VALUE_1        @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   95.3% of the smaller side (61 values)
+      ASSSESS_TOTAL_VALUE_5        @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   95.3% of the smaller side (61 values)
+      ASSSESS_IMP_VALUE_4          @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   93.8% of the smaller side (60 values)
+      ASSSESS_LAND_VALUE_1         @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   93.8% of the smaller side (60 values)
+      ASSSESS_LAND_VALUE_2         @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
+   93.8% of the smaller side (60 values)
+      ASSSESS_LAND_VALUE_3         @ files:rva.gov/assessor-real-estate
+      DwellingVa                   @ ed_Parcels_Richmond_Virginia/FeatureServer/0
 
 -- Verdict --
-  STRONG candidate: PIN <-> PIN (100.0% overlap).
+  STRONG candidate: ASSSESS_TOTAL_VALUE_2 <-> DwellingVa (98.4% overlap).
   Confirm a handful by eye, then map it in core/spine.py the
   way PTM_ID was - as an apn alias, not a bespoke join.
