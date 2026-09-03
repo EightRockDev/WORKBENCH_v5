@@ -1,3 +1,12 @@
-autopilot listings @ 2026-09-03T15:17:32
+autopilot listings @ 2026-09-03T16:15:23
 
-  [listings] fresh (pulled within 7 days, 7 favourites, generation 2) - skipping; 361 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: Linden at Forrest Pines -> not_found
+  [listings] rentcafe: Pembroke Pines -> not_found
+  [listings] zillow: Linden at Forrest Pines -> not_found
+  [listings] zillow: Pembroke Pines -> not_found
+  [listings] apartments_com: Linden at Forrest Pines -> not_found
+  [listings] apartments_com: Pembroke Pines -> not_found
+  [listings] property_site: Linden at Forrest Pines -> not_found
+  [listings] property_site: Pembroke Pines -> not_found
+  [listings] wrote 8 rows (0 successful scrapes)
