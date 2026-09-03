@@ -12,6 +12,40 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.0.0.0 — 2026-09-03  ·  Richmond unit counts from the city's own master address table.
+
+A 28-agent research sweep with adversarial verification (every candidate
+screened for the wrong-Richmond trap, unit-field evidence, and
+programmatic access) found the primary source: Richmond VA's master
+address table — the city's official inventory of every address,
+INCLUDING one row per apartment unit, each stamped with the parcel PIN
+in the assessor's own letter-PIN format. The org (k3vhq11XkBNeeOfM) is
+verifiably Richmond VIRGINIA: OpenAddresses harvests this exact layer as
+us/va/city_of_richmond.json (geoid 51760), its hub is linked from
+rva.gov, and its extent centers on 37.53,-77.49. Spot-checks on an
+archived snapshot reproduce real unit counts: PIN N0170390020 -> 1,051
+units, W0000356014 -> 992; 5,721 parcels carried >=1 unit address.
+
+- New `arcgis_unit_rollup` adapter: pulls unit-designated address rows,
+  folds the 'T' PIN variant onto the base, counts DISTINCT subaddresses
+  per parcel (suites/offices excluded, blank unit types kept), and
+  emits one assessor record per PIN shaped for the existing phase0
+  aliases (PIN -> apn, UnitCount -> units, mean point -> coords) - so
+  the spine joins units onto the 77k Richmond parcels with no new merge
+  machinery.
+- The California lesson is now executable policy: the adapter computes
+  every parcel's mean coordinate and REFUSES to write unless >=95% fall
+  inside the Richmond VA bbox; a feed with no coordinates at all is
+  refused outright. Regression test aims Richmond-California
+  coordinates at it and asserts nothing lands.
+- Counts are an address-inventory measure of units, not the CAMA
+  "Number of Units" field; the Public Data Set building workbook
+  (V5.66.2.0.0) cross-checks it as both arrive. Secondary validators
+  documented by the sweep, not yet wired: HUD Multifamily
+  Assisted/Insured layers and the LIHTC database (exact TOTAL_UNITS for
+  the subsidized slice, address-join only).
+- Full suite green: 1,509 passed.
+
 ## V5.66.2.0.0 — 2026-09-03  ·  Richmond units: the building-characteristics workbook was never downloaded.
 
 With the California feed quarantined, the honest question was where

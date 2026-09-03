@@ -572,3 +572,107 @@ def test_csv_download_assessor_kind_lands_as_assessor(monkeypatch):
     n = m.pull_market(conn, "Hampton-roll", cfg)
     assert n == 1
     assert conn.execute("SELECT kind FROM muni_records").fetchone()[0] == "assessor"
+
+
+# ------------------------- Richmond unit rollup (master address table)
+
+def _units_cfg():
+    m = _mod()
+    return m.SALES_SOURCES["Richmond-units"]
+
+
+def _addr(pin, sub, utype, uval, lat=37.53, lng=-77.44):
+    return {"PIN": pin, "SubaddressID": sub, "UnitType": utype,
+            "UnitValue": uval, "Latitude": lat, "Longitude": lng}
+
+
+def test_unit_rollup_counts_distinct_units_per_stripped_pin(monkeypatch):
+    """One record per parcel; the 'T' PIN variant folds onto the base;
+    duplicate subaddress ids count once; suites/offices don't count;
+    blank unit TYPES do (bare unit numbers are how residential rows
+    arrive)."""
+    m = _mod()
+    cfg = _units_cfg()
+    feats = [
+        _addr("N0170390020", 1, "Apt", "101"),
+        _addr("N0170390020", 2, "Apt", "102"),
+        _addr("N0170390020T", 1, "Apt", "101"),   # T-variant duplicate
+        _addr("N0170390020", 3, "", "103"),       # blank type still counts
+        _addr("N0170390020", 4, "Ste", "300"),    # suite: not a dwelling
+        _addr("W0000356014", 9, "Unit", "A"),
+        _addr("W0000356014", None, "Unit", "B"),  # null sub-id fallback
+        _addr("C0010124002", 7, "Apt", ""),       # blank VALUE: skip
+    ]
+    monkeypatch.setattr(m, "count_sales", lambda url, where="": len(feats))
+    monkeypatch.setattr(m, "iter_features",
+                        lambda url, total, where="": iter(feats))
+    conn = _mk_db()
+    n = m.pull_market(conn, "Richmond-units", cfg)
+    assert n == 2
+    recs = {json.loads(r[0])["PIN"]: json.loads(r[0]) for r in conn.execute(
+        "SELECT record FROM muni_records").fetchall()}
+    assert recs["N0170390020"]["UnitCount"] == 3     # 101, 102, 103
+    assert recs["W0000356014"]["UnitCount"] == 2
+    assert "C0010124002" not in recs
+    assert abs(recs["N0170390020"]["Latitude"] - 37.53) < 1e-6
+    rows = conn.execute(
+        "SELECT DISTINCT market, kind FROM muni_records").fetchall()
+    assert rows == [("Richmond", "assessor")]
+
+
+def test_unit_rollup_refuses_to_write_the_wrong_city(monkeypatch):
+    """The California lesson as executable policy: parcels averaging
+    outside the Richmond VA bbox mean the wrong city - nothing may be
+    written, and existing rows stay."""
+    m = _mod()
+    cfg = _units_cfg()
+    feats = [_addr("N0170390020", 1, "Apt", "101",
+                   lat=37.93, lng=-122.34),     # Richmond, CALIFORNIA
+             _addr("W0000356014", 2, "Apt", "1", lat=37.94, lng=-122.35)]
+    monkeypatch.setattr(m, "count_sales", lambda url, where="": len(feats))
+    monkeypatch.setattr(m, "iter_features",
+                        lambda url, total, where="": iter(feats))
+    conn = _mk_db()
+    conn.execute("INSERT INTO muni_records VALUES ('Richmond','VA',"
+                 "'Richmond','assessor',?, '2000-01-01', '{}')",
+                 (cfg["url"],))
+    n = m._ADAPTERS["arcgis_unit_rollup"](conn, "Richmond-units", cfg)
+    assert n == 0
+    assert conn.execute(
+        "SELECT COUNT(*) FROM muni_records").fetchone()[0] == 1
+
+
+def test_unit_rollup_refuses_without_coordinates(monkeypatch):
+    """No coordinates = no geography proof = no write."""
+    m = _mod()
+    cfg = _units_cfg()
+    feats = [_addr("N0170390020", 1, "Apt", "101", lat=None, lng=None)]
+    monkeypatch.setattr(m, "count_sales", lambda url, where="": 1)
+    monkeypatch.setattr(m, "iter_features",
+                        lambda url, total, where="": iter(feats))
+    conn = _mk_db()
+    n = m._ADAPTERS["arcgis_unit_rollup"](conn, "Richmond-units", cfg)
+    assert n == 0
+    assert conn.execute(
+        "SELECT COUNT(*) FROM muni_records").fetchone()[0] == 0
+
+
+def test_unit_rollup_records_reach_the_spine_aliases():
+    """The whole point: phase0 must map PIN -> apn, UnitCount -> units,
+    Latitude/Longitude -> coords, with the Richmond letter-PIN shape
+    accepted - otherwise the rollup writes orphans like the 08-11
+    workbook did."""
+    import core.phase0 as phase0
+    mapped = phase0.normalize_record("Richmond", "VA", {
+        "PIN": "N0170390020", "UnitCount": 1051,
+        "Latitude": 37.5316, "Longitude": -77.4428,
+        "_derived": "distinct dwelling-unit addresses"})
+    assert str(mapped.get("apn")) == "N0170390020"
+    assert int(float(mapped.get("units"))) == 1051
+    assert mapped.get("lat") and mapped.get("lng")
+
+
+def test_unit_rollup_source_is_not_the_california_org():
+    cfg = _units_cfg()
+    assert "il6vO1TutlF580Ku" not in cfg["url"]
+    assert "k3vhq11XkBNeeOfM" in cfg["url"]

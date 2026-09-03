@@ -165,6 +165,25 @@ SALES_SOURCES: dict[str, dict] = {
         # update monthly (~the 15th), so 5d vs 7d costs nothing.
         "refresh_d": 5,
     },
+    # Richmond VA unit counts via the city's master address table - one
+    # row per address INCLUDING one per apartment unit, PIN-stamped in
+    # the assessor's own letter-PIN format. See _pull_arcgis_unit_rollup
+    # for the verification trail and the in-code geography gate.
+    "Richmond-units": {
+        "type": "arcgis_unit_rollup",
+        "url": ("https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/"
+                "rest/services/Addresses/FeatureServer/0"),
+        "market": "Richmond", "kind": "assessor",
+        "state": "VA", "county": "Richmond",
+        "where": "UnitValue IS NOT NULL",
+        "pin_field": "PIN", "subaddress_field": "SubaddressID",
+        "unit_type_field": "UnitType", "unit_value_field": "UnitValue",
+        "lat_field": "Latitude", "lng_field": "Longitude",
+        # Richmond VIRGINIA city bbox - parcels averaging outside it
+        # mean the wrong city and the pull refuses to write.
+        "bbox": (37.40, 37.65, -77.65, -77.30),
+        "refresh_d": 7,
+    },
     # Hottest-50 Wave 1 begins (owner "do all of them" 2026-08-11). Chicago =
     # Cook County Assessor "Parcel Sales" (wvhk-k5uv) - TRANSACTION-level full
     # sale history per PIN, the dataset the Assessor's own models publish.
@@ -326,6 +345,132 @@ def _pull_arcgis(conn, market: str, cfg: dict) -> int:
         return 0
     _replace_rows(conn, url, rows, kind)
     print(f"[sales:{market}] wrote {len(rows)} rows (expected {total})")
+    return len(rows)
+
+
+# ------------------------------------------- unit rollup (address table)
+#
+# Richmond VA's master address table (city AGOL org k3vhq11XkBNeeOfM -
+# verified VIRGINIA: OpenAddresses us/va/city_of_richmond.json geoid
+# 51760 harvests this exact layer; NOT the quarantined California org)
+# carries one row per ADDRESS, including one per apartment unit, each row
+# stamped with the parcel PIN in the assessor's own letter-PIN format.
+# The assessor's bulk files publish no unit counts, so counting distinct
+# unit-designated addresses per PIN is the city's own data answering the
+# question sideways: 2018 snapshot spot-checks give PIN N0170390020 ->
+# 1,051 units, W0000356014 -> 992.
+
+# Unit-type designators that are NOT dwellings - suites, offices, docks.
+# Rows with a blank type still count (residential units often carry only
+# a bare unit number); these explicit commercial types do not.
+_NON_DWELLING_UNIT_TYPES = {
+    "ste", "suite", "rm", "room", "fl", "floor", "ofc", "office", "box",
+    "trlr", "lot", "slip", "dock", "pier", "hangar", "bldg", "spc",
+}
+
+
+def _rollup_pin(pin: str) -> str:
+    """The address table duplicates every subaddress under the base PIN
+    and a 'T' variant (N0170390020 and N0170390020T) - fold the variant
+    onto the base so counts don't double."""
+    p = (pin or "").strip().upper()
+    if len(p) > 11 and p.endswith("T") and p[:-1][-1].isdigit():
+        return p[:-1]
+    return p
+
+
+def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
+    """Aggregate an address-point layer into one record per parcel PIN
+    with the count of distinct dwelling-unit addresses on it. Writes
+    kind='assessor' rows shaped for the normal phase0 aliases (PIN ->
+    apn, UnitCount -> units, mean point -> Latitude/Longitude), so the
+    spine joins them like any other assessor feed.
+
+    California lesson (V5.66.1.0.0) enforced in code: after the pull,
+    the mean coordinate of every parcel must sit inside the market's
+    bbox or NOTHING is written."""
+    url = cfg["url"]
+    market = cfg.get("market", market)
+    kind = cfg.get("kind", "assessor")
+    where = cfg["where"]
+    f_pin, f_sub = cfg["pin_field"], cfg["subaddress_field"]
+    f_type, f_val = cfg["unit_type_field"], cfg["unit_value_field"]
+    f_lat, f_lng = cfg["lat_field"], cfg["lng_field"]
+    lat_lo, lat_hi, lng_lo, lng_hi = cfg["bbox"]
+
+    total = count_sales(url, where)
+    if total is None:
+        print(f"[units:{market}] count query FAILED "
+              f"({_LAST_ERR or 'endpoint/where?'}) - skip, no rows touched")
+        return 0
+    print(f"[units:{market}] {total} unit-address rows to roll up "
+          f"(where: {where})")
+    if total == 0:
+        return 0
+
+    per_pin: dict[str, dict] = {}
+    skipped_type = 0
+    for attrs in iter_features(url, total, where):
+        val = str(attrs.get(f_val) or "").strip()
+        if not val:
+            continue
+        utype = str(attrs.get(f_type) or "").strip().lower().rstrip(".")
+        if utype in _NON_DWELLING_UNIT_TYPES:
+            skipped_type += 1
+            continue
+        pin = _rollup_pin(str(attrs.get(f_pin) or ""))
+        if not pin:
+            continue
+        d = per_pin.setdefault(pin, {"subs": set(), "lat": 0.0,
+                                     "lng": 0.0, "pts": 0})
+        sub = attrs.get(f_sub)
+        d["subs"].add(str(sub) if sub not in (None, "") else
+                      f"{utype}|{val}")
+        try:
+            la, ln = float(attrs.get(f_lat)), float(attrs.get(f_lng))
+        except (TypeError, ValueError):
+            continue
+        d["lat"] += la
+        d["lng"] += ln
+        d["pts"] += 1
+    if not per_pin:
+        print(f"[units:{market}] rolled up 0 parcels - NOT deleting "
+              f"existing rows (transient?)")
+        return 0
+
+    # Geography gate BEFORE any write. A wrong-city feed passed a name
+    # check once; a coordinate check would have caught it on day one.
+    located = [d for d in per_pin.values() if d["pts"]]
+    if not located:
+        print(f"[units:{market}] no row carried a coordinate - REFUSING "
+              f"to write (cannot prove the layer's geography)")
+        return 0
+    inside = sum(1 for d in located
+                 if lat_lo <= d["lat"] / d["pts"] <= lat_hi
+                 and lng_lo <= d["lng"] / d["pts"] <= lng_hi)
+    share = inside / len(located)
+    if share < 0.95:
+        print(f"[units:{market}] GEOGRAPHY CHECK FAILED: only "
+              f"{share:.0%} of parcels fall inside the {market} bbox - "
+              f"REFUSING to write (wrong city? projection?)")
+        return 0
+
+    now_iso = dt.datetime.now().isoformat(timespec="seconds")
+    rows = []
+    for pin, d in per_pin.items():
+        rec = {"PIN": pin, "UnitCount": len(d["subs"]),
+               "_derived": "distinct dwelling-unit addresses in the city "
+                           "master address table"}
+        if d["pts"]:
+            rec["Latitude"] = round(d["lat"] / d["pts"], 6)
+            rec["Longitude"] = round(d["lng"] / d["pts"], 6)
+        rows.append((market, cfg["state"], cfg["county"], kind, url,
+                     now_iso, json.dumps(rec)))
+    _replace_rows(conn, url, rows, kind)
+    mf = sum(1 for pin, d in per_pin.items() if len(d["subs"]) >= 10)
+    print(f"[units:{market}] wrote {len(rows)} parcels "
+          f"({mf} with >=10 units; {skipped_type} non-dwelling rows "
+          f"skipped; geography {share:.0%} inside bbox)")
     return len(rows)
 
 
@@ -772,6 +917,7 @@ def _pull_csv_download(conn, market: str, cfg: dict) -> int:
 
 _ADAPTERS = {
     "arcgis": _pull_arcgis,
+    "arcgis_unit_rollup": _pull_arcgis_unit_rollup,
     "socrata_stack": _pull_socrata_stack,
     "landbook_xlsx": _pull_landbook,
     "html_files": _pull_html_files,
