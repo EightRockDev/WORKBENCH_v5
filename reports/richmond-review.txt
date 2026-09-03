@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-09-03T12:30:17
+autopilot richmondreview @ 2026-09-03T15:33:15
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-03T12:30:20
+RICHMOND REVIEW  @ 2026-09-03T15:33:18
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
@@ -10,7 +10,7 @@ Richmond properties total: 77,391
 Multifamily (units>=10): 0
 
 -- 2. Raw Richmond assessor rows on hand --
-    76,976  2026-08-27T20:19:02  files:rva.gov/assessor-real-estate
+    76,976  2026-09-03T14:17:53  files:rva.gov/assessor-real-estate
     76,739  2026-09-02T12:15:21  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
      6,570  2026-09-02T01:17:47  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
 
@@ -27,6 +27,14 @@ Multifamily (units>=10): 0
   rva.gov-files join health: 76,715 of 76,976 workbook parcels match an API-feed parcel
   address coverage per source (usable normalized addresses / with units):
      76,063 addrs        0 of them carry units   files:rva.gov/assessor-real-estate
+
+-- 2c. rva.gov files on hand (columns per workbook) --
+  Assessor_Public_Data_Set_2026-05-26.xlsx: 76,976 rows, 80 columns
+    AREA_TAX, ASSESSMENT_CHG_DESC_1, ASSESSMENT_CHG_DESC_2, ASSESSMENT_CHG_DESC_3, ASSESSMENT_CHG_DESC_4, ASSESSMENT_CHG_DESC_5, ASSESSMENT_DATE_1, ASSESSMENT_DATE_2, ASSESSMENT_DATE_3, ASSESSMENT_DATE_4, ASSESSMENT_DATE_5, ASSOC_NAME, ASSSESS_IMP_VALUE_1, ASSSESS_IMP_VALUE_2, ASSSESS_IMP_VALUE_3, ASSSESS_IMP_VALUE_4, ASSSESS_IMP_VALUE_5, ASSSESS_LAND_VALUE_1, ASSSESS_LAND_VALUE_2, ASSSESS_LAND_VALUE_3, ASSSESS_LAND_VALUE_4, ASSSESS_LAND_VALUE_5, ASSSESS_TOTAL_VALUE_1, ASSSESS_TOTAL_VALUE_2, ASSSESS_TOTAL_VALUE_3, ASSSESS_TOTAL_VALUE_4, ASSSESS_TOTAL_VALUE_5, BATH_COUNT, BED_COUNT, CONDITION, DEPT
+    [unit-suspect] STORIES (non-empty on 68,054 rows, sample: 1)
+  Assessor_Transfers_2026-05-20.xlsx: 84,148 rows, 31 columns
+    APPRAISER, ASSOC_NAME, CONSIDERATION, DEED_BOOK, DEED_PAGE, DEED_TYPE, DISTRICT, EXEMPT_CODE, GIS_ID, GRANTEE, LEGAL_AC, LEGAL_DESC, LIVING_AREA, NBHD, PARCEL_LOCATION, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, PID, PIN, PRECINCT, PRIMARY_USE, PROP_SF, PROP_TYPE, PROP_TYPE_2, QUALIFIED, SALE_TYPE, STORIES, TRANSFER_DATE, YEAR_BUILT, ZONING
+    [unit-suspect] STORIES (non-empty on 77,768 rows, sample: 1)
 
 -- 3. Richmond sales (muni_records kind='sales') --
 sale rows: 84,148
