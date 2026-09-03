@@ -1,0 +1,15 @@
+{
+  "external_id": "0.0.7.367.1DD3A3DFEFF69C8.2132DC@mx16.mailsvr.com",
+  "from_email": "NewmarkDallasMF@nmrk.com",
+  "from_name": "Newmark Dallas Multifamily",
+  "subject": "Arden at Midtown GP | 366 UNITS | Luxury Living | Grand Prairie, Texas",
+  "received_at": "2026-09-01T18:16:46+00:00",
+  "body": "Arden at Midtown GP, Grand Prairie, TX. 366 units, luxury.",
+  "fields": {
+    "name": "Arden at Midtown GP",
+    "city": "Grand Prairie",
+    "state": "TX",
+    "units": 366
+  },
+  "confidence": 0.9
+}

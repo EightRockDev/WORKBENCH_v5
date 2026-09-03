@@ -1,0 +1,15 @@
+{
+  "external_id": "0.0.7.284.1DD3A23135C3574.8BFE52@mx16.mailsvr.com",
+  "from_email": "thomas.alleman@nmrk.com",
+  "from_name": "Thomas Alleman (Newmark)",
+  "subject": "Now Available | Royal Sienna | Class A+ Product with Robust Amenity Package | Below Replacement Cost",
+  "received_at": "2026-09-01T15:03:51+00:00",
+  "body": "Royal Sienna, 5222 Avalon Point, Missouri City, TX 77459. Class A+, below replacement cost.",
+  "fields": {
+    "name": "Royal Sienna",
+    "address": "5222 Avalon Point",
+    "city": "Missouri City",
+    "state": "TX"
+  },
+  "confidence": 0.9
+}

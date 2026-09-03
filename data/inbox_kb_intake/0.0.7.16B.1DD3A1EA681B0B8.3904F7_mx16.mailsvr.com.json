@@ -1,0 +1,14 @@
+{
+  "external_id": "0.0.7.16B.1DD3A1EA681B0B8.3904F7@mx16.mailsvr.com",
+  "from_email": "southernvirginiamultifamily@nmrk.com",
+  "from_name": "Newmark Southern Virginia Multifamily",
+  "subject": "Call For Offers | Sept 3rd | Eastwyck Village | 1994 Vintage Value-Add | Virginia Beach, VA",
+  "received_at": "2026-09-01T14:32:19+00:00",
+  "body": "Eastwyck Village, Virginia Beach, VA. 1994 vintage value-add. Call for offers: September 3rd.",
+  "fields": {
+    "name": "Eastwyck Village",
+    "city": "Virginia Beach",
+    "state": "VA"
+  },
+  "confidence": 0.9
+}

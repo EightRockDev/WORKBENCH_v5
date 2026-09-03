@@ -1,0 +1,16 @@
+{
+  "external_id": "0.0.7.622.1DD3BB5669C1A36.1D71B4@mx16.mailsvr.com",
+  "from_email": "carter.mizell@nmrk.com",
+  "from_name": "Carter Mizell (Newmark)",
+  "subject": "Offers Due September 10th | 7% CAP | Rosemont on El Dorado | Webster, TX",
+  "received_at": "2026-09-03T15:06:31+00:00",
+  "body": "Offers due September 10th. 7% cap. Rosemont on El Dorado, 265 El Dorado Blvd, Webster, TX 77598.",
+  "fields": {
+    "name": "Rosemont on El Dorado",
+    "address": "265 El Dorado Blvd",
+    "city": "Webster",
+    "state": "TX",
+    "cap_rate": 7.0
+  },
+  "confidence": 0.9
+}

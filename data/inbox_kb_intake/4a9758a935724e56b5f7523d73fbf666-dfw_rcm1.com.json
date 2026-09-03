@@ -1,0 +1,15 @@
+{
+  "external_id": "4a9758a935724e56b5f7523d73fbf666-dfw@rcm1.com",
+  "from_email": "berkadia@rcm1.com",
+  "from_name": "Berkadia",
+  "subject": "NOW TOURING: Class B Multifamily Opportunity with $250-$300/Unit Comp Supported Reno Upside in High-Performing Hampton, VA | 276 Units",
+  "received_at": "2026-09-02T17:34:15+00:00",
+  "body": "Wyndham at Hampton, Hampton, VA. 276 units, Class B, $250-$300/unit comp-supported reno upside.",
+  "fields": {
+    "name": "Wyndham at Hampton",
+    "city": "Hampton",
+    "state": "VA",
+    "units": 276
+  },
+  "confidence": 0.9
+}
