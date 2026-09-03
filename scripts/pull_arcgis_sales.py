@@ -160,7 +160,10 @@ SALES_SOURCES: dict[str, dict] = {
         "market": "Richmond",
         "state": "VA", "county": "Richmond",
         "source_tag": "files:rva.gov/assessor-real-estate",
-        "refresh_d": 7,
+        # 5 (not 7) so the 2026-09-03 landing-page fix re-pulls on the
+        # NEXT cycle instead of waiting out the last stamp; the files
+        # update monthly (~the 15th), so 5d vs 7d costs nothing.
+        "refresh_d": 5,
     },
     # Hottest-50 Wave 1 begins (owner "do all of them" 2026-08-11). Chicago =
     # Cook County Assessor "Parcel Sales" (wvhk-k5uv) - TRANSACTION-level full
@@ -557,34 +560,41 @@ def _read_workbook(content: bytes):
     return None
 
 
-def _download_table(url: str, _depth: int = 0):
-    """(DataFrame|None, final_url) for a remote spreadsheet. Drupal
+def _download_tables(url: str, _depth: int = 0) -> list[tuple]:
+    """[(DataFrame, final_url), ...] for a remote spreadsheet URL. Drupal
     /media/<id> URLs (2 AM ET first contact) return an HTML LANDING PAGE,
-    not the file - when the body is HTML, follow its first spreadsheet-ish
-    link one level down. final_url is the real file, whose name carries the
-    transfer/assessor classification signal the /media/ URL lacks."""
+    not the file - when the body is HTML, follow EVERY spreadsheet-ish
+    link one level down. The first version returned only the FIRST file
+    that parsed, which is how Richmond's 3-file Public Data Set silently
+    lost its building-characteristics file - and with it every Richmond
+    unit count (found 2026-09-03). final_url is the real file, whose name
+    carries the transfer/assessor classification signal the /media/ URL
+    lacks."""
     import pandas as pd  # noqa: F401  (re-exported for the helpers)
     try:
         r = requests.get(url, headers=_headers(), timeout=180,
                          allow_redirects=True)
         if r.status_code != 200 or not r.content:
-            return None, url
+            return []
     except requests.RequestException:
-        return None, url
+        return []
     content = r.content
     head = content[:512].lstrip().lower()
     if head.startswith((b"<!doctype", b"<html")) or b"<html" in head:
         if _depth >= 1:
-            return None, url
-        for u, _label in _list_file_links(
-                content.decode("utf-8", "replace"), str(r.url)):
+            return []
+        sub = _list_file_links(content.decode("utf-8", "replace"), str(r.url))
+        if len(sub) > 12:
+            print(f"    [files] landing page lists {len(sub)} files - "
+                  f"loading the first 12, IGNORING {len(sub) - 12}")
+        out: list[tuple] = []
+        for u, _label in sub[:12]:
             if u.rstrip("/") == url.rstrip("/"):
                 continue                       # self-link, avoid a loop
-            df, final = _download_table(u, _depth + 1)
-            if df is not None:
-                return df, final
-        return None, url
-    return _read_workbook(content), str(r.url)
+            out.extend(_download_tables(u, _depth + 1))
+        return out
+    df = _read_workbook(content)
+    return [(df, str(r.url))] if df is not None else []
 
 
 def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
@@ -609,33 +619,44 @@ def _pull_html_files(conn, market_key: str, cfg: dict) -> int:
     now_iso = dt.datetime.now().isoformat(timespec="seconds")
     rows: list[tuple] = []
     per_kind = {"sales": 0, "assessor": 0}
+    seen_files: set[str] = set()     # two anchors can land on one file
+    if len(links) > 12:
+        print(f"[sales:{market}] page lists {len(links)} links - loading "
+              f"the first 12, IGNORING {len(links) - 12}")
     for url, label in links[:12]:        # sanity cap on a scraped page
-        df, final_url = _download_table(url)
+        tables = _download_tables(url)
         name = label or url.rsplit("/", 1)[-1]
-        if df is None:
+        if not tables:
             print(f"[sales:{market}]   {name[:60]}: download/parse FAILED "
                   f"({url})")
             continue
-        # Classify on the RESOLVED filename + anchor text - the /media/<id>
-        # link itself says nothing, the file it lands on does.
-        kind = _file_kind(final_url, label)
-        kept = 0
-        for rec in df.to_dict(orient="records"):
-            clean = {}
-            for k, v in rec.items():
-                cv = _clean_value(v)
-                if cv not in (None, ""):
-                    clean[str(k).strip()] = cv
-            if not clean:
+        for df, final_url in tables:
+            if final_url in seen_files:
                 continue
-            clean["_file"] = final_url
-            rows.append((market, cfg["state"], cfg["county"], kind, tag,
-                         now_iso, json.dumps(clean, default=str)))
-            kept += 1
-            if len(rows) >= MAX_RECORDS:
-                break
-        per_kind[kind] = per_kind.get(kind, 0) + kept
-        print(f"[sales:{market}]   {name[:60]}: {kept} rows -> kind={kind}")
+            seen_files.add(final_url)
+            fname = final_url.rsplit("/", 1)[-1] or name
+            # Classify on the RESOLVED filename + anchor text - the
+            # /media/<id> link itself says nothing, the file it lands on
+            # does.
+            kind = _file_kind(final_url, label)
+            kept = 0
+            for rec in df.to_dict(orient="records"):
+                clean = {}
+                for k, v in rec.items():
+                    cv = _clean_value(v)
+                    if cv not in (None, ""):
+                        clean[str(k).strip()] = cv
+                if not clean:
+                    continue
+                clean["_file"] = final_url
+                rows.append((market, cfg["state"], cfg["county"], kind, tag,
+                             now_iso, json.dumps(clean, default=str)))
+                kept += 1
+                if len(rows) >= MAX_RECORDS:
+                    break
+            per_kind[kind] = per_kind.get(kind, 0) + kept
+            print(f"[sales:{market}]   {name[:40]} -> {fname[:50]}: "
+                  f"{kept} rows -> kind={kind}")
     if not rows:
         print(f"[sales:{market}] every file failed to parse - NOT deleting "
               f"existing rows (transient?)")

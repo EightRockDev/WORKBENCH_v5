@@ -333,8 +333,9 @@ def test_html_files_scrapes_classifies_and_writes(monkeypatch):
               "Consideration": 1_800_000, "Qualified": "Q"}]),
     }
     monkeypatch.setattr(
-        m, "_download_table",
-        lambda url: (frames.get(url.rsplit("/", 1)[-1]), url))
+        m, "_download_tables",
+        lambda url: ([(frames[url.rsplit("/", 1)[-1]], url)]
+                     if url.rsplit("/", 1)[-1] in frames else []))
     conn = _mk_db()
     n = m.pull_market(conn, "Richmond-files", cfg)
     assert n == 2
@@ -366,7 +367,7 @@ def test_html_files_media_links_classified_by_anchor_text(monkeypatch):
     assert m._file_kind(links[1][0], links[1][1]) == "assessor"
 
     # /media/<id> serves an HTML LANDING PAGE (2 AM ET first contact:
-    # download/parse FAILED on both files) - _download_table must follow it
+    # download/parse FAILED on both files) - _download_tables must follow it
     # one level to the real file, then sniff xlsx from magic bytes. The
     # resolved filename ("...Transfers...") is what classifies the file.
     buf = io.BytesIO()
@@ -386,10 +387,63 @@ def test_html_files_media_links_classified_by_anchor_text(monkeypatch):
             R.content = buf.getvalue()
         return R()
     monkeypatch.setattr(m.requests, "get", fake_get)
-    df, final = m._download_table("https://www.rva.gov/media/50901")
+    tables = m._download_tables("https://www.rva.gov/media/50901")
+    assert len(tables) == 1
+    df, final = tables[0]
     assert df is not None and df.iloc[0]["PIN"] == "W1"
     assert final.endswith("Assessor_Transfers_2015-2025.xlsx")
     assert m._file_kind(final, "2015-2025") == "sales"
+
+
+def test_html_files_landing_page_yields_every_file(monkeypatch):
+    """Richmond's 'Public Data Set' anchor lands on a page listing THREE
+    workbooks (parcels, land, building characteristics). The first version
+    of the follower returned only the FIRST file that parsed - so the
+    building-characteristics file, the only one carrying unit counts,
+    was never ingested and Richmond had zero units (2026-09-03). Every
+    file behind a landing page must land, and two anchors resolving to
+    the same file must not double-ingest it."""
+    import pandas as pd
+    m = _mod()
+    cfg = m.SALES_SOURCES["Richmond-files"]
+
+    page = ('<a href="/media/50902">Public Data Set 2026</a>'
+            '<a href="/sites/default/files/Parcels_0826.xlsx">parcels</a>')
+    landing = ('<html><body>'
+               '<a href="/sites/default/files/Parcels_0826.xlsx">1</a>'
+               '<a href="/sites/default/files/Land_0826.xlsx">2</a>'
+               '<a href="/sites/default/files/Buildings_0826.xlsx">3</a>'
+               '</body></html>')
+    bufs = {}
+    for fname, rec in (
+            ("Parcels_0826.xlsx", {"PIN": "W0001", "TotalValue": 1}),
+            ("Land_0826.xlsx", {"PIN": "W0001", "LandValue": 2}),
+            ("Buildings_0826.xlsx", {"PIN": "W0001", "NumberOfUnits": 48})):
+        b = io.BytesIO()
+        pd.DataFrame([rec]).to_excel(b, index=False)
+        bufs[fname] = b.getvalue()
+
+    def fake_get(url, **kw):
+        class R:
+            status_code = 200
+        R.url = url
+        R.text = page
+        if "/media/" in url:
+            R.content = landing.encode()
+        else:
+            R.content = bufs.get(url.rsplit("/", 1)[-1], page.encode())
+        return R()
+    monkeypatch.setattr(m.requests, "get", fake_get)
+    conn = _mk_db()
+    n = m.pull_market(conn, "Richmond-files", cfg)
+    assert n == 3, "every landing-page file must be ingested exactly once"
+    recs = [json.loads(r[0]) for r in
+            conn.execute("SELECT record FROM muni_records").fetchall()]
+    files = sorted(r["_file"].rsplit("/", 1)[-1] for r in recs)
+    assert files == ["Buildings_0826.xlsx", "Land_0826.xlsx",
+                     "Parcels_0826.xlsx"]
+    assert any(r.get("NumberOfUnits") == 48 for r in recs), \
+        "the unit-bearing building file must survive ingestion"
 
 
 def test_html_files_no_links_touches_nothing(monkeypatch):

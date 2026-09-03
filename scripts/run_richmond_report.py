@@ -25,6 +25,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import re
 import sqlite3
 import statistics
 import sys
@@ -42,6 +43,65 @@ def _stats(vals: list[float]) -> str:
         return "none"
     return (f"n={len(vals):,}  min={min(vals):,.0f}  "
             f"median={statistics.median(vals):,.0f}  max={max(vals):,.0f}")
+
+
+# Column names that could plausibly carry a unit count or building
+# character - flagged with samples in section 2c so the alias decision
+# rests on evidence, not name guessing (the FRM_PRCL lesson, 2026-09-01).
+_UNITISH = re.compile(r"unit|apart|dwell|stor(y|ies)|room|bldg|"
+                      r"building|improv|res", re.IGNORECASE)
+
+
+def _files_column_inventory(conn, files_src: str, gaps: list[str]) -> None:
+    """Section 2c: full column set of every rva.gov workbook on hand.
+
+    The Public Data Set is a landing page linking THREE workbooks
+    (parcels, land, building characteristics), and until 2026-09-03 the
+    file-follower kept only the FIRST one - so "the workbook maps no
+    units" really meant "the unit-bearing workbook was never downloaded".
+    Every ingested row carries its resolved file URL in _file; this lists
+    each file's columns with unit-suspect ones flagged and sampled, so
+    the next re-pull PROVES which files landed and names the unit column
+    to alias in core/phase0.py."""
+    print("\n-- 2c. rva.gov files on hand (columns per workbook) --")
+    by_file: dict[str, dict] = {}
+    for (rec4,) in conn.execute(
+            "SELECT record FROM muni_records WHERE market='Richmond' "
+            "AND source_url=?", (files_src,)):
+        raw4 = phase0._decode_muni_record(rec4)
+        if not raw4:
+            continue
+        fkey = str(raw4.get("_file", "?")).rsplit("/", 1)[-1]
+        d4 = by_file.setdefault(fkey, {"n": 0, "cols": {}, "samples": {}})
+        d4["n"] += 1
+        for k, v in raw4.items():
+            if k == "_file":
+                continue
+            d4["cols"][k] = d4["cols"].get(k, 0) + 1
+            if (_UNITISH.search(k) and k not in d4["samples"]
+                    and v not in (None, "", "None")):
+                d4["samples"][k] = str(v)[:32]
+    for fkey, d4 in sorted(by_file.items()):
+        cols = sorted(d4["cols"])
+        print(f"  {fkey}: {d4['n']:,} rows, {len(cols)} columns")
+        print("    " + ", ".join(cols)[:600])
+        flagged = [k for k in cols if _UNITISH.search(k)]
+        if flagged:
+            for k in flagged[:10]:
+                print(f"    [unit-suspect] {k} "
+                      f"(non-empty on {d4['cols'][k]:,} rows, "
+                      f"sample: {d4['samples'].get(k, 'all empty')})")
+        else:
+            print("    [unit-suspect] none")
+    if len(by_file) < 2:
+        gaps.append(
+            f"Only {len(by_file)} rva.gov workbook(s) ingested - the "
+            "Public Data Set is a 3-file set (parcels, land, building "
+            "characteristics), and the building file carries the unit "
+            "counts. The landing-page follower fix (2026-09-03) downloads "
+            "all of them on the next stale re-pull; if this line still "
+            "shows <2 files after that, read the arcgis-sales-latest "
+            "per-file lines for what failed.")
 
 
 def main() -> int:
@@ -341,6 +401,10 @@ def main() -> int:
                     "check section 2b and the phase0 unmapped-keys list "
                     "for the workbook's unit column, or promote a units-"
                     "bearing candidate from discover-sales-latest.txt.")
+
+        # ---- 2c. per-FILE column inventory for the rva.gov workbooks ----
+        if files_src:
+            _files_column_inventory(conn, files_src, gaps)
 
         # ---- 3. sales ---------------------------------------------------
         print("\n-- 3. Richmond sales (muni_records kind='sales') --")

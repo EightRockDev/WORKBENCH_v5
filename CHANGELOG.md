@@ -12,6 +12,39 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.66.2.0.0 — 2026-09-03  ·  Richmond units: the building-characteristics workbook was never downloaded.
+
+With the California feed quarantined, the honest question was where
+Richmond VIRGINIA unit counts actually live. Answer: behind a link we
+already scrape. The rva.gov Assessor "Public Data Set" is a THREE-file
+monthly set (parcels, land, building characteristics — the city's own
+property search shows "Number of Units" under Improvements), published
+behind a Drupal /media/ landing page. The 2026-08-27 pull log proves
+what happened: the follower in `_download_table` returned only the FIRST
+file that parsed — the 76,976-row parcel master. The land and building
+workbooks, including every unit count, were silently dropped.
+
+- `_download_tables` (renamed) now follows EVERY spreadsheet link on a
+  landing page and returns them all; `_pull_html_files` ingests each,
+  classifies each by its own resolved filename, dedupes files reached
+  through two anchors, and logs links beyond the sanity cap instead of
+  silently ignoring them.
+- Richmond-files `refresh_d` 7 -> 5 so the fix re-pulls on the next
+  hourly cycle instead of waiting out the 08-27 freshness stamp; the
+  files update monthly, so steady-state cadence is unchanged.
+- richmond-review gains section 2c: a per-workbook column inventory of
+  every rva.gov file on hand (grouped by each row's `_file` URL), with
+  unit-suspect columns flagged and sampled — the next report PROVES
+  which files landed and names the exact unit column. Fewer than 2
+  workbooks is now a loud gap, not silence.
+- The phase0 unit aliases (`units`, `numberofunits`, `dwellingunits`,
+  `totalunits`, …) already cover the likely column names, so units flow
+  to the spine the moment the building workbook lands; if its column
+  name is exotic, section 2c names it and a one-line alias finishes.
+- Regression tests: a landing page linking 3 workbooks must yield all 3
+  exactly once (the unit-bearing one asserted by name), plus section-2c
+  inventory tests.
+
 ## V5.66.1.0.0 — 2026-09-02  ·  The "Richmond unit source" was Richmond, California.
 
 The raw-record dump added in V5.65.3.0.0 settled it in one read: the
