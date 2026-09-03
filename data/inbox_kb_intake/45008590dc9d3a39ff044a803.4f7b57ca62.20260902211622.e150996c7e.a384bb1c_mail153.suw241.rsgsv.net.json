@@ -1,0 +1,15 @@
+{
+  "external_id": "45008590dc9d3a39ff044a803.4f7b57ca62.20260902211622.e150996c7e.a384bb1c@mail153.suw241.rsgsv.net",
+  "from_email": "listings@multifamilyadvisors.com",
+  "from_name": "Multifamily Advisors",
+  "subject": "JUST LISTED! Malloy Bridge | Seagoville, Texas | 225 Units | Built in 2025",
+  "received_at": "2026-09-02T21:16:48+00:00",
+  "body": "New construction, 83% 3-bedrooms, assumable financing available. Malloy Bridge, Seagoville, TX. 225 units, built 2025.",
+  "fields": {
+    "name": "Malloy Bridge",
+    "city": "Seagoville",
+    "state": "TX",
+    "units": 225
+  },
+  "confidence": 0.9
+}

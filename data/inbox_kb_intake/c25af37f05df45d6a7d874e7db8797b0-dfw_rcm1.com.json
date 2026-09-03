@@ -1,0 +1,15 @@
+{
+  "external_id": "c25af37f05df45d6a7d874e7db8797b0-dfw@rcm1.com",
+  "from_email": "investmentsale@rcm1.com",
+  "from_name": "Newmark",
+  "subject": "12505 Park Potomac | Investment Opportunity in the Heart of a Mixed-Use Potomac, MD Destination",
+  "received_at": "2026-09-01T19:10:08+00:00",
+  "body": "12505 Park Potomac Avenue, Potomac, MD. Mixed-use destination acquisition opportunity; Newmark exclusive advisor.",
+  "fields": {
+    "name": "12505 Park Potomac",
+    "address": "12505 Park Potomac Avenue",
+    "city": "Potomac",
+    "state": "MD"
+  },
+  "confidence": 0.9
+}

@@ -1,0 +1,15 @@
+{
+  "external_id": "0.0.7.1AD.1DD3A2BA9AB30D6.8F5C69@mx16.mailsvr.com",
+  "from_email": "David.Mitchell@nmrk.com",
+  "from_name": "David Mitchell (Newmark)",
+  "subject": "OFFERS DUE: 09/16/26 | Alexan Junction Heights | Institutional Quality Infill Product | Premier Walkable Lower Heights Location",
+  "received_at": "2026-09-01T16:06:47+00:00",
+  "body": "Alexan Junction Heights, 3003 Summer St., Houston, TX 77007. Institutional-quality infill, Lower Heights. Offers due 09/16/26.",
+  "fields": {
+    "name": "Alexan Junction Heights",
+    "address": "3003 Summer St",
+    "city": "Houston",
+    "state": "TX"
+  },
+  "confidence": 0.9
+}

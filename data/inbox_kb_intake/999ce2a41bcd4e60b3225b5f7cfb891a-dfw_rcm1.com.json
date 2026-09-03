@@ -1,0 +1,15 @@
+{
+  "external_id": "999ce2a41bcd4e60b3225b5f7cfb891a-dfw@rcm1.com",
+  "from_email": "berkadia@rcm1.com",
+  "from_name": "Berkadia",
+  "subject": "OM AVAILABLE: Bridgeyard | 530-Unit Value-Add Community with Additional Density Potential in Alexandria, VA Adjacent to I-95 and I-495",
+  "received_at": "2026-08-27T19:01:44+00:00",
+  "body": "Bridgeyard, 1204 South (Alexandria, VA). 530-unit value-add with additional density potential, adjacent to I-95/I-495. Offering memorandum available.",
+  "fields": {
+    "name": "Bridgeyard",
+    "city": "Alexandria",
+    "state": "VA",
+    "units": 530
+  },
+  "confidence": 0.9
+}

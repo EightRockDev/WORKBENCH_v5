@@ -1,0 +1,15 @@
+{
+  "external_id": "9eaf99fc51df4cbe940000f823278be3-dfw@rcm1.com",
+  "from_email": "berkadia@rcm1.com",
+  "from_name": "Berkadia",
+  "subject": "CALL FOR OFFERS: 9/16: Logic at White Oak | A 387-Unit Class A Community Delivered in 2025 Located in Northern Montgomery County, MD",
+  "received_at": "2026-09-02T14:02:05+00:00",
+  "body": "Logic at White Oak, Silver Spring, MD. 387 units, Class A, delivered 2025, northern Montgomery County. Call for offers: Wednesday, September 16, 2026.",
+  "fields": {
+    "name": "Logic at White Oak",
+    "city": "Silver Spring",
+    "state": "MD",
+    "units": 387
+  },
+  "confidence": 0.9
+}

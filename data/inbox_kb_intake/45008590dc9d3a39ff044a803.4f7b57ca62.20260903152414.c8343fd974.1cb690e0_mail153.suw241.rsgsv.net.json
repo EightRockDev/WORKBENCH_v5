@@ -1,0 +1,16 @@
+{
+  "external_id": "45008590dc9d3a39ff044a803.4f7b57ca62.20260903152414.c8343fd974.1cb690e0@mail153.suw241.rsgsv.net",
+  "from_email": "listings@multifamilyadvisors.com",
+  "from_name": "Multifamily Advisors",
+  "subject": "The Willows in Corsicana, Texas | 18 Units | Built in 1980",
+  "received_at": "2026-09-03T15:24:23+00:00",
+  "body": "8.5%+ CAP Rate with Huge Increase to NOI. The Willows, Corsicana, TX. 18 units, built 1980.",
+  "fields": {
+    "name": "The Willows",
+    "city": "Corsicana",
+    "state": "TX",
+    "units": 18,
+    "cap_rate": 8.5
+  },
+  "confidence": 0.9
+}

@@ -1,0 +1,14 @@
+{
+  "external_id": "8ffe25f650f442d18d16a75a35be8f68-dfw@rcm1.com",
+  "from_email": "multifamily@rcm1.com",
+  "from_name": "Newmark Multifamily",
+  "subject": "On Market & Now Touring: 89-Unit Stabilized Multifamily Asset in the Brightwood Neighborhood of NW Washington, DC",
+  "received_at": "2026-09-01T10:30:51+00:00",
+  "body": "89-unit stabilized multifamily asset, Brightwood neighborhood, NW Washington, DC. On market and touring.",
+  "fields": {
+    "city": "Washington",
+    "state": "DC",
+    "units": 89
+  },
+  "confidence": 0.9
+}

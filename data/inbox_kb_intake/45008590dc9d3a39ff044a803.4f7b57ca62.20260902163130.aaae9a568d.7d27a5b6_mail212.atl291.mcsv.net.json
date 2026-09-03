@@ -1,0 +1,16 @@
+{
+  "external_id": "45008590dc9d3a39ff044a803.4f7b57ca62.20260902163130.aaae9a568d.7d27a5b6@mail212.atl291.mcsv.net",
+  "from_email": "listings@multifamilyadvisors.com",
+  "from_name": "Multifamily Advisors",
+  "subject": "CFO! Cavern City | 240 Units | Built in 2022",
+  "received_at": "2026-09-02T16:32:12+00:00",
+  "body": "Offers due 09/25. 240-unit new-build apartment community in Carlsbad, NM with 98% occupancy and a 6.75% cap rate.",
+  "fields": {
+    "name": "Cavern City",
+    "city": "Carlsbad",
+    "state": "NM",
+    "units": 240,
+    "cap_rate": 6.75
+  },
+  "confidence": 0.9
+}

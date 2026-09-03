@@ -1,0 +1,15 @@
+{
+  "external_id": "45008590dc9d3a39ff044a803.9a6f67ac12.20260827190919.73b07f52da.12da6fef@mail212.atl291.mcsv.net",
+  "from_email": "listings@multifamilyadvisors.com",
+  "from_name": "Multifamily Advisors",
+  "subject": "Just Listed! 2.5 Acres Farmers Branch Multifamily Land (DFW)",
+  "received_at": "2026-08-27T19:09:32+00:00",
+  "body": "Shovel-ready 2.50 acres, 145 approved units, 7 stories, 93% comp occupancy. Farmers Branch (DFW), TX.",
+  "fields": {
+    "name": "Farmers Branch Multifamily Land",
+    "city": "Farmers Branch",
+    "state": "TX",
+    "units": 145
+  },
+  "confidence": 0.9
+}

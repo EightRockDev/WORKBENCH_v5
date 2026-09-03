@@ -1,0 +1,15 @@
+{
+  "external_id": "abec9adcee8044ae9c1bd46a67c04796-dfw@rcm1.com",
+  "from_email": "berkadia@rcm1.com",
+  "from_name": "Berkadia",
+  "subject": "Call for Offers: 198-Unit Mixed-Income Community in Columbia, MD (80% Market/20% HAP)",
+  "received_at": "2026-09-02T17:04:02+00:00",
+  "body": "Preserve at Cradlerock, Columbia, MD. 198 units, mixed-income (80% market / 20% HAP). Call for offers: September 9.",
+  "fields": {
+    "name": "Preserve at Cradlerock",
+    "city": "Columbia",
+    "state": "MD",
+    "units": 198
+  },
+  "confidence": 0.9
+}

@@ -1,0 +1,14 @@
+{
+  "external_id": "0.0.7.3A2.1DD3A3C68E11636.A95C43@mx16.mailsvr.com",
+  "from_email": "southernvirginiamultifamily@nmrk.com",
+  "from_name": "Newmark Southern Virginia Multifamily",
+  "subject": "Now Touring | Madison Terrace | Value-Add Opportunity Near Fort Lee",
+  "received_at": "2026-09-01T18:05:46+00:00",
+  "body": "Madison Terrace, near Fort Lee (Hopewell, VA area). Value-add opportunity, now touring.",
+  "fields": {
+    "name": "Madison Terrace",
+    "city": "Hopewell",
+    "state": "VA"
+  },
+  "confidence": 0.9
+}

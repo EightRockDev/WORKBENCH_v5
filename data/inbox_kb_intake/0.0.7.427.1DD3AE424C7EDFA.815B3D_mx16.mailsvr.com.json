@@ -1,0 +1,14 @@
+{
+  "external_id": "0.0.7.427.1DD3AE424C7EDFA.815B3D@mx16.mailsvr.com",
+  "from_email": "southernvirginiamultifamily@nmrk.com",
+  "from_name": "Newmark Southern Virginia Multifamily",
+  "subject": "Now Touring | The Cove at Peter's Creek | Value-Add Opportunity | Roanoke MSA",
+  "received_at": "2026-09-02T14:07:32+00:00",
+  "body": "The Cove at Peter's Creek, Roanoke MSA, VA. Value-add opportunity, now touring.",
+  "fields": {
+    "name": "The Cove at Peter's Creek",
+    "city": "Roanoke",
+    "state": "VA"
+  },
+  "confidence": 0.9
+}

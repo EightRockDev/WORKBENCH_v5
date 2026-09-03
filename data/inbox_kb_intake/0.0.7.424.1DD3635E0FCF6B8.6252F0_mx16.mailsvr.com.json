@@ -1,0 +1,15 @@
+{
+  "external_id": "0.0.7.424.1DD3635E0FCF6B8.6252F0@mx16.mailsvr.com",
+  "from_email": "thomas.alleman@nmrk.com",
+  "from_name": "Thomas Alleman (Newmark)",
+  "subject": "NOW AVAILABLE: Terraces at Fall Creek | Below Replacement Cost, Near 1,115 New Manufacturing Jobs | Humble, TX",
+  "received_at": "2026-08-27T15:08:31+00:00",
+  "body": "Terraces at Fall Creek, 7800 N. Sam Houston Parkway East, Humble, TX 77396. Below replacement cost, near 1,115 new manufacturing jobs.",
+  "fields": {
+    "name": "Terraces at Fall Creek",
+    "address": "7800 N Sam Houston Parkway East",
+    "city": "Humble",
+    "state": "TX"
+  },
+  "confidence": 0.9
+}

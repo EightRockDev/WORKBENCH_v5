@@ -1,0 +1,15 @@
+{
+  "external_id": "0.0.7.A1.1DD3AEC6153CA20.444C33@mx16.mailsvr.com",
+  "from_email": "matt.saunders@nmrk.com",
+  "from_name": "Matt Saunders (Newmark)",
+  "subject": "Coming Soon: Lender Foreclosure | 100% Classic Units | Strong Rental Income Trend | Life at Clearwood",
+  "received_at": "2026-09-02T15:06:03+00:00",
+  "body": "Lender foreclosure coming soon. Life at Clearwood, 9465 Clearwood Dr, Houston, TX 77075. 100% classic units, strong rental income trend.",
+  "fields": {
+    "name": "Life at Clearwood",
+    "address": "9465 Clearwood Dr",
+    "city": "Houston",
+    "state": "TX"
+  },
+  "confidence": 0.9
+}
