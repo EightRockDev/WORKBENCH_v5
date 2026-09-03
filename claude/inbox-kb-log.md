@@ -19,3 +19,10 @@ host-side). Host verification: `reports/inbox-sync-latest.txt` counts.
 - Verify next cycle: `reports/inbox-sync-latest.txt` should show 24 files
   ingested from git intake. No mailbox connectors in the app yet, so lane 2
   remains the working path.
+- **VERIFIED** (host report @ 2026-09-03T15:32:50 EDT): git intake 24 new
+  files, 24 records, 24 ingested, 0 failed. Note: the 14:00 cycle's report
+  was lost to a push race with the V5.67 release — and my interim claim that
+  that cycle had "almost certainly" ingested was wrong; the 15:00 cycle did
+  the actual ingest. The published report, not step exit codes, is the only
+  proof of ingestion. "0 linked to deals/properties" is expected for broker
+  listings outside covered backbone metros.
