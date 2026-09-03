@@ -1,4 +1,4 @@
-autopilot discover @ 2026-09-02T21:00:18
+autopilot discover @ 2026-09-02T22:00:15
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
@@ -14,7 +14,6 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected - wrong city] Chesapeake: Planning_GIS_Layers_upd/Cemeteries: only 180 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Chesapeake: City_Property_Management/City Property Management: only 1,575 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Chesapeake: Tyler_Socrata_Data/Apartments: only 161 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: Chesapeake Parcels Within Blast Zone: only 2,908 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Chesapeake: Chesapeake Parcels Within Blast Zone: layer name declares a subset - demoted, does not count as the city roll
    [rejected - wrong city] Chesapeake: Potential Debris Sites: only 24 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: only 53 records - kept but demoted, a citywide roll should have >= 5,000
