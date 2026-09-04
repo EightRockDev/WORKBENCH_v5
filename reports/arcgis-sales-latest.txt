@@ -1,4 +1,4 @@
-autopilot arcgissales @ 2026-09-03T21:14:28
+autopilot arcgissales @ 2026-09-03T22:30:14
 
 [sales:Virginia Beach] fresh (<7d) - skip
 [sales:Norfolk] fresh (<3d) - skip
@@ -6,7 +6,5 @@ autopilot arcgissales @ 2026-09-03T21:14:28
 [sales:Richmond-files] fresh (<5d) - skip
 [units:Richmond] 55435 unit-address rows to roll up (where: UnitValue IS NOT NULL)
 [units:Richmond] rolled up 0 parcels - NOT deleting existing rows (transient?)
-[sales:Chicago] FY stack sizes: sales=473749 (total 473749)
-[sales:Chicago] sales: 400000 dated transfers (399913 unique so far)
-[sales:Chicago] wrote 399913 unique (gpin,date) sale rows
-[sales] done: 399913 rows across 6 source(s)
+[sales:Chicago] fresh (<7d) - skip
+[sales] done: 0 rows across 6 source(s)
