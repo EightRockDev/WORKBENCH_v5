@@ -1,10 +1,11 @@
-autopilot arcgissales @ 2026-09-03T22:30:14
+autopilot arcgissales @ 2026-09-04T00:15:06
 
 [sales:Virginia Beach] fresh (<7d) - skip
 [sales:Norfolk] fresh (<3d) - skip
 [sales:Chesapeake] fresh (<30d) - skip
 [sales:Richmond-files] fresh (<5d) - skip
 [units:Richmond] 55435 unit-address rows to roll up (where: UnitValue IS NOT NULL)
-[units:Richmond] rolled up 0 parcels - NOT deleting existing rows (transient?)
+[units:Richmond] resolved fields: lat=Latitude, lng=Longitude, pin=None, subaddress=None, unit=UnitType, unit=UnitValue
+[units:Richmond] NO PIN-like attribute on this layer - REFUSING. Actual attributes: AddressId, AddressLabel, BuildingNumber, CreatedBy, CreatedDate, EditBy, EditDate, ExtensionWithUnit, Latitude, Longitude, Mailable, OBJECTID, StatePlaneX, StatePlaneY, StreetDirection, StreetName, StreetType, UnitType, UnitValue, ZipCode
 [sales:Chicago] fresh (<7d) - skip
 [sales] done: 0 rows across 6 source(s)
