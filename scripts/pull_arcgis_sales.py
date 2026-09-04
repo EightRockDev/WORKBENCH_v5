@@ -179,6 +179,14 @@ SALES_SOURCES: dict[str, dict] = {
         "pin_field": "PIN", "subaddress_field": "SubaddressID",
         "unit_type_field": "UnitType", "unit_value_field": "UnitValue",
         "lat_field": "Latitude", "lng_field": "Longitude",
+        # The live Addresses layer carries NO parcel id (the 2018
+        # snapshot's PIN column is gone) - unit points are assigned to
+        # parcels by point-in-polygon against the city's own Parcels
+        # layer (same org, PIN + polygons).
+        "parcel_layer_url": ("https://services1.arcgis.com/"
+                             "k3vhq11XkBNeeOfM/arcgis/rest/services/"
+                             "Parcels/FeatureServer/0"),
+        "parcel_pin_field": "PIN",
         # Richmond VIRGINIA city bbox - parcels averaging outside it
         # mean the wrong city and the pull refuses to write.
         "bbox": (37.40, 37.65, -77.65, -77.30),
@@ -390,7 +398,14 @@ _ROLLUP_FALLBACKS = {
     "pin_field": ("pin", "parcelpin", "parcelid", "parcel_id", "pinnumber",
                   "parcelnumber", "gpin", "pin1", "parceladdresspin"),
     "subaddress_field": ("subaddressid", "subaddress_id", "subaddrid",
-                         "addresssubid", "siteaddid"),
+                         "addresssubid", "siteaddid",
+                         # live 2026 layer: no SubaddressID; the unit
+                         # label works because identity is anchored to
+                         # the point below. NEVER fall back to a raw row
+                         # id (AddressId/OBJECTID) - exact duplicate
+                         # rows carry different row ids and would count
+                         # as two units.
+                         "addresslabelwithunit", "extensionwithunit"),
     "unit_type_field": ("unittype", "unit_type", "subaddresstype",
                         "unitdesignator"),
     "unit_value_field": ("unitvalue", "unit_value", "unitnumber", "unitnum",
@@ -416,15 +431,20 @@ def _resolve_rollup_fields(cfg: dict, attrs: dict) -> dict:
     return out
 
 
-def _iter_unit_features(url: str, expected: int, where: str):
+def _iter_unit_features(url: str, expected: int, where: str,
+                        out_fields: str = "*"):
     """Like iter_features but WITH geometry, forced to lat/lng (outSR
     4326) - hosted layers default to Web Mercator meters, and some carry
-    no Latitude/Longitude attributes at all. Yields (attrs, geometry)."""
+    no Latitude/Longitude attributes at all. Yields (attrs, geometry).
+
+    Keeps paging until a page comes back EMPTY: a server whose
+    maxRecordCount is smaller than PAGE returns short pages long before
+    the data runs out, so 'short page = done' silently truncates."""
     offset = 0
     while offset < min(expected, MAX_RECORDS):
         js = _query(url, {
-            "where": where, "outFields": "*", "returnGeometry": "true",
-            "outSR": 4326,
+            "where": where, "outFields": out_fields,
+            "returnGeometry": "true", "outSR": 4326,
             "resultOffset": offset, "resultRecordCount": PAGE, "f": "json"})
         feats = (js or {}).get("features") or []
         if not feats:
@@ -434,9 +454,69 @@ def _iter_unit_features(url: str, expected: int, where: str):
             if isinstance(attrs, dict):
                 yield attrs, f.get("geometry")
         offset += len(feats)
-        if len(feats) < PAGE:
-            break
         time.sleep(0.3)
+
+
+# ------------------------------ spatial join: points -> parcel polygons
+
+_GRID_CELL = 0.001            # ~100m at Richmond's latitude
+
+
+def _point_in_rings(lng: float, lat: float, rings) -> bool:
+    """Even-odd ray cast over every ring, so holes subtract."""
+    inside = False
+    for ring in rings or ():
+        j = len(ring) - 1
+        for i in range(len(ring)):
+            xi, yi = ring[i][0], ring[i][1]
+            xj, yj = ring[j][0], ring[j][1]
+            if (yi > lat) != (yj > lat) and \
+                    lng < (xj - xi) * (lat - yi) / (yj - yi) + xi:
+                inside = not inside
+            j = i
+    return inside
+
+
+def _assign_pins_by_polygon(points: list, parcel_url: str,
+                            pin_field: str, market: str) -> dict:
+    """points: [(lng, lat, point_index), ...]. Streams the parcel layer's
+    polygons ONE PAGE AT A TIME (a whole-city polygon set held at once is
+    hundreds of MB) and ray-casts the grid-bucketed candidate points, so
+    memory stays at one page of rings plus a small point index.
+    Returns {point_index: pin}."""
+    grid: dict[tuple, list] = {}
+    for lng, lat, idx in points:
+        grid.setdefault((int(lng / _GRID_CELL), int(lat / _GRID_CELL)),
+                        []).append((lng, lat, idx))
+    total = count_sales(parcel_url, "1=1")
+    if total is None:
+        print(f"[units:{market}] parcel layer count FAILED "
+              f"({_LAST_ERR or 'endpoint?'}) - cannot spatially join")
+        return {}
+    print(f"[units:{market}] spatial join against {total} parcel "
+          f"polygons ({parcel_url.rsplit('/services/', 1)[-1]})")
+    assigned: dict[int, str] = {}
+    polys = 0
+    for attrs, geom in _iter_unit_features(parcel_url, total, "1=1",
+                                           out_fields=pin_field):
+        polys += 1
+        pin = str((attrs or {}).get(pin_field) or "").strip().upper()
+        rings = (geom or {}).get("rings")
+        if not pin or not rings:
+            continue
+        xs = [p[0] for r in rings for p in r]
+        ys = [p[1] for r in rings for p in r]
+        x0, x1 = int(min(xs) / _GRID_CELL), int(max(xs) / _GRID_CELL)
+        y0, y1 = int(min(ys) / _GRID_CELL), int(max(ys) / _GRID_CELL)
+        for cx in range(x0 - 1, x1 + 2):
+            for cy in range(y0 - 1, y1 + 2):
+                for lng, lat, idx in grid.get((cx, cy), ()):
+                    if idx not in assigned and \
+                            _point_in_rings(lng, lat, rings):
+                        assigned[idx] = pin
+    print(f"[units:{market}] spatial join: {len(assigned)}/{len(points)} "
+          f"unit addresses landed in one of {polys} polygons")
+    return assigned
 
 
 def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
@@ -465,11 +545,12 @@ def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
     if total == 0:
         return 0
 
-    per_pin: dict[str, dict] = {}
+    kept: list[tuple] = []   # (pin_or_None, sub_identity, lat, lng)
     skipped_type = 0
     fetched = 0
     fields: dict | None = None
     first_keys: list[str] = []
+    spatial = False
     for attrs, geom in _iter_unit_features(url, total, where):
         fetched += 1
         if fields is None:
@@ -478,11 +559,18 @@ def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
             print(f"[units:{market}] resolved fields: "
                   + ", ".join(f"{r.split('_')[0]}={fields[r]}"
                               for r in sorted(fields)))
-            if fields["pin_field"] is None:
-                print(f"[units:{market}] NO PIN-like attribute on this "
-                      f"layer - REFUSING. Actual attributes: "
-                      + ", ".join(first_keys))
+            spatial = fields["pin_field"] is None
+            if spatial and not cfg.get("parcel_layer_url"):
+                print(f"[units:{market}] NO PIN-like attribute and no "
+                      f"parcel_layer_url to join against - REFUSING. "
+                      f"Actual attributes: " + ", ".join(first_keys))
                 return 0
+            if spatial:
+                # The city dropped PIN from the live layer (2026-09-04
+                # host run proved it) - points must land in parcel
+                # polygons instead.
+                print(f"[units:{market}] no PIN attribute - will assign "
+                      f"parcels by point-in-polygon")
         val = str(attrs.get(fields["unit_value_field"]) or "").strip() \
             if fields["unit_value_field"] else ""
         if not val:
@@ -494,15 +582,11 @@ def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
         if utype in _NON_DWELLING_UNIT_TYPES:
             skipped_type += 1
             continue
-        pin = _rollup_pin(str(attrs.get(fields["pin_field"]) or ""))
-        if not pin:
-            continue
-        d = per_pin.setdefault(pin, {"subs": set(), "lat": 0.0,
-                                     "lng": 0.0, "pts": 0})
-        sub = attrs.get(fields["subaddress_field"]) \
-            if fields["subaddress_field"] else None
-        d["subs"].add(str(sub) if sub not in (None, "") else
-                      f"{utype}|{val}")
+        pin = None
+        if not spatial:
+            pin = _rollup_pin(str(attrs.get(fields["pin_field"]) or ""))
+            if not pin:
+                continue
         la = ln = None
         if fields["lat_field"] and fields["lng_field"]:
             la, ln = attrs.get(fields["lat_field"]), \
@@ -512,10 +596,51 @@ def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
         try:
             la, ln = float(la), float(ln)
         except (TypeError, ValueError):
+            la = ln = None
+            if spatial:
+                continue          # no coordinate = nothing to join on
+        sub = attrs.get(fields["subaddress_field"]) \
+            if fields["subaddress_field"] else None
+        if sub in (None, ""):
+            sub = f"{utype}|{val}"
+        # Identity is (designator, point): a bare "Apt 101" repeats in
+        # every building of a complex (anchoring to the point keeps them
+        # distinct), while an exact duplicate row shares its point (so
+        # it still collapses to one unit).
+        if la is not None:
+            sub = f"{sub}|{la:.6f},{ln:.6f}"
+        kept.append((pin, str(sub), la, ln))
+
+    pinmap: dict[int, str] = {}
+    unmatched = 0
+    if spatial and kept:
+        pts = [(ln, la, i) for i, (_pin, _s, la, ln) in enumerate(kept)
+               if la is not None]
+        pinmap = _assign_pins_by_polygon(
+            pts, cfg["parcel_layer_url"],
+            cfg.get("parcel_pin_field", "PIN"), market)
+        if not pinmap:
+            print(f"[units:{market}] spatial join assigned 0 parcels - "
+                  f"NOT deleting existing rows")
+            return 0
+
+    per_pin: dict[str, dict] = {}
+    for i, (pin, sub, la, ln) in enumerate(kept):
+        pin = pin or pinmap.get(i)
+        if not pin:
+            unmatched += 1
             continue
-        d["lat"] += la
-        d["lng"] += ln
-        d["pts"] += 1
+        pin = _rollup_pin(pin)
+        d = per_pin.setdefault(pin, {"subs": set(), "lat": 0.0,
+                                     "lng": 0.0, "pts": 0})
+        d["subs"].add(sub)
+        if la is not None:
+            d["lat"] += la
+            d["lng"] += ln
+            d["pts"] += 1
+    if unmatched:
+        print(f"[units:{market}] {unmatched} unit addresses matched no "
+              f"parcel polygon (kept out of the counts)")
     if not per_pin:
         print(f"[units:{market}] rolled up 0 parcels from {fetched} "
               f"fetched rows (expected {total}) - NOT deleting existing "

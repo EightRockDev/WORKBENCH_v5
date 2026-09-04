@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.0.2.0 — 2026-09-04  ·  Unit rollup: the live Addresses layer has no PIN — join by polygon.
+
+The field-name diagnostics did their job on the next host cycle: the
+live layer's full attribute list printed, and it shows the city REMOVED
+the parcel PIN from the public address inventory (the 2018 snapshot had
+it). So the join to parcels is now spatial, the way VCU's published
+analysis of these same layers did it:
+
+- The rollup streams the city's own Parcels layer (same org, PIN +
+  polygons, EPSG:4326) one page at a time and assigns each unit-address
+  point to its parcel by even-odd ray casting over a ~100m grid index —
+  memory stays at one page of polygons plus a small point index.
+- Unit identity is (designator, point): a bare "Apt 101" repeats in
+  every building of a complex (the point keeps them distinct), while an
+  exact duplicate row shares its point and still collapses to one unit.
+  A raw row id is never the identity — duplicate rows carry different
+  row ids and would double the count (a test proved it before the host
+  could).
+- Unmatched points are counted and logged, never silently dropped; the
+  direct-PIN path remains for any layer that still carries one.
+- Paging no longer treats a short page as the end (a server whose
+  maxRecordCount is below our page size returns short pages long before
+  the data ends).
+
 ## V5.67.0.1.0 — 2026-09-04  ·  Unit rollup: resolve the layer's real field names, don't guess them.
 
 First host run of the rollup proved the layer (55,435 unit-address rows

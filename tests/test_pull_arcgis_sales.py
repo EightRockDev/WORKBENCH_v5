@@ -647,13 +647,15 @@ def test_unit_rollup_resolves_the_layers_real_field_names(monkeypatch):
     assert abs(rec["Latitude"] - 37.53) < 1e-6    # from geometry
 
 
-def test_unit_rollup_without_pin_refuses_and_names_the_attributes(
+def test_unit_rollup_without_pin_and_no_parcel_layer_refuses(
         monkeypatch, capsys):
-    """A layer with no PIN-like attribute cannot be rolled up - refuse,
-    and print the layer's ACTUAL attribute names so the next report says
-    what to configure instead of leaving another silent zero."""
+    """A layer with no PIN-like attribute and no parcel layer to join
+    against cannot be rolled up - refuse, and print the layer's ACTUAL
+    attribute names so the next report says what to configure instead of
+    leaving another silent zero."""
     m = _mod()
-    cfg = _units_cfg()
+    cfg = dict(_units_cfg())
+    cfg.pop("parcel_layer_url")
     feats = [({"AddressLabel": "1 MAIN ST", "Unit_Value": "101"},
               {"x": -77.44, "y": 37.53})]
     _patch_feed(monkeypatch, m, feats)
@@ -664,6 +666,98 @@ def test_unit_rollup_without_pin_refuses_and_names_the_attributes(
     assert "NO PIN-like attribute" in out and "AddressLabel" in out
     assert conn.execute(
         "SELECT COUNT(*) FROM muni_records").fetchone()[0] == 0
+
+
+def _live_layer_row(label, utype, uval, lng, lat, oid):
+    """A feature shaped like the LIVE 2026 Addresses layer: no PIN, no
+    SubaddressID - AddressId, label, unit fields, coords only."""
+    return ({"AddressId": oid, "AddressLabel": label, "UnitType": utype,
+             "UnitValue": uval, "Latitude": lat, "Longitude": lng,
+             "OBJECTID": oid}, {"x": lng, "y": lat})
+
+
+def _square(pin, lng0, lat0, size=0.002):
+    """A parcel polygon feature: one square ring."""
+    return ({"PIN": pin},
+            {"rings": [[[lng0, lat0], [lng0 + size, lat0],
+                        [lng0 + size, lat0 + size], [lng0, lat0 + size],
+                        [lng0, lat0]]]})
+
+
+def _patch_spatial(monkeypatch, m, addr_feats, parcel_feats):
+    cfg = _units_cfg()
+
+    def fake_count(url, where=""):
+        return len(parcel_feats) if url == cfg["parcel_layer_url"] \
+            else len(addr_feats)
+
+    def fake_iter(url, total, where, out_fields="*"):
+        return iter(parcel_feats if url == cfg["parcel_layer_url"]
+                    else addr_feats)
+    monkeypatch.setattr(m, "count_sales", fake_count)
+    monkeypatch.setattr(m, "_iter_unit_features", fake_iter)
+
+
+def test_unit_rollup_spatial_join_assigns_units_to_parcels(monkeypatch):
+    """The live layer dropped its PIN column (2026-09-04 host run), so
+    unit points must land in parcel polygons. Two parcels, one with 11
+    units across two buildings whose bare labels collide ('Apt 1' in
+    each building) - the point anchor must keep them distinct."""
+    m = _mod()
+    cfg = _units_cfg()
+    addr = []
+    # parcel A at (-77.45, 37.53): building 1 units 1-6, building 2
+    # units 1-5 - same UnitValue strings, different points
+    for i in range(6):
+        addr.append(_live_layer_row("10 A ST", "Apt", str(i + 1),
+                                    -77.4495, 37.5305, 100 + i))
+    for i in range(5):
+        addr.append(_live_layer_row("12 A ST", "Apt", str(i + 1),
+                                    -77.4485, 37.5315, 200 + i))
+    # parcel B at (-77.43, 37.55): 2 units
+    addr.append(_live_layer_row("20 B ST", "Unit", "A", -77.4295, 37.5505,
+                                300))
+    addr.append(_live_layer_row("20 B ST", "Unit", "B", -77.4295, 37.5505,
+                                301))
+    # a point in neither polygon
+    addr.append(_live_layer_row("99 C ST", "Apt", "1", -77.40, 37.60, 400))
+    parcels = [_square("N0170390020", -77.45, 37.53),
+               _square("W0000356014", -77.43, 37.55)]
+    _patch_spatial(monkeypatch, m, addr, parcels)
+    conn = _mk_db()
+    n = m._ADAPTERS["arcgis_unit_rollup"](conn, "Richmond-units", cfg)
+    assert n == 2
+    recs = {json.loads(r[0])["PIN"]: json.loads(r[0]) for r in conn.execute(
+        "SELECT record FROM muni_records").fetchall()}
+    assert recs["N0170390020"]["UnitCount"] == 11
+    assert recs["W0000356014"]["UnitCount"] == 2
+
+
+def test_unit_rollup_spatial_join_duplicate_rows_count_once(monkeypatch):
+    """Exact duplicate address rows (same label, unit, point - the layer
+    has them) must collapse to one unit, not two."""
+    m = _mod()
+    cfg = _units_cfg()
+    addr = [_live_layer_row("10 A ST", "Apt", "1", -77.4495, 37.5305, 1),
+            _live_layer_row("10 A ST", "Apt", "1", -77.4495, 37.5305, 2)]
+    parcels = [_square("N0170390020", -77.45, 37.53)]
+    _patch_spatial(monkeypatch, m, addr, parcels)
+    conn = _mk_db()
+    n = m._ADAPTERS["arcgis_unit_rollup"](conn, "Richmond-units", cfg)
+    assert n == 1
+    rec = json.loads(conn.execute(
+        "SELECT record FROM muni_records").fetchone()[0])
+    assert rec["UnitCount"] == 1
+
+
+def test_point_in_rings_respects_holes():
+    m = _mod()
+    outer = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0],
+             [0.0, 0.0]]
+    hole = [[4.0, 4.0], [6.0, 4.0], [6.0, 6.0], [4.0, 6.0], [4.0, 4.0]]
+    assert m._point_in_rings(2.0, 2.0, [outer, hole])
+    assert not m._point_in_rings(5.0, 5.0, [outer, hole])   # in the hole
+    assert not m._point_in_rings(11.0, 5.0, [outer, hole])
 
 
 def test_unit_rollup_refuses_to_write_the_wrong_city(monkeypatch):
