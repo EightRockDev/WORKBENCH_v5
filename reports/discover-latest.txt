@@ -1,4 +1,4 @@
-autopilot discover @ 2026-09-04T11:00:15
+autopilot discover @ 2026-09-04T12:00:17
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
@@ -24,7 +24,7 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
-   [rejected - wrong city] Chesapeake: FWS R5 ES DRCN LSP Results and Optimization Example CEA: only 3,580 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Chesapeake: FWS R5 ES DRCN LSP Results and Optimization Example CEA: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: FWS R5 ES DRCN LSP Results and Optimization Example CEA: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: FWS R5 ES DRCN LSP Results and Optimization Example CEA: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: FWS R5 ES DRCN LSP Results and Optimization Example CEA: records are NOT in Chesapeake
