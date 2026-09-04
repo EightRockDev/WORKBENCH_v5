@@ -143,12 +143,16 @@ def main() -> int:
         print(f"Richmond properties total: {total:,}")
         print(f"  with unit data:  {with_units:,}")
         print(f"Multifamily (units>={phase0.MIN_MF_UNITS}): {len(mf):,}")
-        if total and with_units < total * 0.01:
-            gaps.append(f"Unit coverage is thin: {with_units:,} of {total:,} "
-                        "parcels carry unit counts - the COR ownership layer "
-                        "has none, so units depend on the rva.gov Public "
-                        "Data Set files or a discover-sales-latest candidate "
-                        "(no token chases - owner 2026-08-11).")
+        # Coverage looks "thin" by design once units flow: the address-
+        # table rollup (V5.67) stamps every parcel with unit addresses,
+        # and prune_backbone then removes the sub-10s - so the MF rows
+        # ARE the coverage. Gap only when units are actually absent.
+        if total and not with_units:
+            gaps.append(f"NO Richmond parcels carry unit counts (of "
+                        f"{total:,}) - the master-address-table rollup "
+                        "(Richmond-units in pull_arcgis_sales) did not "
+                        "land; read its [units:Richmond] lines in "
+                        "arcgis-sales-latest.txt for which step refused.")
         if units:
             print(f"  units:          {_stats([float(u) for u in units])}")
         else:
@@ -363,7 +367,12 @@ def main() -> int:
             unit_src = max(addr_by_src.items(),
                            key=lambda kv: len(kv[1]["units"]),
                            default=(None, None))[0]
-            if not unit_src or not addr_by_src.get(unit_src, {}).get("units"):
+            if with_units == 0 and (
+                    not unit_src
+                    or not addr_by_src.get(unit_src, {}).get("units")):
+                # Only meaningful while NO units reach the spine - the
+                # V5.67 rollup joins by polygon-derived PIN, so a
+                # unit-bearing source without addresses is normal now.
                 gaps.append(
                     "Units and values sit on different parcel-id schemes AND "
                     "no unit-bearing source maps a usable address - so "
@@ -395,7 +404,11 @@ def main() -> int:
                     "units onto the value-bearing parcels by normalized "
                     "address; a low one means the crosswalk needs geometry.")
 
-            if per[files_src]["units"] == 0:
+            if with_units == 0 and per[files_src]["units"] == 0:
+                # Established fact (section 2c, 2026-09-04): the 80-column
+                # workbook has BATH/BED/STORIES but no unit column - units
+                # come from the master-address-table rollup instead. Only
+                # gap-worthy while that rollup is also failing.
                 gaps.append(
                     "The rva.gov Public Data Set maps NO unit counts - "
                     "check section 2b and the phase0 unmapped-keys list "

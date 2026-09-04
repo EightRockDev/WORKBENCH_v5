@@ -12,6 +12,24 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.0.3.0 — 2026-09-04  ·  Richmond units LANDED; retire the solved gaps.
+
+The 01:14 cycle proved the whole chain: 55,435 unit addresses pulled,
+100% spatially joined into 76,908 parcel polygons, 5,014 parcels
+written with unit counts, geography gate 100% Virginia. The spine now
+shows Richmond with 669 multifamily properties (units>=10, median 28,
+max 1,052 — matching the 2018 snapshot spot-check within one unit),
+with assessed values on 668 of them and the tax section finally live
+($65M/yr estimated MF tax base). Richmond's backbone total fell
+77,391 -> 72,884: ~4,345 parcels whose unit counts came back BELOW 10
+are pruned by design (they were never buyable), plus 163 duplicate
+merges.
+
+- The three Richmond gap messages described the pre-rollup world and
+  would have kept the review exiting non-zero forever; they now fire
+  only when NO units reach the spine, and the thin-coverage gap points
+  at the rollup's own log lines instead of the long-gone COR layer.
+
 ## V5.67.0.2.0 — 2026-09-04  ·  Unit rollup: the live Addresses layer has no PIN — join by polygon.
 
 The field-name diagnostics did their job on the next host cycle: the
