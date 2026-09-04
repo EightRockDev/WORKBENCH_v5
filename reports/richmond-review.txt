@@ -1,18 +1,22 @@
-autopilot richmondreview @ 2026-09-04T00:29:19
+autopilot richmondreview @ 2026-09-04T01:38:06
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-04T00:29:22
+RICHMOND REVIEW  @ 2026-09-04T01:38:08
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
-Richmond properties total: 77,391
-  with unit data:  0
-Multifamily (units>=10): 0
+Richmond properties total: 72,884
+  with unit data:  669
+Multifamily (units>=10): 669
+  units:          n=669  min=10  median=28  max=1,052
+  year built:     1840-2026
+  assessed value: n=668  min=1,000  median=2,945,500  max=121,303,000
 
 -- 2. Raw Richmond assessor rows on hand --
     76,976  2026-09-03T14:17:53  files:rva.gov/assessor-real-estate
     76,739  2026-09-02T12:15:21  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
      6,570  2026-09-02T01:17:47  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
+     5,014  2026-09-04T01:16:18  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
 
 -- 2b. Field mapping per source (spine-visible attributes) --
   files:rva.gov/assessor-real-estate
@@ -24,7 +28,23 @@ Multifamily (units>=10): 0
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
     coords=6,570  units+coords=0  apn shapes=['1a10d', '1a10d1a']
-  rva.gov-files join health: 76,715 of 76,976 workbook parcels match an API-feed parcel
+  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/se
+    rows=5,014  apn=5,014 (sample: N0000322006)  units=5,014  assessed_value=0  use_code=0
+    coords=5,014  units+coords=5,014  apn shapes=['1a10d', '1a10d1a']
+  -- 2 raw records from the unit-bearing source (https://services1.arcgis.com/k3vhq11XkBNeeOfM/ar) --
+      Latitude = 37.558016
+      Longitude = -77.438574
+      PIN = N0000322006
+      UnitCount = 4
+      _derived = distinct dwelling-unit addresses in the city mas
+      ----------------------------------------
+      Latitude = 37.523752
+      Longitude = -77.448917
+      PIN = S0000123011
+      UnitCount = 2
+      _derived = distinct dwelling-unit addresses in the city mas
+      ----------------------------------------
+  rva.gov-files join health: 76,719 of 76,976 workbook parcels match an API-feed parcel
   address coverage per source (usable normalized addresses / with units):
      76,063 addrs        0 of them carry units   files:rva.gov/assessor-real-estate
 
@@ -47,10 +67,10 @@ sale rows: 84,148
     2026-05-18  $540,000  -> MOFFETT TAYLOR ANNE
 
 -- 4. Estimated real-estate tax (rate $1.20/$100 assessed; ER_RICHMOND_TAX_RATE) --
+  MF annual tax:  n=668  min=12  median=35,346  max=1,455,636
+  MF tax base:    $5,432,915,000 assessed -> $65,194,980/yr estimated
 
 -- 5. GAPS (each names its unblock) --
-  [GAP] Unit coverage is thin: 0 of 77,391 parcels carry unit counts - the COR ownership layer has none, so units depend on the rva.gov Public Data Set files or a discover-sales-latest candidate (no token chases - owner 2026-08-11).
-  [GAP] Unit counts: no Richmond MF rows carry units - unit data must come from a richer assessor layer (rva.gov files / discover-sales-latest candidates).
+  [GAP] Unit coverage is thin: 669 of 72,884 parcels carry unit counts - the COR ownership layer has none, so units depend on the rva.gov Public Data Set files or a discover-sales-latest candidate (no token chases - owner 2026-08-11).
   [GAP] Units and values sit on different parcel-id schemes AND no unit-bearing source maps a usable address - so neither an alias nor an address crosswalk can bridge them. The geometry bridge now runs on every spine build (core/geo_bridge.py): read 'units bridged by geometry' and its rejection breakdown in phase0-latest.txt. If everything there is 'rejected (too far)', the two feeds' centroids do not land in the same place and a wider radius is the wrong fix - check the projection.
   [GAP] The rva.gov Public Data Set maps NO unit counts - check section 2b and the phase0 unmapped-keys list for the workbook's unit column, or promote a units-bearing candidate from discover-sales-latest.txt.
-  [GAP] Tax estimates: blocked on assessed values (needs the assessments feed above).
