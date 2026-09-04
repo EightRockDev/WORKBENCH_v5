@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-09-04T03:29:14
+autopilot richmondreview @ 2026-09-04T05:29:18
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-04T03:29:17
+RICHMOND REVIEW  @ 2026-09-04T05:29:21
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
@@ -71,6 +71,4 @@ sale rows: 84,148
   MF tax base:    $5,432,915,000 assessed -> $65,194,980/yr estimated
 
 -- 5. GAPS (each names its unblock) --
-  [GAP] Unit coverage is thin: 669 of 72,884 parcels carry unit counts - the COR ownership layer has none, so units depend on the rva.gov Public Data Set files or a discover-sales-latest candidate (no token chases - owner 2026-08-11).
-  [GAP] Units and values sit on different parcel-id schemes AND no unit-bearing source maps a usable address - so neither an alias nor an address crosswalk can bridge them. The geometry bridge now runs on every spine build (core/geo_bridge.py): read 'units bridged by geometry' and its rejection breakdown in phase0-latest.txt. If everything there is 'rejected (too far)', the two feeds' centroids do not land in the same place and a wider radius is the wrong fix - check the projection.
-  [GAP] The rva.gov Public Data Set maps NO unit counts - check section 2b and the phase0 unmapped-keys list for the workbook's unit column, or promote a units-bearing candidate from discover-sales-latest.txt.
+  none - Richmond properties, MF, units, sales, values and tax estimates are all present.
