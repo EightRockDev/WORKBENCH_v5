@@ -1,3 +1,3 @@
-autopilot saleindex @ 2026-09-03T20:16:05
+autopilot saleindex @ 2026-09-03T21:16:28
 
-[saleindex] scanned 4,008,473 muni rows -> 2,500,152 sale records indexed (stamp 4008473:180762542:2026-09-03T20:15:06:v3)
+[saleindex] scanned 4,008,477 muni rows -> 2,500,156 sale records indexed (stamp 4008477:181162455:2026-09-03T21:16:08:v3)
