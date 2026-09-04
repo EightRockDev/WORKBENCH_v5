@@ -1,10 +1,11 @@
-autopilot arcgissales @ 2026-09-03T19:15:29
+autopilot arcgissales @ 2026-09-03T20:14:42
 
-[sales:Virginia Beach] fresh (<7d) - skip
+[sales:Virginia Beach] 47981 sales rows to pull (where: Sale_Price > 0 AND Sales_Date >= DATE '2021-01-01')
+[sales:Virginia Beach] wrote 47981 rows (expected 47981)
 [sales:Norfolk] fresh (<3d) - skip
 [sales:Chesapeake] fresh (<30d) - skip
 [sales:Richmond-files] fresh (<5d) - skip
 [units:Richmond] 55435 unit-address rows to roll up (where: UnitValue IS NOT NULL)
 [units:Richmond] rolled up 0 parcels - NOT deleting existing rows (transient?)
 [sales:Chicago] fresh (<7d) - skip
-[sales] done: 0 rows across 6 source(s)
+[sales] done: 47981 rows across 6 source(s)
