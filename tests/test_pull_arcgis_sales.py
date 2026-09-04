@@ -582,8 +582,15 @@ def _units_cfg():
 
 
 def _addr(pin, sub, utype, uval, lat=37.53, lng=-77.44):
-    return {"PIN": pin, "SubaddressID": sub, "UnitType": utype,
-            "UnitValue": uval, "Latitude": lat, "Longitude": lng}
+    attrs = {"PIN": pin, "SubaddressID": sub, "UnitType": utype,
+             "UnitValue": uval, "Latitude": lat, "Longitude": lng}
+    return attrs, None
+
+
+def _patch_feed(monkeypatch, m, feats):
+    monkeypatch.setattr(m, "count_sales", lambda url, where="": len(feats))
+    monkeypatch.setattr(m, "_iter_unit_features",
+                        lambda url, total, where: iter(feats))
 
 
 def test_unit_rollup_counts_distinct_units_per_stripped_pin(monkeypatch):
@@ -603,9 +610,7 @@ def test_unit_rollup_counts_distinct_units_per_stripped_pin(monkeypatch):
         _addr("W0000356014", None, "Unit", "B"),  # null sub-id fallback
         _addr("C0010124002", 7, "Apt", ""),       # blank VALUE: skip
     ]
-    monkeypatch.setattr(m, "count_sales", lambda url, where="": len(feats))
-    monkeypatch.setattr(m, "iter_features",
-                        lambda url, total, where="": iter(feats))
+    _patch_feed(monkeypatch, m, feats)
     conn = _mk_db()
     n = m.pull_market(conn, "Richmond-units", cfg)
     assert n == 2
@@ -620,6 +625,47 @@ def test_unit_rollup_counts_distinct_units_per_stripped_pin(monkeypatch):
     assert rows == [("Richmond", "assessor")]
 
 
+def test_unit_rollup_resolves_the_layers_real_field_names(monkeypatch):
+    """2026-09-03 22:30 host run: the where clause matched 55,435 rows
+    but every one was skipped - the live layer's attribute spellings
+    differ from the configured guesses, and the log could not say what
+    they really were. Resolution must be case/underscore-insensitive
+    with per-role fallbacks, and geometry must stand in for missing
+    lat/lng attributes."""
+    m = _mod()
+    cfg = _units_cfg()
+    feats = [({"Parcel_Pin": "N0170390020", "SubAddress_Id": i,
+               "Unit_Type": "Apt", "Unit_Value": str(100 + i)},
+              {"x": -77.44, "y": 37.53}) for i in range(12)]
+    _patch_feed(monkeypatch, m, feats)
+    conn = _mk_db()
+    n = m._ADAPTERS["arcgis_unit_rollup"](conn, "Richmond-units", cfg)
+    assert n == 1
+    rec = json.loads(conn.execute(
+        "SELECT record FROM muni_records").fetchone()[0])
+    assert rec["PIN"] == "N0170390020" and rec["UnitCount"] == 12
+    assert abs(rec["Latitude"] - 37.53) < 1e-6    # from geometry
+
+
+def test_unit_rollup_without_pin_refuses_and_names_the_attributes(
+        monkeypatch, capsys):
+    """A layer with no PIN-like attribute cannot be rolled up - refuse,
+    and print the layer's ACTUAL attribute names so the next report says
+    what to configure instead of leaving another silent zero."""
+    m = _mod()
+    cfg = _units_cfg()
+    feats = [({"AddressLabel": "1 MAIN ST", "Unit_Value": "101"},
+              {"x": -77.44, "y": 37.53})]
+    _patch_feed(monkeypatch, m, feats)
+    conn = _mk_db()
+    n = m._ADAPTERS["arcgis_unit_rollup"](conn, "Richmond-units", cfg)
+    assert n == 0
+    out = capsys.readouterr().out
+    assert "NO PIN-like attribute" in out and "AddressLabel" in out
+    assert conn.execute(
+        "SELECT COUNT(*) FROM muni_records").fetchone()[0] == 0
+
+
 def test_unit_rollup_refuses_to_write_the_wrong_city(monkeypatch):
     """The California lesson as executable policy: parcels averaging
     outside the Richmond VA bbox mean the wrong city - nothing may be
@@ -629,9 +675,7 @@ def test_unit_rollup_refuses_to_write_the_wrong_city(monkeypatch):
     feats = [_addr("N0170390020", 1, "Apt", "101",
                    lat=37.93, lng=-122.34),     # Richmond, CALIFORNIA
              _addr("W0000356014", 2, "Apt", "1", lat=37.94, lng=-122.35)]
-    monkeypatch.setattr(m, "count_sales", lambda url, where="": len(feats))
-    monkeypatch.setattr(m, "iter_features",
-                        lambda url, total, where="": iter(feats))
+    _patch_feed(monkeypatch, m, feats)
     conn = _mk_db()
     conn.execute("INSERT INTO muni_records VALUES ('Richmond','VA',"
                  "'Richmond','assessor',?, '2000-01-01', '{}')",
@@ -647,14 +691,29 @@ def test_unit_rollup_refuses_without_coordinates(monkeypatch):
     m = _mod()
     cfg = _units_cfg()
     feats = [_addr("N0170390020", 1, "Apt", "101", lat=None, lng=None)]
-    monkeypatch.setattr(m, "count_sales", lambda url, where="": 1)
-    monkeypatch.setattr(m, "iter_features",
-                        lambda url, total, where="": iter(feats))
+    _patch_feed(monkeypatch, m, feats)
     conn = _mk_db()
     n = m._ADAPTERS["arcgis_unit_rollup"](conn, "Richmond-units", cfg)
     assert n == 0
     assert conn.execute(
         "SELECT COUNT(*) FROM muni_records").fetchone()[0] == 0
+
+
+def test_unit_rollup_zero_fetched_reports_the_page_error(monkeypatch,
+                                                         capsys):
+    """count says 55,435 but pagination returns nothing: the log must
+    distinguish 'pages failed' from 'rows all skipped' - the first host
+    run could not."""
+    m = _mod()
+    cfg = _units_cfg()
+    monkeypatch.setattr(m, "count_sales", lambda url, where="": 55435)
+    monkeypatch.setattr(m, "_iter_unit_features",
+                        lambda url, total, where: iter([]))
+    conn = _mk_db()
+    n = m._ADAPTERS["arcgis_unit_rollup"](conn, "Richmond-units", cfg)
+    assert n == 0
+    out = capsys.readouterr().out
+    assert "0 parcels from 0 fetched rows" in out
 
 
 def test_unit_rollup_records_reach_the_spine_aliases():

@@ -12,6 +12,28 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.0.1.0 — 2026-09-04  ·  Unit rollup: resolve the layer's real field names, don't guess them.
+
+First host run of the rollup proved the layer (55,435 unit-address rows
+matched the where clause) but wrote nothing: every row was skipped
+because the live layer's attribute spellings differ from the
+snapshot-derived guesses, and the log could not say what they really
+were. Also confirmed by the new section 2c: the full 80-column
+Assessor Public Data Set landed and has NO unit column at all
+(BATH_COUNT/BED_COUNT/STORIES only) — the address-table rollup is the
+only public path to Richmond unit counts.
+
+- The adapter now resolves each role (pin/subaddress/unit type/unit
+  value/lat/lng) against the FIRST feature's actual attribute names —
+  case- and underscore-insensitive, with per-role fallback spellings —
+  and logs the resolved mapping every run.
+- Geometry fallback: features are requested WITH geometry in lat/lng
+  (outSR=4326), so a layer with no Latitude/Longitude attributes still
+  passes the geography gate from its point geometry.
+- Every refusal now names reality: no PIN-like attribute prints the
+  layer's actual attribute list; zero fetched rows prints the paging
+  error; zero kept rows prints the attribute list. No more silent zero.
+
 ## V5.67.0.0.0 — 2026-09-03  ·  Richmond unit counts from the city's own master address table.
 
 A 28-agent research sweep with adversarial verification (every candidate

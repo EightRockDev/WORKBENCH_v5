@@ -379,6 +379,66 @@ def _rollup_pin(pin: str) -> str:
     return p
 
 
+# The configured field name is a starting guess - the live layer's real
+# spelling wins. First host run (2026-09-03 22:30): the where clause
+# matched 55,435 rows, so UnitValue was right, but every row was skipped
+# because the PIN attribute is spelled differently than the 2018 snapshot
+# said - and the log couldn't say what the real name was. Resolution is
+# case/underscore-insensitive with per-role fallbacks, and a failed
+# resolve prints the layer's ACTUAL attribute names.
+_ROLLUP_FALLBACKS = {
+    "pin_field": ("pin", "parcelpin", "parcelid", "parcel_id", "pinnumber",
+                  "parcelnumber", "gpin", "pin1", "parceladdresspin"),
+    "subaddress_field": ("subaddressid", "subaddress_id", "subaddrid",
+                         "addresssubid", "siteaddid"),
+    "unit_type_field": ("unittype", "unit_type", "subaddresstype",
+                        "unitdesignator"),
+    "unit_value_field": ("unitvalue", "unit_value", "unitnumber", "unitnum",
+                         "subaddressvalue", "unitid"),
+    "lat_field": ("latitude", "lat", "pointy", "point_y", "ycoord", "y"),
+    "lng_field": ("longitude", "lng", "lon", "long", "pointx", "point_x",
+                  "xcoord", "x"),
+}
+
+
+def _resolve_rollup_fields(cfg: dict, attrs: dict) -> dict:
+    """Map each cfg role to the attribute name the layer really uses."""
+    keymap = {k.replace("_", "").lower(): k for k in attrs}
+    out = {}
+    for role, fallbacks in _ROLLUP_FALLBACKS.items():
+        for cand in (cfg.get(role, ""), *fallbacks):
+            hit = keymap.get(str(cand).replace("_", "").lower())
+            if hit:
+                out[role] = hit
+                break
+        else:
+            out[role] = None
+    return out
+
+
+def _iter_unit_features(url: str, expected: int, where: str):
+    """Like iter_features but WITH geometry, forced to lat/lng (outSR
+    4326) - hosted layers default to Web Mercator meters, and some carry
+    no Latitude/Longitude attributes at all. Yields (attrs, geometry)."""
+    offset = 0
+    while offset < min(expected, MAX_RECORDS):
+        js = _query(url, {
+            "where": where, "outFields": "*", "returnGeometry": "true",
+            "outSR": 4326,
+            "resultOffset": offset, "resultRecordCount": PAGE, "f": "json"})
+        feats = (js or {}).get("features") or []
+        if not feats:
+            break
+        for f in feats:
+            attrs = f.get("attributes")
+            if isinstance(attrs, dict):
+                yield attrs, f.get("geometry")
+        offset += len(feats)
+        if len(feats) < PAGE:
+            break
+        time.sleep(0.3)
+
+
 def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
     """Aggregate an address-point layer into one record per parcel PIN
     with the count of distinct dwelling-unit addresses on it. Writes
@@ -393,9 +453,6 @@ def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
     market = cfg.get("market", market)
     kind = cfg.get("kind", "assessor")
     where = cfg["where"]
-    f_pin, f_sub = cfg["pin_field"], cfg["subaddress_field"]
-    f_type, f_val = cfg["unit_type_field"], cfg["unit_value_field"]
-    f_lat, f_lng = cfg["lat_field"], cfg["lng_field"]
     lat_lo, lat_hi, lng_lo, lng_hi = cfg["bbox"]
 
     total = count_sales(url, where)
@@ -410,32 +467,61 @@ def _pull_arcgis_unit_rollup(conn, market: str, cfg: dict) -> int:
 
     per_pin: dict[str, dict] = {}
     skipped_type = 0
-    for attrs in iter_features(url, total, where):
-        val = str(attrs.get(f_val) or "").strip()
+    fetched = 0
+    fields: dict | None = None
+    first_keys: list[str] = []
+    for attrs, geom in _iter_unit_features(url, total, where):
+        fetched += 1
+        if fields is None:
+            fields = _resolve_rollup_fields(cfg, attrs)
+            first_keys = sorted(attrs)
+            print(f"[units:{market}] resolved fields: "
+                  + ", ".join(f"{r.split('_')[0]}={fields[r]}"
+                              for r in sorted(fields)))
+            if fields["pin_field"] is None:
+                print(f"[units:{market}] NO PIN-like attribute on this "
+                      f"layer - REFUSING. Actual attributes: "
+                      + ", ".join(first_keys))
+                return 0
+        val = str(attrs.get(fields["unit_value_field"]) or "").strip() \
+            if fields["unit_value_field"] else ""
         if not val:
             continue
-        utype = str(attrs.get(f_type) or "").strip().lower().rstrip(".")
+        utype = ""
+        if fields["unit_type_field"]:
+            utype = str(attrs.get(fields["unit_type_field"]) or "") \
+                .strip().lower().rstrip(".")
         if utype in _NON_DWELLING_UNIT_TYPES:
             skipped_type += 1
             continue
-        pin = _rollup_pin(str(attrs.get(f_pin) or ""))
+        pin = _rollup_pin(str(attrs.get(fields["pin_field"]) or ""))
         if not pin:
             continue
         d = per_pin.setdefault(pin, {"subs": set(), "lat": 0.0,
                                      "lng": 0.0, "pts": 0})
-        sub = attrs.get(f_sub)
+        sub = attrs.get(fields["subaddress_field"]) \
+            if fields["subaddress_field"] else None
         d["subs"].add(str(sub) if sub not in (None, "") else
                       f"{utype}|{val}")
+        la = ln = None
+        if fields["lat_field"] and fields["lng_field"]:
+            la, ln = attrs.get(fields["lat_field"]), \
+                attrs.get(fields["lng_field"])
+        if (la in (None, "") or ln in (None, "")) and isinstance(geom, dict):
+            la, ln = geom.get("y"), geom.get("x")
         try:
-            la, ln = float(attrs.get(f_lat)), float(attrs.get(f_lng))
+            la, ln = float(la), float(ln)
         except (TypeError, ValueError):
             continue
         d["lat"] += la
         d["lng"] += ln
         d["pts"] += 1
     if not per_pin:
-        print(f"[units:{market}] rolled up 0 parcels - NOT deleting "
-              f"existing rows (transient?)")
+        print(f"[units:{market}] rolled up 0 parcels from {fetched} "
+              f"fetched rows (expected {total}) - NOT deleting existing "
+              f"rows. "
+              + (f"Last page error: {_LAST_ERR}" if not fetched else
+                 "Layer attributes: " + ", ".join(first_keys)))
         return 0
 
     # Geography gate BEFORE any write. A wrong-city feed passed a name
