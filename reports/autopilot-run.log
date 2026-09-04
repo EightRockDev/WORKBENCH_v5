@@ -31768,3 +31768,5 @@ Checked 114 packages in 10ms
 [discover] exit 124 -> discover-latest.txt
 [publish] pushed to GitHub
 [discover_national] exit 124 -> discover-national-latest.txt
+[publish] pushed to GitHub
+[salesdiscovery] exit 0 -> discover-sales-latest.txt
