@@ -1,8 +1,11 @@
-autopilot alerts @ 2026-09-04T18:18:54
+autopilot alerts @ 2026-09-04T22:39:00
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 10169 - new_mf 10168, units_jump 1
-  showing the 25 most recent of 10169
+alert sweep, NEW this cycle: 2 multifamily, 0 unit-count moves, 0 ownership changes
+  closed 1 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 10170 - new_mf 10169, units_jump 1
+  showing the 25 most recent of 10170
+  [new_mf] New multifamily on the backbone: 160 CAROLINA ST  (700 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 8R-37067-dfa476dc4849  (16 units · Winston-Salem)
   [new_mf] New multifamily on the backbone: 8R-51760-9f9587713aec  (43 units · Richmond)
   [new_mf] New multifamily on the backbone: 161 Hioaks Road   (216 units · Richmond)
   [new_mf] New multifamily on the backbone: 501  Orleans St   (27 units · Richmond)
@@ -26,5 +29,3 @@ OPEN alerts (carried forward): 10169 - new_mf 10168, units_jump 1
   [new_mf] New multifamily on the backbone: 1317 E Main St   (64 units · Richmond)
   [new_mf] New multifamily on the backbone: 2500 Grayland Ave   (105 units · Richmond)
   [new_mf] New multifamily on the backbone: 411 Bainbridge St   (15 units · Richmond)
-  [new_mf] New multifamily on the backbone: 500 Stockton St   (106 units · Richmond)
-  [new_mf] New multifamily on the backbone: 600 Cowardin Ave   (50 units · Richmond)
