@@ -1,20 +1,3 @@
-autopilot listings @ 2026-09-04T21:58:46
+autopilot listings @ 2026-09-04T22:15:13
 
-  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
-  [listings] rentcafe: Brittany Place -> not_found
-  [listings] rentcafe: Eastwyck Village -> not_found
-  [listings] rentcafe: Rivers Edge -> not_found
-  [listings] rentcafe: Tidewater Gardens -> not_found
-  [listings] zillow: Brittany Place -> not_found
-  [listings] zillow: Eastwyck Village -> success
-  [listings] zillow: Rivers Edge -> not_found
-  [listings] zillow: Tidewater Gardens -> not_found
-  [listings] apartments_com: Brittany Place -> not_found
-  [listings] apartments_com: Eastwyck Village -> not_found
-  [listings] apartments_com: Rivers Edge -> not_found
-  [listings] apartments_com: Tidewater Gardens -> not_found
-  [listings] property_site: Brittany Place -> not_found
-  [listings] property_site: Eastwyck Village -> not_found
-  [listings] property_site: Rivers Edge -> not_found
-  [listings] property_site: Tidewater Gardens -> not_found
-  [listings] wrote 16 rows (1 successful scrapes)
+  [listings] fresh (pulled within 7 days, 9 favourites, generation 2) - skipping; 385 rent_listings rows on hand
