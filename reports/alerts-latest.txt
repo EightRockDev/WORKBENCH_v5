@@ -1,7 +1,6 @@
-autopilot alerts @ 2026-09-04T22:39:00
+autopilot alerts @ 2026-09-04T23:31:03
 
-alert sweep, NEW this cycle: 2 multifamily, 0 unit-count moves, 0 ownership changes
-  closed 1 stale alert(s) whose property no longer qualifies as multifamily
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 10170 - new_mf 10169, units_jump 1
   showing the 25 most recent of 10170
   [new_mf] New multifamily on the backbone: 160 CAROLINA ST  (700 units · Raleigh)
