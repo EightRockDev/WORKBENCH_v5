@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-09-06T12:15:00
+autopilot phase0 @ 2026-09-06T13:23:25
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,246,115
+Assessor records available: 3,245,891
 
 Assessor feeds present (Hampton Roads):
   Chesapeake         92,677  .../OpenData/MapServer/15
@@ -12,13 +12,13 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 25 success rows -> 6 properties, 4 with usable rents, 2 in crosswalk -> 2 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b, a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
 
-muni records scanned:      2,303,308
-parcels normalized:        2,303,308
+muni records scanned:      2,303,084
+parcels normalized:        2,303,084
 multifamily (>= 10 units): 11,342
-written to properties_8r:  2,303,308
+written to properties_8r:  2,303,084
 provisional (no-APN) ids:  1,366
 units derived from address points: 174  (skipped non-residential: 3,948)
-units bridged by geometry: 265  (Richmond 163, Atlanta 100, Raleigh 1, Winston-Salem 1)
+units bridged by geometry: 262  (Richmond 163, Atlanta 97, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 212
 rent estimates stamped (HUD FMR blend): 11,280
 rents from scraped listings: 2
@@ -30,16 +30,16 @@ Multifamily by city: Richmond 5,705, Atlanta 1,981, Raleigh 1,620, Norfolk 866, 
 
 Geometry unit bridge (counts carried across parcel-id schemes):
   unit-bearing parcels   : 740,482
-  candidate parcels      : 576,793
-  merged                 : 113
-  rejected (too far)     : 589,108
-  rejected (same id form): 150,194
-  rejected (not mutual)  : 658
+  candidate parcels      : 576,783
+  merged                 : 110
+  rejected (too far)     : 589,129
+  rejected (same id form): 150,358
+  rejected (not mutual)  : 476
   rejected (ambiguous)   : 409
   merged by address      : 152
   addr rejected (shared) : 804
   addr rejected (coords) : 172
-  Atlanta          sources 320,837  targets  67,387  merged    79   refused: far 252,546 / same-id 67,167 / not-mutual 651 / ambiguous 394   by-address 21 (shared 684, coords 16)
+  Atlanta          sources 320,837  targets  67,377  merged    76   refused: far 252,567 / same-id 67,331 / not-mutual 469 / ambiguous 394   by-address 21 (shared 684, coords 16)
   Richmond         sources   5,014  targets  71,990  merged    32   refused: far 571 / same-id 4,389 / not-mutual 7 / ambiguous 15   by-address 131 (shared 3, coords 1)
   Raleigh          sources 367,953  targets 133,131  merged     1   refused: far 296,969 / same-id 70,983 / not-mutual 0 / ambiguous 0   by-address 0 (shared 109, coords 155)
   Winston-Salem    sources       6  targets 167,413  merged     1   refused: far 5 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
@@ -75,7 +75,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Richmond: PRECINCT, DISTRICT, LEGAL_DESC, GIS_ID, ASSESSMENT_DATE_1, ASSESSMENT_CHG_DESC_1, PROP_TYPE_2, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, VGIN_QPID, LOCALITY, ASSESSMENT_DATE_2, ASSESSMENT_CHG_DESC_2, ASSESSMENT_DATE_3, ASSESSMENT_CHG_DESC_3, ASSESSMENT_DATE_4, ASSESSMENT_CHG_DESC_4, ASSESSMENT_DATE_5, ASSESSMENT_CHG_DESC_5, STYLE, HVAC, ASSOC_NAME, OWNER2
   Greensboro: CentroidXCoordinate, CentroidYCoordinat, NumberOfParts, INSIDE_X, INSIDE_Y, ORIG_FID, Owner_History, Total_Building_Value, DEED_DATE, Short_Parcel_ID, PARCEL_PK, Condo, LOCATION_ADDR, Plat, Lot_Size, PROPERTY_DESCR, Total_Land_Value, TOTAL_DEFERRED_VALUE, Total_Out_Building_Value, BLDG_CARD, Appraisal_Model_Code, GRADE, Structure_Size, Bathrooms
-  Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, TotAssess, TotAppr, ImprAppr, AddrNumber, LandAssess, ImprAssess, LandAppr, OwnerAddr1, OwnerAddr2, LandAcres, AddrSuffix, ExCode, SITECITY, SITESTATE, LOWPARCELID, CNTASSDVAL, CVTTXCD, PSTLADDRESS
+  Atlanta: TaxYear, TaxDist, LUCode, NbrHood, FeatureID, AddrStreet, TotAssess, LandAssess, ImprAssess, TotAppr, LandAppr, ImprAppr, AddrNumber, OwnerAddr1, OwnerAddr2, LandAcres, AddrSuffix, ExCode, LOWPARCELID, SITECITY, SITESTATE, PSTLADDRESS, CNTASSDVAL, CVTTXCD
   Winston-Salem: BLKCNTRL, BLK, LOT, BLKLOT, TBLCNTRL, CNTRL, TAXPIN, TAXPIN_N, PINMAP, PINBLK, PINLOT, PINLOT_A, CALCULATEDACREAGE, TAXPIN16, PINLOT16, MLOT, PARCEL_PK, BLOCKLOT, REID_1, CURRENTOWNERADDRESS, CURRENTDEEDDATE, CURRENTDEEDSTAMPS, ASSESSMENTMETHOD, LASTQUALIFIEDSALEPRICE
   Raleigh: PIN_NUM, CALC_AREA, PARCEL_PK, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE, OWNERSHIP, ACTIVITY, FUNCTION, STRUCTURE, SITE, TOTSTRUCTS, TOTUNITS, OLD_PARCEL_NUMBER, DEED_DATE, ADDR2, TOTAL_VALUE_ASSD, PLANNING_JURISDICTION
   Durham: FEATURE_KEY, PARCEL_TYPE, PARCEL_PK, AUT_SNAPSHOT_DATE, PIN_EXT, PIN_MAP, PIN_BLOCK, PIN_LOT, PROPERTY_DESCR, LOCATION_ADDR, SPEC_DIST, SPEC_DIST_PCNT, TOWNSHIP, CALCULATED_ACRES, DEEDED_ACRES, PROPERTY_OWNER, OWNER_MAIL_1, PHYADDR_LOCID, PHYADDR_STR_NUM, PHYADDR_STR, PHYADDR_STATE, VALUE_APPROACH, DEED_DATE, DEED_PATH
