@@ -1,9 +1,12 @@
-autopilot discover_national @ 2026-09-06T02:08:54
+autopilot discover_national @ 2026-09-06T03:09:08
 
 [national-discovery] probing top-50 metros for free parcel feeds...
 Probing GIS portals for unit-bearing parcel layers (50 national metros)...
 (a few minutes - each city's services are walked layer by layer)
 
+   [rejected - wrong city] Riverside: Vision_Plan_Transfer_WFL1: only 189 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Riverside: Vision_Plan_Transfer_WFL1: only 229 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected - wrong city] Riverside: Vision_Plan_Transfer_WFL1: only 419 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Riverside: Vision_Plan_260727_WFL1: only 189 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Riverside: Vision_Plan_260727_WFL1: only 229 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Riverside: Vision_Plan_260727_WFL1: only 419 records - kept but demoted, a citywide roll should have >= 5,000
@@ -60,8 +63,8 @@ Washington: nothing suitable found (portal may be offline or hides fields until 
 Riverside: 2 candidate layer(s)
    https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
       auto-discovered: Vision_Plan_260727_WFL1; score 13; fields ['apn', 'assessed_value', 'owner_city', 'owner_name', 'owner_state', 'owner_zip', 'use_code']; geo-verify inconclusive; 62,781 records
-   https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/0
-      auto-discovered: Vision_Plan_260727_WFL1; score 1; fields ['address', 'apn', 'owner_name']; geo-verify inconclusive; ONLY 189 records - too small to be a full parcel roll, probably a subset or study extract
+   https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Vision_Plan_Transfer_WFL1/FeatureServer/3
+      auto-discovered: Vision_Plan_Transfer_WFL1; score 1; fields ['address', 'apn', 'owner_name']; geo-verify inconclusive; ONLY 189 records - too small to be a full parcel roll, probably a subset or study extract
 
 Oakland: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
 
