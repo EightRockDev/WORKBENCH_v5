@@ -1,9 +1,12 @@
-autopilot arcgissales @ 2026-09-08T14:17:16
+autopilot arcgissales @ 2026-09-08T15:15:47
 
 [sales:Virginia Beach] fresh (<7d) - skip
 [sales:Norfolk] fresh (<3d) - skip
 [sales:Chesapeake] fresh (<30d) - skip
-[sales:Richmond-files] fresh (<5d) - skip
+[sales:Richmond] https://www.rva.gov/assessor-real-estate/data-request -> HTTP 200, 2 spreadsheet link(s)
+[sales:Richmond]   Public Data Set -> Assessor_Public_Data_Set_2026-05-26.xlsx: 76976 rows -> kind=assessor
+[sales:Richmond]   2015-2025 -> Assessor_Transfers_2026-05-20.xlsx: 84148 rows -> kind=sales
+[sales:Richmond] wrote 161124 rows (sales=84148, assessor=76976)
 [sales:Richmond-units] fresh (<7d) - skip
 [sales:Chicago] fresh (<7d) - skip
-[sales] done: 0 rows across 6 source(s)
+[sales] done: 161124 rows across 6 source(s)
