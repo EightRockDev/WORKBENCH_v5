@@ -1,13 +1,9 @@
-autopilot arcgissales @ 2026-09-10T04:15:01
+autopilot arcgissales @ 2026-09-10T05:14:14
 
 [sales:Virginia Beach] fresh (<7d) - skip
 [sales:Norfolk] fresh (<3d) - skip
-[sales:Chesapeake] commercial LandBook: 30272 rows parsed
-[sales:Chesapeake] commercial: kept 30272 date-bearing rows
-[sales:Chesapeake] residential LandBook: 90285 rows parsed
-[sales:Chesapeake] residential: kept 90285 date-bearing rows
-[sales:Chesapeake] wrote 120557 LandBook sale rows
+[sales:Chesapeake] fresh (<30d) - skip
 [sales:Richmond-files] fresh (<5d) - skip
 [sales:Richmond-units] fresh (<7d) - skip
 [sales:Chicago] fresh (<7d) - skip
-[sales] done: 120557 rows across 6 source(s)
+[sales] done: 0 rows across 6 source(s)
