@@ -1,4 +1,4 @@
-autopilot pendingusers @ 2026-09-10T08:27:30
+autopilot pendingusers @ 2026-09-10T09:29:10
 
-PENDING APPROVAL: 0
-  (none - no users waiting)
+PENDING APPROVAL: 1
+  - b.mccune@gmail.com <b.mccune@gmail.com>  status=invited  role=trial
