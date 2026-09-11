@@ -1,22 +1,22 @@
-autopilot richmondreview @ 2026-09-11T01:28:26
+autopilot richmondreview @ 2026-09-11T05:47:50
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-11T01:28:29
+RICHMOND REVIEW  @ 2026-09-11T05:47:53
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
-Richmond properties total: 72,884
-  with unit data:  669
-Multifamily (units>=10): 669
-  units:          n=669  min=10  median=28  max=1,052
+Richmond properties total: 72,882
+  with unit data:  670
+Multifamily (units>=10): 670
+  units:          n=670  min=10  median=28  max=1,052
   year built:     1840-2026
-  assessed value: n=668  min=1,000  median=2,945,500  max=121,303,000
+  assessed value: n=670  min=1,000  median=2,938,000  max=121,303,000
 
 -- 2. Raw Richmond assessor rows on hand --
     76,976  2026-09-08T15:15:59  files:rva.gov/assessor-real-estate
     76,739  2026-09-08T13:16:24  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
-     6,570  2026-09-08T03:13:56  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
-     5,014  2026-09-04T01:16:18  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
+     6,570  2026-09-11T04:02:37  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
+     5,015  2026-09-11T04:43:18  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
 
 -- 2b. Field mapping per source (spine-visible attributes) --
   files:rva.gov/assessor-real-estate
@@ -29,8 +29,8 @@ Multifamily (units>=10): 669
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
     coords=6,570  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/se
-    rows=5,014  apn=5,014 (sample: N0000322006)  units=5,014  assessed_value=0  use_code=0
-    coords=5,014  units+coords=5,014  apn shapes=['1a10d', '1a10d1a']
+    rows=5,015  apn=5,015 (sample: N0000322006)  units=5,015  assessed_value=0  use_code=0
+    coords=5,015  units+coords=5,015  apn shapes=['1a10d', '1a10d1a']
   -- 2 raw records from the unit-bearing source (https://services1.arcgis.com/k3vhq11XkBNeeOfM/ar) --
       Latitude = 37.558016
       Longitude = -77.438574
@@ -67,8 +67,8 @@ sale rows: 84,148
     2026-05-18  $540,000  -> MOFFETT TAYLOR ANNE
 
 -- 4. Estimated real-estate tax (rate $1.20/$100 assessed; ER_RICHMOND_TAX_RATE) --
-  MF annual tax:  n=668  min=12  median=35,346  max=1,455,636
-  MF tax base:    $5,432,915,000 assessed -> $65,194,980/yr estimated
+  MF annual tax:  n=670  min=12  median=35,256  max=1,455,636
+  MF tax base:    $5,348,278,000 assessed -> $64,179,336/yr estimated
 
 -- 5. GAPS (each names its unblock) --
   none - Richmond properties, MF, units, sales, values and tax estimates are all present.
