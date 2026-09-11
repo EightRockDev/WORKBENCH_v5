@@ -1,14 +1,24 @@
-autopilot alerts @ 2026-09-11T01:29:47
+autopilot alerts @ 2026-09-11T05:49:14
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 10166 - new_mf 10165, units_jump 1
-  showing the 25 most recent of 10166
+alert sweep, NEW this cycle: 11 multifamily, 0 unit-count moves, 0 ownership changes
+  closed 32 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 10145 - new_mf 10144, units_jump 1
+  showing the 25 most recent of 10145
+  [new_mf] New multifamily on the backbone: 707 N Harrison St   (47 units · Richmond)
+  [new_mf] New multifamily on the backbone: 501 Stockton St   (93 units · Richmond)
+  [new_mf] New multifamily on the backbone: 13 N 18th St   (32 units · Richmond)
+  [new_mf] New multifamily on the backbone: 721 E 4th St   (169 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1711 Colorado Ave   (76 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1621 Grove Ave   (22 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1501 N 21st St   (160 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1420 Hull St   (68 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1014 Hull St A Unit   (47 units · Richmond)
+  [new_mf] New multifamily on the backbone: 111 Hull St   (256 units · Richmond)
+  [new_mf] New multifamily on the backbone: 2009 E Franklin St   (96 units · Richmond)
   [new_mf] New multifamily on the backbone: 160 CAROLINA ST  (700 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 8R-51760-9f9587713aec  (43 units · Richmond)
   [new_mf] New multifamily on the backbone: 161 Hioaks Road   (216 units · Richmond)
   [new_mf] New multifamily on the backbone: 501  Orleans St   (27 units · Richmond)
   [new_mf] New multifamily on the backbone: 2525 E Main St   (213 units · Richmond)
-  [new_mf] New multifamily on the backbone: 111 Hull St   (256 units · Richmond)
   [new_mf] New multifamily on the backbone: 1078 German School Road   (32 units · Richmond)
   [new_mf] New multifamily on the backbone: 1300 Riverview Pkwy   (104 units · Richmond)
   [new_mf] New multifamily on the backbone: 3940  Rosedale Ave   (78 units · Richmond)
@@ -19,12 +29,3 @@ OPEN alerts (carried forward): 10166 - new_mf 10165, units_jump 1
   [new_mf] New multifamily on the backbone: 3301 Grove Ave   (18 units · Richmond)
   [new_mf] New multifamily on the backbone: 1030 W Franklin St   (53 units · Richmond)
   [new_mf] New multifamily on the backbone: 360 Stockton St   (33 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1401 German School Road   (84 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1500 German School Road   (168 units · Richmond)
-  [new_mf] New multifamily on the backbone: 300 S 12th St   (89 units · Richmond)
-  [new_mf] New multifamily on the backbone: 900 Terminal Pl   (173 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1501 N 21st St A Unit   (160 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1317 E Main St   (64 units · Richmond)
-  [new_mf] New multifamily on the backbone: 2500 Grayland Ave   (105 units · Richmond)
-  [new_mf] New multifamily on the backbone: 411 Bainbridge St   (15 units · Richmond)
-  [new_mf] New multifamily on the backbone: 500 Stockton St   (106 units · Richmond)
