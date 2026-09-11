@@ -1,9 +1,10 @@
-autopilot arcgissales @ 2026-09-10T19:12:26
+autopilot arcgissales @ 2026-09-10T20:17:24
 
-[sales:Virginia Beach] fresh (<7d) - skip
+[sales:Virginia Beach] 48011 sales rows to pull (where: Sale_Price > 0 AND Sales_Date >= DATE '2021-01-01')
+[sales:Virginia Beach] wrote 48011 rows (expected 48011)
 [sales:Norfolk] fresh (<3d) - skip
 [sales:Chesapeake] fresh (<30d) - skip
 [sales:Richmond-files] fresh (<5d) - skip
 [sales:Richmond-units] fresh (<7d) - skip
 [sales:Chicago] fresh (<7d) - skip
-[sales] done: 0 rows across 6 source(s)
+[sales] done: 48011 rows across 6 source(s)
