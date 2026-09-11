@@ -1,9 +1,11 @@
-autopilot arcgissales @ 2026-09-10T21:14:10
+autopilot arcgissales @ 2026-09-10T23:05:46
 
 [sales:Virginia Beach] fresh (<7d) - skip
 [sales:Norfolk] fresh (<3d) - skip
 [sales:Chesapeake] fresh (<30d) - skip
 [sales:Richmond-files] fresh (<5d) - skip
 [sales:Richmond-units] fresh (<7d) - skip
-[sales:Chicago] fresh (<7d) - skip
-[sales] done: 0 rows across 6 source(s)
+[sales:Chicago] FY stack sizes: sales=473749 (total 473749)
+[sales:Chicago] sales: 400000 dated transfers (399905 unique so far)
+[sales:Chicago] wrote 399905 unique (gpin,date) sale rows
+[sales] done: 399905 rows across 6 source(s)
