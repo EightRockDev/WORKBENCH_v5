@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.0.4.0 — 2026-09-11  ·  Discovery steps get a 15-minute leash.
+
+Twice now (09-04 evening, 09-11 early AM) a slow external portal held
+the feed-discovery steps at their full 1-hour timeout, back to back —
+and because Task Scheduler skips a relaunch while a cycle still runs,
+the 03:00/04:00 cycles were silently lost. Discovery is best-effort
+research, not the data path: discover / discover_national /
+salesdiscovery are now capped at 900s (ER_AUTOPILOT_DISCOVER_TIMEOUT),
+while every data-path step keeps the full hour. Tests pin the cap and
+that only real step names carry one.
+
 ## V5.67.0.3.0 — 2026-09-04  ·  Richmond units LANDED; retire the solved gaps.
 
 The 01:14 cycle proved the whole chain: 55,435 unit addresses pulled,

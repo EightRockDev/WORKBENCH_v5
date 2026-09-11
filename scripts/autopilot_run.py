@@ -108,6 +108,20 @@ def git(*args: str, root: Path = ROOT) -> subprocess.CompletedProcess:
 # as exit 124, and the cycle moves on.
 STEP_TIMEOUT = int(os.environ.get("ER_AUTOPILOT_STEP_TIMEOUT", "3600"))
 
+# Discovery steps scan OUTSIDE portals (Socrata/ArcGIS Hub/city sites),
+# and a slow or wedged portal can hold a socket for the full hour - two
+# such steps back-to-back ate the 03:00 and 04:00 cycles twice (09-04
+# and 09-11: Task Scheduler skips a relaunch while a cycle still runs).
+# They are best-effort research, not the data path, so they get a short
+# leash; every other step keeps the full hour.
+STEP_TIMEOUTS = {
+    "discover": int(os.environ.get("ER_AUTOPILOT_DISCOVER_TIMEOUT", "900")),
+    "discover_national": int(
+        os.environ.get("ER_AUTOPILOT_DISCOVER_TIMEOUT", "900")),
+    "salesdiscovery": int(
+        os.environ.get("ER_AUTOPILOT_DISCOVER_TIMEOUT", "900")),
+}
+
 
 def run_step(name: str, args: list[str], out_name: str) -> tuple[Path, int]:
     REPORTS.mkdir(exist_ok=True)
@@ -116,15 +130,16 @@ def run_step(name: str, args: list[str], out_name: str) -> tuple[Path, int]:
     with open(out, "w", encoding="utf-8") as fh:
         fh.write(f"autopilot {name} @ {stamp}\n\n")
         fh.flush()
+        limit = STEP_TIMEOUTS.get(name, STEP_TIMEOUT)
         try:
             proc = subprocess.run([sys.executable, "-u", *args], cwd=ROOT,
                                   stdout=fh, stderr=subprocess.STDOUT,
-                                  text=True, timeout=STEP_TIMEOUT)
+                                  text=True, timeout=limit)
             code = proc.returncode
         except subprocess.TimeoutExpired:
-            fh.write(f"\n!! step killed after {STEP_TIMEOUT}s "
-                     "(ER_AUTOPILOT_STEP_TIMEOUT) - a hung step must never "
-                     "wedge the cycle\n")
+            fh.write(f"\n!! step killed after {limit}s "
+                     "(ER_AUTOPILOT_STEP_TIMEOUT / _DISCOVER_TIMEOUT) - a "
+                     "hung step must never wedge the cycle\n")
             code = 124
     print(f"[{name}] exit {code} -> {out.name}", flush=True)
     return out, code
