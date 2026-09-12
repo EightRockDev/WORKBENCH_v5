@@ -1,4 +1,4 @@
-autopilot pull @ 2026-09-12T15:13:13
+autopilot pull @ 2026-09-12T16:13:25
 
 WORKBENCH muni-data ETL — 2026-09-12
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -44,6 +44,7 @@ WORKBENCH muni-data ETL — 2026-09-12
   [OK] Chesapeake/assessor                      92676 records
   [fresh] Atlanta/assessor: pulled within 3 days - keeping 244 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           244 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 224 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           224 records
   [fresh] Raleigh/assessor: pulled within 3 days - keeping 25,000 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor                         25000 records
