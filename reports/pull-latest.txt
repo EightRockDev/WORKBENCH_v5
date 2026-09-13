@@ -1,4 +1,4 @@
-autopilot pull @ 2026-09-13T01:12:51
+autopilot pull @ 2026-09-13T02:00:45
 
 WORKBENCH muni-data ETL — 2026-09-13
   discovered feeds loaded from data/feeds_extra.json: 10
@@ -39,7 +39,7 @@ WORKBENCH muni-data ETL — 2026-09-13
   [OK] Virginia Beach/permits                  106707 records
   [fresh] Newport News/assessor+sales: pulled within 3 days - keeping 54,443 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Newport News/assessor+sales              54443 records
-  [ERR] Richmond/assessor+sales                403 Client Error: Forbidden for url: https://data.richmondgov.com/resource/vm9j-9f88.json?%24limit=50000&%24offset=0&%24order=%3Aid
+  [ERR] Richmond/assessor+sales                HTTPSConnectionPool(host='data.richmondgov.com', port=443): Max retries exceeded with url: /resource/vm9j-9f88.json?%24limit=50000&%24offset=0&%24order=%3Aid (Caused by NameResolutionError("HTTPSConnection(host='data.richmondgov.com', port=443): Failed to resolve 'data.richmondgov.com' ([Errno 11001] getaddrinfo failed)"))
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,676 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92676 records
   [fresh] Atlanta/assessor: pulled within 3 days - keeping 244 rows (ER_MUNI_FORCE=1 to re-pull)
