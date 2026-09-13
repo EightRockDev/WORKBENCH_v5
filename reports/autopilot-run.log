@@ -42397,3 +42397,5 @@ Checked 114 packages in 11ms
 [salesdiscovery] exit 0 -> discover-sales-latest.txt
 [publish] PUSH FAILED: fatal: unable to access 'https://github.com/EightRockDev/WORKBENCH_v5.git/': Could not resolve host: github.com
 [pull] exit 0 -> pull-latest.txt
+[publish] PUSH FAILED: fatal: unable to access 'https://github.com/EightRockDev/WORKBENCH_v5.git/': Could not resolve host: github.com
+[publicdata] exit 0 -> public-data-latest.txt
