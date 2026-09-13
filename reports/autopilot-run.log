@@ -42401,3 +42401,5 @@ Checked 114 packages in 11ms
 [publicdata] exit 0 -> public-data-latest.txt
 [publish] PUSH FAILED: fatal: unable to access 'https://github.com/EightRockDev/WORKBENCH_v5.git/': Could not resolve host: github.com
 [listings] exit 0 -> listings-latest.txt
+[publish] PUSH FAILED: fatal: unable to access 'https://github.com/EightRockDev/WORKBENCH_v5.git/': Could not resolve host: github.com
+[salespull] exit 0 -> sales-latest.txt
