@@ -42403,3 +42403,5 @@ Checked 114 packages in 11ms
 [listings] exit 0 -> listings-latest.txt
 [publish] PUSH FAILED: fatal: unable to access 'https://github.com/EightRockDev/WORKBENCH_v5.git/': Could not resolve host: github.com
 [salespull] exit 0 -> sales-latest.txt
+[publish] PUSH FAILED: fatal: unable to access 'https://github.com/EightRockDev/WORKBENCH_v5.git/': Could not resolve host: github.com
+[arcgissales] exit 0 -> arcgis-sales-latest.txt
