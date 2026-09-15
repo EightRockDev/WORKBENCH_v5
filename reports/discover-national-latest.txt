@@ -1,4 +1,4 @@
-autopilot discover_national @ 2026-09-15T01:09:22
+autopilot discover_national @ 2026-09-15T02:09:32
 
 [national-discovery] probing top-50 metros for free parcel feeds...
 Probing GIS portals for unit-bearing parcel layers (50 national metros)...
@@ -20,13 +20,6 @@ Probing GIS portals for unit-bearing parcel layers (50 national metros)...
    [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 310 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 182 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Raleigh: Raleigh County 830 Dilapidated Structures: only 830 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 53 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 205 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 172 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 683 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 236 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 1,107 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 163 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Raleigh: Raleigh County Dilapidated Structures_WFL1: only 830 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
    [rejected - wrong city] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
