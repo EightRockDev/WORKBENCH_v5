@@ -1,7 +1,6 @@
-autopilot alerts @ 2026-09-18T05:39:50
+autopilot alerts @ 2026-09-18T06:30:31
 
-alert sweep, NEW this cycle: 8 multifamily, 0 unit-count moves, 0 ownership changes
-  closed 19 stale alert(s) whose property no longer qualifies as multifamily
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 10134 - new_mf 10133, units_jump 1
   showing the 25 most recent of 10134
   [new_mf] New multifamily on the backbone: 8R-51760-af5c66d1c071  (228 units · Richmond)
