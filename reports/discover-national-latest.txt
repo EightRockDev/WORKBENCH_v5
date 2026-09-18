@@ -1,4 +1,4 @@
-autopilot discover_national @ 2026-09-17T23:08:49
+autopilot discover_national @ 2026-09-18T00:08:52
 
 [national-discovery] probing top-50 metros for free parcel feeds...
 Probing GIS portals for unit-bearing parcel layers (50 national metros)...
@@ -11,7 +11,6 @@ Probing GIS portals for unit-bearing parcel layers (50 national metros)...
    [rejected - wrong city] Riverside: Vision_Plan_260727_WFL1: only 229 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Riverside: Vision_Plan_260727_WFL1: only 419 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Riverside: Vision_Plan_test_WFL1: only 189 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Riverside: Vision_Plan_test_WFL1: only 229 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Riverside: Vision_Plan_test_WFL1: only 419 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Atlanta: Virginia Highland Focus Area: only 244 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 224 records - kept but demoted, a citywide roll should have >= 5,000
