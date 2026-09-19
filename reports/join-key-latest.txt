@@ -1,4 +1,4 @@
-autopilot joinkey @ 2026-09-18T21:30:00
+autopilot joinkey @ 2026-09-18T22:30:32
 
 ====================================================================
 JOIN-KEY SCAN — Richmond
