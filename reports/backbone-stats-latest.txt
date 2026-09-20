@@ -1,4 +1,4 @@
-autopilot backbonestats @ 2026-09-20T08:30:25
+autopilot backbonestats @ 2026-09-20T09:37:45
 
 Properties on the backbone, per metro/market:
 market                properties
@@ -8,9 +8,9 @@ Hampton Roads            167,796
 Winston-Salem            167,449
 Raleigh                  134,843
 Durham-Chapel Hill       129,199
-Richmond                  72,893
+Richmond                  72,879
 Atlanta                   69,292
-TOTAL                  1,243,857
+TOTAL                  1,243,843
 
 Multifamily unit stats (units >= 10), per city:
 city                count   min  median    max
