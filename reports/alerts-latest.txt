@@ -1,8 +1,20 @@
-autopilot alerts @ 2026-09-20T03:30:45
+autopilot alerts @ 2026-09-20T04:41:45
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 10137 - new_mf 10136, units_jump 1
-  showing the 25 most recent of 10137
+alert sweep, NEW this cycle: 11 multifamily, 0 unit-count moves, 0 ownership changes
+  closed 12 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 10136 - new_mf 10135, units_jump 1
+  showing the 25 most recent of 10136
+  [new_mf] New multifamily on the backbone: 1207 School St   (200 units · Richmond)
+  [new_mf] New multifamily on the backbone: 2005 E Franklin St   (96 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1086 German School Road   (64 units · Richmond)
+  [new_mf] New multifamily on the backbone: 525 E Grace St   (31 units · Richmond)
+  [new_mf] New multifamily on the backbone: 3116 Stuart Ave   (12 units · Richmond)
+  [new_mf] New multifamily on the backbone: 3600 Monument Ave   (12 units · Richmond)
+  [new_mf] New multifamily on the backbone: 823 E Main St   (161 units · Richmond)
+  [new_mf] New multifamily on the backbone: 116 E Franklin St   (36 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1501 N 21st St   (160 units · Richmond)
+  [new_mf] New multifamily on the backbone: 700 E Franklin St   (177 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1309 E Main St   (64 units · Richmond)
   [new_mf] New multifamily on the backbone: 0 S HUGHES ST  (106 units · Raleigh)
   [new_mf] New multifamily on the backbone: 4101 FLAT RIDGE CT  (221 units · Raleigh)
   [new_mf] New multifamily on the backbone: 1131 PARKSIDE MAIN ST  (134 units · Raleigh)
@@ -17,14 +29,3 @@ OPEN alerts (carried forward): 10137 - new_mf 10136, units_jump 1
   [new_mf] New multifamily on the backbone: 465 FENTON GATEWAY DR  (186 units · Raleigh)
   [new_mf] New multifamily on the backbone: 707 N Harrison St   (47 units · Richmond)
   [new_mf] New multifamily on the backbone: 501 Stockton St   (93 units · Richmond)
-  [new_mf] New multifamily on the backbone: 13 N 18th St   (32 units · Richmond)
-  [new_mf] New multifamily on the backbone: 721 E 4th St   (169 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1621 Grove Ave   (22 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1420 Hull St   (68 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1014 Hull St A Unit   (47 units · Richmond)
-  [new_mf] New multifamily on the backbone: 111 Hull St   (256 units · Richmond)
-  [new_mf] New multifamily on the backbone: 2009 E Franklin St   (96 units · Richmond)
-  [new_mf] New multifamily on the backbone: 160 CAROLINA ST  (700 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 501  Orleans St   (27 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1300 Riverview Pkwy   (104 units · Richmond)
-  [new_mf] New multifamily on the backbone: 3940  Rosedale Ave   (78 units · Richmond)
