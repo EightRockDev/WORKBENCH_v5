@@ -1,8 +1,11 @@
-autopilot alerts @ 2026-09-19T22:29:58
+autopilot alerts @ 2026-09-20T00:28:55
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 10134 - new_mf 10133, units_jump 1
-  showing the 25 most recent of 10134
+alert sweep, NEW this cycle: 3 multifamily, 0 unit-count moves, 1 ownership changes
+OPEN alerts (carried forward): 10137 - new_mf 10136, units_jump 1
+  showing the 25 most recent of 10137
+  [new_mf] New multifamily on the backbone: 0 S HUGHES ST  (106 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 4101 FLAT RIDGE CT  (221 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 1131 PARKSIDE MAIN ST  (134 units · Raleigh)
   [new_mf] New multifamily on the backbone: 8R-51760-af5c66d1c071  (228 units · Richmond)
   [new_mf] New multifamily on the backbone: 1078 German School Road   (32 units · Richmond)
   [new_mf] New multifamily on the backbone: 2701 E Main St   (62 units · Richmond)
@@ -25,6 +28,3 @@ OPEN alerts (carried forward): 10134 - new_mf 10133, units_jump 1
   [new_mf] New multifamily on the backbone: 501  Orleans St   (27 units · Richmond)
   [new_mf] New multifamily on the backbone: 1300 Riverview Pkwy   (104 units · Richmond)
   [new_mf] New multifamily on the backbone: 3940  Rosedale Ave   (78 units · Richmond)
-  [new_mf] New multifamily on the backbone: 151 W Commerce Road   (14 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1654 Overbrook Road   (51 units · Richmond)
-  [new_mf] New multifamily on the backbone: 8 1/2 W Canal St   (548 units · Richmond)
