@@ -1,8 +1,8 @@
-autopilot listings @ 2026-09-21T12:15:21
+autopilot listings @ 2026-09-21T13:14:09
 
   [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
-  [listings] rentcafe: Spring Creek -> not_found
-  [listings] zillow: Spring Creek -> not_found
-  [listings] apartments_com: Spring Creek -> not_found
-  [listings] property_site: Spring Creek -> not_found
+  [listings] rentcafe: Crossroads Landing -> not_found
+  [listings] zillow: Crossroads Landing -> not_found
+  [listings] apartments_com: Crossroads Landing -> not_found
+  [listings] property_site: Crossroads Landing -> not_found
   [listings] wrote 4 rows (0 successful scrapes)
