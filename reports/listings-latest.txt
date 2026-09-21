@@ -1,3 +1,8 @@
-autopilot listings @ 2026-09-21T11:31:28
+autopilot listings @ 2026-09-21T12:15:21
 
-  [listings] fresh (pulled within 7 days, 9 favourites, generation 2) - skipping; 457 rent_listings rows on hand
+  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
+  [listings] rentcafe: Spring Creek -> not_found
+  [listings] zillow: Spring Creek -> not_found
+  [listings] apartments_com: Spring Creek -> not_found
+  [listings] property_site: Spring Creek -> not_found
+  [listings] wrote 4 rows (0 successful scrapes)
