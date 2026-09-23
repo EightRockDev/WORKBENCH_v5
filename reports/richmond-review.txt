@@ -1,26 +1,26 @@
-autopilot richmondreview @ 2026-09-23T15:31:51
+autopilot richmondreview @ 2026-09-23T16:42:18
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-23T15:31:53
+RICHMOND REVIEW  @ 2026-09-23T16:42:21
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
-Richmond properties total: 72,879
+Richmond properties total: 72,944
   with unit data:  671
 Multifamily (units>=10): 671
   units:          n=671  min=10  median=28  max=1,052
   year built:     1840-2026
-  assessed value: n=670  min=1,000  median=2,950,000  max=121,303,000
+  assessed value: n=669  min=1,000  median=2,950,000  max=121,303,000
 
 -- 2. Raw Richmond assessor rows on hand --
-    76,976  2026-09-18T16:15:12  files:rva.gov/assessor-real-estate
+    76,976  2026-09-23T16:15:57  files:rva.gov/assessor-real-estate
     76,739  2026-09-23T11:15:21  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
      6,570  2026-09-23T05:13:38  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
      5,017  2026-09-18T05:16:28  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
 
 -- 2b. Field mapping per source (spine-visible attributes) --
   files:rva.gov/assessor-real-estate
-    rows=76,976  apn=76,976 (sample: C0010124002)  units=0  assessed_value=76,765  use_code=76,976
+    rows=76,976  apn=76,976 (sample: C0010124002)  units=0  assessed_value=76,786  use_code=76,976
     coords=0  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_B
     rows=76,739  apn=76,739 (sample: C0010124008)  units=0  assessed_value=0  use_code=0
@@ -44,31 +44,31 @@ Multifamily (units>=10): 671
       UnitCount = 1
       _derived = distinct dwelling-unit addresses in the city mas
       ----------------------------------------
-  rva.gov-files join health: 76,719 of 76,976 workbook parcels match an API-feed parcel
+  rva.gov-files join health: 76,653 of 76,976 workbook parcels match an API-feed parcel
   address coverage per source (usable normalized addresses / with units):
-     76,063 addrs        0 of them carry units   files:rva.gov/assessor-real-estate
+     76,047 addrs        0 of them carry units   files:rva.gov/assessor-real-estate
 
 -- 2c. rva.gov files on hand (columns per workbook) --
-  Assessor_Public_Data_Set_2026-05-26.xlsx: 76,976 rows, 80 columns
+  Assessor_Public_Data_Set_2026-09-23.xlsx: 76,976 rows, 80 columns
     AREA_TAX, ASSESSMENT_CHG_DESC_1, ASSESSMENT_CHG_DESC_2, ASSESSMENT_CHG_DESC_3, ASSESSMENT_CHG_DESC_4, ASSESSMENT_CHG_DESC_5, ASSESSMENT_DATE_1, ASSESSMENT_DATE_2, ASSESSMENT_DATE_3, ASSESSMENT_DATE_4, ASSESSMENT_DATE_5, ASSOC_NAME, ASSSESS_IMP_VALUE_1, ASSSESS_IMP_VALUE_2, ASSSESS_IMP_VALUE_3, ASSSESS_IMP_VALUE_4, ASSSESS_IMP_VALUE_5, ASSSESS_LAND_VALUE_1, ASSSESS_LAND_VALUE_2, ASSSESS_LAND_VALUE_3, ASSSESS_LAND_VALUE_4, ASSSESS_LAND_VALUE_5, ASSSESS_TOTAL_VALUE_1, ASSSESS_TOTAL_VALUE_2, ASSSESS_TOTAL_VALUE_3, ASSSESS_TOTAL_VALUE_4, ASSSESS_TOTAL_VALUE_5, BATH_COUNT, BED_COUNT, CONDITION, DEPT
-    [unit-suspect] STORIES (non-empty on 68,054 rows, sample: 1)
-  Assessor_Transfers_2026-05-20.xlsx: 84,148 rows, 31 columns
-    APPRAISER, ASSOC_NAME, CONSIDERATION, DEED_BOOK, DEED_PAGE, DEED_TYPE, DISTRICT, EXEMPT_CODE, GIS_ID, GRANTEE, LEGAL_AC, LEGAL_DESC, LIVING_AREA, NBHD, PARCEL_LOCATION, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, PID, PIN, PRECINCT, PRIMARY_USE, PROP_SF, PROP_TYPE, PROP_TYPE_2, QUALIFIED, SALE_TYPE, STORIES, TRANSFER_DATE, YEAR_BUILT, ZONING
-    [unit-suspect] STORIES (non-empty on 77,768 rows, sample: 1)
+    [unit-suspect] STORIES (non-empty on 68,189 rows, sample: 1)
+  Assessor_Transfers_2026-09-23.xlsx: 323,024 rows, 28 columns
+    ASSOC_NAME, CONSIDERATION, DEED_BOOK, DEED_PAGE, DEED_TYPE, DISTRICT, EXEMPT_CODE, GIS_ID, GRANTEE, GRANTOR, LEGAL_AC, LEGAL_DESC, LIVING_AREA, NBHD, PARCEL_LOCATION, PID, PIN, PRECINCT, PRIMARY_USE, PROP_SF, PROP_TYPE, PROP_TYPE_2, QUALIFIED, SALE_TYPE, STORIES, TRANSFER_DATE, YEAR_BUILT, ZONING
+    [unit-suspect] STORIES (non-empty on 301,487 rows, sample: 1)
 
 -- 3. Richmond sales (muni_records kind='sales') --
-sale rows: 84,148
-  transfer dates: 2015-01-01 .. 2026-05-18
-  consideration:  n=58,582  min=100  median=267,716  max=142,455,000
-    2026-05-18  $562,000  -> GORMAN GEOFFREY G & MARY H
-    2026-05-18  $565,000  -> BURNETTE KYLE & RACHEL
-    2026-05-18  $170,000  -> RAMOS JULIO
-    2026-05-18  $270,000  -> BLANCO GONZALES MIGUEL
-    2026-05-18  $540,000  -> MOFFETT TAYLOR ANNE
+sale rows: 323,024
+  transfer dates: 1977-07-21 .. 2026-09-22
+  consideration:  n=221,952  min=1  median=105,000  max=277,500,000
+    2026-09-22  $160,000  -> WARRINER GEORGE STEVEN JR
+    2026-09-22  $120,000  -> 1424 GARBER STREET SERIES OF RVA
+    2026-09-22  $0  -> MICHAELS SEED ARLO
+    2026-09-22  $0  -> GREEN PROPERTY GROUP LLD
+    2026-09-22  $1,315,000  -> WRIGHT CAROLINE LANGLEY &
 
 -- 4. Estimated real-estate tax (rate $1.20/$100 assessed; ER_RICHMOND_TAX_RATE) --
-  MF annual tax:  n=670  min=12  median=35,400  max=1,455,636
-  MF tax base:    $5,398,102,000 assessed -> $64,777,224/yr estimated
+  MF annual tax:  n=669  min=12  median=35,400  max=1,455,636
+  MF tax base:    $5,389,672,000 assessed -> $64,676,064/yr estimated
 
 -- 5. GAPS (each names its unblock) --
   none - Richmond properties, MF, units, sales, values and tax estimates are all present.
