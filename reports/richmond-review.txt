@@ -1,20 +1,20 @@
-autopilot richmondreview @ 2026-09-23T10:40:23
+autopilot richmondreview @ 2026-09-23T11:39:56
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-23T10:40:26
+RICHMOND REVIEW  @ 2026-09-23T11:39:59
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
-Richmond properties total: 72,893
+Richmond properties total: 72,879
   with unit data:  671
 Multifamily (units>=10): 671
   units:          n=671  min=10  median=28  max=1,052
   year built:     1840-2026
-  assessed value: n=670  min=2,000  median=3,029,000  max=121,303,000
+  assessed value: n=670  min=1,000  median=2,950,000  max=121,303,000
 
 -- 2. Raw Richmond assessor rows on hand --
     76,976  2026-09-18T16:15:12  files:rva.gov/assessor-real-estate
-     6,570  2026-09-23T10:17:29  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
+    76,739  2026-09-23T11:15:21  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
      6,570  2026-09-23T05:13:38  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
      5,017  2026-09-18T05:16:28  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
 
@@ -22,12 +22,12 @@ Multifamily (units>=10): 671
   files:rva.gov/assessor-real-estate
     rows=76,976  apn=76,976 (sample: C0010124002)  units=0  assessed_value=76,765  use_code=76,976
     coords=0  units+coords=0  apn shapes=['1a10d', '1a10d1a']
+  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_B
+    rows=76,739  apn=76,739 (sample: C0010124008)  units=0  assessed_value=0  use_code=0
+    coords=76,739  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
     coords=6,570  units+coords=0  apn shapes=['1a10d', '1a10d1a']
-  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
-    rows=6,570  apn=6,569 (sample: N0001746010)  units=0  assessed_value=6,563  use_code=6,567
-    coords=6,569  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/se
     rows=5,017  apn=5,017 (sample: W0000911052)  units=5,017  assessed_value=0  use_code=0
     coords=5,017  units+coords=5,017  apn shapes=['1a10d', '1a10d1a']
@@ -44,13 +44,7 @@ Multifamily (units>=10): 671
       UnitCount = 1
       _derived = distinct dwelling-unit addresses in the city mas
       ----------------------------------------
-  rva.gov-files join health: 11,142 of 76,976 workbook parcels match an API-feed parcel
-  alias candidates (API attribute -> workbook apn overlap, first 4,000 rows per source):
-     4,000  PIN  @ https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis
-     3,748  PIN_1  @ https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/
-     3,748  PIN_1  @ https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/
-     3,747  PIN  @ https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/
-     3,747  PIN  @ https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/
+  rva.gov-files join health: 76,719 of 76,976 workbook parcels match an API-feed parcel
   address coverage per source (usable normalized addresses / with units):
      76,063 addrs        0 of them carry units   files:rva.gov/assessor-real-estate
 
@@ -73,8 +67,8 @@ sale rows: 84,148
     2026-05-18  $540,000  -> MOFFETT TAYLOR ANNE
 
 -- 4. Estimated real-estate tax (rate $1.20/$100 assessed; ER_RICHMOND_TAX_RATE) --
-  MF annual tax:  n=670  min=24  median=36,348  max=1,455,636
-  MF tax base:    $5,490,943,000 assessed -> $65,891,316/yr estimated
+  MF annual tax:  n=670  min=12  median=35,400  max=1,455,636
+  MF tax base:    $5,398,102,000 assessed -> $64,777,224/yr estimated
 
 -- 5. GAPS (each names its unblock) --
-  [GAP] rva.gov workbook rows do NOT join the parcel backbone (11,142/76,976 apn matches) - their units/values enrich nothing. The alias-candidate lines above name the raw attribute to alias in core/phase0.py.
+  none - Richmond properties, MF, units, sales, values and tax estimates are all present.
