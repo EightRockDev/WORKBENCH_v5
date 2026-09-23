@@ -1,8 +1,3 @@
-autopilot listings @ 2026-09-23T14:14:22
+autopilot listings @ 2026-09-23T15:16:37
 
-  [listings] favourites or scraper generation changed since the last pull - re-scraping despite freshness
-  [listings] rentcafe: Crossroads Landing East -> not_found
-  [listings] zillow: Crossroads Landing East -> not_found
-  [listings] apartments_com: Crossroads Landing East -> not_found
-  [listings] property_site: Crossroads Landing East -> not_found
-  [listings] wrote 4 rows (0 successful scrapes)
+  [listings] fresh (pulled within 7 days, 12 favourites, generation 2) - skipping; 469 rent_listings rows on hand
