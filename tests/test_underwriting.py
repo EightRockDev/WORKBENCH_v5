@@ -26,7 +26,9 @@ def test_wrapped_real_estate_taxes_do_not_crash_the_tab():
     }
     gpr, expenses = _derive_year1_inputs(
         _mk_deal(), sources, units=100, city="Norfolk")
-    assert gpr == 1_200_000
+    # V5.67.1.0.0: T-12 revenue is collected income, grossed up by the dialed
+    # vacancy (8%) so the model's own vacancy deduction lands back on it.
+    assert abs(gpr - 1_200_000 / 0.92) < 0.01
     assert expenses > 0
 
 

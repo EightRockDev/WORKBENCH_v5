@@ -31,13 +31,18 @@ from typing import Any
 import streamlit as st
 
 import config
-from core.calc import DebtTerms, build_cashflow, build_debt_schedule
+from core.calc import (
+    DebtTerms,
+    build_cashflow,
+    build_debt_schedule,
+    effective_year1_vacancy,
+)
 from core.irr import equity_multiple, lp_irr, project_irr
 from core.sensitivity import SensitivityBase, build_sensitivity
 from core.verdict import evaluate
 from core.waterfall import run_waterfall
+from core.year1_inputs import derive_year1_inputs
 from data.property_io import (
-    DealState,
     PropertyFolder,
     load_deal,
     load_sources,
@@ -47,24 +52,6 @@ from ui.components import section_card
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _derive_year1(deal: DealState, sources: dict[str, Any] | None) -> tuple[float, float]:
-    if sources:
-        rev = sources.get("totalRevenue")
-        opex = sources.get("totalOpex")
-        if rev and opex:
-            try:
-                rev_v = rev.get("value") if isinstance(rev, dict) else rev
-                opex_v = opex.get("value") if isinstance(opex, dict) else opex
-                if rev_v and opex_v:
-                    return float(rev_v), float(opex_v)
-            except (AttributeError, TypeError, ValueError):
-                pass
-    er = config.EXPENSE_RATIOS.get("C", 0.45)
-    vac = deal.vacancy_frac
-    denom = (1.0 - vac - er)
-    gpr = deal.noi / denom if denom > 0 else deal.noi / 0.5
-    return gpr, gpr * er
 
 
 def _save_api_key_to_env(env_path: Path, key: str) -> None:
@@ -139,7 +126,11 @@ def _build_summary_data(prop: dict[str, Any], folder: PropertyFolder | None):
     if deal is None:
         return None
     sources = load_sources(folder.path)
-    gpr, expenses = _derive_year1(deal, sources)
+    # Same Year-1 inputs and the same reposition-spike ramp as the
+    # Underwriting header / V2 stat bar, so the summary can never quote a
+    # different IRR than the screen it summarizes (V5.67.1.0.0).
+    gpr, expenses = derive_year1_inputs(
+        deal, sources, prop.get("units"), city=prop.get("city"))
 
     debt_terms = DebtTerms(
         loan_amount=deal.loan_amount,
@@ -148,9 +139,14 @@ def _build_summary_data(prop: dict[str, Any], folder: PropertyFolder | None):
         io_years=deal.io,
     )
     debt_sched = build_debt_schedule(debt_terms, deal.hp)
+    year1_eff_vac = effective_year1_vacancy(
+        base_vac=deal.vacancy_frac,
+        spike_pp=deal.vac_spike_pp / 100.0,
+        stabilization_months=deal.stabilization_months,
+    )
     cf = build_cashflow(
         year1_gpr=gpr,
-        year1_vacancy_pct=deal.vacancy_frac,
+        year1_vacancy_pct=year1_eff_vac,
         year1_expenses=expenses,
         rent_growth=deal.rent_growth,
         expense_growth=deal.expense_growth,
@@ -159,6 +155,8 @@ def _build_summary_data(prop: dict[str, Any], folder: PropertyFolder | None):
         hold_years=deal.hp,
         exit_cap=deal.exit_cap,
         equity_raise=deal.equity_raise,
+        stabilized_vacancy_pct=deal.vacancy_frac,
+        stabilization_year_break=1 if deal.stabilization_months <= 12 else 2,
         reno=deal.renovation_plan(),
         reno_capex_funding=deal.reno_capex_funding,
     )

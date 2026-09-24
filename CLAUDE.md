@@ -120,6 +120,15 @@ Run `uv run pytest` bare.
   reports/ from the repo each session; push fixes; the next cycle applies
   them. Never ask the owner to run .bats for tuning again -
   `install-autopilot.bat` was their last required double-click.
+- **One Year-1 derivation, never a copy (2026-09-24, V5.67.1.0.0)**: every
+  surface that calls `build_cashflow` gets its Year-1 GPR + expenses from
+  `core/year1_inputs.py`. Four hand-copied versions of that logic drifted
+  and produced a 6.73% cap beside a -22.4% IRR on the same screen. Two
+  rules the copies had all broken: (1) the NOI dial is the anchor - at the
+  dialed vacancy with overlays off, Year-1 NOI in the projection equals
+  `deal.noi`; (2) a T-12 `totalRevenue` is COLLECTED income, never GPR -
+  gross it up before the model takes vacancy, or vacancy is charged twice.
+  `tests/test_year1_inputs.py` asserts the hand copies stay gone.
 - **Terminology: say "backbone", never "spine"** in anything the owner or an
   investor sees - reports, .bat text, UI copy, slides, docs (owner directive
   2026-07-29). Internal identifiers (core/spine.py, build_spine,

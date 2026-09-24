@@ -71,6 +71,7 @@ from core.irr import project_irr
 from core.risk_metrics import run_refi_exit_test
 from core.sensitivity import SensitivityBase, build_sensitivity
 from core.verdict import evaluate
+from core.year1_inputs import derive_year1_inputs
 from data.property_io import DealState, PropertyFolder, load_sources
 
 # ---------------------------------------------------------------------------
@@ -245,21 +246,9 @@ def _build_briefing(
         load_sources(folder.path) if folder is not None else None
     ) or {}
 
-    # ---- Year-1 GPR + expenses (T-12 if available, else NOI-derived) ----
-    rev = sources.get("totalRevenue")
-    opex = sources.get("totalOpex")
-    if rev and opex:
-        try:
-            gpr = float(
-                rev.get("value") if isinstance(rev, dict) else rev
-            )
-            expenses = float(
-                opex.get("value") if isinstance(opex, dict) else opex
-            )
-        except (TypeError, ValueError):
-            gpr, expenses = _gpr_from_noi(deal)
-    else:
-        gpr, expenses = _gpr_from_noi(deal)
+    # ---- Year-1 GPR + expenses: the ONE derivation every surface uses ----
+    gpr, expenses = derive_year1_inputs(
+        deal, sources, prop.get("units"), city=prop.get("city"))
 
     # ---- Debt schedule + 5-yr cash flow ----
     debt_terms = DebtTerms(
@@ -456,17 +445,6 @@ def _build_briefing(
         "verdict": _serialize(verdict),
     }
 
-
-def _gpr_from_noi(deal: DealState) -> tuple[float, float]:
-    """Fallback when no T-12: derive GPR + expenses from NOI + 45% Class C ER."""
-    er = config.EXPENSE_RATIOS.get("C", 0.45)
-    vac = deal.vacancy_frac
-    denom = 1.0 - vac - er
-    if denom <= 0:
-        gpr = deal.noi / 0.5
-    else:
-        gpr = deal.noi / denom
-    return gpr, gpr * er
 
 
 def _serialize(obj: Any) -> Any:

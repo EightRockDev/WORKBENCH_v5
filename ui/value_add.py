@@ -892,7 +892,7 @@ def _render_value_add_capex(
     # ---- Engine-measured impact: the deal WITH vs WITHOUT the program ----
     from core.calc import DebtTerms, build_debt_schedule, effective_year1_vacancy
     from core.renovation import renovation_impact
-    from ui.underwriting import _derive_year1_inputs  # lazy: avoids circular import
+    from core.year1_inputs import derive_year1_inputs as _derive_year1_inputs
 
     sources = load_sources(folder.path)
     gpr, expenses = _derive_year1_inputs(deal, sources, units, city=city)

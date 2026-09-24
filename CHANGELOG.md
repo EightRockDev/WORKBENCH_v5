@@ -12,6 +12,53 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.1.0.0 - 2026-09-24  .  One NOI, every surface. The IRR runs off the dial.
+
+Owner report (Hampton Community Townhomes, 120u, Hampton, $17.0M): the V2
+stat bar showed a 6.73% going-in cap next to a -22.4% five-year IRR, a 0.2x
+equity multiple and a 0.99x stabilized DSCR - and the model's own Year-5 NOI
+($931K) sat 19% BELOW the $1,144,070 going-in NOI on the same screen after
+five years of 3% rent growth. Two causes, one fix.
+
+1. The IRR ignored the NOI dial. Cap rate, DSCR Y1, cash-on-cash and debt
+   yield ran off `deal.noi`; the IRR / equity multiple / stabilized DSCR were
+   rebuilt from the T-12 file (`totalRevenue - totalOpex`) and never saw the
+   analyst's number. The NOI tooltip said "used by the cash-flow model"; with
+   a T-12 attached that was false.
+2. Vacancy was taken twice. `totalRevenue` is COLLECTED income - vacancy,
+   write-offs, concessions and the HUD abatement were already out of it. Four
+   hand-copied derivations (Underwriting/V2, exec summary, waterfall, artifact
+   engine) handed it to `build_cashflow` as gross potential rent, which took
+   the dialed 7% off again (13.7% in years 1-2 with the default spike).
+
+Fix - `core/year1_inputs.py` is now the only place Year-1 GPR + expenses are
+derived, and every surface imports it:
+
+- T-12 revenue is grossed up to potential rent (`egi / (1 - vacancy)`) so the
+  model's single vacancy deduction lands back on the T-12 figure.
+- Expenses are whatever reconciles collected income to the dial
+  (`egi - deal.noi`). Dial on the T-12 NOI -> the T-12 opex line, unchanged.
+  Dial up or down -> every projection moves one-for-one, not just the cap card.
+- Reposition spike and post-sale tax / insurance overlays layer on top exactly
+  as before. The no-T-12 fallback was already anchored to the dial; unchanged.
+- Exec summary and LP waterfall now also apply the same reposition-spike ramp
+  as the Underwriting header, so a summary can never quote a different IRR
+  than the screen it summarizes.
+- Calibration panel "Vacancy" row read a fixed 8.00% for months; it now shows
+  the deal's dial (8% only when no deal is saved).
+- NOI dial tooltip rewritten to say what the number actually drives.
+
+Hampton Community at the same dials, after: Year-1 NOI = $1,144,070, NOI grows
+with rents, IRR ~ +10%, EM ~ 1.5x - thin, positive, and what a 6.7% cap on a
+6.25% / 25-yr loan implies. (At $17M the deal is still a NO-GO on Eight Rock
+hurdles; the -22% was the model, the thinness is real.)
+
+Tests: `tests/test_year1_inputs.py` (11) pin the anchor invariant, the
+single-vacancy invariant, the overlays, the Hampton regression, and that all
+four surfaces import the one function (the hand copies are asserted gone).
+`tests/test_underwriting.py` pin updated to the grossed-up GPR. Full suite
+1,525 passed / 92 skipped.
+
 ## V5.67.0.4.0 — 2026-09-11  ·  Discovery steps get a 15-minute leash.
 
 Twice now (09-04 evening, 09-11 early AM) a slow external portal held

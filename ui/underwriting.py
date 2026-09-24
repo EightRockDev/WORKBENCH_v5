@@ -30,11 +30,6 @@ from core.calc import (
 from core.irr import project_irr
 from core.market_data import get_macro_indicators, is_etl_available
 from ui.calibration_panel import render_market_calibration_panel
-from core.mill_rates import (
-    DEFAULT_REASSESSMENT_RATIO,
-    estimated_post_sale_tax,
-    get_mill_rate,
-)
 from core.risk_metrics import run_refi_exit_test
 from core.sensitivity import SensitivityBase, build_sensitivity
 from core.verdict import evaluate
@@ -55,125 +50,11 @@ from ui.value_add import (
 
 
 # ---------------------------------------------------------------------------
-# Year-1 GPR + expenses derivation (T-12 if available, else defaults)
+# Year-1 GPR + expenses derivation lives in core.year1_inputs (V5.67.1.0.0).
+# The private name stays importable from here for the tests.
 # ---------------------------------------------------------------------------
 
-def _scalar(v: Any) -> float | None:
-    """Unwrap a sources.json value to a float, or None if there isn't one.
-
-    Entries are stored either bare (`1234`) or provenance-wrapped
-    (`{"value": 1234, "source": "T12"}`), and nested groups like
-    `t12_fixedCharges.realEstateTaxes` use the wrapped form too. Reading one
-    without unwrapping put a dict into an arithmetic comparison and crashed
-    the whole Underwriting tab, so every read goes through here.
-    """
-    if isinstance(v, dict):
-        v = v.get("value")
-    if isinstance(v, bool) or v is None:
-        return None
-    try:
-        return float(v)
-    except (TypeError, ValueError):
-        return None
-
-
-def _derive_year1_inputs(
-    deal: DealState,
-    sources: dict[str, Any] | None,
-    units: int | None,
-    *,
-    city: str | None = None,
-    pre_sale_tax: float | dict | None = None,
-) -> tuple[float, float]:
-    """Return (year1_gpr, year1_expenses) for the cash flow projection.
-
-    If sources.json has T-12 data (totalRevenue + totalOpex), use those.
-    Otherwise, derive from the deal's NOI + a class-based expense ratio.
-
-    Post-sale adjustments (Beardsley):
-      - tax_reassessment_on: full formula `(price × 85%) × mill_rate/100`
-        when city + price known; fallback to flat +6% opex proxy.
-      - insurance_escalator_on: +$50/unit/yr for agency debt. Default OFF.
-    """
-    if sources:
-        rev = sources.get("totalRevenue")
-        opex = sources.get("totalOpex")
-        # Pull pre-sale tax from sources.json if available
-        if pre_sale_tax is None:
-            t12 = sources.get("t12_fixedCharges")
-            if isinstance(t12, dict):
-                pre_sale_tax = _scalar(t12.get("realEstateTaxes"))
-        rev_v, opex_v = _scalar(rev), _scalar(opex)
-        if rev_v and opex_v:
-            return rev_v, _apply_expense_adjustments(
-                opex_v, units, deal,
-                city=city, purchase_price=deal.pp,
-                pre_sale_tax=pre_sale_tax,
-            )
-
-    # Derive from NOI + expense ratio: NOI = (1 - vac) * GPR - expenses;
-    # expenses = expense_ratio * GPR. Solve for GPR and expenses.
-    # Using class C default 45% expense ratio (per config).
-    er = config.EXPENSE_RATIOS.get("C", 0.45)
-    vac = deal.vacancy_frac
-    # NOI = GPR * (1 - vac) - GPR * er = GPR * (1 - vac - er)
-    denom = (1.0 - vac - er)
-    if denom <= 0:
-        # Pathological inputs; fall back to NOI / 0.5 as gpr
-        gpr = deal.noi / 0.5
-    else:
-        gpr = deal.noi / denom
-    expenses = gpr * er
-    return gpr, _apply_expense_adjustments(
-        expenses, units, deal,
-        city=city, purchase_price=deal.pp,
-        pre_sale_tax=pre_sale_tax,
-    )
-
-
-def _apply_expense_adjustments(
-    base_expenses: float,
-    units: int | None,
-    deal: DealState,
-    *,
-    city: str | None = None,
-    purchase_price: float | None = None,
-    pre_sale_tax: float | dict | None = None,
-) -> float:
-    """Apply post-sale tax reassessment + agency-debt insurance premium.
-
-    Reassessment uses the FULL Beardsley formula when city + purchase price
-    are known: new_tax = (purchase × 85%) × (mill_rate / 100). The DELTA
-    over the seller's pre-sale tax is added to base expenses. Falls back
-    to the conservative +6% opex proxy when inputs are missing.
-    """
-    adjusted = base_expenses
-    # Callers should pass a number, but this runs against user-edited JSON —
-    # normalize rather than trust, so a bad file degrades to the fallback
-    # estimate instead of taking down the tab.
-    pre_sale_tax = _scalar(pre_sale_tax)
-    if deal.tax_reassessment_on:
-        if city and purchase_price and purchase_price > 0:
-            new_tax = estimated_post_sale_tax(purchase_price, city, DEFAULT_REASSESSMENT_RATIO)
-            # If we know the seller's old tax line, add the DELTA. Otherwise
-            # add the full new tax assuming the seller's tax was already
-            # baked into base_expenses at a roughly 30%-of-opex share that
-            # we can't extract — so fall back to delta-vs-implied-old-tax.
-            if pre_sale_tax and pre_sale_tax > 0:
-                delta = new_tax - pre_sale_tax
-                adjusted += max(delta, 0.0)
-            else:
-                # Estimate seller's old tax as ~30% of base opex, add only the
-                # difference. This is more accurate than the flat +6% proxy.
-                implied_old_tax = base_expenses * 0.30
-                delta = new_tax - implied_old_tax
-                adjusted += max(delta, 0.0)
-        else:
-            # No city / price known — fall back to flat +6% proxy
-            adjusted += base_expenses * 0.06
-    if deal.insurance_escalator_on and units:
-        adjusted += 50.0 * float(units)
-    return adjusted
+from core.year1_inputs import derive_year1_inputs as _derive_year1_inputs  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -356,7 +237,10 @@ def _render_dials(
             noi_label = "NOI ($/year)"
 
         noi_help = (
-            "Annual NOI used by the cash-flow model. Type exact value or "
+            "Year-1 NOI at the dialed vacancy. The cap rate, DSCR, cash-on-cash, "
+            "IRR and equity multiple all run from this one number; the "
+            "reposition spike and post-sale tax step-up layer on top. Type "
+            "exact value or "
             "step by $1,000 with ↑/↓. "
         )
         if t12_noi:

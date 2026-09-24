@@ -3065,10 +3065,21 @@ def render_v2_inspector(prop: dict, metrics: dict | None = None) -> None:
         state = _state(dscr_st >= 1.30, warn=dscr_st >= 1.20)
         cal_rows.append(_row("DSCR stab", f"{dscr_st:.2f}×", "vs 1.30", state))
 
-    # Vacancy assumption (we use 8.0% headline, record city baseline as the threshold)
+    # Vacancy assumption: the deal's own dial (V5.67.1.0.0 - this row showed a
+    # fixed 8.00% for months regardless of what the slider said), falling
+    # back to the 8% Eight Rock stabilized standard when no deal is saved.
     vac_t = th_by_name.get("VACANCY_DEFAULT")
     if vac_t:
-        you_vac = 0.08  # standard Eight Rock stabilized vacancy
+        you_vac = 0.08
+        try:
+            from data.property_io import load_deal as _load_vac
+            if folder := m.get("folder"):
+                if hasattr(folder, "path"):
+                    _d3 = _load_vac(folder.path)
+                    if _d3 is not None:
+                        you_vac = float(_d3.vacancy_frac)
+        except Exception:
+            pass
         prop_vac = vac_t.effective_value
         state = "warn" if you_vac < prop_vac else "pos"
         cal_rows.append(_row("Vacancy", _fmt_pct(you_vac), f"vs record {_fmt_pct(prop_vac)}", state))
@@ -3544,7 +3555,7 @@ def gather_metrics(prop: dict, folder: Any = None) -> dict:
                     effective_year1_vacancy,
                 )
                 from core.irr import project_irr
-                from ui.underwriting import _derive_year1_inputs
+                from core.year1_inputs import derive_year1_inputs as _derive_year1_inputs
                 import config
 
                 # Reload sources.json as a raw dict (the underwriting helper expects this shape)

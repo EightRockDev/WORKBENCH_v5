@@ -196,6 +196,20 @@
   (build_cashflow), and make the panel report the engine's own with/without
   difference. Guard the seam with an AST test over every call site.
 
+## One NOI, every surface (2026-09-24)
+
+- **A headline card and the IRR engine must read the same NOI, and a T-12
+  "total revenue" is collected income, never potential rent.** Owner report:
+  a 6.73% going-in cap beside a -22.4% five-year IRR on Hampton Community
+  Townhomes. The cap ran off the NOI dial; the IRR was rebuilt from the
+  T-12 file in four separately hand-copied derivations, each treating
+  collected income as GPR so vacancy came off twice, and none of them
+  seeing the dial. Same lesson class as 2026-08-31: put the rule in ONE
+  core function (`core/year1_inputs.py`), make every surface import it,
+  and pin the invariant with a test that asserts the copies are gone.
+  The tell this time: the model's Year-5 NOI was BELOW its own going-in
+  NOI after five years of rent growth. A projection whose stabilized NOI
+  is lower than its going-in NOI is broken before you read another number.
 ## Session log (append-only, date-stamped)
 
 - **2026-08-11:** File created (owner directive). Seeded with the standing
@@ -264,3 +278,11 @@
   failing against expectations, read the RAW DATA before building a
   cleverer join - the geometry bridge, the apn shapes, and the address
   pass were all correct engineering against the wrong-city premise.
+
+- **2026-09-24 (IRR off the dial):** V5.67.1.0.0 - one Year-1 derivation in
+  core, four hand copies removed, vacancy charged once, dial NOI is the
+  anchor; calibration "Vacancy" row now reads the dial instead of a fixed
+  8%. Hampton Community moved from -22.4% to ~+10% IRR at unchanged dials.
+  Built and tested in a cloud chat session (1,525 passed); pushed by the
+  owner from the laptop clone with push-irr-fix.ps1 because the cloud
+  session cannot push to this repo.
