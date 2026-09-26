@@ -1,8 +1,10 @@
-autopilot alerts @ 2026-09-26T00:31:27
+autopilot alerts @ 2026-09-26T02:32:01
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 10106 - new_mf 10104, units_jump 2
-  showing the 25 most recent of 10106
+alert sweep, NEW this cycle: 2 multifamily, 0 unit-count moves, 1 ownership changes
+OPEN alerts (carried forward): 10108 - new_mf 10106, units_jump 2
+  showing the 25 most recent of 10108
+  [new_mf] New multifamily on the backbone: 524 BIG SPRING RD  (187 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 0  Brentwood Park LN   (36 units · Winston-Salem)
   [units_jump] Unit count moved: 1600  Ingram Ave   (228 -> 94 units · Richmond)
   [new_mf] New multifamily on the backbone: 403 Stockton St   (134 units · Richmond)
   [new_mf] New multifamily on the backbone: 2001 Lakeview Ave   (24 units · Richmond)
@@ -26,5 +28,3 @@ OPEN alerts (carried forward): 10106 - new_mf 10104, units_jump 2
   [new_mf] New multifamily on the backbone: 1654 Overbrook Road   (51 units · Richmond)
   [new_mf] New multifamily on the backbone: 8 1/2 W Canal St   (548 units · Richmond)
   [new_mf] New multifamily on the backbone: 4309 Grove Ave   (12 units · Richmond)
-  [new_mf] New multifamily on the backbone: 3301 Grove Ave   (18 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1030 W Franklin St   (53 units · Richmond)
