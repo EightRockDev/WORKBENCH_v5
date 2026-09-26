@@ -1,4 +1,4 @@
-autopilot discover_national @ 2026-09-26T17:08:48
+autopilot discover_national @ 2026-09-26T18:08:43
 
 [national-discovery] probing top-50 metros for free parcel feeds...
 Probing GIS portals for unit-bearing parcel layers (50 national metros)...
@@ -17,7 +17,6 @@ Probing GIS portals for unit-bearing parcel layers (50 national metros)...
    [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 224 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 76 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 244 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 310 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Atlanta: Atlanta Main Street District Boundaries: only 182 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Raleigh: Raleigh County 830 Dilapidated Structures: only 830 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Raleigh: I_87 Parcel Development Potential Data: only 53 records - kept but demoted, a citywide roll should have >= 5,000
