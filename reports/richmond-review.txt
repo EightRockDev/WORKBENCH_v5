@@ -1,11 +1,11 @@
-autopilot richmondreview @ 2026-09-26T11:29:22
+autopilot richmondreview @ 2026-09-26T12:38:17
 
 ================================================================
-RICHMOND REVIEW  @ 2026-09-26T11:29:24
+RICHMOND REVIEW  @ 2026-09-26T12:38:20
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
-Richmond properties total: 72,955
+Richmond properties total: 72,939
   with unit data:  671
 Multifamily (units>=10): 671
   units:          n=671  min=10  median=28  max=1,052
@@ -14,7 +14,7 @@ Multifamily (units>=10): 671
 
 -- 2. Raw Richmond assessor rows on hand --
     76,976  2026-09-23T16:15:57  files:rva.gov/assessor-real-estate
-    76,739  2026-09-23T11:15:21  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
+    76,879  2026-09-26T12:13:49  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
      6,570  2026-09-26T05:14:06  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
      5,009  2026-09-25T06:14:59  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
 
@@ -23,8 +23,8 @@ Multifamily (units>=10): 671
     rows=76,976  apn=76,976 (sample: C0010124002)  units=0  assessed_value=76,786  use_code=76,976
     coords=0  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_B
-    rows=76,739  apn=76,739 (sample: C0010124008)  units=0  assessed_value=0  use_code=0
-    coords=76,739  units+coords=0  apn shapes=['1a10d', '1a10d1a']
+    rows=76,879  apn=76,879 (sample: C0010126019)  units=0  assessed_value=0  use_code=0
+    coords=76,879  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
     coords=6,570  units+coords=0  apn shapes=['1a10d', '1a10d1a']
@@ -44,7 +44,7 @@ Multifamily (units>=10): 671
       UnitCount = 2
       _derived = distinct dwelling-unit addresses in the city mas
       ----------------------------------------
-  rva.gov-files join health: 76,654 of 76,976 workbook parcels match an API-feed parcel
+  rva.gov-files join health: 76,821 of 76,976 workbook parcels match an API-feed parcel
   address coverage per source (usable normalized addresses / with units):
      76,047 addrs        0 of them carry units   files:rva.gov/assessor-real-estate
 
