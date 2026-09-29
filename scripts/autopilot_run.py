@@ -97,9 +97,23 @@ STEPS = (
 )
 
 
+# A git call over a stalled connection (or a credential prompt nobody can
+# answer) blocks forever, and Task Scheduler stands down every later cycle
+# while this one is still "running". Timed-out calls come back as exit 124
+# so callers treat them like any other failed git command.
+GIT_TIMEOUT = int(os.environ.get("ER_AUTOPILOT_GIT_TIMEOUT", "300"))
+
+
 def git(*args: str, root: Path = ROOT) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=root,
-                          capture_output=True, text=True)
+    try:
+        return subprocess.run(["git", *args], cwd=root,
+                              capture_output=True, text=True,
+                              timeout=GIT_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(
+            ["git", *args], 124, stdout="",
+            stderr=f"git {' '.join(args[:1])} timed out after "
+                   f"{GIT_TIMEOUT}s")
 
 
 # No single step may wedge the cycle (2026-08-11: the 6:00 AM cycle hung

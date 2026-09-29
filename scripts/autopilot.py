@@ -18,8 +18,15 @@ REMOTE = "https://github.com/EightRockDev/WORKBENCH_v5.git"
 
 
 def git(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=ROOT,
-                          capture_output=True, text=True)
+    # A hung fetch here wedges the whole chain: Task Scheduler stands down
+    # every later cycle while this one still runs. Time out, fail visibly.
+    try:
+        return subprocess.run(["git", *args], cwd=ROOT,
+                              capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(
+            ["git", *args], 124, stdout="",
+            stderr="git " + " ".join(args[:1]) + " timed out after 300s")
 
 
 def main() -> int:

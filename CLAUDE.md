@@ -968,6 +968,16 @@ scale this is intolerable. Non-negotiable rules:
    skips, the report line must say WHY ("no token visible" vs
    "already pulled") - a bare "skipping" hides the variable you're
    actually debugging.
+16. **Every subprocess in the always-on loop needs a timeout - git too.**
+   Steps had a 1-hour kill timer since 2026-08-11, but both autopilot
+   scripts ran `git` with none. The chain went silent after the 17:26
+   publish on 2026-09-28 with no heartbeat for 11+ hours. A stalled push
+   or an unanswerable credential prompt blocks forever, and Task
+   Scheduler stands down every later cycle while it "runs". (Could not
+   be proven remotely: an owner sign-out/reboot fits too, since the task
+   only runs while signed in.) git now times out at 300s and returns
+   exit 124 like any other failure. When a silence starts right after a
+   successful publish, check the untimed calls before blaming a step.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /

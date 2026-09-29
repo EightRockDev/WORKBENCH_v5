@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.1.1.0 - 2026-09-29  .  The autopilot's git calls can no longer hang forever.
+
+The chain went silent on 2026-09-28 after the 17:26 saleindex publish:
+no phase0 report, no heartbeat for 11+ hours. Every data step has had a
+1-hour kill timer since 2026-08-11, but both autopilot scripts called
+`git` with no timeout at all. A push over a stalled connection, or a
+credential prompt no one can answer, blocks indefinitely, and Task
+Scheduler stands down every later cycle while that one still "runs".
+
+- `scripts/autopilot_run.py` (stage 2) and `scripts/autopilot.py`
+  (stage 1, the stable pre-update file, kept to the smallest possible
+  change) now time git out at 300s (`ER_AUTOPILOT_GIT_TIMEOUT` for
+  stage 2) and return exit 124, so callers see an ordinary failed git
+  command and the cycle moves on.
+- Tests simulate a hung git in both stages, and stage 1's `main()`
+  exits non-zero with "fetch failed" instead of freezing.
+- Not proven to be the cause: the task only runs while the owner is
+  signed in, so a sign-out or overnight restart fits the same silence.
+  This closes the gap either way; the host needs a restart to resume.
+
 ## V5.67.1.0.0 - 2026-09-24  .  One NOI, every surface. The IRR runs off the dial.
 
 Owner report (Hampton Community Townhomes, 120u, Hampton, $17.0M): the V2
