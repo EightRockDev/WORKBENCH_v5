@@ -978,6 +978,11 @@ scale this is intolerable. Non-negotiable rules:
    only runs while signed in.) git now times out at 300s and returns
    exit 124 like any other failure. When a silence starts right after a
    successful publish, check the untimed calls before blaming a step.
+   Follow-up 2026-09-29: it went silent AGAIN an hour after restarting,
+   this time before the pull step. Two different steps, both heavy, both
+   mid-cycle: make the machine report its own power history (uptime +
+   System-log shutdown/sleep/sign-out events, in the heartbeat) instead
+   of guessing from the silence a third time.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /

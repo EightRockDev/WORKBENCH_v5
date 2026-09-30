@@ -12,6 +12,27 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.1.2.0 - 2026-09-30  .  The heartbeat says why the last cycle stopped.
+
+The chain went silent mid-cycle twice in two days: 2026-09-28 after the
+17:26 saleindex publish, and 2026-09-29 after the 13:12 salesdiscovery
+publish, about an hour after the owner brought it back. Both stop points
+were right before a heavy data step (phase0, pull). From the outside a
+shutdown, a sleep, a sign-out and a hung step look identical, so the
+cause is still unproven.
+
+- `scripts/heartbeat.py` now also prints the machine's uptime (a reboot
+  resets it) and the last 3 days of power/session events from the
+  Windows System log: shutdown requested, clean or UNEXPECTED shutdown,
+  sleep, wake, sign-in, sign-out. The first heartbeat after the next
+  restart answers what happened with no inference required.
+- The event-log read has a 60s timeout, and the heartbeat still always
+  exits 0: a failed history read prints "unavailable" and nothing else
+  changes.
+- Tests cover parsing real wevtutil text (including a same-id event from
+  a different provider that must be ignored), the timeout, and the
+  always-exit-0 rule.
+
 ## V5.67.1.1.0 - 2026-09-29  .  The autopilot's git calls can no longer hang forever.
 
 The chain went silent on 2026-09-28 after the 17:26 saleindex publish:
