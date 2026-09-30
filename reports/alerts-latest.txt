@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-09-28T16:30:40
+autopilot alerts @ 2026-09-30T18:47:39
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 2 ownership changes
 OPEN alerts (carried forward): 10108 - new_mf 10106, units_jump 2
   showing the 25 most recent of 10108
   [new_mf] New multifamily on the backbone: 524 BIG SPRING RD  (187 units · Raleigh)
