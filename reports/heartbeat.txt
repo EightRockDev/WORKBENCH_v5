@@ -1,9 +1,20 @@
-autopilot heartbeat @ 2026-09-29T13:00:19
+autopilot heartbeat @ 2026-09-30T16:00:20
 
 ALIVE
-cycle started : 2026-09-29T13:00:19-04:00
-version       : V5.67.1.1.0
+cycle started : 2026-09-30T16:00:20-04:00
+version       : V5.67.1.2.0
 host          : DESKTOP-RINL8AD
+uptime        : 26.4 h (booted 2026-09-29T13:36)
+power/session events, last 3 days (newest first):
+  2026-09-29T14:10:00  user signed in
+  2026-09-29T13:36:58  rebooted without a clean shutdown
+  2026-09-29T13:34:35  clean shutdown
+  2026-09-29T13:34:34  user signed out
+  2026-09-29T13:34:26  shutdown/restart requested
+  2026-09-29T13:33:42  user signed in
+  2026-09-29T13:31:10  clean shutdown
+  2026-09-29T13:31:08  user signed out
+  2026-09-29T13:31:07  shutdown/restart requested
 
 If the timestamp above is more than ~2 hours old, the autopilot
 chain is DOWN - run fix-autopilot-task.bat on the office machine.
