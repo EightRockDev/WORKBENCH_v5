@@ -1,7 +1,8 @@
-autopilot discover @ 2026-10-01T03:00:24
+autopilot discover @ 2026-10-01T05:00:19
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
 
+   [   0s] probing Virginia Beach...
 
 !! step killed after 900s (ER_AUTOPILOT_STEP_TIMEOUT / _DISCOVER_TIMEOUT) - a hung step must never wedge the cycle
