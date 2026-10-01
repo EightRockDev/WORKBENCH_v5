@@ -23,7 +23,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -524,16 +526,41 @@ def socrata_sample_in_city(resource_url: str, city: str, soda=_soda_get) -> bool
     return inside >= outside
 
 
+# Discovery runs under the autopilot's 900s step cap. A slow portal (each
+# request may legitimately wait TIMEOUT seconds, layer after layer) pushed
+# every run past the cap from 2026-10-01 on, and because results print
+# only at the end, the killed runs reported NOTHING - not even which city
+# stalled. Stop on our own budget instead, with whatever was found.
+BUDGET_S = int(os.environ.get("ER_DISCOVER_BUDGET_S", "720"))
+
+
+class Partial(dict):
+    """discover() result that also says whether the budget cut it short."""
+    cut_short_at: str | None = None
+
+
 def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
-             soda=_soda_get) -> dict[str, list[dict]]:
+             soda=_soda_get, budget_s: float | None = None,
+             clock=time.monotonic) -> dict[str, list[dict]]:
     """{city: [candidate FeedSpec dicts, best first]}.
 
     ``cities`` may be bare city strings (assumed VA, back-compat) or
-    ``(city, state)`` tuples for national discovery.
+    ``(city, state)`` tuples for national discovery. Stops starting new
+    cities once ``budget_s`` has elapsed; the result's ``cut_short_at``
+    names the first city that was skipped.
     """
-    out: dict[str, list[dict]] = {}
+    out: dict[str, list[dict]] = Partial()
+    start = clock()
+    budget = BUDGET_S if budget_s is None else budget_s
     for entry in cities:
         city, state = (entry if isinstance(entry, tuple) else (entry, "VA"))
+        elapsed = clock() - start
+        if elapsed > budget:
+            out.cut_short_at = city
+            print(f"   [budget] {elapsed:.0f}s used of {budget:.0f}s - "
+                  f"stopping before {city}", flush=True)
+            break
+        print(f"   [{elapsed:4.0f}s] probing {city}...", flush=True)
         candidates: list[tuple[int, dict]] = []
         roots = KNOWN_ROOTS.get(city, []) + list(extra_roots)
         sources = []
@@ -653,6 +680,8 @@ def main(argv=None) -> int:
     print("(a few minutes - each city's services are walked layer by layer)")
     print()
     found = discover(cities=targets, extra_roots=args.roots)
+    print()
+    cut = getattr(found, "cut_short_at", None)
 
     specs = [spec for lst in found.values() for spec in lst]
     for _t in targets:
@@ -668,7 +697,13 @@ def main(argv=None) -> int:
                   "hides fields until queried; send me this output)")
         print()
 
-    if specs:
+    if cut:
+        # A partial run must not shrink the feed list the pull step reads -
+        # every city we never reached would silently lose its feeds.
+        print(f"Run stopped early at {cut} (time budget). Found "
+              f"{len(specs)} spec(s) so far; data/feeds_extra.json left "
+              "UNCHANGED.")
+    elif specs:
         out_path = Path(__file__).resolve().parent.parent / "data" / "feeds_extra.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(specs, indent=2))

@@ -71,3 +71,57 @@ def test_the_threshold_is_below_the_smallest_hampton_roads_city():
     exclude a legitimate city roll."""
     assert PLAUSIBLE_ROLL_MIN < 30_000
     assert size_adjustment(30_000)[0] > 0
+
+
+# ------------------------------------------------ time budget (2026-10-01)
+
+def test_discover_stops_on_its_own_budget_and_says_where(capsys):
+    """From 2026-10-01 every run hit the autopilot's 900s kill and printed
+    nothing. discover() must stop starting cities once its budget is spent
+    and say which city it stopped before."""
+    import scripts.discover_feeds as d
+    ticks = iter([0, 0, 100, 900, 900])     # start, city1, city2, city3...
+    found = d.discover(cities=[("A", "VA"), ("B", "VA"), ("C", "VA")],
+                       fetch=lambda *a, **k: None,
+                       soda=lambda *a, **k: None,
+                       budget_s=600, clock=lambda: next(ticks))
+    assert found.cut_short_at == "C"
+    out = capsys.readouterr().out
+    assert "probing A" in out and "probing B" in out
+    assert "stopping before C" in out
+
+
+def test_partial_run_leaves_the_feed_list_untouched(tmp_path, monkeypatch,
+                                                    capsys):
+    """Overwriting feeds_extra.json with a partial result would silently
+    drop every feed for the cities never reached."""
+    import scripts.discover_feeds as d
+
+    def partial(**kw):
+        r = d.Partial({"Norfolk": [{"url": "u", "note": "n"}]})
+        r.cut_short_at = "Richmond"
+        return r
+    monkeypatch.setattr(d, "discover", partial)
+    written = []
+    monkeypatch.setattr(d.Path, "write_text",
+                        lambda self, *a, **k: written.append(self))
+    assert d.main(["--va"]) == 0
+    out = capsys.readouterr().out
+    assert "stopped early at Richmond" in out
+    assert "UNCHANGED" in out
+    assert not any(p.name == "feeds_extra.json" for p in written)
+
+
+def test_budget_fits_inside_the_autopilot_step_cap():
+    import importlib.util
+    import sys
+    from pathlib import Path
+    import scripts.discover_feeds as d
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "autopilot_run_b", root / "scripts" / "autopilot_run.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules["autopilot_run_b"] = m
+    spec.loader.exec_module(m)
+    # leave room for the last city in flight plus printing results
+    assert d.BUDGET_S <= m.STEP_TIMEOUTS["discover"] - 120

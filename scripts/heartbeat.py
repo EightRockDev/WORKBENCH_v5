@@ -70,16 +70,49 @@ def parse_events(text: str) -> list[str]:
     out: list[str] = []
     for block in text.split("Event["):
         fields: dict[str, str] = {}
-        for line in block.splitlines():
+        lines = block.splitlines()
+        for i, line in enumerate(lines):
             key, sep, val = line.strip().partition(":")
             if sep and key in ("Date", "Source", "Event ID") \
                     and key not in fields:
                 fields[key] = val.strip()
+            if key == "Description" and "desc" not in fields:
+                rest = [ln.strip() for ln in lines[i + 1:] if ln.strip()]
+                fields["desc"] = rest[0] if rest else val.strip()
         what = _POWER_EVENTS.get(
             (fields.get("Source", ""), fields.get("Event ID", "")))
         if what:
             out.append(f"  {fields.get('Date', '?')[:19]}  {what}")
+            # 1074 names the process and user that asked for the restart -
+            # Windows Update vs a person is the whole question.
+            if fields.get("Event ID") == "1074" and fields.get("desc"):
+                out.append(f"      {fields['desc'][:150]}")
     return out
+
+
+def task_status() -> list[str]:
+    """What Task Scheduler itself thinks: last run, last result, next run.
+    2026-09-29: no cycle ran for 26 hours while the owner was signed in,
+    and nothing on GitHub could say whether the task was even armed."""
+    if os.name != "nt":
+        return ["  n/a (not Windows)"]
+    try:
+        proc = subprocess.run(
+            ["schtasks", "/Query", "/TN", "EightRockWorkbenchAutopilot",
+             "/V", "/FO", "LIST"], capture_output=True, timeout=30)
+    except Exception as exc:
+        return [f"  could not query the task ({type(exc).__name__})"]
+    text = proc.stdout.decode("utf-8", errors="replace")
+    keep = ("Status", "Last Run Time", "Last Result", "Next Run Time",
+            "Logon Mode", "Repeat: Every", "Repeat: Until: Time",
+            "Repeat: Until: Duration", "Task To Run")
+    out = []
+    for line in text.splitlines():
+        key = line.partition(":")[0].strip()
+        if key in keep or any(line.strip().startswith(k) for k in keep
+                              if ":" in k):
+            out.append("  " + " ".join(line.split())[:150])
+    return out or ["  task not found"]
 
 
 def power_events() -> list[str]:
@@ -113,6 +146,9 @@ def main() -> int:
         print(f"uptime        : {uptime_text()}")
         print("power/session events, last 3 days (newest first):")
         for line in power_events():
+            print(line)
+        print("scheduled task (as Task Scheduler sees it):")
+        for line in task_status():
             print(line)
     except Exception as exc:
         print(f"power history : unavailable ({type(exc).__name__})")

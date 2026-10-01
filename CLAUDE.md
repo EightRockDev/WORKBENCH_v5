@@ -983,6 +983,15 @@ scale this is intolerable. Non-negotiable rules:
    mid-cycle: make the machine report its own power history (uptime +
    System-log shutdown/sleep/sign-out events, in the heartbeat) instead
    of guessing from the silence a third time.
+   Answer (2026-10-01 heartbeat): both were RESTARTS requested right
+   after a sign-in (09-29 13:34, 09-30 16:01), not hangs. The untimed
+   git calls were a real gap but not the cause. Asking the machine beat
+   two days of inference.
+17. **A step that prints only at the end reports nothing when killed.**
+   Discovery hit the 900s cap every cycle from 10-01 and each report
+   was a header plus "step killed". Long-running steps must print
+   progress as they go and stop on their own budget below the cap, and
+   a partial result must never overwrite a complete one.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /

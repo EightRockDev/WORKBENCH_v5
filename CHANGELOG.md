@@ -12,6 +12,31 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.1.3.0 - 2026-10-01  .  The outages were restarts; discovery stops on its own clock.
+
+The first heartbeat after the owner brought the host back (V5.67.1.2.0's
+power history) settled the cause of both silences: the machine was
+RESTARTED mid-cycle - a restart was requested at 13:34 on 09-29 (the
+13:00 cycle died in the pull step) and again at 16:01 on 09-30, each
+right after a sign-in. It was not a hung git call or a frozen step.
+
+- Open question the logs could not answer: no cycle ran for ~26 hours
+  after the 09-29 14:10 sign-in. The heartbeat now also prints what Task
+  Scheduler itself reports (status, last run, last result, next run,
+  logon mode, repeat settings) and, for every restart request, the
+  process and user that asked for it (Windows Update vs. a person).
+- Feed discovery (VA and national) has hit the autopilot's 900s kill on
+  every cycle since 10-01 and, because results print only at the end,
+  each killed run reported nothing. `discover()` now has its own 720s
+  budget (`ER_DISCOVER_BUDGET_S`), prints each city with elapsed time
+  as it goes, and stops cleanly before the cap. A run cut short leaves
+  `data/feeds_extra.json` UNCHANGED, because overwriting it with partial
+  results would drop the feeds of every city it never reached.
+- Tests: budget stop + "stopping before" message, partial run never
+  writes the feed list, budget fits inside the step cap, restart
+  initiator parsed from real wevtutil text, task-status query timed and
+  never raising.
+
 ## V5.67.1.2.0 - 2026-09-30  .  The heartbeat says why the last cycle stopped.
 
 The chain went silent mid-cycle twice in two days: 2026-09-28 after the
