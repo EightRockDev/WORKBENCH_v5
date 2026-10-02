@@ -1,8 +1,11 @@
-autopilot alerts @ 2026-10-02T13:30:03
+autopilot alerts @ 2026-10-02T14:49:21
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 10105 - new_mf 10103, units_jump 2
-  showing the 25 most recent of 10105
+alert sweep, NEW this cycle: 2 multifamily, 0 unit-count moves, 1 ownership changes
+  closed 1 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 10106 - new_mf 10104, units_jump 2
+  showing the 25 most recent of 10106
+  [new_mf] New multifamily on the backbone: 2900 BERRY TREE DR  (10 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 5100 THRIFTWOOD DR  (832 units · Raleigh)
   [new_mf] New multifamily on the backbone: 915 E 4th St   (169 units · Richmond)
   [new_mf] New multifamily on the backbone: 1618 Park Ave   (12 units · Richmond)
   [new_mf] New multifamily on the backbone: 1021 German School Road 1 Unit   (241 units · Richmond)
@@ -26,5 +29,3 @@ OPEN alerts (carried forward): 10105 - new_mf 10103, units_jump 2
   [new_mf] New multifamily on the backbone: 3940  Rosedale Ave   (78 units · Richmond)
   [new_mf] New multifamily on the backbone: 151 W Commerce Road   (14 units · Richmond)
   [new_mf] New multifamily on the backbone: 1654 Overbrook Road   (51 units · Richmond)
-  [new_mf] New multifamily on the backbone: 8 1/2 W Canal St   (548 units · Richmond)
-  [new_mf] New multifamily on the backbone: 4309 Grove Ave   (12 units · Richmond)
