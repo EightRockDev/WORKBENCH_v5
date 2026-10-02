@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-10-02T06:14:02
+autopilot phase0 @ 2026-10-02T07:23:36
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 3,247,264
@@ -14,33 +14,33 @@ Building the Eight Rock property backbone (properties_8r)...
 
 muni records scanned:      2,304,457
 parcels normalized:        2,304,457
-multifamily (>= 10 units): 11,349
+multifamily (>= 10 units): 11,350
 written to properties_8r:  2,304,457
 provisional (no-APN) ids:  1,497
 units derived from address points: 177  (skipped non-residential: 3,946)
-units bridged by geometry: 267  (Richmond 165, Atlanta 100, Raleigh 1, Winston-Salem 1)
+units bridged by geometry: 263  (Richmond 161, Atlanta 100, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 213
-rent estimates stamped (HUD FMR blend): 11,288
+rent estimates stamped (HUD FMR blend): 11,289
 rents from scraped listings: 2
 unusable (no parcel/latlng): 0
 pruned from backbone (known < 10 units): 737,424  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Richmond 5,707, Atlanta 1,981, Raleigh 1,626, Norfolk 866, Greensboro 860, Newport News 244, Chesapeake 61, Winston-Salem 3, Durham 1
+Multifamily by city: Richmond 5,708, Atlanta 1,981, Raleigh 1,626, Norfolk 866, Greensboro 860, Newport News 244, Chesapeake 61, Winston-Salem 3, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
   unit-bearing parcels   : 741,796
-  candidate parcels      : 576,310
-  merged                 : 115
-  rejected (too far)     : 589,806
-  rejected (same id form): 150,809
-  rejected (not mutual)  : 658
-  rejected (ambiguous)   : 408
-  merged by address      : 152
-  addr rejected (shared) : 803
+  candidate parcels      : 576,309
+  merged                 : 110
+  rejected (too far)     : 589,804
+  rejected (same id form): 150,820
+  rejected (not mutual)  : 655
+  rejected (ambiguous)   : 407
+  merged by address      : 153
+  addr rejected (shared) : 804
   addr rejected (coords) : 173
   Atlanta          sources 320,839  targets  67,390  merged    79   refused: far 252,547 / same-id 67,168 / not-mutual 651 / ambiguous 394   by-address 21 (shared 684, coords 16)
-  Richmond         sources   5,009  targets  72,147  merged    34   refused: far 580 / same-id 4,374 / not-mutual 7 / ambiguous 14   by-address 131 (shared 3, coords 1)
+  Richmond         sources   5,009  targets  72,146  merged    29   refused: far 578 / same-id 4,385 / not-mutual 4 / ambiguous 13   by-address 132 (shared 4, coords 1)
   Raleigh          sources 369,266  targets 132,448  merged     1   refused: far 297,654 / same-id 71,611 / not-mutual 0 / ambiguous 0   by-address 0 (shared 108, coords 156)
   Winston-Salem    sources       9  targets 167,450  merged     1   refused: far 8 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Durham           sources       4  targets 129,198  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
@@ -48,7 +48,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Norfolk          sources       0  targets       0  merged     0   refused: far 0 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 1, coords 0)
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
-  Richmond: R-48 Multi Family x1852, R-63 Multi Family Urban Res. x1595, R-53 Multi Family x1439, R-73 Multi Family x230, R-43 Multi Family x193
+  Richmond: R-48 Multi Family x1852, R-63 Multi Family Urban Res. x1596, R-53 Multi Family x1439, R-73 Multi Family x230, R-43 Multi Family x193
   Norfolk: Apartment x866
   Greensboro: MULTI-FAMILY<4 x839, MULTI-FAMILY5> x21
   Atlanta: C3 x809, C4 x640, C5 x278, C1 x62, R3 x52
@@ -62,7 +62,7 @@ Cities with parcels but NO multifamily found - their top use codes:
   Nashville: RS10 x38978, R10 x31914, SP x19406, RS7.5 x18980, RS15 x16482, R6 x14270, RS20 x12128, R8 x11618
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
-  Richmond: code only (no units): 5,036, units>=10: 671
+  Richmond: code only (no units): 5,037, units>=10: 671
   Norfolk: code only (no units): 863, units>=10: 3
   Greensboro: code only (no units): 860
   Atlanta: units>=10: 1,981
