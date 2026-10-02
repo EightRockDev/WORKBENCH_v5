@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-10-02T13:14:27
+autopilot phase0 @ 2026-10-02T14:33:59
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,247,264
+Assessor records available: 3,247,367
 
 Assessor feeds present (Hampton Roads):
   Chesapeake         92,684  .../OpenData/MapServer/15
@@ -12,28 +12,28 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 28 success rows -> 6 properties, 4 with usable rents, 2 in crosswalk -> 2 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b, a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
 
-muni records scanned:      2,304,457
-parcels normalized:        2,304,457
-multifamily (>= 10 units): 11,350
-written to properties_8r:  2,304,457
-provisional (no-APN) ids:  1,497
+muni records scanned:      2,304,560
+parcels normalized:        2,304,560
+multifamily (>= 10 units): 11,351
+written to properties_8r:  2,304,560
+provisional (no-APN) ids:  1,498
 units derived from address points: 177  (skipped non-residential: 3,946)
 units bridged by geometry: 263  (Richmond 161, Atlanta 100, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 213
-rent estimates stamped (HUD FMR blend): 11,289
+rent estimates stamped (HUD FMR blend): 11,290
 rents from scraped listings: 2
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 737,424  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 737,507  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Richmond 5,708, Atlanta 1,981, Raleigh 1,626, Norfolk 866, Greensboro 860, Newport News 244, Chesapeake 61, Winston-Salem 3, Durham 1
+Multifamily by city: Richmond 5,708, Atlanta 1,981, Raleigh 1,627, Norfolk 866, Greensboro 860, Newport News 244, Chesapeake 61, Winston-Salem 3, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 741,796
-  candidate parcels      : 576,309
+  unit-bearing parcels   : 741,880
+  candidate parcels      : 576,327
   merged                 : 110
-  rejected (too far)     : 589,804
-  rejected (same id form): 150,820
+  rejected (too far)     : 589,863
+  rejected (same id form): 150,845
   rejected (not mutual)  : 655
   rejected (ambiguous)   : 407
   merged by address      : 153
@@ -41,7 +41,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   addr rejected (coords) : 173
   Atlanta          sources 320,839  targets  67,390  merged    79   refused: far 252,547 / same-id 67,168 / not-mutual 651 / ambiguous 394   by-address 21 (shared 684, coords 16)
   Richmond         sources   5,009  targets  72,146  merged    29   refused: far 578 / same-id 4,385 / not-mutual 4 / ambiguous 13   by-address 132 (shared 4, coords 1)
-  Raleigh          sources 369,266  targets 132,448  merged     1   refused: far 297,654 / same-id 71,611 / not-mutual 0 / ambiguous 0   by-address 0 (shared 108, coords 156)
+  Raleigh          sources 369,350  targets 132,466  merged     1   refused: far 297,713 / same-id 71,636 / not-mutual 0 / ambiguous 0   by-address 0 (shared 108, coords 156)
   Winston-Salem    sources       9  targets 167,450  merged     1   refused: far 8 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Durham           sources       4  targets 129,198  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Newport News     sources  46,669  targets   7,677  merged     0   refused: far 39,017 / same-id 7,652 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
@@ -55,7 +55,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Chesapeake: 3352 x61
   Winston-Salem: (units only) x3
   Newport News: A x237, C x4, (units only) x2, R x1
-  Raleigh: (units only) x1626
+  Raleigh: (units only) x1627
   Durham: (units only) x1
 
 Cities with parcels but NO multifamily found - their top use codes:
@@ -69,7 +69,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Chesapeake: learned code (no units): 61
   Winston-Salem: units>=10: 3
   Newport News: units>=10: 244
-  Raleigh: units>=10: 1,626
+  Raleigh: units>=10: 1,627
   Durham: units>=10: 1
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
@@ -77,7 +77,7 @@ Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Greensboro: CentroidXCoordinate, CentroidYCoordinat, NumberOfParts, INSIDE_X, INSIDE_Y, ORIG_FID, Owner_History, Total_Building_Value, DEED_DATE, Short_Parcel_ID, PARCEL_PK, Condo, LOCATION_ADDR, Plat, Lot_Size, PROPERTY_DESCR, Total_Land_Value, TOTAL_DEFERRED_VALUE, Total_Out_Building_Value, BLDG_CARD, Appraisal_Model_Code, GRADE, Structure_Size, Bathrooms
   Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, TotAssess, TotAppr, ImprAppr, AddrNumber, LandAssess, ImprAssess, LandAppr, OwnerAddr1, OwnerAddr2, LandAcres, AddrSuffix, ExCode, SITECITY, SITESTATE, TOT_APPR, LOWPARCELID, CNTASSDVAL, CVTTXCD
   Winston-Salem: BLKCNTRL, BLK, LOT, BLKLOT, TBLCNTRL, CNTRL, TAXPIN, TAXPIN_N, PINMAP, PINBLK, PINLOT, PINLOT_A, CALCULATEDACREAGE, TAXPIN16, PINLOT16, MLOT, PARCEL_PK, BLOCKLOT, REID_1, CURRENTOWNERADDRESS, CURRENTDEEDDATE, CURRENTDEEDSTAMPS, ASSESSMENTMETHOD, LASTQUALIFIEDSALEPRICE
-  Raleigh: PIN_NUM, CALC_AREA, PARCEL_PK, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE, OWNERSHIP, ACTIVITY, FUNCTION, STRUCTURE, SITE, TOTSTRUCTS, TOTUNITS, OLD_PARCEL_NUMBER, DEED_DATE, ADDR2, TOTAL_VALUE_ASSD, PLANNING_JURISDICTION
+  Raleigh: CALC_AREA, PIN_NUM, PARCEL_PK, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE, OWNERSHIP, ACTIVITY, FUNCTION, STRUCTURE, SITE, TOTSTRUCTS, TOTUNITS, OLD_PARCEL_NUMBER, DEED_DATE, ADDR2, TOTAL_VALUE_ASSD, PLANNING_JURISDICTION
   Durham: FEATURE_KEY, PARCEL_TYPE, PARCEL_PK, AUT_SNAPSHOT_DATE, PIN_EXT, PIN_MAP, PIN_BLOCK, PIN_LOT, PROPERTY_DESCR, LOCATION_ADDR, SPEC_DIST, SPEC_DIST_PCNT, TOWNSHIP, CALCULATED_ACRES, DEEDED_ACRES, PROPERTY_OWNER, OWNER_MAIL_1, PHYADDR_LOCID, PHYADDR_STR_NUM, PHYADDR_STR, PHYADDR_STATE, VALUE_APPROACH, DEED_DATE, DEED_PATH
   Nashville: STANPAR, FEATURETYPE, OwnDate, OwnInstr, PropHouse, PropState, LegalDesc, PropInstr, PropDate, Front, Side, Council, Tract, PropCity, PropZip, OwnState, OwnCountry, PropStreet, OwnAddr1, OwnCity, OwnZip, IsRegular, TaxDist, LandAppr
 
