@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-10-03T17:28:28
+autopilot richmondreview @ 2026-10-03T19:21:59
 
 ================================================================
-RICHMOND REVIEW  @ 2026-10-03T17:28:31
+RICHMOND REVIEW  @ 2026-10-03T19:22:02
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
@@ -13,7 +13,7 @@ Multifamily (units>=10): 671
   assessed value: n=670  min=1,000  median=3,006,000  max=121,303,000
 
 -- 2. Raw Richmond assessor rows on hand --
-    76,976  2026-09-28T17:14:16  files:rva.gov/assessor-real-estate
+    76,976  2026-10-03T18:55:50  files:rva.gov/assessor-real-estate
     76,879  2026-09-30T19:14:21  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
      6,570  2026-09-30T19:15:16  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
      5,009  2026-10-02T07:15:06  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
