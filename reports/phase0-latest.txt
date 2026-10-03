@@ -1,38 +1,38 @@
-autopilot phase0 @ 2026-10-03T17:14:21
+autopilot phase0 @ 2026-10-03T19:08:25
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 3,247,367
+Assessor records available: 3,247,724
 
 Assessor feeds present (Hampton Roads):
   Chesapeake         92,684  .../OpenData/MapServer/15
   Newport News       54,443  .../Parcel/MapServer/0
-  Norfolk            74,321  .../data.norfolk.gov/resource/qva7-tzrf.json
+  Norfolk            74,311  .../data.norfolk.gov/resource/qva7-tzrf.json
 
 Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 28 success rows -> 6 properties, 4 with usable rents, 2 in crosswalk -> 2 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b, a82b6f2d-8173-4b06-a8d1-d76ffc6e9e9f
 
-muni records scanned:      2,304,560
-parcels normalized:        2,304,560
-multifamily (>= 10 units): 11,351
-written to properties_8r:  2,304,560
-provisional (no-APN) ids:  1,498
-units derived from address points: 177  (skipped non-residential: 3,946)
+muni records scanned:      2,304,917
+parcels normalized:        2,304,917
+multifamily (>= 10 units): 11,392
+written to properties_8r:  2,304,917
+provisional (no-APN) ids:  1,497
+units derived from address points: 181  (skipped non-residential: 3,946)
 units bridged by geometry: 263  (Richmond 161, Atlanta 100, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 213
-rent estimates stamped (HUD FMR blend): 11,290
+rent estimates stamped (HUD FMR blend): 11,331
 rents from scraped listings: 2
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 737,507  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 737,510  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Richmond 5,708, Atlanta 1,981, Raleigh 1,627, Norfolk 866, Greensboro 860, Newport News 244, Chesapeake 61, Winston-Salem 3, Durham 1
+Multifamily by city: Richmond 5,708, Atlanta 1,981, Raleigh 1,627, Greensboro 900, Norfolk 866, Newport News 244, Chesapeake 61, Winston-Salem 4, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 741,880
-  candidate parcels      : 576,327
+  unit-bearing parcels   : 741,884
+  candidate parcels      : 576,320
   merged                 : 110
-  rejected (too far)     : 589,863
+  rejected (too far)     : 589,867
   rejected (same id form): 150,845
   rejected (not mutual)  : 655
   rejected (ambiguous)   : 407
@@ -42,7 +42,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Atlanta          sources 320,839  targets  67,390  merged    79   refused: far 252,547 / same-id 67,168 / not-mutual 651 / ambiguous 394   by-address 21 (shared 684, coords 16)
   Richmond         sources   5,009  targets  72,146  merged    29   refused: far 578 / same-id 4,385 / not-mutual 4 / ambiguous 13   by-address 132 (shared 4, coords 1)
   Raleigh          sources 369,350  targets 132,466  merged     1   refused: far 297,713 / same-id 71,636 / not-mutual 0 / ambiguous 0   by-address 0 (shared 108, coords 156)
-  Winston-Salem    sources       9  targets 167,450  merged     1   refused: far 8 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
+  Winston-Salem    sources      13  targets 167,443  merged     1   refused: far 12 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Durham           sources       4  targets 129,198  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Newport News     sources  46,669  targets   7,677  merged     0   refused: far 39,017 / same-id 7,652 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
   Norfolk          sources       0  targets       0  merged     0   refused: far 0 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 1, coords 0)
@@ -50,36 +50,36 @@ Geometry unit bridge (counts carried across parcel-id schemes):
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Richmond: R-48 Multi Family x1852, R-63 Multi Family Urban Res. x1596, R-53 Multi Family x1439, R-73 Multi Family x230, R-43 Multi Family x193
   Norfolk: Apartment x866
-  Greensboro: MULTI-FAMILY<4 x839, MULTI-FAMILY5> x21
+  Greensboro: MULTI-FAMILY<4 x734, MULTI-FAMILY5> x166
   Atlanta: C3 x809, C4 x640, C5 x278, C1 x62, R3 x52
   Chesapeake: 3352 x61
-  Winston-Salem: (units only) x3
+  Winston-Salem: (units only) x4
   Newport News: A x237, C x4, (units only) x2, R x1
   Raleigh: (units only) x1627
   Durham: (units only) x1
 
 Cities with parcels but NO multifamily found - their top use codes:
-  Nashville: RS10 x38978, R10 x31914, SP x19406, RS7.5 x18980, RS15 x16482, R6 x14270, RS20 x12128, R8 x11618
+  Nashville: RS10 x38978, R10 x31918, SP x19417, RS7.5 x18979, RS15 x16482, R6 x14269, RS20 x12128, R8 x11620
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Richmond: code only (no units): 5,037, units>=10: 671
   Norfolk: code only (no units): 863, units>=10: 3
-  Greensboro: code only (no units): 860
+  Greensboro: code only (no units): 900
   Atlanta: units>=10: 1,981
   Chesapeake: learned code (no units): 61
-  Winston-Salem: units>=10: 3
+  Winston-Salem: units>=10: 4
   Newport News: units>=10: 244
   Raleigh: units>=10: 1,627
   Durham: units>=10: 1
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Richmond: PRECINCT, DISTRICT, LEGAL_DESC, GIS_ID, VGIN_QPID, LOCALITY, ASSESSMENT_DATE_1, ASSESSMENT_CHG_DESC_1, PROP_TYPE_2, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, ASSESSMENT_DATE_2, ASSESSMENT_CHG_DESC_2, ASSESSMENT_DATE_3, ASSESSMENT_CHG_DESC_3, ASSESSMENT_DATE_4, ASSESSMENT_CHG_DESC_4, ASSESSMENT_DATE_5, ASSESSMENT_CHG_DESC_5, STYLE, HVAC, ASSOC_NAME, OWNER2
-  Greensboro: CentroidXCoordinate, CentroidYCoordinat, NumberOfParts, INSIDE_X, INSIDE_Y, ORIG_FID, Owner_History, Total_Building_Value, DEED_DATE, Short_Parcel_ID, PARCEL_PK, Condo, LOCATION_ADDR, Plat, Lot_Size, PROPERTY_DESCR, Total_Land_Value, TOTAL_DEFERRED_VALUE, Total_Out_Building_Value, BLDG_CARD, Appraisal_Model_Code, GRADE, Structure_Size, Bathrooms
+  Greensboro: CentroidXCoordinate, CentroidYCoordinat, NumberOfParts, INSIDE_X, INSIDE_Y, ORIG_FID, Owner_History, Total_Building_Value, DEED_DATE, Short_Parcel_ID, PARCEL_PK, Lot_Size, Condo, LOCATION_ADDR, Plat, PROPERTY_DESCR, Total_Land_Value, TOTAL_DEFERRED_VALUE, Total_Out_Building_Value, BLDG_CARD, Appraisal_Model_Code, GRADE, Structure_Size, Bathrooms
   Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, TotAssess, TotAppr, ImprAppr, AddrNumber, LandAssess, ImprAssess, LandAppr, OwnerAddr1, OwnerAddr2, LandAcres, AddrSuffix, ExCode, SITECITY, SITESTATE, TOT_APPR, LOWPARCELID, CNTASSDVAL, CVTTXCD
   Winston-Salem: BLKCNTRL, BLK, LOT, BLKLOT, TBLCNTRL, CNTRL, TAXPIN, TAXPIN_N, PINMAP, PINBLK, PINLOT, PINLOT_A, CALCULATEDACREAGE, TAXPIN16, PINLOT16, MLOT, PARCEL_PK, BLOCKLOT, REID_1, CURRENTOWNERADDRESS, CURRENTDEEDDATE, CURRENTDEEDSTAMPS, ASSESSMENTMETHOD, LASTQUALIFIEDSALEPRICE
   Raleigh: CALC_AREA, PIN_NUM, PARCEL_PK, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE, OWNERSHIP, ACTIVITY, FUNCTION, STRUCTURE, SITE, TOTSTRUCTS, TOTUNITS, OLD_PARCEL_NUMBER, DEED_DATE, ADDR2, TOTAL_VALUE_ASSD, PLANNING_JURISDICTION
   Durham: FEATURE_KEY, PARCEL_TYPE, PARCEL_PK, AUT_SNAPSHOT_DATE, PIN_EXT, PIN_MAP, PIN_BLOCK, PIN_LOT, PROPERTY_DESCR, LOCATION_ADDR, SPEC_DIST, SPEC_DIST_PCNT, TOWNSHIP, CALCULATED_ACRES, DEEDED_ACRES, PROPERTY_OWNER, OWNER_MAIL_1, PHYADDR_LOCID, PHYADDR_STR_NUM, PHYADDR_STR, PHYADDR_STATE, VALUE_APPROACH, DEED_DATE, DEED_PATH
-  Nashville: STANPAR, FEATURETYPE, OwnDate, OwnInstr, PropHouse, PropState, LegalDesc, PropInstr, PropDate, Front, Side, Council, Tract, PropCity, PropZip, OwnState, OwnCountry, PropStreet, OwnAddr1, OwnCity, OwnZip, IsRegular, TaxDist, LandAppr
+  Nashville: STANPAR, FEATURETYPE, OwnDate, OwnInstr, PropHouse, PropState, LegalDesc, PropInstr, PropDate, Front, Side, Council, Tract, PropStreet, PropCity, PropZip, OwnState, OwnCountry, OwnAddr1, OwnCity, OwnZip, IsRegular, TaxDist, LandAppr
 
 P0-1 GATE PASSED.
 
@@ -122,10 +122,10 @@ Learning apartment use codes from matched properties:
   Chesapeake: 68 known-MF parcels matched
       [ACCEPT] code '3352': on 27 MF parcels, 61/92,587 citywide (0.1%) - 40% of known MF, only 0.1% of the roll
       [reject] code '3346': on 11 MF parcels, 41/92,587 citywide (0.0%) - only 16% of this city's known MF, need 25%
-      [reject] code '1010': on 5 MF parcels, 50,257/92,587 citywide (54.3%) - only 7% of this city's known MF, need 25%
-      [reject] code '1060': on 4 MF parcels, 7,863/92,587 citywide (8.5%) - only 6% of this city's known MF, need 25%
-      [reject] code '2010': on 2 MF parcels, 7,277/92,587 citywide (7.9%) - only 2 supporting parcel(s), need 3
-      [reject] code '4406': on 2 MF parcels, 354/92,587 citywide (0.4%) - only 2 supporting parcel(s), need 3
+      [reject] code '1010': on 5 MF parcels, 50,218/92,587 citywide (54.2%) - only 7% of this city's known MF, need 25%
+      [reject] code '1060': on 4 MF parcels, 7,861/92,587 citywide (8.5%) - only 6% of this city's known MF, need 25%
+      [reject] code '2010': on 2 MF parcels, 7,274/92,587 citywide (7.9%) - only 2 supporting parcel(s), need 3
+      [reject] code '4406': on 2 MF parcels, 355/92,587 citywide (0.4%) - only 2 supporting parcel(s), need 3
       [reject] code '4344': on 2 MF parcels, 235/92,587 citywide (0.3%) - only 2 supporting parcel(s), need 3
       [reject] code '4341': on 2 MF parcels, 82/92,587 citywide (0.1%) - only 2 supporting parcel(s), need 3
       [reject] code '4330': on 1 MF parcels, 26/92,587 citywide (0.0%) - only 1 supporting parcel(s), need 3
@@ -140,5 +140,5 @@ Learning apartment use codes from matched properties:
       [reject] code '1000': on 1 MF parcels, 1,087/92,587 citywide (1.2%) - only 1 supporting parcel(s), need 3
       [reject] code '4020': on 1 MF parcels, 283/92,587 citywide (0.3%) - only 1 supporting parcel(s), need 3
       [reject] code '7410': on 1 MF parcels, 946/92,587 citywide (1.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '4000': on 1 MF parcels, 981/92,587 citywide (1.1%) - only 1 supporting parcel(s), need 3
+      [reject] code '4000': on 1 MF parcels, 979/92,587 citywide (1.1%) - only 1 supporting parcel(s), need 3
   learned 1 code(s) - they take effect on the next run-phase0 (re-run to see the new counts)
