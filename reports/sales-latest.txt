@@ -1,6 +1,6 @@
-autopilot salespull @ 2026-10-03T23:46:42
+autopilot salespull @ 2026-10-04T01:28:26
 
-[sales] 21 localities tracked
+[sales] 19 localities tracked
 [sales] Alexandria: no parcels to probe - skip
 [sales] Arlington: no parcels to probe - skip
 [sales] Athens: no Spatialest sales endpoint (needs vendor discovery) - skip
@@ -19,6 +19,4 @@ autopilot salespull @ 2026-10-03T23:46:42
 [sales] Raleigh: no Spatialest sales endpoint (needs vendor discovery) - skip
 [sales] Richmond: no Spatialest sales endpoint (needs vendor discovery) - skip
 [sales] Savannah: no Spatialest sales endpoint (needs vendor discovery) - skip
-[sales] Suffolk: no Spatialest sales endpoint (needs vendor discovery) - skip
-[sales] Virginia Beach: no Spatialest sales endpoint (needs vendor discovery) - skip
 [sales] Winston-Salem: no Spatialest sales endpoint (needs vendor discovery) - skip
