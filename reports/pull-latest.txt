@@ -1,7 +1,7 @@
-autopilot pull @ 2026-10-04T04:12:32
+autopilot pull @ 2026-10-04T05:12:30
 
 WORKBENCH muni-data ETL — 2026-10-04
-  discovered feeds loaded from data/feeds_extra.json: 10
+  discovered feeds loaded from data/feeds_extra.json: 21
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
     + Riverside: https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Vision_Plan_Transfer_WFL1/FeatureServer/3
     + Atlanta: https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Virginia_Highland_Focus_Area/FeatureServer/1
@@ -12,6 +12,17 @@ WORKBENCH muni-data ETL — 2026-10-04
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/5
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3
+    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
+    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
+    + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
+    + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
+    + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
+    + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
+    + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
+    + Suffolk: https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificates/MapServer/1
+    + Suffolk: https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1
+    + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
+    + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 438,908 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  438908 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 184,438 rows (ER_MUNI_FORCE=1 to re-pull)
@@ -54,3 +65,14 @@ WORKBENCH muni-data ETL — 2026-10-04
   [OK] Richmond/assessor                        76879 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
+  [OK] Virginia Beach/assessor                 219143 records
+  [OK] Virginia Beach/assessor                 135362 records
+  [OK] Chesapeake/assessor                     110301 records
+  [OK] Chesapeake/assessor                     116455 records
+  [OK] Hampton/assessor                           703 records
+  [OK] Portsmouth/assessor                      36464 records
+  [OK] Portsmouth/assessor                      36241 records
+  [OK] Suffolk/assessor                          5823 records
+  [OK] Suffolk/assessor                          5775 records
+  [OK] Norfolk/assessor                         10295 records
+  [OK] Norfolk/assessor                         74637 records
