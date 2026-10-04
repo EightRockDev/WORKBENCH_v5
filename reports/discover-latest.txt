@@ -1,4 +1,4 @@
-autopilot discover @ 2026-10-04T04:00:19
+autopilot discover @ 2026-10-04T05:00:18
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
@@ -8,7 +8,7 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected - wrong city] Virginia Beach: SolarVector_PubLayers: layer name declares a subset - demoted, does not count as the city roll
    [rejected - wrong city] Virginia Beach: Private Parcels Ranked_081920: only 374 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Virginia Beach: Public Parcels Ranked_081920: only 303 records - kept but demoted, a citywide roll should have >= 5,000
-   [ 181s] probing Chesapeake...
+   [ 182s] probing Chesapeake...
    [rejected - wrong city] Chesapeake: Towers/Towers: only 138 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Chesapeake: CommunityLayers/Apartments: only 161 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected - wrong city] Chesapeake: CommunityLayers/Places of Worship: only 256 records - kept but demoted, a citywide roll should have >= 5,000
@@ -27,7 +27,7 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
    [rejected - wrong city] Chesapeake: Chesapeake Parcels Publicly Owned: only 1,465 records - kept but demoted, a citywide roll should have >= 5,000
-   [ 299s] probing Hampton...
+   [ 301s] probing Hampton...
    [rejected - wrong city] Hampton: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Hampton
    [rejected - wrong city] Hampton: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Hampton
    [rejected - wrong city] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Hampton
@@ -55,16 +55,16 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected - wrong city] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Portsmouth
    [rejected - wrong city] Portsmouth: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Portsmouth
    [rejected - wrong city] Portsmouth: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Portsmouth
-   [ 384s] probing Suffolk...
+   [ 382s] probing Suffolk...
    [rejected - wrong city] Suffolk: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Suffolk
    [rejected - wrong city] Suffolk: ElevationCertificates/Elevation Certificates - Parcels: layer name declares a subset - demoted, does not count as the city roll
    [rejected - wrong city] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Suffolk
    [rejected - wrong city] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): layer name declares a subset - demoted, does not count as the city roll
    [rejected - wrong city] Suffolk: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Suffolk
-   [ 414s] probing Norfolk...
+   [ 412s] probing Norfolk...
    [rejected - wrong city] Norfolk: Backlick Run Stream Restoration: records are NOT in Norfolk
    [rejected - wrong city] Norfolk: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Norfolk
-   [ 440s] probing Richmond...
+   [ 434s] probing Richmond...
    [rejected - wrong city] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
    [rejected - wrong city] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
    [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
@@ -119,5 +119,5 @@ Richmond: 2 candidate layer(s)
    https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
       auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_address', 'owner_city', 'owner_name', 'owner_state', 'owner_zip', 'use_code']; 6,570 records; NAMED as a subset - demoted
 
-Wrote 16 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json
+Wrote 21 feed spec(s) to C:\WORKBENCH_V5\data\feeds_extra.json (16 from this run, 8 kept from other markets)
 NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.
