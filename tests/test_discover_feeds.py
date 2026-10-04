@@ -125,3 +125,41 @@ def test_budget_fits_inside_the_autopilot_step_cap():
     spec.loader.exec_module(m)
     # leave room for the last city in flight plus printing results
     assert d.BUDGET_S <= m.STEP_TIMEOUTS["discover"] - 120
+
+
+# ------------------------- shared feed list (2026-10-04)
+
+def test_each_run_replaces_only_its_own_markets():
+    """VA and national discovery share feeds_extra.json. Each must keep
+    the other's markets - wholesale overwrite meant the pull only ever
+    saw whichever step ran last."""
+    import scripts.discover_feeds as d
+    existing = [{"market": "Atlanta", "url": "a"},
+                {"market": "Hampton", "url": "h-old"},
+                {"market": "Richmond", "url": "r"}]
+    fresh = [{"market": "Hampton", "url": "h-new"},
+             {"market": "Portsmouth", "url": "p"},
+             {"market": "Richmond", "url": "r"}]
+    merged, kept = d.merge_specs(
+        existing, fresh, {"Hampton", "Portsmouth", "Richmond", "Norfolk"})
+    urls = [x["url"] for x in merged]
+    assert urls == ["h-new", "p", "r", "a"]
+    assert kept == 1                       # Atlanta survived the VA run
+    assert "h-old" not in urls             # covered market was replaced
+
+
+def test_main_merges_with_the_file_on_disk(tmp_path, monkeypatch, capsys):
+    import json
+    import scripts.discover_feeds as d
+    data = tmp_path / "data"
+    data.mkdir()
+    feeds = data / "feeds_extra.json"
+    feeds.write_text(json.dumps([{"market": "Atlanta", "url": "a"}]))
+    fake_script = tmp_path / "scripts" / "discover_feeds.py"
+    monkeypatch.setattr(d, "__file__", str(fake_script))
+    monkeypatch.setattr(d, "discover", lambda **kw: d.Partial(
+        {"Hampton": [{"market": "Hampton", "url": "h", "note": "n"}]}))
+    assert d.main(["--va"]) == 0
+    merged = json.loads(feeds.read_text())
+    assert {x["url"] for x in merged} == {"a", "h"}
+    assert "1 kept from other markets" in capsys.readouterr().out

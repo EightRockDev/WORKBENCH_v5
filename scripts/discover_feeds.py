@@ -664,6 +664,36 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
     return out
 
 
+def _read_specs(path: Path) -> list[dict]:
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return []
+    return [d for d in data if isinstance(d, dict)] \
+        if isinstance(data, list) else []
+
+
+def merge_specs(existing: list[dict], fresh: list[dict],
+                covered: set[str]) -> tuple[list[dict], int]:
+    """Replace only the markets this run probed; keep everyone else's.
+
+    The VA and national discovery steps both write feeds_extra.json, and
+    each used to overwrite the other wholesale, so the pull saw whichever
+    ran last. National always ran second, so the VA run's Hampton Roads
+    feeds were silently dropped every cycle until the national step was
+    cut short on 2026-10-03 and they reached the pull for the first time.
+    """
+    kept = [d for d in existing if d.get("market") not in covered]
+    out, seen = [], set()
+    for d in fresh + kept:
+        url = d.get("url")
+        if url in seen:
+            continue
+        seen.add(url)
+        out.append(d)
+    return out, sum(1 for d in out if d in kept)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--roots", nargs="*", default=[],
@@ -706,8 +736,12 @@ def main(argv=None) -> int:
     elif specs:
         out_path = Path(__file__).resolve().parent.parent / "data" / "feeds_extra.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(json.dumps(specs, indent=2))
-        print(f"Wrote {len(specs)} feed spec(s) to {out_path}")
+        merged, kept = merge_specs(_read_specs(out_path), specs,
+                                   {label_of(t) for t in targets})
+        out_path.write_text(json.dumps(merged, indent=2))
+        print(f"Wrote {len(merged)} feed spec(s) to {out_path} "
+              f"({len(specs)} from this run, {kept} kept from other "
+              "markets)")
         print("NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.")
     else:
         print("No feeds written. Send me this output and I will widen the probes.")

@@ -12,6 +12,30 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.1.4.0 - 2026-10-04  .  Both discovery runs keep each other's feeds.
+
+Overnight 10-03 -> 10-04 the backbone grew 2.30M -> 2.49M parcels: the
+statewide VGIN parcel layer arrived for Chesapeake (92,557), Hampton
+(51,800) and Portsmouth (36,615). Cause: the VA and national discovery
+steps both WRITE data/feeds_extra.json, each overwriting the other, and
+national always ran second - so the VA run's Hampton Roads feeds never
+reached the pull. On 10-03 23:20 the national step stopped on its new
+time budget (V5.67.1.3.0) and, correctly, left the file alone, and the
+VA feeds were pulled for the first time.
+
+- `merge_specs()`: each discovery run now replaces only the markets it
+  probed and keeps every other market's specs (deduped by URL), so the
+  pull sees VA + national feeds every cycle, deterministically, instead
+  of whichever step happened to finish last.
+- Effect on the gates (no tuning resumed): match rate 42.8% -> 60.5% and
+  the crosswalk 276 -> 390, because legacy deals in Hampton, Portsmouth
+  and Chesapeake now have parcels to match. Comp overlap reads 35.9%
+  (was 63.4%): those newly matched subjects sit in cities whose feeds
+  carry no unit counts, so their 8R comp sets are thin. The metric now
+  covers more of the portfolio; it did not get worse on the old set.
+- Apartment properties 11,290 -> 11,333 (+43, mostly Greensboro, plus
+  Hampton's first 2 from address points).
+
 ## V5.67.1.3.0 - 2026-10-01  .  The outages were restarts; discovery stops on its own clock.
 
 The first heartbeat after the owner brought the host back (V5.67.1.2.0's

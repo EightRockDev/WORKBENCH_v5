@@ -992,6 +992,12 @@ scale this is intolerable. Non-negotiable rules:
    was a header plus "step killed". Long-running steps must print
    progress as they go and stop on their own budget below the cap, and
    a partial result must never overwrite a complete one.
+18. **Two writers, one file: merge, never overwrite.** The VA and national
+   discovery steps both wrote feeds_extra.json wholesale, so for months
+   the pull only saw the national list (it ran second). Nobody noticed
+   until a budget stop let the VA list survive and 180K Hampton Roads
+   parcels appeared overnight, swinging every parity gate. Any shared
+   output written by more than one step must be merged by key.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /
