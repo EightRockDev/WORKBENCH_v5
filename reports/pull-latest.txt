@@ -1,28 +1,29 @@
-autopilot pull @ 2026-10-03T23:21:10
+autopilot pull @ 2026-10-04T01:12:52
 
-WORKBENCH muni-data ETL — 2026-10-03
-  discovered feeds loaded from data/feeds_extra.json: 16
-    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
-    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
-    + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
-    + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
-    + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-    + Hampton: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-    + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
-    + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
-    + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
-    + Portsmouth: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-    + Suffolk: https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificates/MapServer/1
-    + Suffolk: https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1
-    + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
-    + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
+WORKBENCH muni-data ETL — 2026-10-04
+  discovered feeds loaded from data/feeds_extra.json: 10
+    + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
+    + Riverside: https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Vision_Plan_Transfer_WFL1/FeatureServer/3
+    + Atlanta: https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Virginia_Highland_Focus_Area/FeatureServer/1
+    + Atlanta: https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Atlanta_Main_Street_District_Boundaries/FeatureServer/1
+    + Raleigh: https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/RaleighWV_Service/FeatureServer/0
+    + Raleigh: https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/Raleigh_Precinct_Data/FeatureServer/6
     + Richmond: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
-  [swept] Raleigh: 61,363 stale rows from retired feed https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/RaleighWV_Service/FeatureServer/0
-  [swept] Raleigh: 61,157 stale rows from retired feed https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/Raleigh_Precinct_Data/FeatureServer/6
-  [swept] Atlanta: 244 stale rows from retired feed https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Virginia_Highland_Focus_Area/FeatureServer/1
-  [swept] Atlanta: 224 stale rows from retired feed https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Atlanta_Main_Street_District_Boundaries/FeatureServer/1
-  stale rows removed: 122,988
+    + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/5
+    + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3
+  [swept] Norfolk: 10,295 stale rows from retired feed https://data.norfolk.gov/resource/ykcq-76im.json
+  [swept] Norfolk: 74,637 stale rows from retired feed https://data.norfolk.gov/resource/yvpm-8aid.json
+  [swept] Virginia Beach: 219,143 stale rows from retired feed https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
+  [swept] Virginia Beach: 135,362 stale rows from retired feed https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
+  [swept] Chesapeake: 110,301 stale rows from retired feed https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
+  [swept] Chesapeake: 116,455 stale rows from retired feed https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
+  [swept] Hampton: 703 stale rows from retired feed https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
+  [swept] Portsmouth: 36,464 stale rows from retired feed https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
+  [swept] Portsmouth: 36,241 stale rows from retired feed https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels_Real_Estate_View/FeatureServer/3
+  [swept] Suffolk: 5,823 stale rows from retired feed https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificates/MapServer/1
+  [swept] Suffolk: 5,775 stale rows from retired feed https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1
+  stale rows removed: 751,199
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 438,908 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  438908 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 184,438 rows (ER_MUNI_FORCE=1 to re-pull)
@@ -53,20 +54,10 @@ WORKBENCH muni-data ETL — 2026-10-03
   [ERR] Richmond/assessor+sales                403 Client Error: Forbidden for url: https://data.richmondgov.com/resource/vm9j-9f88.json?%24limit=50000&%24offset=0&%24order=%3Aid
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,684 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92684 records
-  [OK] Virginia Beach/assessor                 219143 records
-  [OK] Virginia Beach/assessor                 135362 records
-  [OK] Chesapeake/assessor                     110301 records
-  [OK] Chesapeake/assessor                     116455 records
-  [OK] Chesapeake/assessor                      92557 records
-  [OK] Hampton/assessor                         51800 records
-  [OK] Hampton/assessor                           703 records
-  [OK] Portsmouth/assessor                      36464 records
-  [OK] Portsmouth/assessor                      36241 records
-  [OK] Portsmouth/assessor                      36615 records
-  [OK] Suffolk/assessor                          5823 records
-  [OK] Suffolk/assessor                          5775 records
-  [OK] Norfolk/assessor                         10295 records
-  [OK] Norfolk/assessor                         74637 records
+  [OK] Atlanta/assessor                           244 records
+  [OK] Atlanta/assessor                           224 records
+  [OK] Raleigh/assessor                         61363 records
+  [OK] Raleigh/assessor                         61157 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 76,879 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                        76879 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
