@@ -1,7 +1,4 @@
-autopilot phase0 @ 2026-10-05T04:14:57
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-05T05:14:28
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 4,179,895
@@ -31,19 +28,19 @@ Building the Eight Rock property backbone (properties_8r)...
 
 muni records scanned:      3,237,088
 parcels normalized:        3,237,088
-multifamily (>= 10 units): 29,590
+multifamily (>= 10 units): 8,355
 written to properties_8r:  3,237,088
 provisional (no-APN) ids:  1,769
 units derived from address points: 869  (skipped non-residential: 9,444)
 units bridged by geometry: 266  (Richmond 161, Atlanta 100, Hampton 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 214
-rent estimates stamped (HUD FMR blend): 29,589
+rent estimates stamped (HUD FMR blend): 8,355
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
 pruned from backbone (known < 10 units): 738,016  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Virginia Beach 16,286, Richmond 5,708, Atlanta 1,981, Chesapeake 1,966, Raleigh 1,627, Greensboro 900, Norfolk 869, Newport News 244, Winston-Salem 4, Suffolk 2, Hampton 2, Durham 1
+Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,627, Greensboro 900, Norfolk 869, Richmond 671, Newport News 244, Virginia Beach 222, Winston-Salem 4, Suffolk 2, Hampton 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
   unit-bearing parcels   : 744,439
@@ -70,16 +67,16 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Virginia Beach   sources     283  targets 163,655  merged     0   refused: far 159 / same-id 124 / not-mutual 0 / ambiguous 0   by-address 0 (shared 3, coords 0)
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
-  Richmond: R-48 Multi Family x1852, R-63 Multi Family Urban Res. x1596, R-53 Multi Family x1439, R-73 Multi Family x230, R-43 Multi Family x193
+  Richmond: R-48 Multi Family x165, B-4 Central Business x65, R-53 Multi Family x60, R-6 Single Family Attached x52, B-5 Central Business x50
   Norfolk: Apartment x869
   Greensboro: MULTI-FAMILY<4 x734, MULTI-FAMILY5> x166
   Suffolk: R5 Multi-Family Residential x2
   Atlanta: C3 x809, C4 x640, C5 x278, C1 x62, R3 x52
-  Chesapeake: Apartments x743, 1060 x186, 3015 x166, (units only) x164, 4020 x151
+  Chesapeake: Apartments x612, 1060 x186, 3015 x166, (units only) x164, 4020 x151
   Winston-Salem: (units only) x4
   Newport News: A x237, C x4, (units only) x2, R x1
   Raleigh: (units only) x1627
-  Virginia Beach: Multi Family x16286
+  Virginia Beach: Multi Family x222
   Durham: (units only) x1
   Hampton: (units only) x2
 
@@ -88,18 +85,23 @@ Cities with parcels but NO multifamily found - their top use codes:
   Nashville: RS10 x38978, R10 x31918, SP x19417, RS7.5 x18979, RS15 x16482, R6 x14269, RS20 x12128, R8 x11620
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
-  Richmond: code only (no units): 5,037, units>=10: 671
+  Richmond: units>=10: 671
   Norfolk: code only (no units): 864, units>=10: 5
   Greensboro: code only (no units): 900
   Suffolk: code only (no units): 2
   Atlanta: units>=10: 1,981
-  Chesapeake: units>=10: 1,832, code only (no units): 133, learned code (no units): 1
+  Chesapeake: units>=10: 1,832
   Winston-Salem: units>=10: 4
   Newport News: units>=10: 244
   Raleigh: units>=10: 1,627
-  Virginia Beach: code only (no units): 16,064, units>=10: 222
+  Virginia Beach: units>=10: 222
   Durham: units>=10: 1
   Hampton: units>=10: 2
+
+NOT counted - multifamily label but no unit count, in a city whose feed carries unit data (>= 50 parcels with a known 10+ count):
+  Virginia Beach: 16,064
+  Richmond: 5,037
+  Chesapeake: 134
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Richmond: PRECINCT, DISTRICT, LEGAL_DESC, GIS_ID, VGIN_QPID, LOCALITY, ASSESSMENT_DATE_1, ASSESSMENT_CHG_DESC_1, PROP_TYPE_2, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, ASSESSMENT_DATE_2, ASSESSMENT_CHG_DESC_2, ASSESSMENT_DATE_3, ASSESSMENT_CHG_DESC_3, ASSESSMENT_DATE_4, ASSESSMENT_CHG_DESC_4, ASSESSMENT_DATE_5, ASSESSMENT_CHG_DESC_5, STYLE, HVAC, ASSOC_NAME, OWNER2
@@ -127,7 +129,7 @@ year built agrees:        99/197
 
 comp-set replay subjects: 184  (+16 skipped - city has no 8R coordinates yet)
 avg comp-set overlap:     48.5%  (gate >= 90%)
-avg-rent delta:           26.5%  [signed +18.5%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
+avg-rent delta:           27.1%  [signed +19.8%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
 
 P0-2 GATE: not met yet
 crosswalk persisted:      569 legacy->8R mappings (property_crosswalk)
