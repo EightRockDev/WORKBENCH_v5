@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-05T13:18:12
+autopilot pull @ 2026-10-05T14:13:32
 
 WORKBENCH muni-data ETL — 2026-10-05
   discovered feeds loaded from data/feeds_extra.json: 21
@@ -23,8 +23,7 @@ WORKBENCH muni-data ETL — 2026-10-05
     + Suffolk: https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1
     + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
-  [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 438,908 rows (ER_MUNI_FORCE=1 to re-pull)
-  [OK] Raleigh/assessor+sales                  438908 records
+  [OK] Raleigh/assessor+sales                  438960 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 184,438 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/permits                         184438 records
   [fresh] Greensboro/assessor: pulled within 3 days - keeping 223,244 rows (ER_MUNI_FORCE=1 to re-pull)
