@@ -20,7 +20,8 @@ import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from core.phase0 import MIN_MF_UNITS, find_workbench_db, is_mf_ten_plus_for_city
+from core.phase0 import (MIN_MF_UNITS, find_workbench_db,
+                         is_mf_ten_plus_for_city, unit_rich_cities)
 
 
 @dataclass
@@ -66,6 +67,7 @@ def market_breakdown(db_path: str | Path | None = None) -> Breakdown:
 
         rows: dict[str, MarketRow] = {}
         try:
+            rich = unit_rich_cities(conn)
             cursor = conn.execute(
                 "SELECT COALESCE(r8_market, city), r8_submarket, city, "
                 "       use_code, units FROM properties_8r")
@@ -80,7 +82,8 @@ def market_breakdown(db_path: str | Path | None = None) -> Breakdown:
             return out
         for market, sub, city, use_code, units in cursor:
             out.total_records += 1
-            if not is_mf_ten_plus_for_city(city, use_code, units, learned):
+            if not is_mf_ten_plus_for_city(city, use_code, units, learned,
+                                           rich):
                 continue
             m = rows.setdefault(market or "(unassigned)",
                                 MarketRow(market or "(unassigned)"))

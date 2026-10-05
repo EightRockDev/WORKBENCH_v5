@@ -66,7 +66,6 @@ def run_sweep(db_path: Path) -> dict[str, int]:
     snapshot; write alerts for what changed; refresh the snapshot.
     Returns counts per alert kind (first-ever sweep seeds the snapshot
     silently - everything would be "new")."""
-    from core.phase0 import is_mf_ten_plus
     now = dt.datetime.now().isoformat(timespec="seconds")
     counts = {"new_mf": 0, "units_jump": 0, "owner_change": 0,
               "stale_closed": 0}
@@ -80,10 +79,12 @@ def run_sweep(db_path: Path) -> dict[str, int]:
         prior = {pid: (u, o) for pid, u, o in conn.execute(
             "SELECT property_id, units, owner_name FROM alert_snapshot")}
         current: dict[str, tuple] = {}
+        from core.phase0 import is_mf_ten_plus_for_city, unit_rich_cities
+        rich = unit_rich_cities(conn)
         for pid, city, addr, uc, units, owner in conn.execute(
                 "SELECT property_id, city, address, use_code, units, "
                 "       owner_name FROM properties_8r"):
-            if is_mf_ten_plus(uc, units):
+            if is_mf_ten_plus_for_city(city, uc, units, None, rich):
                 current[pid] = (city, addr, units, owner)
         seeding = not prior
         for pid, (city, addr, units, owner) in current.items():

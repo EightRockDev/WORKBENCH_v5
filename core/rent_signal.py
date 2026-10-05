@@ -181,11 +181,9 @@ def apply_rent_signal(spine_db: Path, etl_path: Path | None = None) -> int:
     blend = county_fmr_blend(etl_path)
     if not blend:
         return 0
-    # Membership must be the shared product rule (is_mf_ten_plus), not a
-    # bare units>=10 SQL filter: Norfolk's rolls carry no unit counts at
-    # all, so its multifamily is code-only - exactly the rows a units
-    # filter would skip.
-    from core.phase0 import is_mf_ten_plus
+    # Membership must be the shared product rule, not a bare units>=10 SQL
+    # filter: Norfolk's rolls carry no unit counts at all, so its
+    # multifamily is code-only - exactly the rows a units filter would skip.
     updated = 0
     with sqlite3.connect(spine_db, timeout=60) as conn:
         ensure_rent_columns(conn)
@@ -194,6 +192,8 @@ def apply_rent_signal(spine_db: Path, etl_path: Path | None = None) -> int:
         # Richmond's 6,585 MF rows, Atlanta's 1,982 and Raleigh's 1,613
         # could never receive an FMR estimate - rent coverage sat frozen
         # at 9.2% no matter what the HUD pull returned.
+        from core.phase0 import is_mf_ten_plus_for_city, unit_rich_cities
+        rich = unit_rich_cities(conn)
         for city, fips in CITY_TO_COUNTY_FIPS_5.items():
             est = blend.get(fips)
             if est is None:
@@ -204,7 +204,7 @@ def apply_rent_signal(spine_db: Path, etl_path: Path | None = None) -> int:
                             WHERE city = ? AND (rent_source IS NULL
                                                 OR rent_source = 'hud_fmr')""",
                         (city,))
-                    if is_mf_ten_plus(uc, u)]
+                    if is_mf_ten_plus_for_city(city, uc, u, None, rich)]
             conn.executemany(
                 """UPDATE properties_8r
                       SET est_avg_rent = ?, rent_source = 'hud_fmr'

@@ -40,8 +40,7 @@ import config
 
 GATE_COMP_OVERLAP = 0.90     # spec 7.3 P0-2
 GATE_RENT_DELTA = 0.05
-UNIT_RICH_MIN = 50   # entities at 10+ units before a city counts as
-                     # "carries unit data" for comp-pool evidence rules
+from core.phase0 import UNIT_RICH_MIN  # noqa: E402  (one rule, every count)
 MATCH_RADIUS_MILES = 0.075   # ~120 m - same parcel, different geocoders
 PROXIMITY_RADIUS_MILES = 0.25  # last-resort: big complexes geocode far apart
 UNIT_TOLERANCE_PCT = 0.10

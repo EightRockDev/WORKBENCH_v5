@@ -384,6 +384,9 @@ class CoverageReport:
     # DESPITE a small known unit count (suspicious - duplexes labeled
     # "Multi Family"), or an MF use code with no unit data at all.
     mf_basis: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
+    # Label-only rows NOT counted because their city carries unit data.
+    label_only_dropped: Counter = field(default_factory=Counter)
+    unit_rich_cities: list = field(default_factory=list)
     # For cities with parcels but ZERO multifamily: their top use-code
     # values overall, so the missing-MF mystery names its own suspects.
     no_mf_use_codes: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
@@ -460,6 +463,14 @@ class CoverageReport:
             for city, basis in self.mf_basis.items():
                 parts = ", ".join(f"{k}: {n:,}" for k, n in basis.most_common())
                 lines.append(f"  {city}: {parts}")
+        if self.label_only_dropped:
+            lines.append("")
+            lines.append(
+                "NOT counted - multifamily label but no unit count, in a city "
+                f"whose feed carries unit data (>= {UNIT_RICH_MIN} parcels "
+                "with a known 10+ count):")
+            for city, n in self.label_only_dropped.most_common():
+                lines.append(f"  {city}: {n:,}")
         pending = {c: k for c, k in self.unmapped_keys.items() if k}
         if pending:
             lines.append("")
@@ -572,9 +583,27 @@ def is_multifamily(use_code: str | None, units: float | None) -> bool:
     return not _MF_USE_TOKENS.isdisjoint(tokens)
 
 
+# A city "carries unit data" once this many of its parcels have a known
+# count of 10+. There, a multifamily LABEL with no count is presumed small:
+# Virginia Beach labels ~16K duplexes "Multi Family", and Richmond's city
+# address table lists every apartment unit, so an "apartment"-coded parcel
+# with no unit addresses is not a 10-unit building. Where a city publishes
+# no counts at all (Norfolk, Greensboro), the label is the only evidence.
+UNIT_RICH_MIN = 50
+
+
+def unit_rich_cities(conn) -> set[str]:
+    """Cities in properties_8r whose feeds prove they carry unit counts."""
+    return {city for city, n in conn.execute(
+        "SELECT city, count(*) FROM properties_8r "
+        " WHERE units >= ? GROUP BY city", (MIN_MF_UNITS,))
+        if n >= UNIT_RICH_MIN}
+
+
 def is_mf_ten_plus_for_city(city: str | None, use_code: str | None,
                             units: float | None,
-                            learned: dict[str, set[str]] | None = None) -> bool:
+                            learned: dict[str, set[str]] | None = None,
+                            unit_rich: set[str] | None = None) -> bool:
     """`is_mf_ten_plus`, plus any code this city has been taught.
 
     Rolls that publish bare numeric use codes ("9", "18") match none of the
@@ -586,6 +615,8 @@ def is_mf_ten_plus_for_city(city: str | None, use_code: str | None,
     """
     if units is not None:
         return units >= MIN_MF_UNITS
+    if unit_rich and city in unit_rich:
+        return False
     if is_multifamily(use_code, None):
         return True
     if learned and city:
@@ -905,9 +936,15 @@ def build_spine(db_path: Path,
         # units included), not incrementally.
         from core.use_code_learn import load as _load_learned
         learned = _load_learned(conn)
+        rich = unit_rich_cities(conn)
+        report.unit_rich_cities = sorted(rich)
         for city, units, use_code in conn.execute(
                 "SELECT city, units, use_code FROM properties_8r"):
-            if is_mf_ten_plus_for_city(city, use_code, units, learned):
+            if units is None and city in rich and (
+                    is_multifamily(use_code, None)
+                    or is_mf_ten_plus_for_city(city, use_code, None, learned)):
+                report.label_only_dropped[city] += 1
+            if is_mf_ten_plus_for_city(city, use_code, units, learned, rich):
                 report.multifamily += 1
                 report.mf_by_city[city] += 1
                 report.mf_use_codes[city][(use_code or "").strip()[:40]] += 1
@@ -945,7 +982,7 @@ def build_spine(db_path: Path,
 # aliasing, prune logic...) so an unchanged-inputs skip cannot pin an old
 # spine under new code. Same pattern, same reason as listings
 # PULL_GENERATION: a fix that cannot run is indistinguishable from no fix.
-SPINE_BUILD_GENERATION = 4
+SPINE_BUILD_GENERATION = 5
 
 
 def spine_input_fingerprint(db_path: Path) -> str:

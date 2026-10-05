@@ -998,6 +998,12 @@ scale this is intolerable. Non-negotiable rules:
    until a budget stop let the VA list survive and 180K Hampton Roads
    parcels appeared overnight, swinging every parity gate. Any shared
    output written by more than one step must be merged by key.
+19. **One definition, every count.** The comp pool learned in round 6 to
+   presume label-only rows small where a city carries unit data; the
+   headline, metrics box, rent stamping and alerts kept the bare label
+   rule, so a single new feed (VB, 10-04) nearly tripled the headline
+   while the comp pool barely moved. When a classification rule gets
+   smarter in one module, grep every caller of the old rule the same day.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /

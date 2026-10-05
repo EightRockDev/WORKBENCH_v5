@@ -12,6 +12,34 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.2.0.0 - 2026-10-05  .  One multifamily rule for every count.
+
+With both discovery lists finally reaching the pull (V5.67.1.4.0),
+Virginia Beach's CAD basemap parcels joined the backbone and the
+headline jumped 11,333 -> 29,589. 16,064 of VB's 16,286 "multifamily"
+rows had NO unit count, only a "Multi Family" label - the same duplexes
+the comp pool has excluded since round 6 ("presumed small in a city
+whose feed proves it carries unit counts"). The comp pool applied that
+evidence rule; the headline, the screener metrics box, rent stamping,
+alerts and the cutover preflight did not.
+
+- `core.phase0.unit_rich_cities()` + an optional `unit_rich` set on
+  `is_mf_ten_plus_for_city()`: in a city with >= 50 parcels carrying a
+  known 10+ count, a label with no count does not qualify. A known count
+  always wins; cities that publish no counts (Norfolk, Greensboro) still
+  count by label. One `UNIT_RICH_MIN`, shared with the comp pool.
+- Applied to the spine headline, screener metrics, FMR rent stamping,
+  alert sweep and preflight rent coverage. phase0 prints a new "NOT
+  counted" line per city so the dropped rows stay visible.
+- Expected effect on the next build (SPINE_BUILD_GENERATION 4 -> 5
+  forces it): about 8,355 apartment properties. Virginia Beach 16,286 ->
+  222 and Richmond 5,708 -> 671 (Richmond's master address table lists
+  every apartment unit; an "apartment"-coded parcel with no unit
+  addresses is not a 10-unit building). Chesapeake loses its 134
+  label-only rows. Norfolk and Greensboro are unchanged.
+- The previous headlines (11,2xx through 10-03) included ~5,000 Richmond
+  label-only parcels; this corrects those too.
+
 ## V5.67.1.4.0 - 2026-10-04  .  Both discovery runs keep each other's feeds.
 
 Overnight 10-03 -> 10-04 the backbone grew 2.30M -> 2.49M parcels: the
