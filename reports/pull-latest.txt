@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-07T15:13:04
+autopilot pull @ 2026-10-07T16:13:26
 
 WORKBENCH muni-data ETL — 2026-10-07
   discovered feeds loaded from data/feeds_extra.json: 21
@@ -23,8 +23,6 @@ WORKBENCH muni-data ETL — 2026-10-07
     + Suffolk: https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1
     + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
-  [swept] Chesapeake: 92,557 stale rows from retired feed https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/MapServer/0
-  stale rows removed: 92,557
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 438,960 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  438960 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 184,431 rows (ER_MUNI_FORCE=1 to re-pull)
