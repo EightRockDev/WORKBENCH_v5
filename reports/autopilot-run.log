@@ -71649,3 +71649,5 @@ error: failed to push some refs to 'https://github.com/EightRockDev/WORKBENCH_v5
 [salespull] exit 0 -> sales-latest.txt
 [publish] pushed to GitHub
 [arcgissales] exit 0 -> arcgis-sales-latest.txt
+[publish] pushed to GitHub
+[saleindex] exit 0 -> sale-index-latest.txt
