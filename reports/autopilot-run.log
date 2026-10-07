@@ -71552,3 +71552,5 @@ error: failed to push some refs to 'https://github.com/EightRockDev/WORKBENCH_v5
 [backbonestats] exit 0 -> backbone-stats-latest.txt
 [publish] pushed to GitHub
 [richmondreview] exit 0 -> richmond-review.txt
+[publish] pushed to GitHub
+[joinkey] exit 0 -> join-key-latest.txt
