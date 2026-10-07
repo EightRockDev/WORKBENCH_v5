@@ -1,11 +1,11 @@
-autopilot pull @ 2026-10-06T22:12:53
+autopilot pull @ 2026-10-06T23:13:10
 
 WORKBENCH muni-data ETL — 2026-10-06
   discovered feeds loaded from data/feeds_extra.json: 21
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
     + Riverside: https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Vision_Plan_Transfer_WFL1/FeatureServer/3
     + Atlanta: https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Virginia_Highland_Focus_Area/FeatureServer/1
-    + Atlanta: https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Atlanta_Main_Street_District_Boundaries/FeatureServer/3
+    + Atlanta: https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Atlanta_Main_Street_District_Boundaries/FeatureServer/1
     + Raleigh: https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/RaleighWV_Service/FeatureServer/0
     + Raleigh: https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/Raleigh_Precinct_Data/FeatureServer/6
     + Richmond: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
@@ -23,8 +23,8 @@ WORKBENCH muni-data ETL — 2026-10-06
     + Suffolk: https://geo.hrsd.com/hrgeo/rest/services/regionalgis/ElevationCertificatesNAVD88/MapServer/1
     + Norfolk: https://data.norfolk.gov/resource/ykcq-76im.json
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
-  [swept] Atlanta: 224 stale rows from retired feed https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Atlanta_Main_Street_District_Boundaries/FeatureServer/1
-  stale rows removed: 224
+  [swept] Atlanta: 244 stale rows from retired feed https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Atlanta_Main_Street_District_Boundaries/FeatureServer/3
+  stale rows removed: 244
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 438,960 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  438960 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 184,431 rows (ER_MUNI_FORCE=1 to re-pull)
@@ -57,7 +57,7 @@ WORKBENCH muni-data ETL — 2026-10-06
   [OK] Chesapeake/assessor                      92684 records
   [fresh] Atlanta/assessor: pulled within 3 days - keeping 244 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           244 records
-  [OK] Atlanta/assessor                           244 records
+  [OK] Atlanta/assessor                           224 records
   [fresh] Raleigh/assessor: pulled within 3 days - keeping 61,363 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor                         61363 records
   [fresh] Raleigh/assessor: pulled within 3 days - keeping 61,157 rows (ER_MUNI_FORCE=1 to re-pull)
