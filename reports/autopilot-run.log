@@ -71513,3 +71513,10 @@ To https://github.com/EightRockDev/WORKBENCH_v5.git
  ! [remote rejected]     main -> main (Internal Server Error)
 error: failed to push some refs to 'https://github.com/EightRockDev/WORKBENCH_v5.git'
 [publicdata] exit 0 -> public-data-latest.txt
+[publish] PUSH FAILED: remote: Internal Server Error        
+remote: Request ID C083:7FC59:9FBA2F:D45E43:6AC66219        
+remote: Time 2026-10-07T15:15:39Z
+To https://github.com/EightRockDev/WORKBENCH_v5.git
+ ! [remote rejected]     main -> main (Internal Server Error)
+error: failed to push some refs to 'https://github.com/EightRockDev/WORKBENCH_v5.git'
+[listings] exit 0 -> listings-latest.txt
