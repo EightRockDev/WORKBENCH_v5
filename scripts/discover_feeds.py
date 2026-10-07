@@ -552,6 +552,21 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
     out: dict[str, list[dict]] = Partial()
     start = clock()
     budget = BUDGET_S if budget_s is None else budget_s
+
+    # The between-cities check alone was not enough: on 2026-10-06 Hampton
+    # alone ran 385s+ (layer after layer, each allowed TIMEOUT) and the
+    # step was killed at the cap with nothing saved. Every request now
+    # checks the clock too; once the budget is spent, fetches return None
+    # at once, the current city winds down in seconds, and the run stops.
+    def _over() -> bool:
+        return clock() - start > budget
+
+    def _guard(fn):
+        def wrapped(*a, **k):
+            return None if _over() else fn(*a, **k)
+        return wrapped
+    fetch, soda = _guard(fetch), _guard(soda)
+
     for entry in cities:
         city, state = (entry if isinstance(entry, tuple) else (entry, "VA"))
         elapsed = clock() - start
@@ -649,6 +664,13 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                 # Below any real city roll, above every subset/extract.
                 candidates.append((MIN_SCORE + 1, vgin))
                 candidates.sort(key=lambda t: -t[0])
+        if _over():
+            # Budget ran out mid-city: its results are incomplete, so they
+            # must not replace this city's feeds in the saved list.
+            out.cut_short_at = city
+            print(f"   [budget] {clock() - start:.0f}s used of "
+                  f"{budget:.0f}s - stopped during {city}", flush=True)
+            break
         out[city] = [spec for _s, spec in candidates[:2]]
         if real_rolls and not any("lat" in (c.get("fields_mapped") or [])
                                   for c in real_rolls):

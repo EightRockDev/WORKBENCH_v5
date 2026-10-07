@@ -75,20 +75,30 @@ def test_the_threshold_is_below_the_smallest_hampton_roads_city():
 
 # ------------------------------------------------ time budget (2026-10-01)
 
-def test_discover_stops_on_its_own_budget_and_says_where(capsys):
+def test_discover_stops_on_its_own_budget_and_says_where(capsys,
+                                                       monkeypatch):
     """From 2026-10-01 every run hit the autopilot's 900s kill and printed
     nothing. discover() must stop starting cities once its budget is spent
     and say which city it stopped before."""
     import scripts.discover_feeds as d
-    ticks = iter([0, 0, 100, 900, 900])     # start, city1, city2, city3...
+    now = {"t": 0.0}
+
+    def city_takes_350s(city, fetch=None):
+        now["t"] += 350
+        return iter(())
+    monkeypatch.setattr(d, "search_agol", city_takes_350s)
     found = d.discover(cities=[("A", "VA"), ("B", "VA"), ("C", "VA")],
                        fetch=lambda *a, **k: None,
                        soda=lambda *a, **k: None,
-                       budget_s=600, clock=lambda: next(ticks))
-    assert found.cut_short_at == "C"
+                       budget_s=600, clock=lambda: now["t"])
+    # A ends at 350s (under budget, kept); B ends at 700s (over budget
+    # mid-city, so its partial result is dropped and the run stops).
+    assert found.cut_short_at == "B"
+    assert "A" in found and "B" not in found and "C" not in found
     out = capsys.readouterr().out
     assert "probing A" in out and "probing B" in out
-    assert "stopping before C" in out
+    assert "probing C" not in out
+    assert "stopped during B" in out
 
 
 def test_partial_run_leaves_the_feed_list_untouched(tmp_path, monkeypatch,
@@ -163,3 +173,26 @@ def test_main_merges_with_the_file_on_disk(tmp_path, monkeypatch, capsys):
     merged = json.loads(feeds.read_text())
     assert {x["url"] for x in merged} == {"a", "h"}
     assert "1 kept from other markets" in capsys.readouterr().out
+
+
+def test_a_single_slow_city_cannot_overrun_the_budget(capsys):
+    """2026-10-06: Hampton alone ran past the cap - the budget was only
+    checked between cities. Once the deadline passes mid-city, no further
+    request may go out, and the half-probed city must not be saved."""
+    import scripts.discover_feeds as d
+    now = {"t": 0.0}
+    calls = {"n": 0}
+
+    def slow_fetch(url, params=None):
+        calls["n"] += 1
+        now["t"] += 100            # every request "takes" 100s
+        return None
+
+    found = d.discover(cities=[("Hampton", "VA"), ("Suffolk", "VA")],
+                       extra_roots=["https://x/arcgis/rest/services"],
+                       fetch=slow_fetch, soda=lambda *a, **k: None,
+                       budget_s=250, clock=lambda: now["t"])
+    assert found.cut_short_at == "Hampton"
+    assert "Hampton" not in found and "Suffolk" not in found
+    assert calls["n"] <= 3, "requests kept going after the deadline"
+    assert "stopped during Hampton" in capsys.readouterr().out

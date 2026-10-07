@@ -992,6 +992,9 @@ scale this is intolerable. Non-negotiable rules:
    was a header plus "step killed". Long-running steps must print
    progress as they go and stop on their own budget below the cap, and
    a partial result must never overwrite a complete one.
+   Follow-up 10-06: a budget checked only between units of work fails
+   when ONE unit is slow (Hampton alone ran 385s+). Put the deadline on
+   the innermost operation - every request - not just the outer loop.
 18. **Two writers, one file: merge, never overwrite.** The VA and national
    discovery steps both wrote feeds_extra.json wholesale, so for months
    the pull only saw the national list (it ran second). Nobody noticed

@@ -12,6 +12,25 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.2.1.0 - 2026-10-07  .  Discovery's time budget is checked on every request.
+
+V5.67.1.3.0 gave discovery a 720s budget, checked between cities. On
+2026-10-06 four runs were still killed at the 900s cap: Hampton alone
+took 385s+ (started at 515s), walking layer after layer with each
+request allowed its 25s timeout, and the between-cities check never got
+a chance to fire. The run saved nothing.
+
+- Every fetch inside `discover()` now goes through a deadline guard;
+  once the budget is spent, requests return None immediately, the
+  current city winds down in seconds, and the run stops well inside
+  the cap (worst case: budget + one in-flight 25s request).
+- A city still being probed when the budget runs out is treated as
+  incomplete: it is not added to the results and is reported as
+  "stopped during <city>", so the saved feed list keeps that city's
+  previous feeds instead of a half-probed replacement.
+- Test recreates the 10-06 case (one slow city, 100s per request):
+  at most 3 requests go out, nothing partial is saved.
+
 ## V5.67.2.0.0 - 2026-10-05  .  One multifamily rule for every count.
 
 With both discovery lists finally reaching the pull (V5.67.1.4.0),
