@@ -1,4 +1,4 @@
-autopilot backbonestats @ 2026-10-06T22:44:27
+autopilot backbonestats @ 2026-10-06T23:44:53
 
 Properties on the backbone, per metro/market:
 market                properties
@@ -9,8 +9,8 @@ Winston-Salem            167,453
 Raleigh                  135,076
 Durham-Chapel Hill       129,199
 Richmond                  72,943
-Atlanta                   69,285
-TOTAL                  1,505,491
+Atlanta                   69,292
+TOTAL                  1,505,498
 
 Multifamily unit stats (units >= 10), per city:
 city                count   min  median    max
