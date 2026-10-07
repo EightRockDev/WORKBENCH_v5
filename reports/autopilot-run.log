@@ -71546,3 +71546,5 @@ error: failed to push some refs to 'https://github.com/EightRockDev/WORKBENCH_v5
 [pendingusers] exit 0 -> pending-users-latest.txt
 [publish] pushed to GitHub
 [inboxsync] exit 0 -> inbox-sync-latest.txt
+[publish] pushed to GitHub
+[expertise] exit 0 -> expertise-latest.txt
