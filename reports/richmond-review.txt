@@ -1,7 +1,7 @@
-autopilot richmondreview @ 2026-10-08T08:47:17
+autopilot richmondreview @ 2026-10-08T09:44:38
 
 ================================================================
-RICHMOND REVIEW  @ 2026-10-08T08:47:20
+RICHMOND REVIEW  @ 2026-10-08T09:44:41
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
@@ -15,7 +15,6 @@ Multifamily (units>=10): 671
 -- 2. Raw Richmond assessor rows on hand --
     76,976  2026-10-03T18:55:50  files:rva.gov/assessor-real-estate
     76,879  2026-10-07T14:16:39  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
-     6,570  2026-10-08T08:16:07  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
      6,570  2026-10-06T20:17:06  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
      5,009  2026-10-02T07:15:06  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
 
@@ -29,9 +28,6 @@ Multifamily (units>=10): 671
   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
     coords=6,570  units+coords=0  apn shapes=['1a10d', '1a10d1a']
-  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/ser
-    rows=6,570  apn=6,569 (sample: N0001746010)  units=0  assessed_value=6,563  use_code=6,567
-    coords=6,569  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/se
     rows=5,009  apn=5,009 (sample: W0000911052)  units=5,009  assessed_value=0  use_code=0
     coords=5,009  units+coords=5,009  apn shapes=['1a10d', '1a10d1a']
