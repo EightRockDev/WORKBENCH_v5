@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-08T16:13:12
+autopilot pull @ 2026-10-08T17:14:10
 
 WORKBENCH muni-data ETL — 2026-10-08
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -14,7 +14,7 @@ WORKBENCH muni-data ETL — 2026-10-08
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
-    + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/MapServer/0
+    + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Hampton: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
@@ -26,6 +26,8 @@ WORKBENCH muni-data ETL — 2026-10-08
     + Norfolk: https://data.norfolk.gov/resource/yvpm-8aid.json
     + Richmond: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
+  [swept] Chesapeake: 92,557 stale rows from retired feed https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/MapServer/0
+  stale rows removed: 92,557
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 439,311 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  439311 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 184,431 rows (ER_MUNI_FORCE=1 to re-pull)
@@ -72,6 +74,7 @@ WORKBENCH muni-data ETL — 2026-10-08
   [OK] Chesapeake/assessor                     110309 records
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 116,461 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     116461 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,557 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92557 records
   [fresh] Hampton/assessor: pulled within 3 days - keeping 51,800 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Hampton/assessor                         51800 records
