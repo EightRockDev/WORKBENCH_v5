@@ -12,6 +12,32 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.2.2.0 - 2026-10-08  .  Fix my own feed-merge bug: VGIN cities were collapsing.
+
+V5.67.1.4.0's `merge_specs()` deduped feed specs by URL alone. The
+statewide VGIN parcel layer is ONE url for every Virginia city (the pull
+filters it by each market's FIPS), so Chesapeake, Hampton, Portsmouth and
+Richmond's VGIN entries collapsed into a single entry, and the national
+run's Richmond copy then knocked out whichever one survived. By 10-07 the
+VGIN parcels for Chesapeake (92,557), Hampton (51,800) and Portsmouth
+(36,615) had dropped out of the pull - ~181K parcels gone from the
+backbone - and on 10-07 13:46 Richmond's VGIN entry was briefly missing
+too, so the rva.gov workbook could not join its parcels for one cycle
+(the richmondreview exit 1).
+
+- Dedupe key is now (market, url, kind), the same key the pull uses for
+  its rows (`etl_munidata._feed_key`).
+- Richmond is in both discovery target lists, and the two runs kept
+  swapping each other's Richmond specs every hour. The VA run now owns
+  every VA city: the national run neither writes nor clears them.
+- Gate numbers since 10-07 (overlap 70.2%, match 73.8%) were measured
+  WITHOUT the Hampton/Portsmouth/Chesapeake parcels. With them back,
+  expect a return toward 10-06's 48.5% / 88.2%. The overlap "gain" was
+  the hard-to-comp subjects falling out of the denominator, not better
+  comps.
+- Tests: one URL serving four cities keeps all four; the national run
+  leaves VA cities untouched.
+
 ## V5.67.2.1.0 - 2026-10-07  .  Discovery's time budget is checked on every request.
 
 V5.67.1.3.0 gave discovery a 720s budget, checked between cities. On

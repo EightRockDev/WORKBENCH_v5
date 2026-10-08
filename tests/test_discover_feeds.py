@@ -196,3 +196,42 @@ def test_a_single_slow_city_cannot_overrun_the_budget(capsys):
     assert "Hampton" not in found and "Suffolk" not in found
     assert calls["n"] <= 3, "requests kept going after the deadline"
     assert "stopped during Hampton" in capsys.readouterr().out
+
+
+def test_one_url_serving_several_cities_keeps_every_city():
+    """2026-10-08: the VGIN statewide layer is one url for every VA city.
+    A url-only dedupe collapsed four cities' entries into one and ~181K
+    parcels fell out of the backbone."""
+    import scripts.discover_feeds as d
+    vgin = "https://vginmaps.vdem.virginia.gov/.../VA_Parcels/FeatureServer/0"
+    fresh = [{"market": m, "url": vgin, "kind": "assessor"}
+             for m in ("Chesapeake", "Hampton", "Portsmouth", "Richmond")]
+    merged, _ = d.merge_specs([], fresh, {"Chesapeake", "Hampton",
+                                          "Portsmouth", "Richmond"})
+    assert sorted(x["market"] for x in merged) == [
+        "Chesapeake", "Hampton", "Portsmouth", "Richmond"]
+
+
+def test_national_run_never_touches_the_va_cities(tmp_path, monkeypatch):
+    """Richmond is in both target lists; the runs kept replacing each
+    other's Richmond feeds. The VA run owns VA cities outright."""
+    import json
+    import scripts.discover_feeds as d
+    data = tmp_path / "data"
+    data.mkdir()
+    feeds = data / "feeds_extra.json"
+    va_specs = [{"market": "Richmond", "url": "vgin", "kind": "assessor"},
+                {"market": "Hampton", "url": "vgin", "kind": "assessor"}]
+    feeds.write_text(json.dumps(va_specs))
+    monkeypatch.setattr(d, "__file__",
+                        str(tmp_path / "scripts" / "discover_feeds.py"))
+    monkeypatch.setattr(d, "discover", lambda **kw: d.Partial({
+        "Richmond": [{"market": "Richmond", "url": "other", "note": "n",
+                      "kind": "assessor"}],
+        "Atlanta": [{"market": "Atlanta", "url": "a", "note": "n",
+                     "kind": "assessor"}]}))
+    assert d.main([]) == 0                          # national mode
+    merged = json.loads(feeds.read_text())
+    got = sorted((x["market"], x["url"]) for x in merged)
+    assert got == [("Atlanta", "a"), ("Hampton", "vgin"),
+                   ("Richmond", "vgin")]

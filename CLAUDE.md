@@ -1001,6 +1001,12 @@ scale this is intolerable. Non-negotiable rules:
    until a budget stop let the VA list survive and 180K Hampton Roads
    parcels appeared overnight, swinging every parity gate. Any shared
    output written by more than one step must be merged by key.
+   Follow-up 10-08: and the key must be the CONSUMER's key. I deduped
+   feed specs by url; the pull keys rows by url + market + kind, and one
+   statewide url serves every VA city. Four cities collapsed into one
+   and 181K parcels fell out, while a gate metric "improved" 48% -> 70%.
+   A metric that jumps in the good direction after your own change is a
+   bug report until proven otherwise.
 19. **One definition, every count.** The comp pool learned in round 6 to
    presume label-only rows small where a city carries unit data; the
    headline, metrics box, rent stamping and alerts kept the bare label

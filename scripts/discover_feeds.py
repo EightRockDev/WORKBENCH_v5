@@ -705,13 +705,19 @@ def merge_specs(existing: list[dict], fresh: list[dict],
     feeds were silently dropped every cycle until the national step was
     cut short on 2026-10-03 and they reached the pull for the first time.
     """
+    # Key is (market, url), never url alone: the statewide VGIN parcel
+    # layer is ONE url for every Virginia city (filtered by FIPS per
+    # market), so a url-only key collapsed Chesapeake, Hampton, Portsmouth
+    # and Richmond into a single entry (V5.67.1.4.0, found 2026-10-08
+    # after ~181K parcels quietly fell out of the backbone). The pull keys
+    # its rows the same way (etl_munidata._feed_key: url + market + kind).
     kept = [d for d in existing if d.get("market") not in covered]
     out, seen = [], set()
     for d in fresh + kept:
-        url = d.get("url")
-        if url in seen:
+        key = (d.get("market"), d.get("url"), d.get("kind"))
+        if key in seen:
             continue
-        seen.add(url)
+        seen.add(key)
         out.append(d)
     return out, sum(1 for d in out if d in kept)
 
@@ -758,8 +764,15 @@ def main(argv=None) -> int:
     elif specs:
         out_path = Path(__file__).resolve().parent.parent / "data" / "feeds_extra.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        merged, kept = merge_specs(_read_specs(out_path), specs,
-                                   {label_of(t) for t in targets})
+        covered = {label_of(t) for t in targets}
+        if not args.va:
+            # Richmond sits in both target lists, and the two runs kept
+            # replacing each other's Richmond feeds every cycle. The VA
+            # run owns every VA city; national neither writes nor clears
+            # them.
+            covered -= set(TARGET_CITIES)
+            specs = [x for x in specs if x.get("market") in covered]
+        merged, kept = merge_specs(_read_specs(out_path), specs, covered)
         out_path.write_text(json.dumps(merged, indent=2))
         print(f"Wrote {len(merged)} feed spec(s) to {out_path} "
               f"({len(specs)} from this run, {kept} kept from other "
