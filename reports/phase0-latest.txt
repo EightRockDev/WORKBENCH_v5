@@ -1,10 +1,7 @@
-autopilot phase0 @ 2026-10-08T14:15:10
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-08T15:35:30
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,179,964
+Assessor records available: 4,180,315
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,309  .../Accela_base_map_pro/MapServer/0
@@ -29,28 +26,28 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 29 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,237,157
-parcels normalized:        3,237,157
-multifamily (>= 10 units): 8,354
-written to properties_8r:  3,237,157
-provisional (no-APN) ids:  1,769
+muni records scanned:      3,237,508
+parcels normalized:        3,237,508
+multifamily (>= 10 units): 8,356
+written to properties_8r:  3,237,508
+provisional (no-APN) ids:  1,768
 units derived from address points: 870  (skipped non-residential: 9,444)
 units bridged by geometry: 266  (Richmond 161, Atlanta 100, Hampton 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 215
-rent estimates stamped (HUD FMR blend): 8,354
+rent estimates stamped (HUD FMR blend): 8,356
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 738,028  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 738,196  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,626, Greensboro 900, Norfolk 869, Richmond 671, Newport News 244, Virginia Beach 222, Winston-Salem 4, Suffolk 2, Hampton 2, Durham 1
+Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,628, Greensboro 900, Norfolk 869, Richmond 671, Newport News 244, Virginia Beach 222, Winston-Salem 4, Suffolk 2, Hampton 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 744,450
-  candidate parcels      : 926,881
+  unit-bearing parcels   : 744,620
+  candidate parcels      : 927,063
   merged                 : 113
-  rejected (too far)     : 591,276
-  rejected (same id form): 151,999
+  rejected (too far)     : 591,366
+  rejected (same id form): 152,079
   rejected (not mutual)  : 655
   rejected (ambiguous)   : 407
   merged by address      : 153
@@ -60,7 +57,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Richmond         sources   5,009  targets  72,146  merged    29   refused: far 578 / same-id 4,385 / not-mutual 4 / ambiguous 13   by-address 132 (shared 4, coords 1)
   Hampton          sources     210  targets  51,333  merged     2   refused: far 26 / same-id 182 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Chesapeake       sources   2,049  targets  92,377  merged     1   refused: far 1,202 / same-id 846 / not-mutual 0 / ambiguous 0   by-address 0 (shared 12, coords 0)
-  Raleigh          sources 369,360  targets 132,508  merged     1   refused: far 297,725 / same-id 71,634 / not-mutual 0 / ambiguous 0   by-address 0 (shared 108, coords 156)
+  Raleigh          sources 369,530  targets 132,690  merged     1   refused: far 297,815 / same-id 71,714 / not-mutual 0 / ambiguous 0   by-address 0 (shared 108, coords 156)
   Winston-Salem    sources      13  targets 167,443  merged     1   refused: far 12 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Durham           sources       4  targets 129,198  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Newport News     sources  46,669  targets   7,678  merged     0   refused: far 39,017 / same-id 7,652 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
@@ -78,7 +75,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Chesapeake: Apartments x612, 1060 x186, 3015 x166, (units only) x164, 4020 x151
   Winston-Salem: (units only) x4
   Newport News: A x237, C x4, (units only) x2, R x1
-  Raleigh: (units only) x1626
+  Raleigh: (units only) x1628
   Virginia Beach: Multi Family x222
   Durham: (units only) x1
   Hampton: (units only) x2
@@ -96,7 +93,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Chesapeake: units>=10: 1,832
   Winston-Salem: units>=10: 4
   Newport News: units>=10: 244
-  Raleigh: units>=10: 1,626
+  Raleigh: units>=10: 1,628
   Virginia Beach: units>=10: 222
   Durham: units>=10: 1
   Hampton: units>=10: 2
@@ -113,7 +110,7 @@ Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Suffolk: LENGTH_UNIT, EC_ELEV_DATUM, EC_FLOOD_ZONE, BLDG_DIAGRAM, FIRM_STATUS, AGENCYURL, CURRENT_DATUM, LOWELEV_STAIRS, TAXMAPNO, COUNTY, EC_FLOOD_ZONE1, NOTES, HIGHWATER99, EC_FLOOD_ZONE2
   Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, TotAssess, TotAppr, ImprAppr, AddrNumber, LandAssess, ImprAssess, LandAppr, OwnerAddr1, OwnerAddr2, LandAcres, AddrSuffix, ExCode, SITECITY, SITESTATE, TOT_APPR, LOWPARCELID, CNTASSDVAL, CVTTXCD
   Winston-Salem: BLKCNTRL, BLK, LOT, BLKLOT, TBLCNTRL, CNTRL, TAXPIN, TAXPIN_N, PINMAP, PINBLK, PINLOT, PINLOT_A, CALCULATEDACREAGE, TAXPIN16, PINLOT16, MLOT, PARCEL_PK, BLOCKLOT, REID_1, CURRENTOWNERADDRESS, CURRENTDEEDDATE, CURRENTDEEDSTAMPS, ASSESSMENTMETHOD, LASTQUALIFIEDSALEPRICE
-  Raleigh: CALC_AREA, PIN_NUM, PARCEL_PK, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE, OWNERSHIP, ACTIVITY, FUNCTION, STRUCTURE, SITE, TOTSTRUCTS, TOTUNITS, OLD_PARCEL_NUMBER, DEED_DATE, ADDR2, TOTAL_VALUE_ASSD, PLANNING_JURISDICTION
+  Raleigh: CALC_AREA, PIN_NUM, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE, OLD_PARCEL_NUMBER, PARCEL_PK, OWNERSHIP, ACTIVITY, FUNCTION, STRUCTURE, SITE, TOTSTRUCTS, TOTUNITS, DEED_DATE, ADDR2, TOTAL_VALUE_ASSD, PLANNING_JURISDICTION
   Hampton: VGIN_QPID, LOCALITY, VGIN_GEOID, VGIN_LASTU, NEW_ZONE_S, NOTES, EC_FLOOD_1, EC_FLOOD_2
   Portsmouth: PREV_INST_, VGIN_QPID, LOCALITY, COMBLDFACT, COMPHDPRC1, COMFNDPRC2, COMECDPRC3, FRONT, LOC_ZIP, OWNER_ST_N, MP, ACRES_A, LOT_SEQ_A, ACPRICE_A, DEPR1_A, DEPR2_A, DEPR3_A, TOTVAL_A, ACRES_B, LOT_SEQ_B, ACPRICE_B, DEPR1_B, DEPR2_B, DEPR3_B
   Virginia Beach: CRNT_OWNER, OWNER_MAIL_ZIP, OWNER_MAIL_STATE, OWNER_MAIL_ADRS, OWNER_MAIL_CITY, PAR_GPIN, geodb_oid, SUBDIVISION, INSTRUMENT, STR_DIR
