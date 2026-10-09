@@ -1,22 +1,22 @@
-autopilot richmondreview @ 2026-10-09T07:15:52
+autopilot richmondreview @ 2026-10-09T08:46:58
 
 ================================================================
-RICHMOND REVIEW  @ 2026-10-09T07:15:55
+RICHMOND REVIEW  @ 2026-10-09T08:47:01
 ================================================================
 
 -- 1. Backbone properties (properties_8r) --
-Richmond properties total: 72,943
+Richmond properties total: 72,932
   with unit data:  671
 Multifamily (units>=10): 671
   units:          n=671  min=10  median=28  max=1,052
   year built:     1840-2026
-  assessed value: n=670  min=1,000  median=3,006,000  max=121,303,000
+  assessed value: n=670  min=1,000  median=3,010,500  max=121,303,000
 
 -- 2. Raw Richmond assessor rows on hand --
     76,976  2026-10-08T19:14:18  files:rva.gov/assessor-real-estate
     76,879  2026-10-07T14:16:39  https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcel
      6,570  2026-10-06T20:17:06  https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Pa
-     5,009  2026-10-02T07:15:06  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
+     5,018  2026-10-09T08:16:47  https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Addresses/Fea
 
 -- 2b. Field mapping per source (spine-visible attributes) --
   files:rva.gov/assessor-real-estate
@@ -29,19 +29,19 @@ Multifamily (units>=10): 671
     rows=6,570  apn=6,570 (sample: N0001746010)  units=0  assessed_value=6,564  use_code=6,568
     coords=6,570  units+coords=0  apn shapes=['1a10d', '1a10d1a']
   https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/se
-    rows=5,009  apn=5,009 (sample: W0000911052)  units=5,009  assessed_value=0  use_code=0
-    coords=5,009  units+coords=5,009  apn shapes=['1a10d', '1a10d1a']
+    rows=5,018  apn=5,018 (sample: N0000978005)  units=5,018  assessed_value=0  use_code=0
+    coords=5,018  units+coords=5,018  apn shapes=['1a10d', '1a10d1a']
   -- 2 raw records from the unit-bearing source (https://services1.arcgis.com/k3vhq11XkBNeeOfM/ar) --
-      Latitude = 37.557448
-      Longitude = -77.462637
-      PIN = W0000911052
-      UnitCount = 3
+      Latitude = 37.572186
+      Longitude = -77.428379
+      PIN = N0000978005
+      UnitCount = 1
       _derived = distinct dwelling-unit addresses in the city mas
       ----------------------------------------
-      Latitude = 37.547219
-      Longitude = -77.440711
-      PIN = N0000077010
-      UnitCount = 1
+      Latitude = 37.547191
+      Longitude = -77.440664
+      PIN = N0000077011
+      UnitCount = 2
       _derived = distinct dwelling-unit addresses in the city mas
       ----------------------------------------
   rva.gov-files join health: 76,821 of 76,976 workbook parcels match an API-feed parcel
@@ -67,8 +67,8 @@ sale rows: 323,024
     2026-09-22  $1,315,000  -> WRIGHT CAROLINE LANGLEY &
 
 -- 4. Estimated real-estate tax (rate $1.20/$100 assessed; ER_RICHMOND_TAX_RATE) --
-  MF annual tax:  n=670  min=12  median=36,072  max=1,455,636
-  MF tax base:    $5,424,720,000 assessed -> $65,096,640/yr estimated
+  MF annual tax:  n=670  min=12  median=36,126  max=1,455,636
+  MF tax base:    $5,408,383,000 assessed -> $64,900,596/yr estimated
 
 -- 5. GAPS (each names its unblock) --
   none - Richmond properties, MF, units, sales, values and tax estimates are all present.
