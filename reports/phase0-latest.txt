@@ -1,10 +1,7 @@
-autopilot phase0 @ 2026-10-09T07:14:43
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-09T08:26:40
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,180,315
+Assessor records available: 4,180,324
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,309  .../Accela_base_map_pro/MapServer/0
@@ -29,35 +26,35 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 29 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,237,508
-parcels normalized:        3,237,508
+muni records scanned:      3,237,517
+parcels normalized:        3,237,517
 multifamily (>= 10 units): 8,356
-written to properties_8r:  3,237,508
+written to properties_8r:  3,237,517
 provisional (no-APN) ids:  1,768
 units derived from address points: 870  (skipped non-residential: 9,444)
-units bridged by geometry: 266  (Richmond 161, Atlanta 100, Hampton 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
+units bridged by geometry: 268  (Richmond 163, Atlanta 100, Hampton 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 215
 rent estimates stamped (HUD FMR blend): 8,356
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 738,196  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 738,205  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
 Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,628, Greensboro 900, Norfolk 869, Richmond 671, Newport News 244, Virginia Beach 222, Winston-Salem 4, Suffolk 2, Hampton 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 744,620
-  candidate parcels      : 927,063
-  merged                 : 113
-  rejected (too far)     : 591,366
-  rejected (same id form): 152,079
-  rejected (not mutual)  : 655
+  unit-bearing parcels   : 744,629
+  candidate parcels      : 927,053
+  merged                 : 114
+  rejected (too far)     : 591,364
+  rejected (same id form): 152,087
+  rejected (not mutual)  : 657
   rejected (ambiguous)   : 407
-  merged by address      : 153
+  merged by address      : 154
   addr rejected (shared) : 819
   addr rejected (coords) : 173
   Atlanta          sources 320,839  targets  67,390  merged    79   refused: far 252,547 / same-id 67,168 / not-mutual 651 / ambiguous 394   by-address 21 (shared 684, coords 16)
-  Richmond         sources   5,009  targets  72,146  merged    29   refused: far 578 / same-id 4,385 / not-mutual 4 / ambiguous 13   by-address 132 (shared 4, coords 1)
+  Richmond         sources   5,018  targets  72,136  merged    30   refused: far 576 / same-id 4,393 / not-mutual 6 / ambiguous 13   by-address 133 (shared 4, coords 1)
   Hampton          sources     210  targets  51,333  merged     2   refused: far 26 / same-id 182 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Chesapeake       sources   2,049  targets  92,377  merged     1   refused: far 1,202 / same-id 846 / not-mutual 0 / ambiguous 0   by-address 0 (shared 12, coords 0)
   Raleigh          sources 369,530  targets 132,690  merged     1   refused: far 297,815 / same-id 71,714 / not-mutual 0 / ambiguous 0   by-address 0 (shared 108, coords 156)
@@ -103,7 +100,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
 
 NOT counted - multifamily label but no unit count, in a city whose feed carries unit data (>= 50 parcels with a known 10+ count):
   Virginia Beach: 16,064
-  Richmond: 5,037
+  Richmond: 5,038
   Chesapeake: 134
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
