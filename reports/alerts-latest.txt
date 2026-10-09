@@ -1,8 +1,11 @@
-autopilot alerts @ 2026-10-09T07:17:39
+autopilot alerts @ 2026-10-09T08:48:46
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
+alert sweep, NEW this cycle: 2 multifamily, 0 unit-count moves, 0 ownership changes
+  closed 2 stale alert(s) whose property no longer qualifies as multifamily
 OPEN alerts (carried forward): 4978 - new_mf 4976, units_jump 2
   showing the 25 most recent of 4978
+  [new_mf] New multifamily on the backbone: 600 Cowardin Ave   (50 units · Richmond)
+  [new_mf] New multifamily on the backbone: 1021 German School Road 2 Unit   (241 units · Richmond)
   [new_mf] New multifamily on the backbone: 3708 ROCK QUARRY RD  (22 units · Raleigh)
   [new_mf] New multifamily on the backbone: 1217 WAKE FOREST RD  (18 units · Raleigh)
   [new_mf] New multifamily on the backbone: 8R-37067-a3dfa2cf2261  (36 units · Winston-Salem)
@@ -11,7 +14,6 @@ OPEN alerts (carried forward): 4978 - new_mf 4976, units_jump 2
   [new_mf] New multifamily on the backbone: 5100 THRIFTWOOD DR  (832 units · Raleigh)
   [new_mf] New multifamily on the backbone: 915 E 4th St   (169 units · Richmond)
   [new_mf] New multifamily on the backbone: 1618 Park Ave   (12 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1021 German School Road 1 Unit   (241 units · Richmond)
   [new_mf] New multifamily on the backbone: 7608 Forest Hill Ave   (86 units · Richmond)
   [new_mf] New multifamily on the backbone: 1561 E Main St   (30 units · Richmond)
   [new_mf] New multifamily on the backbone: 524 BIG SPRING RD  (187 units · Raleigh)
@@ -27,4 +29,3 @@ OPEN alerts (carried forward): 4978 - new_mf 4976, units_jump 2
   [new_mf] New multifamily on the backbone: 501 Stockton St   (93 units · Richmond)
   [new_mf] New multifamily on the backbone: 160 CAROLINA ST  (700 units · Raleigh)
   [new_mf] New multifamily on the backbone: 501  Orleans St   (27 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1300 Riverview Pkwy   (104 units · Richmond)
