@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-10T06:12:36
+autopilot pull @ 2026-10-10T08:12:30
 
 WORKBENCH muni-data ETL — 2026-10-10
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -64,22 +64,33 @@ WORKBENCH muni-data ETL — 2026-10-10
   [OK] Raleigh/assessor                         61363 records
   [fresh] Raleigh/assessor: pulled within 3 days - keeping 61,157 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor                         61157 records
+  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 219,143 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/assessor                 219143 records
+  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 135,362 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/assessor                 135362 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 110,312 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     110312 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 116,464 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     116464 records
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,557 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92557 records
   [fresh] Hampton/assessor: pulled within 3 days - keeping 51,800 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Hampton/assessor                         51800 records
+  [fresh] Hampton/assessor: pulled within 3 days - keeping 703 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Hampton/assessor                           703 records
+  [fresh] Portsmouth/assessor: pulled within 3 days - keeping 36,464 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Portsmouth/assessor                      36464 records
+  [fresh] Portsmouth/assessor: pulled within 3 days - keeping 36,241 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Portsmouth/assessor                      36241 records
   [fresh] Portsmouth/assessor: pulled within 3 days - keeping 36,615 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Portsmouth/assessor                      36615 records
+  [fresh] Suffolk/assessor: pulled within 3 days - keeping 5,823 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Suffolk/assessor                          5823 records
+  [fresh] Suffolk/assessor: pulled within 3 days - keeping 5,775 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Suffolk/assessor                          5775 records
+  [fresh] Norfolk/assessor: pulled within 3 days - keeping 10,295 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor                         10295 records
+  [fresh] Norfolk/assessor: pulled within 3 days - keeping 74,637 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor                         74637 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 76,879 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                        76879 records
