@@ -1,5 +1,5 @@
-autopilot inboxsync @ 2026-10-10T08:15:08
+autopilot inboxsync @ 2026-10-10T09:15:02
 
-[inbox-sync] KB drop (C:\WORKBENCH_V5\data\inbox_kb): 3 file(s), 3 record(s), 2 ingested, 0 linked to deals/properties, 0 failed
+[inbox-sync] KB drop (C:\WORKBENCH_V5\data\inbox_kb): 1 file(s), 1 record(s), 0 ingested, 0 linked to deals/properties, 0 failed
 [inbox-sync] git intake (C:\WORKBENCH_V5\data\inbox_kb_intake): 24 new file(s), 24 record(s), 24 ingested, 0 linked to deals/properties, 0 failed
 inbox-sync: no connected mailboxes (connect one in the app: Inbox tab -> Connect Microsoft 365)
