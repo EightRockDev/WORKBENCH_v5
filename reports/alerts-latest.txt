@@ -1,8 +1,13 @@
-autopilot alerts @ 2026-10-10T01:17:25
+autopilot alerts @ 2026-10-10T03:00:27
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 4978 - new_mf 4976, units_jump 2
-  showing the 25 most recent of 4978
+alert sweep, NEW this cycle: 5 multifamily, 0 unit-count moves, 0 ownership changes
+OPEN alerts (carried forward): 4983 - new_mf 4981, units_jump 2
+  showing the 25 most recent of 4983
+  [new_mf] New multifamily on the backbone: 8R-37183-6ecd95acaa0c  (16 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 8R-37183-55a734d3b5a8  (29 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 8R-37183-36adba183fe8  (114 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 8R-37183-556728f7f456  (95 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 8R-37183-fc88a51677d8  (284 units · Raleigh)
   [new_mf] New multifamily on the backbone: 600 Cowardin Ave   (50 units · Richmond)
   [new_mf] New multifamily on the backbone: 1021 German School Road 2 Unit   (241 units · Richmond)
   [new_mf] New multifamily on the backbone: 3708 ROCK QUARRY RD  (22 units · Raleigh)
@@ -23,8 +28,3 @@ OPEN alerts (carried forward): 4978 - new_mf 4976, units_jump 2
   [new_mf] New multifamily on the backbone: 2050 GOLD BLOOM ST  (126 units · Raleigh)
   [new_mf] New multifamily on the backbone: 0 S HUGHES ST  (106 units · Raleigh)
   [new_mf] New multifamily on the backbone: 4101 FLAT RIDGE CT  (221 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 8R-51760-af5c66d1c071  (228 units · Richmond)
-  [new_mf] New multifamily on the backbone: 465 FENTON GATEWAY DR  (186 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 501 Stockton St   (93 units · Richmond)
-  [new_mf] New multifamily on the backbone: 160 CAROLINA ST  (700 units · Raleigh)
-  [new_mf] New multifamily on the backbone: 501  Orleans St   (27 units · Richmond)
