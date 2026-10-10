@@ -1,4 +1,4 @@
-autopilot preflight @ 2026-10-10T12:17:40
+autopilot preflight @ 2026-10-10T13:17:49
 
     (no local deals tables - pilot Postgres migrated at flip)
 
