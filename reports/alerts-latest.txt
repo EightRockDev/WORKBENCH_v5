@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-10-09T18:17:33
+autopilot alerts @ 2026-10-09T20:30:49
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 3 ownership changes
 OPEN alerts (carried forward): 4978 - new_mf 4976, units_jump 2
   showing the 25 most recent of 4978
   [new_mf] New multifamily on the backbone: 600 Cowardin Ave   (50 units · Richmond)
