@@ -1,11 +1,11 @@
-autopilot phase0 @ 2026-10-10T05:24:51
+autopilot phase0 @ 2026-10-10T06:37:41
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,180,403
+Assessor records available: 4,180,409
 
 Assessor feeds present (Hampton Roads):
-  Chesapeake        110,309  .../Accela_base_map_pro/MapServer/0
-  Chesapeake        116,461  .../Address_Points/MapServer/0
+  Chesapeake        110,312  .../Accela_base_map_pro/MapServer/0
+  Chesapeake        116,464  .../Address_Points/MapServer/0
   Chesapeake         92,684  .../OpenData/MapServer/15
   Chesapeake         92,557  .../VA_Parcels/FeatureServer/0
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
@@ -26,12 +26,12 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 29 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,237,596
-parcels normalized:        3,237,596
+muni records scanned:      3,237,602
+parcels normalized:        3,237,602
 multifamily (>= 10 units): 8,359
-written to properties_8r:  3,237,596
+written to properties_8r:  3,237,602
 provisional (no-APN) ids:  1,007
-units derived from address points: 866  (skipped non-residential: 9,444)
+units derived from address points: 866  (skipped non-residential: 9,445)
 units bridged by geometry: 268  (Richmond 163, Atlanta 100, Hampton 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 215
 rent estimates stamped (HUD FMR blend): 8,359
