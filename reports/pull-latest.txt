@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-09T19:12:24
+autopilot pull @ 2026-10-09T21:12:20
 
 WORKBENCH muni-data ETL — 2026-10-09
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -28,20 +28,33 @@ WORKBENCH muni-data ETL — 2026-10-09
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 439,311 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  439311 records
+  [fresh] Raleigh/permits: pulled within 3 days - keeping 184,498 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/permits                         184498 records
+  [fresh] Greensboro/assessor: pulled within 3 days - keeping 223,246 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Greensboro/assessor                     223246 records
+  [fresh] Durham/assessor: pulled within 3 days - keeping 133,553 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Durham/assessor                         133553 records
   [OK] Durham/permits                               0 records
+  [fresh] Winston-Salem/assessor+sales: pulled within 3 days - keeping 167,652 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Winston-Salem/assessor+sales            167652 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 171,156 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        171156 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 373,307 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        373307 records
+  [fresh] Nashville/assessor+sales: pulled within 3 days - keeping 287,316 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/assessor+sales                287316 records
+  [fresh] Nashville/permits: pulled within 3 days - keeping 29,644 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/permits                        29644 records
+  [fresh] Norfolk/assessor+sales: pulled within 3 days - keeping 74,311 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor+sales                   74311 records
+  [fresh] Norfolk/permits: pulled within 3 days - keeping 127,552 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/permits                         127552 records
+  [fresh] Virginia Beach/permits: pulled within 3 days - keeping 108,929 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/permits                  108929 records
+  [fresh] Newport News/assessor+sales: pulled within 3 days - keeping 54,444 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Newport News/assessor+sales              54444 records
   [ERR] Richmond/assessor+sales                403 Client Error: Forbidden for url: https://data.richmondgov.com/resource/vm9j-9f88.json?%24limit=50000&%24offset=0&%24order=%3Aid
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,684 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92684 records
   [fresh] Atlanta/assessor: pulled within 3 days - keeping 244 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           244 records
@@ -81,5 +94,4 @@ WORKBENCH muni-data ETL — 2026-10-09
   [OK] Norfolk/assessor                         74637 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 76,879 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                        76879 records
-  [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
