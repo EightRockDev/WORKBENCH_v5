@@ -1,4 +1,7 @@
-autopilot phase0 @ 2026-10-10T14:39:09
+autopilot phase0 @ 2026-10-10T16:28:33
+
+phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
+Last full report follows so the gate numbers stay in this cycle's report file:
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 4,180,409
