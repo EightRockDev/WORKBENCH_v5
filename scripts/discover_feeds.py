@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -451,6 +452,20 @@ _COORD_COLUMNS = ("latitude", "longitude", "location", "the_geom",
                   "geocoded_column", "point", "geolocation")
 
 
+# A dataset named for one fiscal year is a frozen snapshot. Norfolk
+# publishes a new assessment dataset id every year ("... - FY23", "FY25",
+# "FY27"); the CURRENT year is curated in etl_munidata (and rolled by hand
+# when the city publishes the next one). Discovery kept adding an old
+# snapshot as a second assessor feed - FY23 most cycles, FY25 for a few -
+# merging stale use codes into the backbone and moving Norfolk's
+# apartment count by 11 every time the pick changed (2026-10-10/11).
+_FY_SNAPSHOT = re.compile(r"\bFY[\s_\-]?'?(?:19|20)?\d{2}\b", re.IGNORECASE)
+
+
+def dated_snapshot(name: str) -> bool:
+    return bool(_FY_SNAPSHOT.search(name or ""))
+
+
 def search_socrata(city: str, soda=_soda_get):
     """Yield (resource_url, name, field_names, has_coords) from a city's
     Socrata catalog. Only cities in SOCRATA_PORTALS are probed."""
@@ -592,6 +607,10 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                 score, mapped = score_fields(fields)
                 if score < MIN_SCORE:
                     continue
+                if dated_snapshot(name):
+                    rejected.append(f"{name}: dated fiscal-year snapshot "
+                                    "(the current roll is curated)")
+                    continue
                 if named_for_other_city(name, layer_url, city):
                     rejected.append(f"{name}: layer is named for another city")
                     continue
@@ -636,6 +655,10 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                 score += 5            # a coordinate column is the point
                 mapped.setdefault("lat", "(location column)")
             if score < MIN_SCORE:
+                continue
+            if dated_snapshot(name):
+                rejected.append(f"{name}: dated fiscal-year snapshot "
+                                "(the current roll is curated)")
                 continue
             if named_for_other_city(name, res_url, city):
                 rejected.append(f"{name}: layer is named for another city")
@@ -682,7 +705,7 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                 vgin["note"] = "geometry supplement; " + vgin["note"]
                 out[city] = out[city] + [vgin]
         for r in rejected:
-            print(f"   [rejected - wrong city] {city}: {r}")
+            print(f"   [rejected] {city}: {r}")
     return out
 
 

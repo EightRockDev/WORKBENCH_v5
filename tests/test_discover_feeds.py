@@ -235,3 +235,35 @@ def test_national_run_never_touches_the_va_cities(tmp_path, monkeypatch):
     got = sorted((x["market"], x["url"]) for x in merged)
     assert got == [("Atlanta", "a"), ("Hampton", "vgin"),
                    ("Richmond", "vgin")]
+
+
+def test_fiscal_year_snapshots_are_never_discovered():
+    """2026-10-10/11: discovery kept adding Norfolk's FY23 (sometimes FY25)
+    assessment snapshot as a second assessor feed next to the curated FY27
+    roll, and Norfolk's apartment count moved by 11 each time the pick
+    changed. A dataset named for one fiscal year is a frozen snapshot."""
+    import scripts.discover_feeds as d
+    for name in ("Property Assessment and Sales - FY23", "Assessments FY2025",
+                 "Parcels fy 24", "Roll FY-26", "Sales FY'27"):
+        assert d.dated_snapshot(name), name
+    for name in ("Better Buildings Challenge Properties", "Parcels",
+                 "Property Assessment and Sales", "FYI Parcel Notes",
+                 "Real Estate 2026"):
+        assert not d.dated_snapshot(name), name
+
+
+def test_discover_rejects_the_norfolk_fy_snapshot(monkeypatch, capsys):
+    import scripts.discover_feeds as d
+    monkeypatch.setattr(d, "search_agol", lambda city, fetch=None: iter(()))
+    monkeypatch.setattr(d, "search_socrata", lambda city, soda=None: iter([
+        ("https://data.norfolk.gov/resource/yvpm-8aid.json",
+         "Property Assessment and Sales - FY23",
+         ["parcel_id", "owner_name", "use_code", "year_built", "total_value"],
+         False)]))
+    monkeypatch.setattr(d, "socrata_sample_in_city", lambda *a, **k: True)
+    monkeypatch.setattr(d, "vgin_fallback", lambda *a, **k: None)
+    found = d.discover(cities=[("Norfolk", "VA")],
+                       fetch=lambda *a, **k: None, soda=lambda *a, **k: None,
+                       budget_s=1e9)
+    assert found["Norfolk"] == []
+    assert "dated fiscal-year snapshot" in capsys.readouterr().out

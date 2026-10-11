@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.2.3.0 - 2026-10-11  .  Discovery stops adding old fiscal-year snapshots.
+
+Norfolk's apartment count moved 869 -> 858 overnight with no real-world
+change. Discovery had been adding a frozen past-year Norfolk assessment
+dataset ("Property Assessment and Sales - FY23", and for ten cycles on
+10-10 the FY25 one) as a SECOND assessor feed alongside the curated
+current-year roll (FY27, qva7-tzrf). Every time the pick changed, the
+pull swept one snapshot's rows and loaded the other's, and stale use
+codes from years-old rolls moved the count.
+
+- `dated_snapshot()`: any ArcGIS layer or Socrata dataset whose name
+  carries a fiscal-year tag (FY23, FY2025, FY-26, fy 24) is rejected in
+  discovery, with the reason printed. The current roll stays curated in
+  etl_munidata and is rolled by hand when a city publishes the next one.
+- Once the next discovery run drops the FY23 spec, the pull's existing
+  retired-feed sweep removes its rows and Norfolk runs on the current
+  roll only (expected ~866, its count before the snapshots arrived).
+- The "[rejected - wrong city]" report line is now "[rejected]", since
+  it lists more than one kind of rejection.
+
 ## V5.67.2.2.0 - 2026-10-08  .  Fix my own feed-merge bug: VGIN cities were collapsing.
 
 V5.67.1.4.0's `merge_specs()` deduped feed specs by URL alone. The
