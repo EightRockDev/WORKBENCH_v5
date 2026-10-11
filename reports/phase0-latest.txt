@@ -1,10 +1,7 @@
-autopilot phase0 @ 2026-10-11T03:14:38
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-11T05:25:08
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,180,025
+Assessor records available: 4,187,064
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,312  .../Accela_base_map_pro/MapServer/0
@@ -14,7 +11,7 @@ Assessor feeds present (Hampton Roads):
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
   Hampton            51,800  .../VA_Parcels/FeatureServer/0
   Newport News       54,444  .../Parcel/MapServer/0
-  Norfolk            74,253  .../data.norfolk.gov/resource/g7sg-tivf.json
+  Norfolk            81,292  .../data.norfolk.gov/resource/ere7-kake.json
   Norfolk            74,311  .../data.norfolk.gov/resource/qva7-tzrf.json
   Norfolk            10,295  .../data.norfolk.gov/resource/ykcq-76im.json
   Portsmouth         36,464  .../Parcels/FeatureServer/3
@@ -29,49 +26,49 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 29 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,237,218
-parcels normalized:        3,237,218
-multifamily (>= 10 units): 8,348
-written to properties_8r:  3,237,218
-provisional (no-APN) ids:  1,007
-units derived from address points: 856  (skipped non-residential: 9,424)
-units bridged by geometry: 268  (Richmond 163, Atlanta 100, Hampton 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
-coords backfilled by address (multifamily): 209
-rent estimates stamped (HUD FMR blend): 8,348
+muni records scanned:      3,244,257
+parcels normalized:        3,244,257
+multifamily (>= 10 units): 7,552
+written to properties_8r:  3,244,257
+provisional (no-APN) ids:  1,154
+units derived from address points: 1,103  (skipped non-residential: 11,954)
+units bridged by geometry: 270  (Richmond 163, Atlanta 100, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
+coords backfilled by address (multifamily): 0
+rent estimates stamped (HUD FMR blend): 7,552
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 738,191  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 738,379  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,633, Greensboro 900, Norfolk 858, Richmond 671, Newport News 244, Virginia Beach 222, Suffolk 2, Winston-Salem 2, Hampton 2, Durham 1
+Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,633, Greensboro 900, Richmond 671, Newport News 244, Virginia Beach 222, Norfolk 62, Suffolk 2, Winston-Salem 2, Hampton 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 744,626
-  candidate parcels      : 927,369
-  merged                 : 114
-  rejected (too far)     : 591,361
-  rejected (same id form): 152,085
+  unit-bearing parcels   : 745,022
+  candidate parcels      : 994,263
+  merged                 : 116
+  rejected (too far)     : 591,484
+  rejected (same id form): 152,356
   rejected (not mutual)  : 658
   rejected (ambiguous)   : 408
   merged by address      : 154
-  addr rejected (shared) : 819
+  addr rejected (shared) : 818
   addr rejected (coords) : 173
   Atlanta          sources 320,840  targets  67,389  merged    79   refused: far 252,550 / same-id 67,166 / not-mutual 651 / ambiguous 394   by-address 21 (shared 684, coords 16)
   Richmond         sources   5,018  targets  72,136  merged    30   refused: far 576 / same-id 4,393 / not-mutual 6 / ambiguous 13   by-address 133 (shared 4, coords 1)
   Hampton          sources     210  targets  51,333  merged     2   refused: far 26 / same-id 182 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
+  Norfolk          sources     396  targets  67,021  merged     2   refused: far 123 / same-id 271 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Chesapeake       sources   2,049  targets  92,377  merged     1   refused: far 1,202 / same-id 846 / not-mutual 0 / ambiguous 0   by-address 0 (shared 12, coords 0)
   Raleigh          sources 369,535  targets 132,909  merged     1   refused: far 297,818 / same-id 71,714 / not-mutual 1 / ambiguous 1   by-address 0 (shared 108, coords 156)
   Winston-Salem    sources       4  targets 167,536  merged     1   refused: far 3 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Durham           sources       4  targets 129,203  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Newport News     sources  46,669  targets   7,678  merged     0   refused: far 39,017 / same-id 7,652 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
-  Norfolk          sources       0  targets     127  merged     0   refused: far 0 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 1, coords 0)
   Portsmouth       sources       7  targets  37,544  merged     0   refused: far 3 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Suffolk          sources       7  targets   5,482  merged     0   refused: far 7 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Virginia Beach   sources     283  targets 163,655  merged     0   refused: far 159 / same-id 124 / not-mutual 0 / ambiguous 0   by-address 0 (shared 3, coords 0)
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Richmond: R-48 Multi Family x165, B-4 Central Business x65, R-53 Multi Family x60, R-6 Single Family Attached x52, B-5 Central Business x50
-  Norfolk: Apartment x858
+  Norfolk: Apartment x61, (units only) x1
   Greensboro: MULTI-FAMILY<4 x734, MULTI-FAMILY5> x166
   Suffolk: R5 Multi-Family Residential x2
   Atlanta: C3 x809, C4 x640, C5 x278, C1 x62, R3 x52
@@ -89,7 +86,7 @@ Cities with parcels but NO multifamily found - their top use codes:
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Richmond: units>=10: 671
-  Norfolk: code only (no units): 855, units>=10: 3
+  Norfolk: units>=10: 62
   Greensboro: code only (no units): 900
   Suffolk: code only (no units): 2
   Atlanta: units>=10: 1,981
@@ -104,11 +101,12 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
 NOT counted - multifamily label but no unit count, in a city whose feed carries unit data (>= 50 parcels with a known 10+ count):
   Virginia Beach: 16,064
   Richmond: 5,038
+  Norfolk: 637
   Chesapeake: 134
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Richmond: PRECINCT, DISTRICT, LEGAL_DESC, GIS_ID, VGIN_QPID, LOCALITY, ASSESSMENT_DATE_1, ASSESSMENT_CHG_DESC_1, PROP_TYPE_2, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, ASSESSMENT_DATE_2, ASSESSMENT_CHG_DESC_2, ASSESSMENT_DATE_3, ASSESSMENT_CHG_DESC_3, ASSESSMENT_DATE_4, ASSESSMENT_CHG_DESC_4, ASSESSMENT_DATE_5, ASSESSMENT_CHG_DESC_5, STYLE, HVAC, ASSOC_NAME, OWNER2
-  Norfolk: property_name, number_of_buildings, national_median_site_energy, national_median_site_energy_1, national_median_source_energy, national_median_source_energy_1, percent_difference_from
+  Norfolk: tax_account_number, parcel_centroid_latitude, parcel_centroid_longitude, state_plane_x_coordinate, state_plane_y_coordinate, nearest_park, nearest_park_address, nearest_recreation_facility, nearest_recreation_facility_name, recreation_facility_phone, nearest_library, nearestlibrary_address, nearest_fire_hydrant, approximate_distance_to_nearest_fire_hydrant_ft_, u_s_house_representatives, u_s_house_representative_url, u_s_house_representative, u_s_house_representative_1, virginia_house_district, virginia_house_district_name, virginia_house_district_phone, virginia_house_district_web, precinct_name, polling_place
   Greensboro: CentroidXCoordinate, CentroidYCoordinat, NumberOfParts, INSIDE_X, INSIDE_Y, ORIG_FID, Owner_History, Total_Building_Value, DEED_DATE, Short_Parcel_ID, PARCEL_PK, Lot_Size, Condo, LOCATION_ADDR, Plat, PROPERTY_DESCR, Total_Land_Value, TOTAL_DEFERRED_VALUE, Total_Out_Building_Value, BLDG_CARD, Appraisal_Model_Code, GRADE, Structure_Size, Bathrooms
   Suffolk: LENGTH_UNIT, EC_ELEV_DATUM, EC_FLOOD_ZONE, BLDG_DIAGRAM, FIRM_STATUS, AGENCYURL, CURRENT_DATUM, LOWELEV_STAIRS, TAXMAPNO, COUNTY, EC_FLOOD_ZONE1, NOTES, HIGHWATER99, EC_FLOOD_ZONE2
   Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, TotAssess, TotAppr, ImprAppr, AddrNumber, LandAssess, ImprAssess, LandAppr, OwnerAddr1, OwnerAddr2, LandAcres, AddrSuffix, ExCode, SITECITY, SITESTATE, TOT_APPR, LOWPARCELID, CNTASSDVAL, CVTTXCD
@@ -126,29 +124,29 @@ P0-1 GATE PASSED.
 P0-2 shadow parity: comparing against 13,678 legacy rows...
 
 legacy multifamily rows:  645
-matched to the 8R backbone: 568 (88.1%)  [106 by address, 418 by lat/lng, 44 by proximity]
-unit counts agree:        144/195
-year built agrees:        88/155
+matched to the 8R backbone: 599 (92.9%)  [97 by address, 473 by lat/lng, 29 by proximity]
+unit counts agree:        146/214
+year built agrees:        87/144
 
-comp-set replay subjects: 184  (+16 skipped - city has no 8R coordinates yet)
-avg comp-set overlap:     48.5%  (gate >= 90%)
-avg-rent delta:           27.2%  [signed +19.9%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
+comp-set replay subjects: 185  (+15 skipped - city has no 8R coordinates yet)
+avg comp-set overlap:     48.1%  (gate >= 90%)
+avg-rent delta:           27.3%  [signed +20.7%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
 
 P0-2 GATE: not met yet
-crosswalk persisted:      568 legacy->8R mappings (property_crosswalk)
-(+27 unit disagreements resolved by multi-parcel footprint totals)
-match rate, covered cities only: 87.2%  (cities whose feed has multifamily data)
+crosswalk persisted:      599 legacy->8R mappings (property_crosswalk)
+(+28 unit disagreements resolved by multi-parcel footprint totals)
+match rate, covered cities only: 92.3%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
   Virginia Beach    174 ->   173 |    221 |    221
-  Norfolk           127 ->    95 |    857 |    209
+  Norfolk           127 ->   126 |     62 |     62
   Newport News      123 ->   119 |    243 |    243
   Hampton            76 ->    70 |      2 |      2
   Chesapeake         66 ->    66 |    517 |    517
   Portsmouth         45 ->    45 |      0 |      0   <- feed has no usable multifamily data
   Suffolk            34 ->     0 |      2 |      2
 
-Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,546, Chesapeake 133
+Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,546, Norfolk 636, Chesapeake 133
 
 Largest unit-count disagreements (check these matches):
   Acorn Grove: legacy 108 vs 8R 197
@@ -161,7 +159,7 @@ Largest unit-count disagreements (check these matches):
   Cottages at Great Bridge: legacy 128 vs 8R 50
 
 Learning apartment use codes from matched properties:
-  Chesapeake: 19 known-MF parcels matched
+  Chesapeake: 18 known-MF parcels matched
       [reject] code '1010': on 5 MF parcels, 50,136/94,519 citywide (53.0%) - 53% of the whole roll carries it - too common to mean apartments
       [reject] code '1060': on 2 MF parcels, 7,109/94,519 citywide (7.5%) - only 2 supporting parcel(s), need 3
       [reject] code '7430': on 2 MF parcels, 20/94,519 citywide (0.0%) - only 2 supporting parcel(s), need 3
@@ -171,7 +169,6 @@ Learning apartment use codes from matched properties:
       [reject] code '7410': on 1 MF parcels, 767/94,519 citywide (0.8%) - only 1 supporting parcel(s), need 3
       [reject] code '2010': on 1 MF parcels, 7,083/94,519 citywide (7.5%) - only 1 supporting parcel(s), need 3
       [reject] code '7440': on 1 MF parcels, 10/94,519 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '4407': on 1 MF parcels, 14/94,519 citywide (0.0%) - only 1 supporting parcel(s), need 3
       [reject] code '4595': on 1 MF parcels, 19/94,519 citywide (0.0%) - only 1 supporting parcel(s), need 3
       [reject] code '4000': on 1 MF parcels, 920/94,519 citywide (1.0%) - only 1 supporting parcel(s), need 3
       [reject] code '2000': on 1 MF parcels, 3,405/94,519 citywide (3.6%) - only 1 supporting parcel(s), need 3
