@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-10-11T05:47:50
+autopilot alerts @ 2026-10-11T06:52:11
 
-alert sweep, NEW this cycle: 22 multifamily, 2 unit-count moves, 0 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 4999 - new_mf 4995, units_jump 4
   showing the 25 most recent of 4999
   [new_mf] New multifamily on the backbone: 5354 E VIRGINIA BEACH BOULEVARD  (10 units · Norfolk)
