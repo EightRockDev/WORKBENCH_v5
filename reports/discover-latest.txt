@@ -1,77 +1,86 @@
-autopilot discover @ 2026-10-11T04:00:20
+autopilot discover @ 2026-10-11T05:00:20
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
 
    [   0s] probing Virginia Beach...
-   [rejected - wrong city] Virginia Beach: Chesapeake_Norfolk_Streets_Parcels/Chesapeake Parcels: layer is named for another city
-   [rejected - wrong city] Virginia Beach: SolarVector_PubLayers: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Virginia Beach: Private Parcels Ranked_081920: only 374 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Virginia Beach: Public Parcels Ranked_081920: only 303 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Virginia Beach: Chesapeake_Norfolk_Streets_Parcels/Chesapeake Parcels: layer is named for another city
+   [rejected] Virginia Beach: SolarVector_PubLayers: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Virginia Beach: Private Parcels Ranked_081920: only 374 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Virginia Beach: Public Parcels Ranked_081920: only 303 records - kept but demoted, a citywide roll should have >= 5,000
    [ 178s] probing Chesapeake...
-   [rejected - wrong city] Chesapeake: Towers/Towers: only 138 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: CommunityLayers/Apartments: only 161 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: CommunityLayers/Places of Worship: only 256 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: OpenData/Cemeteries: only 180 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: Planning_GIS_Layers_upd/Cemeteries: only 180 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: City_Property_Management/City Property Management: only 1,575 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: Tyler_Socrata_Data/Apartments: only 161 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: Chesapeake Parcels Within Blast Zone: only 2,908 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: Chesapeake Parcels Within Blast Zone: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Chesapeake: Potential Debris Sites: only 24 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: only 53 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
-   [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
-   [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
-   [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
-   [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
-   [rejected - wrong city] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
-   [rejected - wrong city] Chesapeake: Chesapeake Parcels Publicly Owned: only 1,465 records - kept but demoted, a citywide roll should have >= 5,000
-   [ 301s] probing Hampton...
-   [rejected - wrong city] Hampton: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Hampton
-   [rejected - wrong city] Hampton: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Hampton
-   [rejected - wrong city] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Hampton
-   [rejected - wrong city] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Hampton
-   [rejected - wrong city] Hampton: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Hampton
-   [rejected - wrong city] Hampton: Chesapeake Parcels Within Blast Zone: layer is named for another city
-   [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
-   [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
-   [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
-   [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
-   [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
-   [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
-   [rejected - wrong city] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
-   [rejected - wrong city] Hampton: SNA Mapping Layers_WFL1: records are NOT in Hampton
-   [rejected - wrong city] Hampton: SNA Mapping Layers_WFL1: records are NOT in Hampton
-   [rejected - wrong city] Hampton: CZM_Hampton_Data: only 703 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Hampton: CZM_Hampton_Data: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Hampton: CZM_Hampton_Data: only 716 records - kept but demoted, a citywide roll should have >= 5,000
-   [rejected - wrong city] Hampton: CZM_Hampton_Data: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Hampton: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Hampton
-   [ 365s] probing Portsmouth...
-   [rejected - wrong city] Portsmouth: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Portsmouth
-   [rejected - wrong city] Portsmouth: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Portsmouth
-   [rejected - wrong city] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Portsmouth
-   [rejected - wrong city] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Portsmouth
-   [rejected - wrong city] Portsmouth: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Portsmouth
-   [rejected - wrong city] Portsmouth: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Portsmouth
-   [ 393s] probing Suffolk...
-   [rejected - wrong city] Suffolk: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Suffolk
-   [rejected - wrong city] Suffolk: ElevationCertificates/Elevation Certificates - Parcels: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Suffolk
-   [rejected - wrong city] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Suffolk: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Suffolk
-   [ 422s] probing Norfolk...
-   [rejected - wrong city] Norfolk: Backlick Run Stream Restoration: records are NOT in Norfolk
-   [rejected - wrong city] Norfolk: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Norfolk
-   [ 439s] probing Richmond...
-   [rejected - wrong city] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
-   [rejected - wrong city] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
-   [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
-   [rejected - wrong city] Richmond: RichmondCountyWellRecords_PDCPriorto2000: records are NOT in Richmond
+   [rejected] Chesapeake: Towers/Towers: only 138 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: CommunityLayers/Apartments: only 161 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: CommunityLayers/Places of Worship: only 256 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: OpenData/Cemeteries: only 180 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: Planning_GIS_Layers_upd/Cemeteries: only 180 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: City_Property_Management/City Property Management: only 1,575 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: Tyler_Socrata_Data/Apartments: only 161 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: Chesapeake Parcels Within Blast Zone: only 2,908 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: Chesapeake Parcels Within Blast Zone: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Chesapeake: Potential Debris Sites: only 24 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: I_87 Parcel Development Potential Data: only 53 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
+   [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
+   [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
+   [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
+   [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
+   [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
+   [rejected] Chesapeake: Chesapeake Parcels Publicly Owned: only 1,465 records - kept but demoted, a citywide roll should have >= 5,000
+   [ 302s] probing Hampton...
+   [rejected] Hampton: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Hampton
+   [rejected] Hampton: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Hampton
+   [rejected] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Hampton
+   [rejected] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Hampton
+   [rejected] Hampton: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Hampton
+   [rejected] Hampton: Chesapeake Parcels Within Blast Zone: layer is named for another city
+   [rejected] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
+   [rejected] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
+   [rejected] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
+   [rejected] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
+   [rejected] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
+   [rejected] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
+   [rejected] Hampton: I_87 Parcel Development Potential Data: records are NOT in Hampton
+   [rejected] Hampton: SNA Mapping Layers_WFL1: records are NOT in Hampton
+   [rejected] Hampton: SNA Mapping Layers_WFL1: records are NOT in Hampton
+   [rejected] Hampton: CZM_Hampton_Data: only 703 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Hampton: CZM_Hampton_Data: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Hampton: CZM_Hampton_Data: only 716 records - kept but demoted, a citywide roll should have >= 5,000
+   [rejected] Hampton: CZM_Hampton_Data: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Hampton: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Hampton
+   [ 356s] probing Portsmouth...
+   [rejected] Portsmouth: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Portsmouth
+   [rejected] Portsmouth: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Portsmouth
+   [rejected] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Portsmouth
+   [rejected] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Portsmouth
+   [rejected] Portsmouth: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Portsmouth
+   [rejected] Portsmouth: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Portsmouth
+   [ 384s] probing Suffolk...
+   [rejected] Suffolk: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Suffolk
+   [rejected] Suffolk: ElevationCertificates/Elevation Certificates - Parcels: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Suffolk
+   [rejected] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Suffolk: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Suffolk
+   [ 415s] probing Norfolk...
+   [rejected] Norfolk: Backlick Run Stream Restoration: records are NOT in Norfolk
+   [rejected] Norfolk: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Norfolk
+   [rejected] Norfolk: Property Assessment and Sales - FY23: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY25: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY24: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY26: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY21: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY22: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY27: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY20: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY19: dated fiscal-year snapshot (the current roll is curated)
+   [ 428s] probing Richmond...
+   [rejected] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
+   [rejected] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
+   [rejected] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
+   [rejected] Richmond: RichmondCountyWellRecords_PDCPriorto2000: records are NOT in Richmond
 
 Virginia Beach: 2 candidate layer(s)
    https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
@@ -110,8 +119,8 @@ Suffolk: 2 candidate layer(s)
 Norfolk: 2 candidate layer(s)
    https://data.norfolk.gov/resource/ykcq-76im.json
       auto-discovered (socrata): Better Buildings Challenge Properties; score 17; fields ['address', 'apn', 'lat', 'lng', 'sqft', 'use_code', 'year_built']
-   https://data.norfolk.gov/resource/yvpm-8aid.json
-      auto-discovered (socrata): Property Assessment and Sales - FY23; score 12; fields ['apn', 'assessed_value', 'city', 'owner_name', 'sqft', 'use_code', 'year_built', 'zip']; geo-verify inconclusive
+   https://data.norfolk.gov/resource/ere7-kake.json
+      auto-discovered (socrata): Address Information; score 11; fields ['address', 'apn', 'lat']
 
 Richmond: 2 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
