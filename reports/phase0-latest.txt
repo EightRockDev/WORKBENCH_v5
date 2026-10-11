@@ -1,10 +1,7 @@
-autopilot phase0 @ 2026-10-10T22:17:19
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-10T23:25:00
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,180,409
+Assessor records available: 4,180,025
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,312  .../Accela_base_map_pro/MapServer/0
@@ -14,9 +11,9 @@ Assessor feeds present (Hampton Roads):
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
   Hampton            51,800  .../VA_Parcels/FeatureServer/0
   Newport News       54,444  .../Parcel/MapServer/0
+  Norfolk            74,253  .../data.norfolk.gov/resource/g7sg-tivf.json
   Norfolk            74,311  .../data.norfolk.gov/resource/qva7-tzrf.json
   Norfolk            10,295  .../data.norfolk.gov/resource/ykcq-76im.json
-  Norfolk            74,637  .../data.norfolk.gov/resource/yvpm-8aid.json
   Portsmouth         36,464  .../Parcels/FeatureServer/3
   Portsmouth         36,241  .../Parcels_Real_Estate_View/FeatureServer/3
   Portsmouth         36,615  .../VA_Parcels/FeatureServer/0
@@ -29,21 +26,21 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 29 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,237,602
-parcels normalized:        3,237,602
-multifamily (>= 10 units): 8,359
-written to properties_8r:  3,237,602
+muni records scanned:      3,237,218
+parcels normalized:        3,237,218
+multifamily (>= 10 units): 8,348
+written to properties_8r:  3,237,218
 provisional (no-APN) ids:  1,007
-units derived from address points: 866  (skipped non-residential: 9,445)
+units derived from address points: 856  (skipped non-residential: 9,424)
 units bridged by geometry: 268  (Richmond 163, Atlanta 100, Hampton 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
-coords backfilled by address (multifamily): 215
-rent estimates stamped (HUD FMR blend): 8,359
+coords backfilled by address (multifamily): 209
+rent estimates stamped (HUD FMR blend): 8,348
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 738,199  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 738,191  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,633, Greensboro 900, Norfolk 869, Richmond 671, Newport News 244, Virginia Beach 222, Suffolk 2, Winston-Salem 2, Hampton 2, Durham 1
+Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,633, Greensboro 900, Norfolk 858, Richmond 671, Newport News 244, Virginia Beach 222, Suffolk 2, Winston-Salem 2, Hampton 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
   unit-bearing parcels   : 744,626
@@ -71,7 +68,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Richmond: R-48 Multi Family x165, B-4 Central Business x65, R-53 Multi Family x60, R-6 Single Family Attached x52, B-5 Central Business x50
-  Norfolk: Apartment x869
+  Norfolk: Apartment x858
   Greensboro: MULTI-FAMILY<4 x734, MULTI-FAMILY5> x166
   Suffolk: R5 Multi-Family Residential x2
   Atlanta: C3 x809, C4 x640, C5 x278, C1 x62, R3 x52
@@ -89,7 +86,7 @@ Cities with parcels but NO multifamily found - their top use codes:
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Richmond: units>=10: 671
-  Norfolk: code only (no units): 864, units>=10: 5
+  Norfolk: code only (no units): 855, units>=10: 3
   Greensboro: code only (no units): 900
   Suffolk: code only (no units): 2
   Atlanta: units>=10: 1,981
@@ -126,22 +123,22 @@ P0-1 GATE PASSED.
 P0-2 shadow parity: comparing against 13,678 legacy rows...
 
 legacy multifamily rows:  645
-matched to the 8R backbone: 569 (88.2%)  [106 by address, 419 by lat/lng, 44 by proximity]
-unit counts agree:        144/196
-year built agrees:        99/197
+matched to the 8R backbone: 568 (88.1%)  [106 by address, 418 by lat/lng, 44 by proximity]
+unit counts agree:        144/195
+year built agrees:        88/155
 
 comp-set replay subjects: 184  (+16 skipped - city has no 8R coordinates yet)
 avg comp-set overlap:     48.5%  (gate >= 90%)
-avg-rent delta:           27.1%  [signed +19.8%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
+avg-rent delta:           27.2%  [signed +19.9%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
 
 P0-2 GATE: not met yet
-crosswalk persisted:      569 legacy->8R mappings (property_crosswalk)
+crosswalk persisted:      568 legacy->8R mappings (property_crosswalk)
 (+27 unit disagreements resolved by multi-parcel footprint totals)
-match rate, covered cities only: 87.3%  (cities whose feed has multifamily data)
+match rate, covered cities only: 87.2%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
   Virginia Beach    174 ->   173 |    221 |    221
-  Norfolk           127 ->    96 |    863 |    214
+  Norfolk           127 ->    95 |    857 |    209
   Newport News      123 ->   119 |    243 |    243
   Hampton            76 ->    70 |      2 |      2
   Chesapeake         66 ->    66 |    517 |    517
