@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-10-12T03:28:35
+autopilot phase0 @ 2026-10-12T05:28:48
 
 phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
 Last full report follows so the gate numbers stay in this cycle's report file:
@@ -31,19 +31,19 @@ Building the Eight Rock property backbone (properties_8r)...
 
 muni records scanned:      3,244,257
 parcels normalized:        3,244,257
-multifamily (>= 10 units): 7,552
+multifamily (>= 10 units): 7,931
 written to properties_8r:  3,244,257
 provisional (no-APN) ids:  1,154
 units derived from address points: 1,103  (skipped non-residential: 11,954)
 units bridged by geometry: 270  (Richmond 163, Atlanta 100, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
 coords backfilled by address (multifamily): 0
-rent estimates stamped (HUD FMR blend): 7,552
+rent estimates stamped (HUD FMR blend): 7,928
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
 pruned from backbone (known < 10 units): 738,379  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 1,981, Chesapeake 1,832, Raleigh 1,633, Greensboro 900, Richmond 671, Newport News 244, Virginia Beach 222, Norfolk 62, Suffolk 2, Winston-Salem 2, Hampton 2, Durham 1
+Multifamily by city: Atlanta 1,981, Chesapeake 1,856, Raleigh 1,633, Greensboro 900, Richmond 671, Virginia Beach 332, Newport News 271, Norfolk 164, Hampton 72, Portsmouth 45, Suffolk 3, Winston-Salem 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
   unit-bearing parcels   : 745,022
@@ -71,41 +71,42 @@ Geometry unit bridge (counts carried across parcel-id schemes):
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
   Richmond: R-48 Multi Family x165, B-4 Central Business x65, R-53 Multi Family x60, R-6 Single Family Attached x52, B-5 Central Business x50
-  Norfolk: Apartment x61, (units only) x1
+  Norfolk: Apartment x86, Single Family - Detached x25, Commercial x19, Non-Taxable x14, Vacant Land x5
   Greensboro: MULTI-FAMILY<4 x734, MULTI-FAMILY5> x166
-  Suffolk: R5 Multi-Family Residential x2
+  Suffolk: R5 Multi-Family Residential x2, Residential x1
   Atlanta: C3 x809, C4 x640, C5 x278, C1 x62, R3 x52
-  Chesapeake: Apartments x612, 1060 x186, 3015 x166, (units only) x164, 4020 x151
+  Chesapeake: Apartments x614, 1060 x188, 3015 x166, (units only) x165, 4020 x151
   Winston-Salem: (units only) x2
-  Newport News: A x237, C x4, (units only) x2, R x1
+  Newport News: A x243, C x21, R x3, (units only) x2, O x2
   Raleigh: (units only) x1633
-  Virginia Beach: Multi Family x222
+  Hampton: (units only) x71, Residential x1
+  Portsmouth: (units only) x44, 20 x1
+  Virginia Beach: Multi Family x240, Commercial x20, Single Family or Duplex x17, Undeveloped x15, Town House x13
   Durham: (units only) x1
-  Hampton: (units only) x2
 
 Cities with parcels but NO multifamily found - their top use codes:
-  Portsmouth: (blank) x36618, 9 x314, 18 x181, 7 x139, 5 x80, 3 x27, 2 x23, 29 x19
   Nashville: RS10 x38978, R10 x31922, SP x19506, RS7.5 x18979, RS15 x16482, R6 x14271, RS20 x12128, R8 x11626
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Richmond: units>=10: 671
-  Norfolk: units>=10: 62
+  Norfolk: learned code (no units): 77, units>=10: 62, code only (no units): 25
   Greensboro: code only (no units): 900
-  Suffolk: code only (no units): 2
+  Suffolk: code only (no units): 2, learned code (no units): 1
   Atlanta: units>=10: 1,981
-  Chesapeake: units>=10: 1,832
+  Chesapeake: units>=10: 1,832, learned code (no units): 22, code only (no units): 2
   Winston-Salem: units>=10: 2
-  Newport News: units>=10: 244
+  Newport News: units>=10: 244, learned code (no units): 27
   Raleigh: units>=10: 1,633
-  Virginia Beach: units>=10: 222
+  Hampton: learned code (no units): 70, units>=10: 2
+  Portsmouth: learned code (no units): 45
+  Virginia Beach: units>=10: 222, learned code (no units): 92, code only (no units): 18
   Durham: units>=10: 1
-  Hampton: units>=10: 2
 
 NOT counted - multifamily label but no unit count, in a city whose feed carries unit data (>= 50 parcels with a known 10+ count):
-  Virginia Beach: 16,064
+  Virginia Beach: 16,046  (curated known apartments carrying a unit count: 47 of 157)
   Richmond: 5,038
-  Norfolk: 637
-  Chesapeake: 134
+  Norfolk: 612  (curated known apartments carrying a unit count: 15 of 117)
+  Chesapeake: 132  (curated known apartments carrying a unit count: 37 of 61)
 
 Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Richmond: PRECINCT, DISTRICT, LEGAL_DESC, GIS_ID, VGIN_QPID, LOCALITY, ASSESSMENT_DATE_1, ASSESSMENT_CHG_DESC_1, PROP_TYPE_2, PARCEL_LOCATION_CITY, PARCEL_LOCATION_STATE, PARCEL_LOCATION_ZIP, ASSESSMENT_DATE_2, ASSESSMENT_CHG_DESC_2, ASSESSMENT_DATE_3, ASSESSMENT_CHG_DESC_3, ASSESSMENT_DATE_4, ASSESSMENT_CHG_DESC_4, ASSESSMENT_DATE_5, ASSESSMENT_CHG_DESC_5, STYLE, HVAC, ASSOC_NAME, OWNER2
@@ -131,25 +132,25 @@ matched to the 8R backbone: 599 (92.9%)  [97 by address, 473 by lat/lng, 29 by p
 unit counts agree:        146/214
 year built agrees:        87/144
 
-comp-set replay subjects: 185  (+15 skipped - city has no 8R coordinates yet)
-avg comp-set overlap:     48.1%  (gate >= 90%)
-avg-rent delta:           27.3%  [signed +20.7%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
+comp-set replay subjects: 200
+avg comp-set overlap:     97.9%  (gate >= 90%)
+avg-rent delta:           27.5%  [signed +17.9%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
 
 P0-2 GATE: not met yet
 crosswalk persisted:      599 legacy->8R mappings (property_crosswalk)
 (+28 unit disagreements resolved by multi-parcel footprint totals)
-match rate, covered cities only: 92.3%  (cities whose feed has multifamily data)
+match rate, covered cities only: 92.9%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
-  Virginia Beach    174 ->   173 |    221 |    221
-  Norfolk           127 ->   126 |     62 |     62
-  Newport News      123 ->   119 |    243 |    243
-  Hampton            76 ->    70 |      2 |      2
-  Chesapeake         66 ->    66 |    517 |    517
-  Portsmouth         45 ->    45 |      0 |      0   <- feed has no usable multifamily data
-  Suffolk            34 ->     0 |      2 |      2
+  Virginia Beach    174 ->   173 |    330 |    330
+  Norfolk           127 ->   126 |    164 |    164
+  Newport News      123 ->   119 |    269 |    269
+  Hampton            76 ->    70 |     72 |     72
+  Chesapeake         66 ->    66 |    541 |    541
+  Portsmouth         45 ->    45 |     45 |     45
+  Suffolk            34 ->     0 |      3 |      3
 
-Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,546, Norfolk 636, Chesapeake 133
+Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,528, Norfolk 611, Chesapeake 131
 
 Largest unit-count disagreements (check these matches):
   Acorn Grove: legacy 108 vs 8R 197
