@@ -67,15 +67,18 @@ def main() -> int:
     checks.append((len(xwalk) > 0, f"crosswalk materialized ({len(xwalk):,} mappings)"))
 
     # Rent coverage by source across the multifamily backbone.
-    from core.phase0 import is_mf_ten_plus_for_city, unit_rich_cities
+    from core.phase0 import (is_mf_ten_plus_for_city, known_apartment_ids,
+                             unit_rich_cities)
     by_source: dict[str, int] = {}
     try:
         with sqlite3.connect(db) as conn:
             rich = unit_rich_cities(conn)
-            for city, uc, units, src in conn.execute(
-                    "SELECT city, use_code, units, rent_source "
+            known = known_apartment_ids(conn)
+            for pid, city, uc, units, src in conn.execute(
+                    "SELECT property_id, city, use_code, units, rent_source "
                     "  FROM properties_8r"):
-                if is_mf_ten_plus_for_city(city, uc, units, None, rich):
+                if is_mf_ten_plus_for_city(city, uc, units, None, rich,
+                                           pid in known):
                     by_source[src or "none"] = by_source.get(src or "none", 0) + 1
     except sqlite3.Error:
         pass

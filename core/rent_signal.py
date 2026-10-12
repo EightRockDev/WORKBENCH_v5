@@ -192,8 +192,10 @@ def apply_rent_signal(spine_db: Path, etl_path: Path | None = None) -> int:
         # Richmond's 6,585 MF rows, Atlanta's 1,982 and Raleigh's 1,613
         # could never receive an FMR estimate - rent coverage sat frozen
         # at 9.2% no matter what the HUD pull returned.
-        from core.phase0 import is_mf_ten_plus_for_city, unit_rich_cities
+        from core.phase0 import (is_mf_ten_plus_for_city,
+                                 known_apartment_ids, unit_rich_cities)
         rich = unit_rich_cities(conn)
+        known = known_apartment_ids(conn)
         for city, fips in CITY_TO_COUNTY_FIPS_5.items():
             est = blend.get(fips)
             if est is None:
@@ -204,7 +206,8 @@ def apply_rent_signal(spine_db: Path, etl_path: Path | None = None) -> int:
                             WHERE city = ? AND (rent_source IS NULL
                                                 OR rent_source = 'hud_fmr')""",
                         (city,))
-                    if is_mf_ten_plus_for_city(city, uc, u, None, rich)]
+                    if is_mf_ten_plus_for_city(city, uc, u, None, rich,
+                                               pid in known)]
             conn.executemany(
                 """UPDATE properties_8r
                       SET est_avg_rent = ?, rent_source = 'hud_fmr'

@@ -90,10 +90,11 @@ def test_discover_stops_on_its_own_budget_and_says_where(capsys,
     found = d.discover(cities=[("A", "VA"), ("B", "VA"), ("C", "VA")],
                        fetch=lambda *a, **k: None,
                        soda=lambda *a, **k: None,
-                       budget_s=600, clock=lambda: now["t"])
+                       budget_s=600, clock=lambda: now["t"],
+                       city_cap_s=1e9)
     # A ends at 350s (under budget, kept); B ends at 700s (over budget
     # mid-city, so its partial result is dropped and the run stops).
-    assert found.cut_short_at == "B"
+    assert found.incomplete == ["B"] and found.cut_short_at == "C"
     assert "A" in found and "B" not in found and "C" not in found
     out = capsys.readouterr().out
     assert "probing A" in out and "probing B" in out
@@ -101,25 +102,71 @@ def test_discover_stops_on_its_own_budget_and_says_where(capsys,
     assert "stopped during B" in out
 
 
-def test_partial_run_leaves_the_feed_list_untouched(tmp_path, monkeypatch,
-                                                    capsys):
-    """Overwriting feeds_extra.json with a partial result would silently
-    drop every feed for the cities never reached."""
+def test_partial_run_saves_finished_cities_and_keeps_the_rest(
+        tmp_path, monkeypatch, capsys):
+    """A run cut short must not shrink the feed list: every city it never
+    reached, abandoned mid-probe, or got an empty answer from keeps its
+    saved feeds. Cities it did finish are updated."""
+    import json
     import scripts.discover_feeds as d
+    data = tmp_path / "data"
+    data.mkdir()
+    feeds = data / "feeds_extra.json"
+    feeds.write_text(json.dumps([
+        {"market": "Norfolk", "url": "n-old", "kind": "assessor"},
+        {"market": "Suffolk", "url": "s-old", "kind": "assessor"},
+        {"market": "Richmond", "url": "r-old", "kind": "assessor"},
+        {"market": "Hampton", "url": "h-old", "kind": "assessor"}]))
+    monkeypatch.setattr(d, "__file__",
+                        str(tmp_path / "scripts" / "discover_feeds.py"))
 
     def partial(**kw):
-        r = d.Partial({"Norfolk": [{"url": "u", "note": "n"}]})
+        r = d.Partial({"Norfolk": [{"market": "Norfolk", "url": "n-new",
+                                    "kind": "assessor", "note": "x"}],
+                       "Hampton": []})                 # empty answer
+        r.incomplete = ["Suffolk"]
         r.cut_short_at = "Richmond"
         return r
     monkeypatch.setattr(d, "discover", partial)
-    written = []
-    monkeypatch.setattr(d.Path, "write_text",
-                        lambda self, *a, **k: written.append(self))
     assert d.main(["--va"]) == 0
+    got = sorted((x["market"], x["url"])
+                 for x in json.loads(feeds.read_text()))
+    assert got == [("Hampton", "h-old"), ("Norfolk", "n-new"),
+                   ("Richmond", "r-old"), ("Suffolk", "s-old")]
     out = capsys.readouterr().out
-    assert "stopped early at Richmond" in out
-    assert "UNCHANGED" in out
-    assert not any(p.name == "feeds_extra.json" for p in written)
+    assert "Suffolk: INCOMPLETE" in out
+    assert "Richmond: not probed" in out
+
+
+def test_one_slow_city_no_longer_blocks_the_rest(monkeypatch, capsys):
+    """From 2026-10-11 23:12 Virginia Beach alone outran the whole budget
+    every cycle and no Virginia city after it was ever probed. A city
+    over its own cap is skipped and the run moves on."""
+    import scripts.discover_feeds as d
+    now = {"t": 0.0}
+
+    def agol(city, fetch=None):
+        if city == "Virginia Beach":
+            for _ in range(10):          # each layer request "takes" 60s
+                now["t"] += 60
+                fetch("https://x/layer")
+        else:
+            now["t"] += 30
+        return iter(())
+    monkeypatch.setattr(d, "search_agol", agol)
+    monkeypatch.setattr(d, "vgin_fallback",
+                        lambda city, fetch: {"market": city, "url": "vgin",
+                                             "kind": "assessor", "note": "v"})
+    found = d.discover(cities=[("Virginia Beach", "VA"),
+                               ("Chesapeake", "VA")],
+                       fetch=lambda *a, **k: None,
+                       soda=lambda *a, **k: None,
+                       budget_s=720, city_cap_s=240,
+                       clock=lambda: now["t"])
+    assert found.incomplete == ["Virginia Beach"]
+    assert found.cut_short_at is None
+    assert [s["market"] for s in found["Chesapeake"]] == ["Chesapeake"]
+    assert "[city cap] Virginia Beach" in capsys.readouterr().out
 
 
 def test_budget_fits_inside_the_autopilot_step_cap():
@@ -192,7 +239,8 @@ def test_a_single_slow_city_cannot_overrun_the_budget(capsys):
                        extra_roots=["https://x/arcgis/rest/services"],
                        fetch=slow_fetch, soda=lambda *a, **k: None,
                        budget_s=250, clock=lambda: now["t"])
-    assert found.cut_short_at == "Hampton"
+    assert found.incomplete == ["Hampton"]
+    assert found.cut_short_at == "Suffolk"
     assert "Hampton" not in found and "Suffolk" not in found
     assert calls["n"] <= 3, "requests kept going after the deadline"
     assert "stopped during Hampton" in capsys.readouterr().out

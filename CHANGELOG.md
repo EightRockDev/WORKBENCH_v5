@@ -12,6 +12,45 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.3.0.0 - 2026-10-12  .  Known apartments always count; one slow city can't stall discovery.
+
+**Norfolk 858 -> 62.** On 10-11 discovery added Norfolk's "Address
+Information" dataset. Address-point unit derivation then gave 247
+Norfolk parcels a unit count, 62 of them 10+, which made Norfolk
+"unit-rich" under V5.67.2.0.0's rule, and 637 apartment-coded parcels
+with no unit addresses were presumed small and dropped. That rule is
+sound where the unit source sees every building (Richmond's master
+address table; Virginia Beach's CAD roll), but Norfolk's address data
+covers only some buildings, and the dropped set included complexes the
+curated legacy list already knows are 10+ units.
+
+- `core.phase0.known_apartment_ids()`: 8R parcels matched (by address or
+  coordinates, not the last-resort proximity match) to a curated legacy
+  apartment are never presumed small, in the headline, screener metrics,
+  rent stamping, alerts, preflight and the comp pool alike. A known
+  small unit count still wins.
+- The "NOT counted" report line now shows, per unit-rich city, how many
+  curated known apartments carry a unit count. A low share there is the
+  signal that a city's unit source misses real buildings.
+- SPINE_BUILD_GENERATION 5 -> 6 forces the rebuild. Norfolk's true 10+
+  count is genuinely uncertain: of the 247 Norfolk apartment parcels
+  whose unit count IS known, 185 (75%) are under 10, so the old 866
+  label-only figure was inflated too. Expect the next count to sit
+  between those, with every known complex included.
+
+**Discovery stalled on Virginia Beach.** From 10-11 23:12 VB's portal
+alone outran the whole 720s budget every cycle, so the VA run never got
+past its first city.
+
+- Each city now has its own cap (`ER_DISCOVER_CITY_CAP_S`, 240s). A city
+  that overruns is skipped, its saved feeds kept, and the run moves on.
+- A cut-short run now saves the cities it DID finish instead of leaving
+  the whole file alone. Cities unfinished, unreached, or answering empty
+  (often a transient outage) keep their saved feeds - an empty answer
+  never deletes feeds anymore.
+- The report says INCOMPLETE / not probed per city instead of the
+  misleading "nothing suitable found" for cities it never reached.
+
 ## V5.67.2.3.0 - 2026-10-11  .  Discovery stops adding old fiscal-year snapshots.
 
 Norfolk's apartment count moved 869 -> 858 overnight with no real-world

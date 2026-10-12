@@ -1013,6 +1013,12 @@ scale this is intolerable. Non-negotiable rules:
    rule, so a single new feed (VB, 10-04) nearly tripled the headline
    while the comp pool barely moved. When a classification rule gets
    smarter in one module, grep every caller of the old rule the same day.
+   Follow-up 10-12: an evidence rule ("absence of a unit count means
+   small") is only as good as the unit source's coverage, and coverage
+   changes when feeds change. A partial address dataset flipped Norfolk
+   to "unit-rich" and the count fell 858 -> 62. Anchor such rules to
+   ground truth you already hold (the curated legacy list) and report
+   that coverage every run.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /

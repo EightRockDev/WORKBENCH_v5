@@ -547,16 +547,31 @@ def socrata_sample_in_city(resource_url: str, city: str, soda=_soda_get) -> bool
 # only at the end, the killed runs reported NOTHING - not even which city
 # stalled. Stop on our own budget instead, with whatever was found.
 BUDGET_S = int(os.environ.get("ER_DISCOVER_BUDGET_S", "720"))
+# Per-city share of that budget. From 2026-10-11 23:12 Virginia Beach's
+# portal alone ran past the whole 720s budget every cycle, so the VA run
+# never got past its FIRST city and no Virginia feed refreshed at all. A
+# city that overruns its share is skipped (its saved feeds stay) and the
+# run moves on to the next one.
+CITY_CAP_S = int(os.environ.get("ER_DISCOVER_CITY_CAP_S", "240"))
 
 
 class Partial(dict):
-    """discover() result that also says whether the budget cut it short."""
+    """discover() result that also says which cities did not finish.
+
+    cut_short_at: first city never started (total budget spent).
+    incomplete:   cities started but abandoned (their own cap, or the
+                  total budget, ran out mid-city)."""
     cut_short_at: str | None = None
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.incomplete: list[str] = []
 
 
 def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
              soda=_soda_get, budget_s: float | None = None,
-             clock=time.monotonic) -> dict[str, list[dict]]:
+             clock=time.monotonic,
+             city_cap_s: float | None = None) -> dict[str, list[dict]]:
     """{city: [candidate FeedSpec dicts, best first]}.
 
     ``cities`` may be bare city strings (assumed VA, back-compat) or
@@ -567,6 +582,8 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
     out: dict[str, list[dict]] = Partial()
     start = clock()
     budget = BUDGET_S if budget_s is None else budget_s
+    city_cap = CITY_CAP_S if city_cap_s is None else city_cap_s
+    city_start = {"t": start}
 
     # The between-cities check alone was not enough: on 2026-10-06 Hampton
     # alone ran 385s+ (layer after layer, each allowed TIMEOUT) and the
@@ -574,6 +591,11 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
     # checks the clock too; once the budget is spent, fetches return None
     # at once, the current city winds down in seconds, and the run stops.
     def _over() -> bool:
+        now = clock()
+        return (now - start > budget
+                or now - city_start["t"] > city_cap)
+
+    def _total_over() -> bool:
         return clock() - start > budget
 
     def _guard(fn):
@@ -582,7 +604,8 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
         return wrapped
     fetch, soda = _guard(fetch), _guard(soda)
 
-    for entry in cities:
+    cities = list(cities)
+    for i, entry in enumerate(cities):
         city, state = (entry if isinstance(entry, tuple) else (entry, "VA"))
         elapsed = clock() - start
         if elapsed > budget:
@@ -591,6 +614,7 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                   f"stopping before {city}", flush=True)
             break
         print(f"   [{elapsed:4.0f}s] probing {city}...", flush=True)
+        city_start["t"] = clock()
         candidates: list[tuple[int, dict]] = []
         roots = KNOWN_ROOTS.get(city, []) + list(extra_roots)
         sources = []
@@ -688,12 +712,20 @@ def discover(cities=TARGET_CITIES, extra_roots=(), fetch=_get_json,
                 candidates.append((MIN_SCORE + 1, vgin))
                 candidates.sort(key=lambda t: -t[0])
         if _over():
-            # Budget ran out mid-city: its results are incomplete, so they
+            # Time ran out mid-city: its results are incomplete, so they
             # must not replace this city's feeds in the saved list.
-            out.cut_short_at = city
-            print(f"   [budget] {clock() - start:.0f}s used of "
-                  f"{budget:.0f}s - stopped during {city}", flush=True)
-            break
+            out.incomplete.append(city)
+            if _total_over():
+                print(f"   [budget] {clock() - start:.0f}s used of "
+                      f"{budget:.0f}s - stopped during {city}", flush=True)
+                if i + 1 < len(cities):
+                    nxt = cities[i + 1]
+                    out.cut_short_at = nxt[0] if isinstance(nxt, tuple) \
+                        else nxt
+                break
+            print(f"   [city cap] {city} passed {city_cap:.0f}s - skipped, "
+                  "its saved feeds are kept", flush=True)
+            continue
         out[city] = [spec for _s, spec in candidates[:2]]
         if real_rolls and not any("lat" in (c.get("fields_mapped") or [])
                                   for c in real_rolls):
@@ -763,38 +795,47 @@ def main(argv=None) -> int:
     found = discover(cities=targets, extra_roots=args.roots)
     print()
     cut = getattr(found, "cut_short_at", None)
+    incomplete = set(getattr(found, "incomplete", []) or [])
+    labels = [label_of(t) for t in targets]
+    not_probed = (set(labels[labels.index(cut):])
+                  if cut in labels else set()) - incomplete
 
     specs = [spec for lst in found.values() for spec in lst]
-    for _t in targets:
-        city = label_of(_t)
+    for city in labels:
         lst = found.get(city) or []
-        if lst:
+        if city in incomplete:
+            print(f"{city}: INCOMPLETE - ran out of time mid-probe; its "
+                  "saved feeds are kept")
+        elif city in not_probed:
+            print(f"{city}: not probed this run (time budget); its saved "
+                  "feeds are kept")
+        elif lst:
             print(f"{city}: {len(lst)} candidate layer(s)")
             for spec in lst:
                 print(f"   {spec['url']}")
                 print(f"      {spec['note']}")
         else:
             print(f"{city}: nothing suitable found (portal may be offline or "
-                  "hides fields until queried; send me this output)")
+                  "hides fields until queried); its saved feeds are kept")
         print()
 
-    if cut:
-        # A partial run must not shrink the feed list the pull step reads -
-        # every city we never reached would silently lose its feeds.
-        print(f"Run stopped early at {cut} (time budget). Found "
-              f"{len(specs)} spec(s) so far; data/feeds_extra.json left "
-              "UNCHANGED.")
-    elif specs:
+    # Replace a market's saved feeds only when this run fully probed it AND
+    # found something. An unfinished city, an unreached city, or a city
+    # whose portal returned nothing (often a transient outage) keeps what
+    # the pull already reads - an empty answer must never delete feeds.
+    covered = {c for c in labels if found.get(c)} - incomplete - not_probed
+    if not args.va:
+        # Richmond sits in both target lists, and the two runs kept
+        # replacing each other's Richmond feeds every cycle. The VA run
+        # owns every VA city; national neither writes nor clears them.
+        covered -= set(TARGET_CITIES)
+    specs = [x for x in specs if x.get("market") in covered]
+    if cut or incomplete:
+        print(f"Time limit: {len(incomplete)} city(ies) incomplete, "
+              f"{len(not_probed)} not probed - their saved feeds are kept.")
+    if specs:
         out_path = Path(__file__).resolve().parent.parent / "data" / "feeds_extra.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        covered = {label_of(t) for t in targets}
-        if not args.va:
-            # Richmond sits in both target lists, and the two runs kept
-            # replacing each other's Richmond feeds every cycle. The VA
-            # run owns every VA city; national neither writes nor clears
-            # them.
-            covered -= set(TARGET_CITIES)
-            specs = [x for x in specs if x.get("market") in covered]
         merged, kept = merge_specs(_read_specs(out_path), specs, covered)
         out_path.write_text(json.dumps(merged, indent=2))
         print(f"Wrote {len(merged)} feed spec(s) to {out_path} "
@@ -802,7 +843,8 @@ def main(argv=None) -> int:
               "markets)")
         print("NEXT: double-click pull-muni.bat to ingest them, then run-phase0.bat.")
     else:
-        print("No feeds written. Send me this output and I will widen the probes.")
+        print("No feeds changed this run; data/feeds_extra.json left "
+              "UNCHANGED.")
     return 0
 
 

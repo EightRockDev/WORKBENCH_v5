@@ -21,7 +21,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from core.phase0 import (MIN_MF_UNITS, find_workbench_db,
-                         is_mf_ten_plus_for_city, unit_rich_cities)
+                         is_mf_ten_plus_for_city, known_apartment_ids,
+                         unit_rich_cities)
 
 
 @dataclass
@@ -68,9 +69,10 @@ def market_breakdown(db_path: str | Path | None = None) -> Breakdown:
         rows: dict[str, MarketRow] = {}
         try:
             rich = unit_rich_cities(conn)
+            known = known_apartment_ids(conn)
             cursor = conn.execute(
                 "SELECT COALESCE(r8_market, city), r8_submarket, city, "
-                "       use_code, units FROM properties_8r")
+                "       use_code, units, property_id FROM properties_8r")
         except sqlite3.OperationalError as exc:
             # A drifted/partial backbone (missing column on an old build)
             # must read as "not ready", never crash the whole screen -
@@ -80,10 +82,10 @@ def market_breakdown(db_path: str | Path | None = None) -> Breakdown:
                          f"build ({exc}) - the next update-workbench run "
                          f"rebuilds it.")
             return out
-        for market, sub, city, use_code, units in cursor:
+        for market, sub, city, use_code, units, pid in cursor:
             out.total_records += 1
             if not is_mf_ten_plus_for_city(city, use_code, units, learned,
-                                           rich):
+                                           rich, pid in known):
                 continue
             m = rows.setdefault(market or "(unassigned)",
                                 MarketRow(market or "(unassigned)"))

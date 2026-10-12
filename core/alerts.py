@@ -79,12 +79,15 @@ def run_sweep(db_path: Path) -> dict[str, int]:
         prior = {pid: (u, o) for pid, u, o in conn.execute(
             "SELECT property_id, units, owner_name FROM alert_snapshot")}
         current: dict[str, tuple] = {}
-        from core.phase0 import is_mf_ten_plus_for_city, unit_rich_cities
+        from core.phase0 import (is_mf_ten_plus_for_city,
+                                 known_apartment_ids, unit_rich_cities)
         rich = unit_rich_cities(conn)
+        known = known_apartment_ids(conn)
         for pid, city, addr, uc, units, owner in conn.execute(
                 "SELECT property_id, city, address, use_code, units, "
                 "       owner_name FROM properties_8r"):
-            if is_mf_ten_plus_for_city(city, uc, units, None, rich):
+            if is_mf_ten_plus_for_city(city, uc, units, None, rich,
+                                       pid in known):
                 current[pid] = (city, addr, units, owner)
         seeding = not prior
         for pid, (city, addr, units, owner) in current.items():

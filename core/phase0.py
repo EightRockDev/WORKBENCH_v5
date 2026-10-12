@@ -386,6 +386,11 @@ class CoverageReport:
     mf_basis: dict[str, Counter] = field(default_factory=lambda: defaultdict(Counter))
     # Label-only rows NOT counted because their city carries unit data.
     label_only_dropped: Counter = field(default_factory=Counter)
+    # Per unit-rich city: curated known apartments with / without a unit
+    # count. Low "with units" share = the unit source misses real
+    # buildings, so the presume-small rule is on thin ice there.
+    known_apts_seen: dict[str, Counter] = field(
+        default_factory=lambda: defaultdict(Counter))
     unit_rich_cities: list = field(default_factory=list)
     # For cities with parcels but ZERO multifamily: their top use-code
     # values overall, so the missing-MF mystery names its own suspects.
@@ -470,7 +475,11 @@ class CoverageReport:
                 f"whose feed carries unit data (>= {UNIT_RICH_MIN} parcels "
                 "with a known 10+ count):")
             for city, n in self.label_only_dropped.most_common():
-                lines.append(f"  {city}: {n:,}")
+                seen = self.known_apts_seen.get(city) or Counter()
+                tot = sum(seen.values())
+                cov = (f"  (curated known apartments carrying a unit count:"
+                       f" {seen['with units']:,} of {tot:,})" if tot else "")
+                lines.append(f"  {city}: {n:,}{cov}")
         pending = {c: k for c, k in self.unmapped_keys.items() if k}
         if pending:
             lines.append("")
@@ -600,10 +609,30 @@ def unit_rich_cities(conn) -> set[str]:
         if n >= UNIT_RICH_MIN}
 
 
+def known_apartment_ids(conn) -> set[str]:
+    """8R parcels already matched to a curated 10+ unit apartment.
+
+    The unit-rich rule presumes a label-only parcel small, which is only
+    safe when the city's unit source sees every building. Norfolk's
+    address dataset (2026-10-11) gave units to 62 parcels - enough to make
+    Norfolk "unit-rich" - and the rule then dropped 637 apartment-coded
+    parcels, including complexes the curated legacy list already knows
+    are 10+ units. A known apartment can never be presumed small.
+    Proximity matches are left out: they are the cascade's last resort.
+    """
+    try:
+        return {pid for (pid,) in conn.execute(
+            "SELECT r8_property_id FROM property_crosswalk "
+            " WHERE match_method != 'proximity'")}
+    except sqlite3.Error:
+        return set()
+
+
 def is_mf_ten_plus_for_city(city: str | None, use_code: str | None,
                             units: float | None,
                             learned: dict[str, set[str]] | None = None,
-                            unit_rich: set[str] | None = None) -> bool:
+                            unit_rich: set[str] | None = None,
+                            known_apartment: bool = False) -> bool:
     """`is_mf_ten_plus`, plus any code this city has been taught.
 
     Rolls that publish bare numeric use codes ("9", "18") match none of the
@@ -615,6 +644,8 @@ def is_mf_ten_plus_for_city(city: str | None, use_code: str | None,
     """
     if units is not None:
         return units >= MIN_MF_UNITS
+    if known_apartment:
+        return True
     if unit_rich and city in unit_rich:
         return False
     if is_multifamily(use_code, None):
@@ -937,14 +968,21 @@ def build_spine(db_path: Path,
         from core.use_code_learn import load as _load_learned
         learned = _load_learned(conn)
         rich = unit_rich_cities(conn)
+        known = known_apartment_ids(conn)
         report.unit_rich_cities = sorted(rich)
-        for city, units, use_code in conn.execute(
-                "SELECT city, units, use_code FROM properties_8r"):
-            if units is None and city in rich and (
+        for pid, city, units, use_code in conn.execute(
+                "SELECT property_id, city, units, use_code "
+                "  FROM properties_8r"):
+            is_known = pid in known
+            if city in rich and is_known:
+                report.known_apts_seen[city][
+                    "with units" if units is not None else "no units"] += 1
+            if units is None and city in rich and not is_known and (
                     is_multifamily(use_code, None)
                     or is_mf_ten_plus_for_city(city, use_code, None, learned)):
                 report.label_only_dropped[city] += 1
-            if is_mf_ten_plus_for_city(city, use_code, units, learned, rich):
+            if is_mf_ten_plus_for_city(city, use_code, units, learned, rich,
+                                       is_known):
                 report.multifamily += 1
                 report.mf_by_city[city] += 1
                 report.mf_use_codes[city][(use_code or "").strip()[:40]] += 1
@@ -982,7 +1020,7 @@ def build_spine(db_path: Path,
 # aliasing, prune logic...) so an unchanged-inputs skip cannot pin an old
 # spine under new code. Same pattern, same reason as listings
 # PULL_GENERATION: a fix that cannot run is indistinguishable from no fix.
-SPINE_BUILD_GENERATION = 5
+SPINE_BUILD_GENERATION = 6
 
 
 def spine_input_fingerprint(db_path: Path) -> str:

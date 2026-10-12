@@ -82,3 +82,46 @@ def test_screener_metrics_applies_the_rule(tmp_path):
     conn.close()
     out = screener_metrics.market_breakdown(db)
     assert out.total == 90, out
+
+
+# ------------------- known apartments are never presumed small (10-12)
+
+def _db_xw(rows, crosswalk):
+    conn = _db(rows)
+    conn.execute("CREATE TABLE property_crosswalk (legacy_property_id TEXT, "
+                 "r8_property_id TEXT, match_method TEXT, parcel_count INT, "
+                 "built_at TEXT)")
+    conn.executemany("INSERT INTO property_crosswalk VALUES (?,?,?,1,'x')",
+                     crosswalk)
+    return conn
+
+
+def test_known_apartments_count_even_in_a_unit_rich_city():
+    """2026-10-11: a Norfolk address dataset gave 62 parcels unit counts,
+    Norfolk became 'unit-rich', and the rule dropped 637 apartment-coded
+    parcels including complexes the curated list knows are 10+ units."""
+    rows = [(f"nfu{i}", "Norfolk", "Apartment", 20) for i in range(60)]
+    rows += [(f"nfl{i}", "Norfolk", "Apartment", None) for i in range(10)]
+    conn = _db_xw(rows, [("L1", "nfl0", "address"),
+                         ("L2", "nfl1", "latlng"),
+                         ("L3", "nfl2", "proximity")])
+    rich = phase0.unit_rich_cities(conn)
+    known = phase0.known_apartment_ids(conn)
+    assert "Norfolk" in rich
+    assert known == {"nfl0", "nfl1"}          # proximity is not trusted
+    counted = {pid for pid, c, uc, u in conn.execute(
+        "SELECT property_id, city, use_code, units FROM properties_8r")
+        if phase0.is_mf_ten_plus_for_city(c, uc, u, None, rich,
+                                          pid in known)}
+    assert len(counted) == 62
+    assert {"nfl0", "nfl1"} <= counted and "nfl2" not in counted
+
+
+def test_a_known_small_unit_count_still_wins_over_the_crosswalk():
+    assert not phase0.is_mf_ten_plus_for_city(
+        "Norfolk", "Apartment", 4, None, {"Norfolk"}, True)
+
+
+def test_no_crosswalk_table_means_no_known_apartments():
+    conn = _db(_rows())
+    assert phase0.known_apartment_ids(conn) == set()
