@@ -1,4 +1,4 @@
-autopilot discover_national @ 2026-10-12T03:12:38
+autopilot discover_national @ 2026-10-12T05:12:50
 
 [national-discovery] probing top-50 metros for free parcel feeds...
 Probing GIS portals for unit-bearing parcel layers (50 national metros)...
@@ -7,111 +7,116 @@ Probing GIS portals for unit-bearing parcel layers (50 national metros)...
    [   0s] probing Chicago...
    [   0s] probing Fort Lauderdale...
    [   0s] probing Miami...
-   [ 285s] probing Santa Ana...
-   [ 286s] probing West Palm Beach...
-   [ 287s] probing San Jose...
-   [ 287s] probing Seattle...
-   [ 287s] probing New York...
-   [budget] 726s used of 720s - stopped during New York
+   [city cap] Miami passed 240s - skipped, its saved feeds are kept
+   [ 240s] probing Santa Ana...
+   [ 241s] probing West Palm Beach...
+   [ 241s] probing San Jose...
+   [ 241s] probing Seattle...
+   [ 241s] probing New York...
+   [city cap] New York passed 240s - skipped, its saved feeds are kept
+   [ 503s] probing Boston...
+   [ 505s] probing San Diego...
+   [budget] 724s used of 720s - stopped during San Diego
 
-Chicago: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Chicago: nothing suitable found (portal may be offline or hides fields until queried); its saved feeds are kept
 
-Fort Lauderdale: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Fort Lauderdale: nothing suitable found (portal may be offline or hides fields until queried); its saved feeds are kept
 
-Miami: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Miami: INCOMPLETE - ran out of time mid-probe; its saved feeds are kept
 
-Santa Ana: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Santa Ana: nothing suitable found (portal may be offline or hides fields until queried); its saved feeds are kept
 
-West Palm Beach: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+West Palm Beach: nothing suitable found (portal may be offline or hides fields until queried); its saved feeds are kept
 
-San Jose: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+San Jose: nothing suitable found (portal may be offline or hides fields until queried); its saved feeds are kept
 
-Seattle: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Seattle: nothing suitable found (portal may be offline or hides fields until queried); its saved feeds are kept
 
-New York: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+New York: INCOMPLETE - ran out of time mid-probe; its saved feeds are kept
 
-Boston: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Boston: nothing suitable found (portal may be offline or hides fields until queried); its saved feeds are kept
 
-San Diego: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+San Diego: INCOMPLETE - ran out of time mid-probe; its saved feeds are kept
 
-Los Angeles: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Los Angeles: not probed this run (time budget); its saved feeds are kept
 
-Washington: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Washington: not probed this run (time budget); its saved feeds are kept
 
-Riverside: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Riverside: not probed this run (time budget); its saved feeds are kept
 
-Oakland: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Oakland: not probed this run (time budget); its saved feeds are kept
 
-Philadelphia: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Philadelphia: not probed this run (time budget); its saved feeds are kept
 
-Newark: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Newark: not probed this run (time budget); its saved feeds are kept
 
-Sacramento: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Sacramento: not probed this run (time budget); its saved feeds are kept
 
-Portland: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Portland: not probed this run (time budget); its saved feeds are kept
 
-Baltimore: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Baltimore: not probed this run (time budget); its saved feeds are kept
 
-Minneapolis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Minneapolis: not probed this run (time budget); its saved feeds are kept
 
-Atlanta: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Atlanta: not probed this run (time budget); its saved feeds are kept
 
-Orlando: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Orlando: not probed this run (time budget); its saved feeds are kept
 
-Tampa: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Tampa: not probed this run (time budget); its saved feeds are kept
 
-Charlotte: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Charlotte: not probed this run (time budget); its saved feeds are kept
 
-Raleigh: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Raleigh: not probed this run (time budget); its saved feeds are kept
 
-Richmond: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Richmond: not probed this run (time budget); its saved feeds are kept
 
-Las Vegas: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Las Vegas: not probed this run (time budget); its saved feeds are kept
 
-Phoenix: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Phoenix: not probed this run (time budget); its saved feeds are kept
 
-Denver: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Denver: not probed this run (time budget); its saved feeds are kept
 
-Salt Lake City: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Salt Lake City: not probed this run (time budget); its saved feeds are kept
 
-Columbus: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Columbus: not probed this run (time budget); its saved feeds are kept
 
-Indianapolis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Indianapolis: not probed this run (time budget); its saved feeds are kept
 
-Cincinnati: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Cincinnati: not probed this run (time budget); its saved feeds are kept
 
-Cleveland: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Cleveland: not probed this run (time budget); its saved feeds are kept
 
-Detroit: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Detroit: not probed this run (time budget); its saved feeds are kept
 
-Kansas City: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Kansas City: not probed this run (time budget); its saved feeds are kept
 
-Milwaukee: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Milwaukee: not probed this run (time budget); its saved feeds are kept
 
-St. Louis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+St. Louis: not probed this run (time budget); its saved feeds are kept
 
-Pittsburgh: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Pittsburgh: not probed this run (time budget); its saved feeds are kept
 
-Louisville: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Louisville: not probed this run (time budget); its saved feeds are kept
 
-Dallas: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Dallas: not probed this run (time budget); its saved feeds are kept
 
-Fort Worth: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Fort Worth: not probed this run (time budget); its saved feeds are kept
 
-Houston: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Houston: not probed this run (time budget); its saved feeds are kept
 
-Austin: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Austin: not probed this run (time budget); its saved feeds are kept
 
-San Antonio: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+San Antonio: not probed this run (time budget); its saved feeds are kept
 
-Nashville: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Nashville: not probed this run (time budget); its saved feeds are kept
 
-Jacksonville: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Jacksonville: not probed this run (time budget); its saved feeds are kept
 
-San Francisco: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+San Francisco: not probed this run (time budget); its saved feeds are kept
 
-New Haven: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+New Haven: not probed this run (time budget); its saved feeds are kept
 
-Memphis: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Memphis: not probed this run (time budget); its saved feeds are kept
 
-Run stopped early at New York (time budget). Found 0 spec(s) so far; data/feeds_extra.json left UNCHANGED.
+Time limit: 3 city(ies) incomplete, 40 not probed - their saved feeds are kept.
+No feeds changed this run; data/feeds_extra.json left UNCHANGED.
