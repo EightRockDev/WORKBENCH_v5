@@ -1,23 +1,28 @@
-autopilot discover @ 2026-10-12T04:00:21
+autopilot discover @ 2026-10-12T05:00:17
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
 
    [   0s] probing Virginia Beach...
-   [budget] 735s used of 720s - stopped during Virginia Beach
+   [city cap] Virginia Beach passed 240s - skipped, its saved feeds are kept
+   [ 246s] probing Chesapeake...
+   [city cap] Chesapeake passed 240s - skipped, its saved feeds are kept
+   [ 498s] probing Hampton...
+   [budget] 742s used of 720s - stopped during Hampton
 
-Virginia Beach: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Virginia Beach: INCOMPLETE - ran out of time mid-probe; its saved feeds are kept
 
-Chesapeake: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Chesapeake: INCOMPLETE - ran out of time mid-probe; its saved feeds are kept
 
-Hampton: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Hampton: INCOMPLETE - ran out of time mid-probe; its saved feeds are kept
 
-Portsmouth: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Portsmouth: not probed this run (time budget); its saved feeds are kept
 
-Suffolk: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Suffolk: not probed this run (time budget); its saved feeds are kept
 
-Norfolk: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Norfolk: not probed this run (time budget); its saved feeds are kept
 
-Richmond: nothing suitable found (portal may be offline or hides fields until queried; send me this output)
+Richmond: not probed this run (time budget); its saved feeds are kept
 
-Run stopped early at Virginia Beach (time budget). Found 0 spec(s) so far; data/feeds_extra.json left UNCHANGED.
+Time limit: 3 city(ies) incomplete, 4 not probed - their saved feeds are kept.
+No feeds changed this run; data/feeds_extra.json left UNCHANGED.
