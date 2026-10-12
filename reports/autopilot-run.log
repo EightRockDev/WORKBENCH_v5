@@ -78070,3 +78070,8 @@ Checked 114 packages in 25ms
 [backbonestats] exit 0 -> backbone-stats-latest.txt
 [publish] pushed to GitHub
 [richmondreview] exit 0 -> richmond-review.txt
+[publish] PUSH FAILED: remote: fatal error in commit_refs        
+To https://github.com/EightRockDev/WORKBENCH_v5.git
+ ! [remote rejected]     main -> main (failure)
+error: failed to push some refs to 'https://github.com/EightRockDev/WORKBENCH_v5.git'
+[joinkey] exit 0 -> join-key-latest.txt
