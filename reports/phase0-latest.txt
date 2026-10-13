@@ -1,7 +1,4 @@
-autopilot phase0 @ 2026-10-13T04:16:10
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-13T05:15:23
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 4,035,943
@@ -130,25 +127,25 @@ matched to the 8R backbone: 599 (92.9%)  [97 by address, 473 by lat/lng, 29 by p
 unit counts agree:        146/214
 year built agrees:        87/144
 
-comp-set replay subjects: 200
-avg comp-set overlap:     97.9%  (gate >= 90%)
+comp-set replay subjects: 185  (+15 skipped - city has no 8R coordinates yet)
+avg comp-set overlap:     48.1%  (gate >= 90%)
 avg-rent delta:           27.5%  [signed +17.9%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
 
 P0-2 GATE: not met yet
 crosswalk persisted:      599 legacy->8R mappings (property_crosswalk)
 (+28 unit disagreements resolved by multi-parcel footprint totals)
-match rate, covered cities only: 92.9%  (cities whose feed has multifamily data)
+match rate, covered cities only: 92.3%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
-  Virginia Beach    174 ->   173 |    330 |    330
-  Norfolk           127 ->   126 |    164 |    164
-  Newport News      123 ->   119 |    269 |    269
-  Hampton            76 ->    70 |     72 |     72
-  Chesapeake         66 ->    66 |    541 |    541
-  Portsmouth         45 ->    45 |     45 |     45
-  Suffolk            34 ->     0 |      3 |      3
+  Virginia Beach    174 ->   173 |    221 |    221
+  Norfolk           127 ->   126 |     62 |     62
+  Newport News      123 ->   119 |    243 |    243
+  Hampton            76 ->    70 |      2 |      2
+  Chesapeake         66 ->    66 |    517 |    517
+  Portsmouth         45 ->    45 |      0 |      0   <- feed has no usable multifamily data
+  Suffolk            34 ->     0 |      2 |      2
 
-Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,528, Norfolk 611, Chesapeake 131
+Comp pool: label-only entities excluded in unit-rich cities: Virginia Beach 11,546, Norfolk 636, Chesapeake 133
 
 Largest unit-count disagreements (check these matches):
   Acorn Grove: legacy 108 vs 8R 197
