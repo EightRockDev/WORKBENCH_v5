@@ -1,7 +1,4 @@
-autopilot phase0 @ 2026-10-13T01:15:23
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-13T02:54:46
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 4,035,943
@@ -76,7 +73,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Atlanta: C3 x811, C4 x641, C5 x278, C1 x62, E1 x52
   Chesapeake: Apartments x614, 1060 x188, 3015 x166, (units only) x165, 4020 x151
   Newport News: A x243, C x21, R x3, (units only) x2, O x2
-  Raleigh: (units only) x1633
+  Raleigh: (units only) x1632, MD x1
   Hampton: (units only) x71, Residential x1
   Portsmouth: (units only) x44, 20 x1
   Virginia Beach: Multi Family x240, Commercial x20, Single Family or Duplex x17, Undeveloped x15, Town House x13
