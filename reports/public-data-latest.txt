@@ -1,5 +1,5 @@
-autopilot publicdata @ 2026-10-13T18:12:48
+autopilot publicdata @ 2026-10-13T19:13:00
 
 ETL db: C:\WORKBENCH_V5\data\hampton_roads.db
-  [hmda] wrote 323 originations, 198 lender-summary rows
+  [hmda] fresh (pulled within 30 days) - skipping
   [hud_fmr] fresh - skipping (already pulled live with token)
