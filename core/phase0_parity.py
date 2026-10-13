@@ -648,18 +648,17 @@ def run_parity(legacy_db: Path, spine_db: Path,
             city = e.get("city") or "?"
             units_rich[city] = units_rich.get(city, 0) + 1
     rich = {c for c, n in units_rich.items() if n >= UNIT_RICH_MIN}
-    # Same guard as the headline (core.phase0.known_apartment_ids): an
-    # entity matched to a curated 10+ unit apartment is never presumed
-    # small, and is in the pool even if its parcel carries no MF label.
-    known = {r8 for _leg, r8, how, *_ in report.crosswalk_records
-             if how != "proximity"}
+    # DELIBERATELY not the headline's known-apartment guard. The replay
+    # restricts the 8R pool to crosswalked entities, so admitting every
+    # crosswalked entity into the pool makes the 8R side's universe equal
+    # the legacy side's and the gate grades the legacy list against
+    # itself: overlap read 97.9% on 2026-10-13 (V5.67.3.0.0) against a
+    # true 48%. The pool must stand on the backbone's own evidence.
     mf_entities = []
     for e in entities:
-        is_known = e.get("property_id") in known and e.get("units") is None
-        if not (_is_mf_entity(e) or is_known):
+        if not _is_mf_entity(e):
             continue
-        if (e.get("units") is None and not is_known
-                and (e.get("city") or "?") in rich):
+        if (e.get("units") is None and (e.get("city") or "?") in rich):
             city = e.get("city") or "?"
             report.pool_label_only_excluded[city] = (
                 report.pool_label_only_excluded.get(city, 0) + 1)

@@ -12,6 +12,26 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.3.1.0 - 2026-10-13  .  Undo a false gate pass: the comp pool can't use the crosswalk.
+
+V5.67.3.0.0 applied the known-apartment guard to the comp pool too. The
+replay restricts the 8R pool to crosswalked entities, so admitting every
+crosswalked entity made the 8R universe identical to the legacy one and
+the gate graded the legacy list against itself: comp overlap read 97.9%
+(true value ~48%) and the cutover preflight printed "[PASS] comp
+overlap". The preflight stayed "not ready" overall (rent delta 27.5%),
+so nothing could have cut over on it.
+
+- The comp pool is back to the backbone's own evidence only, with a
+  comment and a source-level test that it never reads the crosswalk.
+- SPINE_BUILD_GENERATION 6 -> 7, so the next phase0 rebuilds and
+  recomputes the gates instead of replaying the false 97.9% report.
+- The headline guard stays: 7,930 apartment properties, with Norfolk
+  164, Virginia Beach 332, Hampton 72 and Portsmouth 45 now counting the
+  curated complexes known to exist there. Known limitation: the guard
+  reads `property_crosswalk`, which P0-4 destroys after the soak; those
+  parcels need a persisted "verified apartment" flag before then.
+
 ## V5.67.3.0.0 - 2026-10-12  .  Known apartments always count; one slow city can't stall discovery.
 
 **Norfolk 858 -> 62.** On 10-11 discovery added Norfolk's "Address

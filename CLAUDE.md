@@ -1019,6 +1019,13 @@ scale this is intolerable. Non-negotiable rules:
    to "unit-rich" and the count fell 858 -> 62. Anchor such rules to
    ground truth you already hold (the curated legacy list) and report
    that coverage every run.
+20. **A gate must never consume the reference side's answers.** The comp
+   overlap gate measures whether the backbone independently finds the
+   legacy comps. Feeding legacy-matched entities into the backbone's pool
+   made it 97.9% overnight and printed a false PASS. Ground truth may
+   correct a product COUNT; it must never feed the MEASUREMENT against
+   that same ground truth. Any jump of 50 points is circularity until
+   proven otherwise.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /

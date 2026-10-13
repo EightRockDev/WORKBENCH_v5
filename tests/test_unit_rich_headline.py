@@ -125,3 +125,14 @@ def test_a_known_small_unit_count_still_wins_over_the_crosswalk():
 def test_no_crosswalk_table_means_no_known_apartments():
     conn = _db(_rows())
     assert phase0.known_apartment_ids(conn) == set()
+
+
+def test_comp_pool_never_uses_the_crosswalk():
+    """2026-10-13: putting crosswalked entities into the comp pool made the
+    replay compare the legacy list with itself (97.9% vs a true 48%). The
+    pool must not depend on which entities the legacy side matched."""
+    import inspect
+    from core import phase0_parity
+    src = inspect.getsource(phase0_parity.run_parity)
+    pool = src[src.index("mf_entities = []"):src.index("for e in mf_entities")]
+    assert "crosswalk" not in pool and "known" not in pool

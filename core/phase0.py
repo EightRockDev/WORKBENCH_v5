@@ -1020,7 +1020,7 @@ def build_spine(db_path: Path,
 # aliasing, prune logic...) so an unchanged-inputs skip cannot pin an old
 # spine under new code. Same pattern, same reason as listings
 # PULL_GENERATION: a fix that cannot run is indistinguishable from no fix.
-SPINE_BUILD_GENERATION = 6
+SPINE_BUILD_GENERATION = 7
 
 
 def spine_input_fingerprint(db_path: Path) -> str:
