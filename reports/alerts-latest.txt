@@ -1,8 +1,9 @@
-autopilot alerts @ 2026-10-12T18:18:20
+autopilot alerts @ 2026-10-12T20:01:52
 
 alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 5357 - new_mf 5353, units_jump 4
-  showing the 25 most recent of 5357
+  closed 2 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 5355 - new_mf 5351, units_jump 4
+  showing the 25 most recent of 5355
   [new_mf] New multifamily on the backbone: 8R-51740-64a0649e716f  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-7b9941ef936a  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-f2d0740bf4a1  (? units · Portsmouth)
