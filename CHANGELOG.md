@@ -12,6 +12,47 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.3.2.0 - 2026-10-14  .  The browser test no longer touches live data.
+
+tests/test_sale_history_e2e.py (the real-app, real-browser Sale History
+check) had errored for weeks with "no such table: properties". Its
+fixture wrote straight into the app's REAL data/workbench.db and the
+real Properties/ folder, then started the real app against them. Here
+that DB was empty, so it crashed. On any developer box where it is
+populated, the test edited live rows, created calibration tables, left a
+permanent "already populated" seed marker in the real Properties root
+(which disables auto-seeding forever), and rewrote the real recents
+file. That is the hazard class tests/pgguard.py exists for.
+
+- The fixture now runs entirely inside a pytest tmp dir: its own SQLite
+  file (schema from data/schema.sql, plus empty muni_records/sale_records
+  built by the repo's own etl_munidata/sale_index code), deal-folder
+  root, recents file, an empty HOME, and an empty Streamlit secrets file
+  passed as --secrets.files. pg.database_url() reads st.secrets BEFORE
+  $DATABASE_URL, so DATABASE_URL="" alone never kept a developer's
+  [postgres] url out (found by the safety review).
+- A startup probe replays the exact `streamlit run` argv in a fresh
+  interpreter and refuses to launch unless every DB path, the deal root,
+  the recents file, HOME and secrets resolve into the sandbox and
+  pg.is_configured() is False. Server log goes to a file (the old
+  undrained PIPE could deadlock); Popen..yield is in try/finally.
+- New overrides, all byte-identical behaviour when unset: ER_DB_PATH
+  (read only by data/db.py and core/calibration.py; deliberately not
+  ER_WORKBENCH_DB, which phase0 users point at a different file) and
+  ER_RECENT_VIEWS_FILE (ui recents list only).
+- Test assertions and browser flow are unchanged. Test 3 can now actually
+  fail when sales.json is not read (it could not before).
+- Two adversarial reviews, two rounds: round 1 refuted on the Postgres
+  gap; round 2 approved by both (safety: attack secrets in HOME, repo,
+  .env and STREAMLIT_SECRETS_FILES, zero app connects under strace;
+  validity: mutations fail the right tests). Full suite: 1557 passed,
+  0 errors (was 1554 + 3 errors). data/workbench.db md5 unchanged.
+- Known, not changed: the recents file's default location is the repo's
+  PARENT folder (C:\Properties on the host) - owner decision. On a box
+  with the Hampton Roads ETL file, the test still READS it (never
+  writes). Other suites still open the real dev DB read-write; this
+  test does not.
+
 ## V5.67.3.1.0 - 2026-10-13  .  Undo a false gate pass: the comp pool can't use the crosswalk.
 
 V5.67.3.0.0 applied the known-apartment guard to the comp pool too. The

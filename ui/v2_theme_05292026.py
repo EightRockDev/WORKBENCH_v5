@@ -3788,7 +3788,16 @@ def _quote_of_the_day() -> tuple[str, str]:
 
 
 def _recent_views_path() -> Path:
-    """JSON file storing the list of recently-viewed property_ids."""
+    """JSON file storing the list of recently-viewed property_ids.
+
+    $ER_RECENT_VIEWS_FILE, when set, relocates this one file and nothing
+    else (read on every call; tests/test_sale_history_e2e.py points it into
+    its sandbox). Unset or blank -> the default below, unchanged.
+    """
+    override = os.environ.get("ER_RECENT_VIEWS_FILE", "").strip()
+    if override:
+        return Path(override).expanduser()
+    # NB: 3 hops = the repo's PARENT dir, not <repo>/Properties (deal folders) - owner to decide.
     repo_root = Path(__file__).resolve().parent.parent.parent
     return repo_root / "Properties" / "_recent_views.json"
 

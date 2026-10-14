@@ -12,6 +12,7 @@ startup so the property list is always fresh after a new licensed export drops i
 from __future__ import annotations
 
 import contextlib
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any, Iterator
@@ -19,7 +20,11 @@ from typing import Any, Iterator
 from data.legacy_loader import LEGACY_FILENAME, sync, multistate_paths, LEGACY_DATA_DIR
 
 _DATA_DIR = Path(__file__).resolve().parent
-DB_PATH = _DATA_DIR / "workbench.db"
+# ER_DB_PATH relocates this file (e.g. to a test's tmp DB); unset -> as below. Read once, at
+# import, and ONLY here and in core/calibration.py. Deliberately not ER_WORKBENCH_DB, which
+# core/phase0.py users point at a different file (the v2.4.1 muni_records workbench.db).
+_db_override = os.environ.get("ER_DB_PATH", "").strip()
+DB_PATH = Path(_db_override).expanduser() if _db_override else _DATA_DIR / "workbench.db"
 SCHEMA_PATH = _DATA_DIR / "schema.sql"
 # Back-compat single-file path (workbench root). The multi-state library in
 # `Property Data and Reports/` is the real source now; this is only a fallback.

@@ -60,6 +60,7 @@ Refresh cadence:
 from __future__ import annotations
 
 import datetime as dt
+import os
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -75,7 +76,11 @@ from core import etl_db
 # ---------------------------------------------------------------------------
 
 _HERE = Path(__file__).resolve()
-WORKBENCH_DB_PATH = _HERE.parent.parent / "data" / "workbench.db"
+# ER_DB_PATH moves these tables with data/db.py's DB_PATH; unset -> data/workbench.db. Read
+# once, at import, and ONLY here and in data/db.py (not ER_WORKBENCH_DB: see data/db.py).
+_db_override = os.environ.get("ER_DB_PATH", "").strip()
+WORKBENCH_DB_PATH = (Path(_db_override).expanduser() if _db_override
+                     else _HERE.parent.parent / "data" / "workbench.db")
 CALIBRATION_SCHEMA_PATH = _HERE.parent.parent / "data" / "calibration_schema.sql"
 ETL_DB_PATH = etl_db.resolve_etl_db() or etl_db.preferred_location()
 
