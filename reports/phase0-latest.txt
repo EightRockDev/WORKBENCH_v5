@@ -1,10 +1,7 @@
-autopilot phase0 @ 2026-10-14T15:17:27
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-14T16:49:48
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,035,943
+Assessor records available: 4,035,942
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,312  .../Accela_base_map_pro/MapServer/0
@@ -29,28 +26,28 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 29 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,093,136
-parcels normalized:        3,093,136
+muni records scanned:      3,093,135
+parcels normalized:        3,093,135
 multifamily (>= 10 units): 7,933
-written to properties_8r:  3,093,136
-provisional (no-APN) ids:  1,151
+written to properties_8r:  3,093,135
+provisional (no-APN) ids:  1,160
 units derived from address points: 1,099  (skipped non-residential: 11,954)
 units bridged by geometry: 268  (Richmond 163, Atlanta 99, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1)
 coords backfilled by address (multifamily): 0
 rent estimates stamped (HUD FMR blend): 7,930
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 738,742  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 738,894  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
 Multifamily by city: Atlanta 1,985, Chesapeake 1,856, Raleigh 1,633, Greensboro 900, Richmond 671, Virginia Beach 332, Newport News 271, Norfolk 164, Hampton 72, Portsmouth 45, Suffolk 3, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 745,388
-  candidate parcels      : 826,324
+  unit-bearing parcels   : 745,540
+  candidate parcels      : 826,162
   merged                 : 114
-  rejected (too far)     : 591,890
-  rejected (same id form): 152,317
+  rejected (too far)     : 592,024
+  rejected (same id form): 152,335
   rejected (not mutual)  : 658
   rejected (ambiguous)   : 409
   merged by address      : 154
@@ -61,7 +58,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Hampton          sources     210  targets  51,333  merged     2   refused: far 26 / same-id 182 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Norfolk          sources     396  targets  67,021  merged     2   refused: far 123 / same-id 271 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Chesapeake       sources   2,049  targets  92,388  merged     1   refused: far 1,202 / same-id 846 / not-mutual 0 / ambiguous 0   by-address 0 (shared 12, coords 0)
-  Raleigh          sources 369,535  targets 132,909  merged     1   refused: far 297,818 / same-id 71,714 / not-mutual 1 / ambiguous 1   by-address 0 (shared 108, coords 156)
+  Raleigh          sources 369,687  targets 132,747  merged     1   refused: far 297,952 / same-id 71,732 / not-mutual 1 / ambiguous 1   by-address 0 (shared 108, coords 156)
   Durham           sources       4  targets 129,203  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Newport News     sources  46,669  targets   7,678  merged     0   refused: far 39,017 / same-id 7,652 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
   Portsmouth       sources       7  targets  37,544  merged     0   refused: far 3 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
@@ -113,7 +110,7 @@ Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Suffolk: LENGTH_UNIT, EC_ELEV_DATUM, EC_FLOOD_ZONE, BLDG_DIAGRAM, FIRM_STATUS, AGENCYURL, CURRENT_DATUM, LOWELEV_STAIRS, TAXMAPNO, COUNTY, EC_FLOOD_ZONE1, NOTES, HIGHWATER99, EC_FLOOD_ZONE2
   Atlanta: TaxYear, FeatureID, TaxDist, LUCode, NbrHood, AddrStreet, AddrNumber, OwnerAddr1, TotAssess, TotAppr, ImprAppr, LandAssess, ImprAssess, LandAppr, OwnerAddr2, LandAcres, AddrSuffix, ExCode, SITECITY, SITESTATE, TOT_APPR, LOWPARCELID, CNTASSDVAL, CVTTXCD
   Winston-Salem: BLKCNTRL, BLK, LOT, BLKLOT, MLOT, TBLCNTRL, CNTRL, TAXPIN, TAXPIN_N, PINMAP, PINBLK, PINLOT, PINLOT_A, CALCULATEDACREAGE, TAXPIN16, PINLOT16, PARCEL_PK, BLOCKLOT, REID_1, CURRENTOWNERNAME1, CURRENTOWNERADDRESS, CURRENTDEEDDATE, CURRENTDEEDSTAMPS, ASSESSMENTMETHOD
-  Raleigh: CALC_AREA, PIN_NUM, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE, OLD_PARCEL_NUMBER, PARCEL_PK, OWNERSHIP, ACTIVITY, FUNCTION, STRUCTURE, SITE, TOTSTRUCTS, TOTUNITS, DEED_DATE, ADDR2, TOTAL_VALUE_ASSD, PLANNING_JURISDICTION
+  Raleigh: CALC_AREA, PIN_NUM, PARCEL_PK, MAP_NAME, ADDR1, DEED_ACRES, BILLCLASS, BILLING_CLASS_DECODE, PROPDESC, FULL_STREET_NAME, TOWNSHIP, TOWNSHIP_DECODE, OLD_PARCEL_NUMBER, OWNERSHIP, ACTIVITY, FUNCTION, STRUCTURE, SITE, TOTSTRUCTS, TOTUNITS, DEED_DATE, ADDR2, TOTAL_VALUE_ASSD, PLANNING_JURISDICTION
   Hampton: VGIN_QPID, LOCALITY, VGIN_GEOID, VGIN_LASTU, NEW_ZONE_S, NOTES, EC_FLOOD_1, EC_FLOOD_2
   Portsmouth: PREV_INST_, VGIN_QPID, LOCALITY, COMBLDFACT, COMPHDPRC1, COMFNDPRC2, COMECDPRC3, FRONT, LOC_ZIP, OWNER_ST_N, MP, ACRES_A, LOT_SEQ_A, ACPRICE_A, DEPR1_A, DEPR2_A, DEPR3_A, TOTVAL_A, ACRES_B, LOT_SEQ_B, ACPRICE_B, DEPR1_B, DEPR2_B, DEPR3_B
   Virginia Beach: CRNT_OWNER, OWNER_MAIL_ZIP, OWNER_MAIL_STATE, OWNER_MAIL_ADRS, OWNER_MAIL_CITY, PAR_GPIN, geodb_oid, SUBDIVISION, INSTRUMENT, STR_DIR
