@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-15T21:15:34
+autopilot pull @ 2026-10-15T23:16:51
 
 WORKBENCH muni-data ETL — 2026-10-15
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -37,15 +37,24 @@ WORKBENCH muni-data ETL — 2026-10-15
   [OK] Durham/permits                               0 records
   [fresh] Winston-Salem/assessor+sales: pulled within 3 days - keeping 167,651 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Winston-Salem/assessor+sales            167651 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 171,158 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        171158 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 373,242 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        373242 records
+  [fresh] Nashville/assessor+sales: pulled within 3 days - keeping 287,604 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/assessor+sales                287604 records
+  [fresh] Nashville/permits: pulled within 3 days - keeping 29,652 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/permits                        29652 records
+  [fresh] Norfolk/assessor+sales: pulled within 3 days - keeping 74,310 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor+sales                   74310 records
+  [fresh] Norfolk/permits: pulled within 3 days - keeping 127,787 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/permits                         127787 records
+  [fresh] Virginia Beach/permits: pulled within 3 days - keeping 109,564 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/permits                  109564 records
+  [fresh] Newport News/assessor+sales: pulled within 3 days - keeping 54,444 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Newport News/assessor+sales              54444 records
   [ERR] Richmond/assessor+sales                403 Client Error: Forbidden for url: https://data.richmondgov.com/resource/vm9j-9f88.json?%24limit=50000&%24offset=0&%24order=%3Aid
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,710 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92710 records
   [fresh] Atlanta/assessor: pulled within 3 days - keeping 244 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           244 records
@@ -81,6 +90,7 @@ WORKBENCH muni-data ETL — 2026-10-15
   [OK] Norfolk/assessor                         81292 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 76,879 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                        76879 records
+  [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
   [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 219,143 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/assessor                 219143 records
