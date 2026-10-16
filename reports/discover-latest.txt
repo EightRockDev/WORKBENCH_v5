@@ -1,4 +1,4 @@
-autopilot discover @ 2026-10-16T15:00:21
+autopilot discover @ 2026-10-16T16:00:21
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
@@ -24,7 +24,7 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
    [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
    [rejected] Chesapeake: Chesapeake Parcels Publicly Owned: only 1,465 records - kept but demoted, a citywide roll should have >= 5,000
-   [ 358s] probing Hampton...
+   [ 354s] probing Hampton...
    [rejected] Hampton: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Hampton
    [rejected] Hampton: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Hampton
    [rejected] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Hampton
@@ -45,20 +45,20 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected] Hampton: CZM_Hampton_Data: only 716 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected] Hampton: CZM_Hampton_Data: layer name declares a subset - demoted, does not count as the city roll
    [rejected] Hampton: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Hampton
-   [ 438s] probing Portsmouth...
+   [ 435s] probing Portsmouth...
    [rejected] Portsmouth: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Portsmouth
    [rejected] Portsmouth: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Portsmouth
    [rejected] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Portsmouth
    [rejected] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Portsmouth
    [rejected] Portsmouth: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Portsmouth
    [rejected] Portsmouth: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Portsmouth
-   [ 471s] probing Suffolk...
+   [ 469s] probing Suffolk...
    [rejected] Suffolk: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Suffolk
    [rejected] Suffolk: ElevationCertificates/Elevation Certificates - Parcels: layer name declares a subset - demoted, does not count as the city roll
    [rejected] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Suffolk
    [rejected] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): layer name declares a subset - demoted, does not count as the city roll
    [rejected] Suffolk: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Suffolk
-   [ 504s] probing Norfolk...
+   [ 503s] probing Norfolk...
    [rejected] Norfolk: Backlick Run Stream Restoration: records are NOT in Norfolk
    [rejected] Norfolk: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Norfolk
    [rejected] Norfolk: Property Assessment and Sales - FY23: dated fiscal-year snapshot (the current roll is curated)
@@ -70,7 +70,7 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected] Norfolk: Property Assessment and Sales - FY27: dated fiscal-year snapshot (the current roll is curated)
    [rejected] Norfolk: Property Assessment and Sales - FY19: dated fiscal-year snapshot (the current roll is curated)
    [rejected] Norfolk: Property Assessment and Sales - FY20: dated fiscal-year snapshot (the current roll is curated)
-   [ 598s] probing Richmond...
+   [ 520s] probing Richmond...
    [rejected] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
    [rejected] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
    [rejected] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
@@ -116,9 +116,9 @@ Norfolk: 2 candidate layer(s)
       auto-discovered (socrata): Address Information; score 11; fields ['address', 'apn', 'lat']
 
 Richmond: 2 candidate layer(s)
+   https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
+      VGIN statewide fallback: FIPS = '51760'; 76,879 records; fields ['apn']
    https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
-      auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_address', 'owner_city', 'owner_name', 'owner_state', 'owner_zip', 'use_code']; 6,570 records; NAMED as a subset - demoted
-   https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/1
       auto-discovered: Undeveloped_Parcels_Richmond_Virginia; score 7; fields ['apn', 'assessed_value', 'owner_address', 'owner_city', 'owner_name', 'owner_state', 'owner_zip', 'use_code']; 6,570 records; NAMED as a subset - demoted
 
 Time limit: 1 city(ies) incomplete, 0 not probed - their saved feeds are kept.
