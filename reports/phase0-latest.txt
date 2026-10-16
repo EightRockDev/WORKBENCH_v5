@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-10-16T07:37:28
+autopilot phase0 @ 2026-10-16T09:32:22
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 4,187,323
@@ -32,7 +32,7 @@ multifamily (>= 10 units): 7,935
 written to properties_8r:  3,244,516
 provisional (no-APN) ids:  1,167
 units derived from address points: 1,124  (skipped non-residential: 11,956)
-units bridged by geometry: 272  (Richmond 163, Atlanta 99, Winston-Salem 4, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1)
+units bridged by geometry: 270  (Richmond 161, Atlanta 99, Winston-Salem 4, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1)
 coords backfilled by address (multifamily): 0
 rent estimates stamped (HUD FMR blend): 7,932
 rents from scraped listings: 3
@@ -45,16 +45,16 @@ Multifamily by city: Atlanta 1,985, Chesapeake 1,856, Raleigh 1,633, Greensboro 
 Geometry unit bridge (counts carried across parcel-id schemes):
   unit-bearing parcels   : 745,585
   candidate parcels      : 993,652
-  merged                 : 118
-  rejected (too far)     : 592,075
-  rejected (same id form): 152,324
-  rejected (not mutual)  : 658
-  rejected (ambiguous)   : 410
-  merged by address      : 154
-  addr rejected (shared) : 826
+  merged                 : 117
+  rejected (too far)     : 592,068
+  rejected (same id form): 152,331
+  rejected (not mutual)  : 657
+  rejected (ambiguous)   : 412
+  merged by address      : 153
+  addr rejected (shared) : 825
   addr rejected (coords) : 173
   Atlanta          sources 321,230  targets  66,955  merged    78   refused: far 252,991 / same-id 67,115 / not-mutual 651 / ambiguous 395   by-address 21 (shared 692, coords 16)
-  Richmond         sources   5,018  targets  72,136  merged    30   refused: far 576 / same-id 4,393 / not-mutual 6 / ambiguous 13   by-address 133 (shared 4, coords 1)
+  Richmond         sources   5,018  targets  72,136  merged    29   refused: far 569 / same-id 4,400 / not-mutual 5 / ambiguous 15   by-address 132 (shared 3, coords 1)
   Winston-Salem    sources      24  targets 167,485  merged     4   refused: far 19 / same-id 0 / not-mutual 0 / ambiguous 1   by-address 0 (shared 0, coords 0)
   Hampton          sources     210  targets  51,333  merged     2   refused: far 26 / same-id 182 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Norfolk          sources     396  targets  67,021  merged     2   refused: far 123 / same-id 271 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
@@ -67,7 +67,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Virginia Beach   sources     283  targets 163,655  merged     0   refused: far 159 / same-id 124 / not-mutual 0 / ambiguous 0   by-address 0 (shared 3, coords 0)
 
 Top use codes classified multifamily (wrong codes here = bad aliasing):
-  Richmond: R-48 Multi Family x165, B-4 Central Business x65, R-53 Multi Family x60, R-6 Single Family Attached x52, B-5 Central Business x50
+  Richmond: R-48 Multi Family x165, B-4 Central Business x65, R-53 Multi Family x60, R-6 Single Family Attached x52, B-5 Central Business x51
   Norfolk: Apartment x86, Single Family - Detached x25, Commercial x19, Non-Taxable x14, Vacant Land x5
   Greensboro: MULTI-FAMILY<4 x734, MULTI-FAMILY5> x166
   Suffolk: R5 Multi-Family Residential x2, Residential x1
