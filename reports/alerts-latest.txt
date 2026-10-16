@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-10-15T22:16:12
+autopilot alerts @ 2026-10-15T23:54:17
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 3 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 5345 - new_mf 5341, units_jump 4
   showing the 25 most recent of 5345
   [new_mf] New multifamily on the backbone: OFF RT 33 RHODELL  (29 units · Raleigh)
