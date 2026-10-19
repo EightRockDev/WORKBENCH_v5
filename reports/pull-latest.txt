@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-19T07:15:31
+autopilot pull @ 2026-10-19T08:15:20
 
 WORKBENCH muni-data ETL — 2026-10-19
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -39,7 +39,7 @@ WORKBENCH muni-data ETL — 2026-10-19
   [OK] Winston-Salem/assessor+sales            167651 records
   [fresh] Atlanta/assessor: pulled within 3 days - keeping 171,158 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        171158 records
-  [OK] Atlanta/assessor                             0 records
+  [OK] Atlanta/assessor                        373242 records
   [fresh] Nashville/assessor+sales: pulled within 3 days - keeping 287,607 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/assessor+sales                287607 records
   [fresh] Nashville/permits: pulled within 3 days - keeping 29,672 rows (ER_MUNI_FORCE=1 to re-pull)
@@ -91,7 +91,5 @@ WORKBENCH muni-data ETL — 2026-10-19
   [OK] Richmond/assessor                        76879 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
-  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 219,143 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/assessor                 219143 records
-  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 135,362 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/assessor                 135362 records
