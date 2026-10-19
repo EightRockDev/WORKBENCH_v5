@@ -275,3 +275,75 @@ def test_pulling_one_market_keeps_a_siblings_shared_url_rows(monkeypatch):
         "SELECT COUNT(*) FROM muni_records WHERE market='Suffolk'").fetchone()[0]
     assert hampton_rows == 1, "Suffolk's pull wiped Hampton's shared-url rows"
     assert suffolk_rows == 1
+
+
+# ---------------- an empty or collapsed pull never erases good rows (10-18)
+
+class _ListPuller:
+    def __init__(self, recs, last_error=""):
+        self._recs, self.last_error = recs, last_error
+
+    def iter_records(self):
+        yield from self._recs
+
+
+def test_an_empty_pull_keeps_the_rows_on_hand(monkeypatch, capsys):
+    """2026-10-18: Fulton County's server returned nothing and run_feed
+    deleted Atlanta's 373K rows; the apartment count fell 1,985 -> 1,301."""
+    conn = _muni_conn(age_days=em.MUNI_REFRESH_DAYS + 1, n=10)
+    monkeypatch.delenv("ER_MUNI_FORCE", raising=False)
+    monkeypatch.delenv("ER_MUNI_ALLOW_SHRINK", raising=False)
+    monkeypatch.setattr(em, "puller_for", lambda *a, **k: _ListPuller(
+        [], last_error="ConnectionError: host unreachable"))
+    assert em.run_feed(_feed(), conn) == 10
+    assert conn.execute("SELECT COUNT(*) FROM muni_records").fetchone()[0] == 10
+    out = capsys.readouterr().out
+    assert "[kept]" in out and "host unreachable" in out
+    # still stale, so the next cycle retries
+    assert not em._feed_fresh(conn, _feed())
+
+
+def test_a_collapsed_pull_keeps_the_rows_on_hand(monkeypatch):
+    conn = _muni_conn(age_days=em.MUNI_REFRESH_DAYS + 1, n=10)
+    monkeypatch.delenv("ER_MUNI_ALLOW_SHRINK", raising=False)
+    monkeypatch.setattr(em, "puller_for",
+                        lambda *a, **k: _ListPuller([{"a": 1}] * 3))
+    assert em.run_feed(_feed(), conn) == 10      # 3 < 50% of 10: kept
+
+
+def test_a_normal_repull_still_replaces(monkeypatch):
+    conn = _muni_conn(age_days=em.MUNI_REFRESH_DAYS + 1, n=10)
+    monkeypatch.setattr(em, "puller_for",
+                        lambda *a, **k: _ListPuller([{"a": 1}] * 9))
+    assert em.run_feed(_feed(), conn) == 9
+    assert conn.execute("SELECT COUNT(*) FROM muni_records").fetchone()[0] == 9
+
+
+def test_an_override_accepts_a_genuine_shrink(monkeypatch):
+    conn = _muni_conn(age_days=em.MUNI_REFRESH_DAYS + 1, n=10)
+    monkeypatch.setenv("ER_MUNI_ALLOW_SHRINK", "1")
+    monkeypatch.setattr(em, "puller_for",
+                        lambda *a, **k: _ListPuller([{"a": 1}] * 2))
+    assert em.run_feed(_feed(), conn) == 2
+
+
+def test_a_first_pull_of_a_new_feed_is_never_blocked(monkeypatch):
+    conn = sqlite3.connect(":memory:")
+    conn.execute("""CREATE TABLE muni_records (
+        id INTEGER PRIMARY KEY, market TEXT, state TEXT, county TEXT,
+        kind TEXT, source_url TEXT, pulled_at TEXT, record TEXT)""")
+    monkeypatch.setattr(em, "puller_for",
+                        lambda *a, **k: _ListPuller([{"a": 1}]))
+    assert em.run_feed(_feed(), conn) == 1
+
+
+def test_the_arcgis_puller_reports_why_it_got_nothing(monkeypatch):
+    p = em.ArcGISPuller("https://dead.test/MapServer/0")
+
+    def boom(params):
+        raise ConnectionError("Max retries exceeded")
+    monkeypatch.setattr(p, "_get", boom)
+    monkeypatch.setattr(p, "max_record_count", lambda: 1000)
+    monkeypatch.setattr(p, "_oid_field", lambda: None)
+    assert list(p.iter_records()) == []
+    assert "Max retries exceeded" in p.last_error

@@ -12,6 +12,29 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.3.3.0 - 2026-10-19  .  An empty pull can no longer erase good data.
+
+Atlanta's apartment count fell 1,985 -> 1,301 overnight. From the
+2026-10-18 22:37 cycle on, the Fulton County valuation feed
+(gismaps.fultoncountyga.gov PropertyMapViewer/MapServer/11) returned 0
+records, and `run_feed` deleted the 373,242 rows it already had before
+inserting nothing. The ArcGIS puller swallowed the connection error on
+its first-page probe, so a dead server looked exactly like an empty
+layer, and the report printed "[OK] Atlanta/assessor 0 records".
+
+- `run_feed` now keeps the rows on hand when a re-pull returns fewer
+  than half of them (`MUNI_MIN_KEEP_RATIO`), prints "[kept]" with the
+  source's error, and leaves the old pulled_at in place so the feed
+  stays stale and is retried every cycle. `ER_MUNI_ALLOW_SHRINK=1`
+  accepts a genuine large shrink for one run. First pulls of new feeds
+  and `--limit` test pulls are never blocked.
+- `ArcGISPuller` records the first-page error as `last_error`.
+- The Fulton rows already deleted on the host come back on the first
+  cycle where Fulton's server answers again; nothing to run by hand.
+- Tests: empty pull keeps rows and stays stale, collapsed pull keeps
+  rows, a normal re-pull still replaces, the override works, a new feed
+  is never blocked, and the puller reports why it got nothing.
+
 ## V5.67.3.2.0 - 2026-10-14  .  The browser test no longer touches live data.
 
 tests/test_sale_history_e2e.py (the real-app, real-browser Sale History

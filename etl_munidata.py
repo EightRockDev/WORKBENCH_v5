@@ -27,6 +27,7 @@ import argparse
 import dataclasses
 import datetime as dt
 import json
+import os
 import re as _re
 import sqlite3
 import sys
@@ -395,7 +396,10 @@ class ArcGISPuller:
                 for mode in self._GEO_MODES:
                     try:
                         data = self._get({**base, **self._geo_params(mode)})
-                    except Exception:
+                    except Exception as e:
+                        # Kept for run_feed: a dead server must read as
+                        # "failed", not as an empty layer (2026-10-18).
+                        self.last_error = f"{type(e).__name__}: {e}"[:200]
                         continue
                     feats = data.get("features", [])
                     if data.get("error") or not feats:
@@ -529,6 +533,13 @@ def _feed_fresh(conn: sqlite3.Connection, feed: FeedSpec) -> bool:
     return age <= dt.timedelta(days=MUNI_REFRESH_DAYS)
 
 
+# A re-pull smaller than this share of the rows already on hand is treated
+# as a source failure (server down, pagination cut short), not as the
+# county suddenly losing most of its parcels. ER_MUNI_ALLOW_SHRINK=1
+# accepts a genuine big shrink for one run.
+MUNI_MIN_KEEP_RATIO = 0.5
+
+
 def run_feed(feed: FeedSpec, conn: sqlite3.Connection,
              app_token: str | None = None, limit: int | None = None) -> int:
     if _feed_fresh(conn, feed):
@@ -549,6 +560,21 @@ def run_feed(feed: FeedSpec, conn: sqlite3.Connection,
         n += 1
         if limit and n >= limit:
             break
+    # Never let an empty or collapsed pull erase a good one. 2026-10-18:
+    # Fulton County's server returned nothing, this function deleted the
+    # 373,242 rows it had, and Atlanta's apartment count fell 1,985 ->
+    # 1,301 overnight. The kept rows keep their OLD pulled_at, so the feed
+    # stays stale and is retried every cycle until the source answers.
+    prior = _feed_key(conn, feed, "COUNT(*)").fetchone()[0]
+    floor = prior * MUNI_MIN_KEEP_RATIO
+    if prior and not limit and n < floor and \
+            os.environ.get("ER_MUNI_ALLOW_SHRINK") != "1":
+        why = getattr(puller, "last_error", "") or "no error reported"
+        print(f"  [kept] {feed.market}/{feed.kind}: pull returned {n:,} "
+              f"rows vs {prior:,} on hand (< {MUNI_MIN_KEEP_RATIO:.0%}) - "
+              f"KEEPING the existing rows; retrying next cycle. "
+              f"Source said: {why}  ({feed.url})")
+        return prior
     # Replace prior records for this (market, kind, url) - all three, so a
     # URL shared across markets (the VGIN statewide layer) does not wipe a
     # sibling market's rows.

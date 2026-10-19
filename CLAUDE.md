@@ -1026,6 +1026,12 @@ scale this is intolerable. Non-negotiable rules:
    correct a product COUNT; it must never feed the MEASUREMENT against
    that same ground truth. Any jump of 50 points is circularity until
    proven otherwise.
+21. **Every replace-on-refresh needs an empty-result guard.** The sales
+   pullers had "NOT deleting existing rows (transient?)" since August;
+   the main muni ETL's run_feed did not, and a down county server erased
+   373K Atlanta rows (10-18). Any "DELETE old, INSERT new" refresh must
+   refuse when NEW is empty or collapsed, and a puller must surface the
+   error it swallowed - "[OK] ... 0 records" hid a dead host.
 
 ### Comp-overlap: ceiling declared 2026-07-30 (BACKLOGGED, owner call)
 Measured on live host cycles: centroid 66.9% / largest-parcel 66.4% /
