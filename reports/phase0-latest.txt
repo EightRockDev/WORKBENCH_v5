@@ -1,14 +1,11 @@
-autopilot phase0 @ 2026-10-18T19:17:27
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-18T20:54:45
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,187,358
+Assessor records available: 4,187,424
 
 Assessor feeds present (Hampton Roads):
-  Chesapeake        110,312  .../Accela_base_map_pro/MapServer/0
-  Chesapeake        116,464  .../Address_Points/MapServer/0
+  Chesapeake        110,326  .../Accela_base_map_pro/MapServer/0
+  Chesapeake        116,478  .../Address_Points/MapServer/0
   Chesapeake         92,710  .../OpenData/MapServer/15
   Chesapeake         92,557  .../VA_Parcels/FeatureServer/0
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
@@ -29,12 +26,12 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 30 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,244,551
-parcels normalized:        3,244,551
+muni records scanned:      3,244,617
+parcels normalized:        3,244,617
 multifamily (>= 10 units): 7,935
-written to properties_8r:  3,244,551
-provisional (no-APN) ids:  1,158
-units derived from address points: 1,124  (skipped non-residential: 11,956)
+written to properties_8r:  3,244,617
+provisional (no-APN) ids:  1,160
+units derived from address points: 1,124  (skipped non-residential: 11,957)
 units bridged by geometry: 270  (Richmond 161, Atlanta 99, Winston-Salem 4, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1)
 coords backfilled by address (multifamily): 0
 rent estimates stamped (HUD FMR blend): 7,932
@@ -47,7 +44,7 @@ Multifamily by city: Atlanta 1,985, Chesapeake 1,856, Raleigh 1,633, Greensboro 
 
 Geometry unit bridge (counts carried across parcel-id schemes):
   unit-bearing parcels   : 745,675
-  candidate parcels      : 993,606
+  candidate parcels      : 993,644
   merged                 : 117
   rejected (too far)     : 592,087
   rejected (same id form): 152,402
@@ -63,7 +60,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Norfolk          sources     396  targets  67,021  merged     2   refused: far 123 / same-id 271 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Chesapeake       sources   2,050  targets  92,402  merged     1   refused: far 1,202 / same-id 847 / not-mutual 0 / ambiguous 0   by-address 0 (shared 12, coords 0)
   Raleigh          sources 369,777  targets 132,701  merged     1   refused: far 297,971 / same-id 71,803 / not-mutual 1 / ambiguous 1   by-address 0 (shared 108, coords 156)
-  Durham           sources       4  targets 129,214  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
+  Durham           sources       4  targets 129,252  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Newport News     sources  46,669  targets   7,678  merged     0   refused: far 39,017 / same-id 7,652 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
   Portsmouth       sources       7  targets  37,544  merged     0   refused: far 3 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Suffolk          sources       7  targets   5,482  merged     0   refused: far 7 / same-id 0 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
@@ -164,18 +161,18 @@ Largest unit-count disagreements (check these matches):
 
 Learning apartment use codes from matched properties:
   Chesapeake: 18 known-MF parcels matched
-      [reject] code '1010': on 5 MF parcels, 50,125/94,545 citywide (53.0%) - 53% of the whole roll carries it - too common to mean apartments
-      [reject] code '1060': on 2 MF parcels, 7,110/94,545 citywide (7.5%) - only 2 supporting parcel(s), need 3
-      [reject] code '7430': on 2 MF parcels, 20/94,545 citywide (0.0%) - only 2 supporting parcel(s), need 3
-      [reject] code '4341': on 1 MF parcels, 65/94,545 citywide (0.1%) - only 1 supporting parcel(s), need 3
-      [reject] code '4344': on 1 MF parcels, 180/94,545 citywide (0.2%) - only 1 supporting parcel(s), need 3
-      [reject] code '1050': on 1 MF parcels, 5,922/94,545 citywide (6.3%) - only 1 supporting parcel(s), need 3
-      [reject] code '7410': on 1 MF parcels, 767/94,545 citywide (0.8%) - only 1 supporting parcel(s), need 3
-      [reject] code '2010': on 1 MF parcels, 7,078/94,545 citywide (7.5%) - only 1 supporting parcel(s), need 3
-      [reject] code '7440': on 1 MF parcels, 10/94,545 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '4595': on 1 MF parcels, 19/94,545 citywide (0.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '4000': on 1 MF parcels, 920/94,545 citywide (1.0%) - only 1 supporting parcel(s), need 3
-      [reject] code '2000': on 1 MF parcels, 3,403/94,545 citywide (3.6%) - only 1 supporting parcel(s), need 3
+      [reject] code '1010': on 5 MF parcels, 50,125/94,546 citywide (53.0%) - 53% of the whole roll carries it - too common to mean apartments
+      [reject] code '1060': on 2 MF parcels, 7,110/94,546 citywide (7.5%) - only 2 supporting parcel(s), need 3
+      [reject] code '7430': on 2 MF parcels, 20/94,546 citywide (0.0%) - only 2 supporting parcel(s), need 3
+      [reject] code '4341': on 1 MF parcels, 65/94,546 citywide (0.1%) - only 1 supporting parcel(s), need 3
+      [reject] code '4344': on 1 MF parcels, 180/94,546 citywide (0.2%) - only 1 supporting parcel(s), need 3
+      [reject] code '1050': on 1 MF parcels, 5,922/94,546 citywide (6.3%) - only 1 supporting parcel(s), need 3
+      [reject] code '7410': on 1 MF parcels, 767/94,546 citywide (0.8%) - only 1 supporting parcel(s), need 3
+      [reject] code '2010': on 1 MF parcels, 7,078/94,546 citywide (7.5%) - only 1 supporting parcel(s), need 3
+      [reject] code '7440': on 1 MF parcels, 10/94,546 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '4595': on 1 MF parcels, 19/94,546 citywide (0.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '4000': on 1 MF parcels, 920/94,546 citywide (1.0%) - only 1 supporting parcel(s), need 3
+      [reject] code '2000': on 1 MF parcels, 3,403/94,546 citywide (3.6%) - only 1 supporting parcel(s), need 3
   Portsmouth: 1 known-MF parcels matched
       [reject] code '20': on 1 MF parcels, 2/37,560 citywide (0.0%) - only 1 supporting parcel(s), need 3
   Virginia Beach: 1 known-MF parcels matched
