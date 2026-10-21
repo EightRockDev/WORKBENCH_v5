@@ -12,6 +12,17 @@ app's top-bar pill. **Bump it and add an entry here on every change.**
 
 ---
 
+## V5.67.3.4.0 - 2026-10-21  .  Retire Richmond's always-403 Socrata feed.
+
+The Richmond "Property Assessments Current" Socrata dataset
+(data.richmondgov.com vm9j-9f88) has returned 403 Forbidden on every
+host pull since 2026-08-12 and never delivered a row, leaving a red
+"[ERR] Richmond/assessor+sales" line in every cycle's pull report.
+Richmond is fully covered by the rva.gov Public Data Set and transfers
+(V5.66.2) and the master-address-table unit rollup (V5.67), so the feed
+is now status="gated": still listed (so the stale-row sweep keeps
+treating it as known), no longer pulled. No data change.
+
 ## V5.67.3.3.0 - 2026-10-19  .  An empty pull can no longer erase good data.
 
 Atlanta's apartment count fell 1,985 -> 1,301 overnight. From the

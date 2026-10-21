@@ -182,10 +182,16 @@ MUNI_FEEDS: list[FeedSpec] = [
     # The old "auth-gated 403" note came from probing a different dataset. If
     # this 403s on the host, the pull logs it loudly; fallback = the monthly
     # assessor Excel at rva.gov/assessor-real-estate/data-request.
+    # GATED 2026-10-21: it has returned 403 Forbidden on EVERY host pull
+    # since 2026-08-12 and never delivered a row. Richmond is fully served
+    # by the rva.gov Public Data Set + transfers (pull_arcgis_sales
+    # Richmond-files) and the master-address-table unit rollup, so this
+    # only added a red [ERR] line to every cycle's report.
     FeedSpec("Richmond", "VA", "Richmond", "assessor+sales", "socrata",
              "https://data.richmondgov.com/resource/vm9j-9f88.json",
-             note="Property Assessments Current. Sales history via "
-                  "pull_arcgis_sales.py Property Transfer History stack."),
+             status="gated",
+             note="403 Forbidden on every host pull since 2026-08-12. "
+                  "Superseded by the rva.gov files + address-table units."),
     FeedSpec("Chesapeake", "VA", "Chesapeake", "assessor", "arcgis", status="live",
              url="https://gis.cityofchesapeake.net/mapping/rest/services/OpenData/"
                  "OpenData/MapServer/15",
