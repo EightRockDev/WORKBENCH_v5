@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-20T17:16:42
+autopilot pull @ 2026-10-20T20:16:22
 
 WORKBENCH muni-data ETL — 2026-10-20
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -26,6 +26,7 @@ WORKBENCH muni-data ETL — 2026-10-20
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
+  [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 439,406 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  439406 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 184,681 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/permits                         184681 records
