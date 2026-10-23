@@ -1,9 +1,27 @@
-autopilot arcgissales @ 2026-10-21T08:36:34
+autopilot arcgissales @ 2026-10-23T16:20:00
 
-[sales:Virginia Beach] fresh (<7d) - skip
-[sales:Norfolk] fresh (<3d) - skip
+[sales:Virginia Beach] 49001 sales rows to pull (where: Sale_Price > 0 AND Sales_Date >= DATE '2021-01-01')
+[sales:Virginia Beach] wrote 49001 rows (expected 49001)
+[sales:Norfolk] FY stack sizes: FY19=74835, FY20=74898, FY21=74767, FY22=74659, FY23=74637, FY24=74520, FY25=74253, FY26=74311, FY27=74302 (total 671182)
+[sales:Norfolk] FY19: 72322 dated transfers (70615 unique so far)
+[sales:Norfolk] FY20: 72269 dated transfers (73704 unique so far)
+[sales:Norfolk] FY21: 72258 dated transfers (79739 unique so far)
+[sales:Norfolk] FY22: 72293 dated transfers (88450 unique so far)
+[sales:Norfolk] FY23: 72301 dated transfers (95309 unique so far)
+[sales:Norfolk] FY24: 72133 dated transfers (100541 unique so far)
+[sales:Norfolk] FY25: 71998 dated transfers (106034 unique so far)
+[sales:Norfolk] FY26: 72037 dated transfers (111809 unique so far)
+[sales:Norfolk] FY27: 72012 dated transfers (115937 unique so far)
+[sales:Norfolk] wrote 115937 unique (gpin,date) sale rows
 [sales:Chesapeake] fresh (<30d) - skip
 [sales:Richmond-files] fresh (<5d) - skip
-[sales:Richmond-units] fresh (<7d) - skip
-[sales:Chicago] fresh (<7d) - skip
-[sales] done: 0 rows across 6 source(s)
+[units:Richmond] 55562 unit-address rows to roll up (where: UnitValue IS NOT NULL)
+[units:Richmond] resolved fields: lat=Latitude, lng=Longitude, pin=None, subaddress=ExtensionWithUnit, unit=UnitType, unit=UnitValue
+[units:Richmond] no PIN attribute - will assign parcels by point-in-polygon
+[units:Richmond] spatial join against 76933 parcel polygons (Parcels/FeatureServer/0)
+[units:Richmond] spatial join: 51606/51606 unit addresses landed in one of 76933 polygons
+[units:Richmond] wrote 5018 parcels (671 with >=10 units; 3819 non-dwelling rows skipped; geography 100% inside bbox)
+[sales:Chicago] FY stack sizes: sales=476356 (total 476356)
+[sales:Chicago] sales: 400000 dated transfers (399906 unique so far)
+[sales:Chicago] wrote 399906 unique (gpin,date) sale rows
+[sales] done: 569862 rows across 6 source(s)
