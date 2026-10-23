@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-23T15:17:41
+autopilot pull @ 2026-10-23T18:14:04
 
 WORKBENCH muni-data ETL — 2026-10-23
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -10,6 +10,8 @@ WORKBENCH muni-data ETL — 2026-10-23
     + Raleigh: https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/Raleigh_Precinct_Data/FeatureServer/6
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/5
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3
+    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
+    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
     + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
@@ -24,25 +26,53 @@ WORKBENCH muni-data ETL — 2026-10-23
     + Norfolk: https://data.norfolk.gov/resource/ere7-kake.json
     + Richmond: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
-    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
-    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
-  [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 439,406 rows (ER_MUNI_FORCE=1 to re-pull)
-  [OK] Raleigh/assessor+sales                  439406 records
+  [OK] Raleigh/assessor+sales                  439400 records
+  [fresh] Raleigh/permits: pulled within 3 days - keeping 184,756 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/permits                         184756 records
+  [fresh] Greensboro/assessor: pulled within 3 days - keeping 223,246 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Greensboro/assessor                     223246 records
+  [fresh] Durham/assessor: pulled within 3 days - keeping 133,705 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Durham/assessor                         133705 records
   [OK] Durham/permits                               0 records
+  [fresh] Winston-Salem/assessor+sales: pulled within 3 days - keeping 167,699 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Winston-Salem/assessor+sales            167699 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 171,158 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        171158 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 373,401 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        373401 records
+  [fresh] Nashville/assessor+sales: pulled within 3 days - keeping 287,743 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/assessor+sales                287743 records
+  [fresh] Nashville/permits: pulled within 3 days - keeping 29,689 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Nashville/permits                        29689 records
+  [fresh] Norfolk/assessor+sales: pulled within 3 days - keeping 74,302 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/assessor+sales                   74302 records
+  [fresh] Norfolk/permits: pulled within 3 days - keeping 128,109 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Norfolk/permits                         128109 records
+  [fresh] Virginia Beach/permits: pulled within 3 days - keeping 110,093 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Virginia Beach/permits                  110093 records
+  [fresh] Newport News/assessor+sales: pulled within 3 days - keeping 54,441 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Newport News/assessor+sales              54441 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,710 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92710 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 244 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           244 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 224 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                           224 records
-
-!! step killed after 3600s (ER_AUTOPILOT_STEP_TIMEOUT / _DISCOVER_TIMEOUT) - a hung step must never wedge the cycle
+  [OK] Raleigh/assessor                         61363 records
+  [OK] Raleigh/assessor                         61157 records
+  [OK] Virginia Beach/assessor                 219143 records
+  [OK] Virginia Beach/assessor                 135362 records
+  [OK] Chesapeake/assessor                     110338 records
+  [OK] Chesapeake/assessor                     116490 records
+  [OK] Chesapeake/assessor                      92557 records
+  [OK] Hampton/assessor                         51800 records
+  [OK] Hampton/assessor                           703 records
+  [OK] Portsmouth/assessor                      36464 records
+  [OK] Portsmouth/assessor                      36241 records
+  [OK] Portsmouth/assessor                      36615 records
+  [OK] Suffolk/assessor                          5823 records
+  [OK] Suffolk/assessor                          5775 records
+  [OK] Norfolk/assessor                         10295 records
+  [OK] Norfolk/assessor                         81290 records
+  [OK] Richmond/assessor                        76879 records
+  [OK] Richmond/assessor                         6570 records
