@@ -1,11 +1,13 @@
-autopilot alerts @ 2026-10-21T08:52:40
+autopilot alerts @ 2026-10-23T17:03:12
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 4655 - new_mf 4651, units_jump 4
-  showing the 25 most recent of 4655
-  [new_mf] New multifamily on the backbone: 1618 Park Ave 1C Unit   (12 units · Richmond)
-  [new_mf] New multifamily on the backbone: 720 E 6th St   (169 units · Richmond)
-  [new_mf] New multifamily on the backbone: 1203 E Brookland Park Blvd   (43 units · Richmond)
+alert sweep, NEW this cycle: 4 multifamily, 0 unit-count moves, 2 ownership changes
+  closed 3 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 4656 - new_mf 4652, units_jump 4
+  showing the 25 most recent of 4656
+  [new_mf] New multifamily on the backbone: 8R-37067-ba49726226a6  (45 units · Winston-Salem)
+  [new_mf] New multifamily on the backbone: 1121 HUFF RD NW  (250 units · Atlanta)
+  [new_mf] New multifamily on the backbone: 1618 Park Ave 2B Unit   (12 units · Richmond)
+  [new_mf] New multifamily on the backbone: 12 N 19th St   (32 units · Richmond)
   [new_mf] New multifamily on the backbone: OFF RT 33 RHODELL  (29 units · Raleigh)
   [new_mf] New multifamily on the backbone: 8R-51740-64a0649e716f  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-7b9941ef936a  (? units · Portsmouth)
@@ -27,4 +29,3 @@ OPEN alerts (carried forward): 4655 - new_mf 4651, units_jump 4
   [new_mf] New multifamily on the backbone: 8R-51740-1fe9adbeb235  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-b04b90eaddb4  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-1e09fa6361f2  (? units · Portsmouth)
-  [new_mf] New multifamily on the backbone: 8R-51740-6c1403d7e7c5  (? units · Portsmouth)
