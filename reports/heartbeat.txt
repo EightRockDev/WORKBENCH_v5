@@ -1,17 +1,24 @@
-autopilot heartbeat @ 2026-10-21T09:00:11
+autopilot heartbeat @ 2026-10-23T15:00:22
 
 ALIVE
-cycle started : 2026-10-21T09:00:11-04:00
+cycle started : 2026-10-23T15:00:22-04:00
 version       : V5.67.3.4.0
 host          : DESKTOP-RINL8AD
-uptime        : 497.0 h (booted 2026-09-30T16:02)
+uptime        : 53.5 h (booted 2026-10-21T09:29)
 power/session events, last 3 days (newest first):
-  none recorded in the last 3 days
+  2026-10-23T14:17:33  user signed in
+  2026-10-21T09:28:53  shutdown/restart requested
+      The process C:\WINDOWS\servicing\TrustedInstaller.exe (DESKTOP-RINL8AD) has initiated the restart of computer DESKTOP-RINL8AD on behalf of user NT AUT
+  2026-10-21T09:28:54  clean shutdown
+  2026-10-21T09:24:05  clean shutdown
+  2026-10-21T09:22:54  user signed out
+  2026-10-21T09:22:43  shutdown/restart requested
+      The process C:\WINDOWS\uus\AMD64\MoNotificationUx.exe (DESKTOP-RINL8AD) has initiated the restart of computer DESKTOP-RINL8AD on behalf of user DESKTO
 scheduled task (as Task Scheduler sees it):
-  Next Run Time: 10/21/2026 10:00:00 AM
+  Next Run Time: 10/23/2026 4:00:00 PM
   Status: Running
   Logon Mode: Interactive only
-  Last Run Time: 10/21/2026 9:00:00 AM
+  Last Run Time: 10/23/2026 3:00:01 PM
   Last Result: 267009
   Task To Run: C:\WORKBENCH_V5\autopilot.bat
   Repeat: Every: 1 Hour(s), 0 Minute(s)
