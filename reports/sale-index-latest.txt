@@ -1,3 +1,3 @@
-autopilot saleindex @ 2026-10-24T09:17:39
+autopilot saleindex @ 2026-10-24T10:20:28
 
-[saleindex] fresh (muni stamp 5196364:240620727:2026-10-23T21:17:51:v3) - skipping
+[saleindex] scanned 5,248,164 muni rows -> 2,815,361 sale records indexed (stamp 5248164:240672527:2026-10-24T10:17:34:v3)
