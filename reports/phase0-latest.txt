@@ -1,14 +1,13 @@
-autopilot phase0 @ 2026-10-25T04:30:57
+autopilot phase0 @ 2026-10-25T05:27:28
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,280,496
+Assessor records available: 4,187,939
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,338  .../Accela_base_map_pro/MapServer/0
   Chesapeake        116,490  .../Address_Points/MapServer/0
   Chesapeake         92,710  .../OpenData/MapServer/15
   Chesapeake         92,557  .../VA_Parcels/FeatureServer/0
-  Chesapeake         92,557  .../VA_Parcels/MapServer/0
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
   Hampton            51,800  .../VA_Parcels/FeatureServer/0
   Newport News       54,441  .../Parcel/MapServer/0
@@ -27,10 +26,10 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 31 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,337,689
-parcels normalized:        3,337,689
+muni records scanned:      3,245,132
+parcels normalized:        3,245,132
 multifamily (>= 10 units): 7,937
-written to properties_8r:  3,337,689
+written to properties_8r:  3,245,132
 provisional (no-APN) ids:  1,155
 units derived from address points: 1,105  (skipped non-residential: 11,955)
 units bridged by geometry: 271  (Richmond 165, Atlanta 99, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1, Winston-Salem 1)
