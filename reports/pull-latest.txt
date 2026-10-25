@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-25T03:16:16
+autopilot pull @ 2026-10-25T04:16:55
 
 WORKBENCH muni-data ETL — 2026-10-25
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -12,7 +12,7 @@ WORKBENCH muni-data ETL — 2026-10-25
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
-    + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
+    + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/MapServer/0
     + Hampton: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
@@ -67,7 +67,6 @@ WORKBENCH muni-data ETL — 2026-10-25
   [OK] Chesapeake/assessor                     110338 records
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 116,490 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     116490 records
-  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,557 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                      92557 records
   [fresh] Hampton/assessor: pulled within 3 days - keeping 51,800 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Hampton/assessor                         51800 records
