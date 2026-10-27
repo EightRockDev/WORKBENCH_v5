@@ -1,8 +1,10 @@
-autopilot alerts @ 2026-10-27T00:21:47
+autopilot alerts @ 2026-10-27T01:52:34
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
+alert sweep, NEW this cycle: 1 multifamily, 0 unit-count moves, 0 ownership changes
+  closed 1 stale alert(s) whose property no longer qualifies as multifamily
 OPEN alerts (carried forward): 4658 - new_mf 4654, units_jump 4
   showing the 25 most recent of 4658
+  [new_mf] New multifamily on the backbone: 5006 Cay Street  (? units · Hampton)
   [new_mf] New multifamily on the backbone: 1000 LIMELIGHT CT  (392 units · Raleigh)
   [new_mf] New multifamily on the backbone: 2402 ELMOAK DR  (170 units · Raleigh)
   [new_mf] New multifamily on the backbone: 8R-37067-ba49726226a6  (45 units · Winston-Salem)
@@ -27,4 +29,3 @@ OPEN alerts (carried forward): 4658 - new_mf 4654, units_jump 4
   [new_mf] New multifamily on the backbone: 8R-51740-c5d18af3e768  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-1aa8b98fbfce  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-25e65751f59c  (? units · Portsmouth)
-  [new_mf] New multifamily on the backbone: 8R-51740-1fe9adbeb235  (? units · Portsmouth)
