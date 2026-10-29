@@ -1,7 +1,4 @@
-autopilot phase0 @ 2026-10-28T21:17:36
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-10-28T22:31:21
 
 Database: C:\WORKBENCH_V5\data\workbench.db
 Assessor records available: 4,188,039
@@ -79,7 +76,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Winston-Salem: (units only) x2
   Newport News: A x243, C x21, R x3, (units only) x2, O x2
   Raleigh: (units only) x1634, MD x1
-  Hampton: (units only) x70, Residential x2
+  Hampton: (units only) x71, Residential x1
   Portsmouth: (units only) x44, 20 x1
   Virginia Beach: Multi Family x240, Commercial x20, Single Family or Duplex x17, Undeveloped x15, Town House x13
   Durham: (units only) x1
@@ -125,26 +122,26 @@ Attribute keys with NO mapping yet (add aliases in core/phase0.py):
 
 P0-1 GATE PASSED.
 
-P0-2 shadow parity: comparing against 13,680 legacy rows...
+P0-2 shadow parity: comparing against 13,682 legacy rows...
 
-legacy multifamily rows:  646
-matched to the 8R backbone: 599 (92.7%)  [97 by address, 473 by lat/lng, 29 by proximity]
+legacy multifamily rows:  648
+matched to the 8R backbone: 599 (92.4%)  [97 by address, 473 by lat/lng, 29 by proximity]
 unit counts agree:        146/214
 year built agrees:        87/144
 
 comp-set replay subjects: 185  (+15 skipped - city has no 8R coordinates yet)
 avg comp-set overlap:     48.1%  (gate >= 90%)
-avg-rent delta:           27.6%  [signed +17.9%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
+avg-rent delta:           27.5%  [signed +17.9%: systematic - the estimate runs HIGH; a calibration factor is the fix]  (gate <= 5%)
 
 P0-2 GATE: not met yet
 crosswalk persisted:      599 legacy->8R mappings (property_crosswalk)
 (+28 unit disagreements resolved by multi-parcel footprint totals)
-match rate, covered cities only: 92.2%  (cities whose feed has multifamily data)
+match rate, covered cities only: 91.9%  (cities whose feed has multifamily data)
 
 By city (legacy rows -> matched | backbone MF entities | w/ coords):
   Virginia Beach    175 ->   173 |    221 |    221
-  Norfolk           127 ->   126 |     62 |     62
-  Newport News      123 ->   119 |    243 |    243
+  Norfolk           128 ->   126 |     62 |     62
+  Newport News      124 ->   119 |    243 |    243
   Hampton            76 ->    70 |      2 |      2
   Chesapeake         66 ->    66 |    517 |    517
   Portsmouth         45 ->    45 |      0 |      0   <- feed has no usable multifamily data
