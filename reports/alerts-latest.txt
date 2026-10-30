@@ -1,14 +1,14 @@
-autopilot alerts @ 2026-10-30T16:21:29
+autopilot alerts @ 2026-10-30T17:54:57
 
 alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 4658 - new_mf 4654, units_jump 4
-  showing the 25 most recent of 4658
+  closed 2 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 4656 - new_mf 4652, units_jump 4
+  showing the 25 most recent of 4656
   [new_mf] New multifamily on the backbone: 4842 CINDY DR  (32 units · Raleigh)
   [new_mf] New multifamily on the backbone: 1655 PEACHTREE ST NE  (68 units · Atlanta)
   [new_mf] New multifamily on the backbone: 1000 LIMELIGHT CT  (392 units · Raleigh)
   [new_mf] New multifamily on the backbone: 2402 ELMOAK DR  (170 units · Raleigh)
   [new_mf] New multifamily on the backbone: 1121 HUFF RD NW  (250 units · Atlanta)
-  [new_mf] New multifamily on the backbone: 1618 Park Ave 2B Unit   (12 units · Richmond)
   [new_mf] New multifamily on the backbone: 12 N 19th St   (32 units · Richmond)
   [new_mf] New multifamily on the backbone: OFF RT 33 RHODELL  (29 units · Raleigh)
   [new_mf] New multifamily on the backbone: 8R-51740-64a0649e716f  (? units · Portsmouth)
@@ -28,3 +28,4 @@ OPEN alerts (carried forward): 4658 - new_mf 4654, units_jump 4
   [new_mf] New multifamily on the backbone: 8R-51740-c5d18af3e768  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-1aa8b98fbfce  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-25e65751f59c  (? units · Portsmouth)
+  [new_mf] New multifamily on the backbone: 8R-51740-1fe9adbeb235  (? units · Portsmouth)
