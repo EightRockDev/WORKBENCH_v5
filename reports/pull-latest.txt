@@ -1,4 +1,4 @@
-autopilot pull @ 2026-10-31T12:15:56
+autopilot pull @ 2026-10-31T13:19:09
 
 WORKBENCH muni-data ETL — 2026-10-31
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -10,8 +10,6 @@ WORKBENCH muni-data ETL — 2026-10-31
     + Raleigh: https://services3.arcgis.com/nJbIFHiSnaX0z0hS/arcgis/rest/services/Raleigh_Precinct_Data/FeatureServer/6
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/5
     + Houston: https://services1.arcgis.com/Ug5xGQbHsD8zuZzM/arcgis/rest/services/North_Houston_REPI_2_0_WFL1/FeatureServer/3
-    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
-    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
     + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
@@ -26,6 +24,8 @@ WORKBENCH muni-data ETL — 2026-10-31
     + Norfolk: https://data.norfolk.gov/resource/ere7-kake.json
     + Richmond: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
+    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/11
+    + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 439,410 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  439410 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 184,832 rows (ER_MUNI_FORCE=1 to re-pull)
@@ -63,10 +63,6 @@ WORKBENCH muni-data ETL — 2026-10-31
   [OK] Raleigh/assessor                         61363 records
   [fresh] Raleigh/assessor: pulled within 3 days - keeping 61,157 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor                         61157 records
-  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 219,143 rows (ER_MUNI_FORCE=1 to re-pull)
-  [OK] Virginia Beach/assessor                 219143 records
-  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 135,362 rows (ER_MUNI_FORCE=1 to re-pull)
-  [OK] Virginia Beach/assessor                 135362 records
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 110,415 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     110415 records
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 116,567 rows (ER_MUNI_FORCE=1 to re-pull)
@@ -95,3 +91,7 @@ WORKBENCH muni-data ETL — 2026-10-31
   [OK] Richmond/assessor                        76879 records
   [fresh] Richmond/assessor: pulled within 3 days - keeping 6,570 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Richmond/assessor                         6570 records
+  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 219,143 rows (ER_MUNI_FORCE=1 to re-pull)
+  [OK] Virginia Beach/assessor                 219143 records
+  [fresh] Virginia Beach/assessor: pulled within 3 days - keeping 135,362 rows (ER_MUNI_FORCE=1 to re-pull)
+  [OK] Virginia Beach/assessor                 135362 records
