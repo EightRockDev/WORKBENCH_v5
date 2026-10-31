@@ -1,7 +1,7 @@
-autopilot pull @ 2026-10-31T14:21:28
+autopilot pull @ 2026-10-31T15:15:35
 
 WORKBENCH muni-data ETL — 2026-10-31
-  discovered feeds loaded from data/feeds_extra.json: 23
+  discovered feeds loaded from data/feeds_extra.json: 24
     + Riverside: https://services.arcgis.com/S0bgWxbY97XvuH2I/arcgis/rest/services/Vision_Plan_260727_WFL1/FeatureServer/26
     + Riverside: https://services1.arcgis.com/k3vhq11XkBNeeOfM/arcgis/rest/services/Vision_Plan_Transfer_WFL1/FeatureServer/3
     + Atlanta: https://services5.arcgis.com/5RxyIIJ9boPdptdo/arcgis/rest/services/Virginia_Highland_Focus_Area/FeatureServer/1
@@ -14,6 +14,7 @@ WORKBENCH muni-data ETL — 2026-10-31
     + Virginia Beach: https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/CAD_Basemap/FeatureServer/13
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0
     + Chesapeake: https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
+    + Chesapeake: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Hampton: https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
     + Hampton: https://services1.arcgis.com/QHK2l9cSYhemgg5s/arcgis/rest/services/CZM_Hampton_Data/FeatureServer/44
     + Portsmouth: https://services1.arcgis.com/nGsguNiHLn7MU4R4/arcgis/rest/services/Parcels/FeatureServer/3
@@ -70,6 +71,8 @@ WORKBENCH muni-data ETL — 2026-10-31
   [OK] Chesapeake/assessor                     110415 records
   [fresh] Chesapeake/assessor: pulled within 3 days - keeping 116,567 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Chesapeake/assessor                     116567 records
+  [fresh] Chesapeake/assessor: pulled within 3 days - keeping 92,557 rows (ER_MUNI_FORCE=1 to re-pull)
+  [OK] Chesapeake/assessor                      92557 records
   [fresh] Hampton/assessor: pulled within 3 days - keeping 51,800 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Hampton/assessor                         51800 records
   [fresh] Hampton/assessor: pulled within 3 days - keeping 703 rows (ER_MUNI_FORCE=1 to re-pull)
