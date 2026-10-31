@@ -1,5 +1,5 @@
-autopilot salesdiscovery @ 2026-10-31T12:15:47
+autopilot salesdiscovery @ 2026-10-31T13:19:00
 
-autopilot salesdiscovery @ 2026-10-31T12:15:48
+autopilot salesdiscovery @ 2026-10-31T13:19:00
 
 [sales-discovery] ran within 7d - skipping (ER_SALES_DISCOVERY_FORCE=1 to override)
