@@ -1,8 +1,11 @@
-autopilot alerts @ 2026-11-01T00:21:25
+autopilot alerts @ 2026-11-02T14:57:59
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 4656 - new_mf 4652, units_jump 4
-  showing the 25 most recent of 4656
+alert sweep, NEW this cycle: 3 multifamily, 0 unit-count moves, 0 ownership changes
+OPEN alerts (carried forward): 4659 - new_mf 4655, units_jump 4
+  showing the 25 most recent of 4659
+  [new_mf] New multifamily on the backbone: 2900 CREECH RD  (50 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 5477 CYPRESS CIR  (10 units · Atlanta)
+  [new_mf] New multifamily on the backbone: 184 FORSYTH ST SW  (40 units · Atlanta)
   [new_mf] New multifamily on the backbone: 4842 CINDY DR  (32 units · Raleigh)
   [new_mf] New multifamily on the backbone: 1655 PEACHTREE ST NE  (68 units · Atlanta)
   [new_mf] New multifamily on the backbone: 1000 LIMELIGHT CT  (392 units · Raleigh)
@@ -25,6 +28,3 @@ OPEN alerts (carried forward): 4656 - new_mf 4652, units_jump 4
   [new_mf] New multifamily on the backbone: 8R-51740-dd41f526034f  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-2471c0991b39  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-c5d18af3e768  (? units · Portsmouth)
-  [new_mf] New multifamily on the backbone: 8R-51740-1aa8b98fbfce  (? units · Portsmouth)
-  [new_mf] New multifamily on the backbone: 8R-51740-25e65751f59c  (? units · Portsmouth)
-  [new_mf] New multifamily on the backbone: 8R-51740-1fe9adbeb235  (? units · Portsmouth)
