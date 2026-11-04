@@ -101930,3 +101930,5 @@ To https://github.com/EightRockDev/WORKBENCH_v5.git
  ! [remote rejected]     main -> main (Internal Server Error)
 error: failed to push some refs to 'https://github.com/EightRockDev/WORKBENCH_v5.git'
 [validate] exit 0 -> validate-latest.txt
+[publish] pushed to GitHub
+[pendingusers] exit 0 -> pending-users-latest.txt
