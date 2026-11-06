@@ -1,8 +1,9 @@
-autopilot alerts @ 2026-11-06T17:53:13
+autopilot alerts @ 2026-11-06T18:53:24
 
 alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 4660 - new_mf 4656, units_jump 4
-  showing the 25 most recent of 4660
+  closed 1 stale alert(s) whose property no longer qualifies as multifamily
+OPEN alerts (carried forward): 4659 - new_mf 4655, units_jump 4
+  showing the 25 most recent of 4659
   [new_mf] New multifamily on the backbone: 850 WEST END AVE SW  (305 units · Atlanta)
   [new_mf] New multifamily on the backbone: 2900 CREECH RD  (50 units · Raleigh)
   [new_mf] New multifamily on the backbone: 5477 CYPRESS CIR  (10 units · Atlanta)
@@ -12,7 +13,6 @@ OPEN alerts (carried forward): 4660 - new_mf 4656, units_jump 4
   [new_mf] New multifamily on the backbone: 1000 LIMELIGHT CT  (392 units · Raleigh)
   [new_mf] New multifamily on the backbone: 2402 ELMOAK DR  (170 units · Raleigh)
   [new_mf] New multifamily on the backbone: 1121 HUFF RD NW  (250 units · Atlanta)
-  [new_mf] New multifamily on the backbone: 12 N 19th St   (32 units · Richmond)
   [new_mf] New multifamily on the backbone: OFF RT 33 RHODELL  (29 units · Raleigh)
   [new_mf] New multifamily on the backbone: 8R-51740-64a0649e716f  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-7b9941ef936a  (? units · Portsmouth)
@@ -28,3 +28,4 @@ OPEN alerts (carried forward): 4660 - new_mf 4656, units_jump 4
   [new_mf] New multifamily on the backbone: 8R-51740-1f633af9f977  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-dd41f526034f  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-2471c0991b39  (? units · Portsmouth)
+  [new_mf] New multifamily on the backbone: 8R-51740-c5d18af3e768  (? units · Portsmouth)
