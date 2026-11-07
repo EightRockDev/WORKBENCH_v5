@@ -1,7 +1,6 @@
-autopilot alerts @ 2026-11-06T18:53:24
+autopilot alerts @ 2026-11-06T19:21:00
 
 alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-  closed 1 stale alert(s) whose property no longer qualifies as multifamily
 OPEN alerts (carried forward): 4659 - new_mf 4655, units_jump 4
   showing the 25 most recent of 4659
   [new_mf] New multifamily on the backbone: 850 WEST END AVE SW  (305 units · Atlanta)
