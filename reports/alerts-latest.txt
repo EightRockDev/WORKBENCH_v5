@@ -1,8 +1,10 @@
-autopilot alerts @ 2026-11-08T13:32:01
+autopilot alerts @ 2026-11-08T16:02:39
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 4659 - new_mf 4655, units_jump 4
-  showing the 25 most recent of 4659
+alert sweep, NEW this cycle: 2 multifamily, 0 unit-count moves, 0 ownership changes
+OPEN alerts (carried forward): 4661 - new_mf 4657, units_jump 4
+  showing the 25 most recent of 4661
+  [new_mf] New multifamily on the backbone: 4841 CINDY DR  (23 units · Raleigh)
+  [new_mf] New multifamily on the backbone: 415 S BLOUNT ST  (138 units · Raleigh)
   [new_mf] New multifamily on the backbone: 850 WEST END AVE SW  (305 units · Atlanta)
   [new_mf] New multifamily on the backbone: 2900 CREECH RD  (50 units · Raleigh)
   [new_mf] New multifamily on the backbone: 5477 CYPRESS CIR  (10 units · Atlanta)
@@ -26,5 +28,3 @@ OPEN alerts (carried forward): 4659 - new_mf 4655, units_jump 4
   [new_mf] New multifamily on the backbone: 8R-51740-e34e9eae0c9f  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-1f633af9f977  (? units · Portsmouth)
   [new_mf] New multifamily on the backbone: 8R-51740-dd41f526034f  (? units · Portsmouth)
-  [new_mf] New multifamily on the backbone: 8R-51740-2471c0991b39  (? units · Portsmouth)
-  [new_mf] New multifamily on the backbone: 8R-51740-c5d18af3e768  (? units · Portsmouth)
