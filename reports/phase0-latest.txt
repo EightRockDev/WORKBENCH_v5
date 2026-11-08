@@ -1,10 +1,7 @@
-autopilot phase0 @ 2026-11-08T13:28:51
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-11-08T15:39:11
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,188,737
+Assessor records available: 4,188,828
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,509  .../Accela_base_map_pro/MapServer/0
@@ -29,28 +26,28 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 33 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,245,930
-parcels normalized:        3,245,930
-multifamily (>= 10 units): 7,941
-written to properties_8r:  3,245,930
+muni records scanned:      3,246,021
+parcels normalized:        3,246,021
+multifamily (>= 10 units): 7,943
+written to properties_8r:  3,246,021
 provisional (no-APN) ids:  1,154
 units derived from address points: 1,101  (skipped non-residential: 11,957)
 units bridged by geometry: 271  (Richmond 167, Atlanta 98, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1)
 coords backfilled by address (multifamily): 0
-rent estimates stamped (HUD FMR blend): 7,938
+rent estimates stamped (HUD FMR blend): 7,940
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 739,936  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 739,955  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 1,988, Chesapeake 1,856, Raleigh 1,637, Greensboro 900, Richmond 671, Virginia Beach 332, Newport News 271, Norfolk 164, Hampton 72, Portsmouth 45, Suffolk 3, Winston-Salem 1, Durham 1
+Multifamily by city: Atlanta 1,988, Chesapeake 1,856, Raleigh 1,639, Greensboro 900, Richmond 671, Virginia Beach 332, Newport News 271, Norfolk 164, Hampton 72, Portsmouth 45, Suffolk 3, Winston-Salem 1, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 746,590
-  candidate parcels      : 993,519
+  unit-bearing parcels   : 746,611
+  candidate parcels      : 993,589
   merged                 : 115
-  rejected (too far)     : 592,614
-  rejected (same id form): 152,793
+  rejected (too far)     : 592,623
+  rejected (same id form): 152,805
   rejected (not mutual)  : 655
   rejected (ambiguous)   : 413
   merged by address      : 156
@@ -61,7 +58,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Hampton          sources     210  targets  51,333  merged     2   refused: far 26 / same-id 182 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Norfolk          sources     397  targets  67,016  merged     2   refused: far 123 / same-id 272 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Chesapeake       sources   2,048  targets  92,502  merged     1   refused: far 1,202 / same-id 845 / not-mutual 0 / ambiguous 0   by-address 0 (shared 12, coords 0)
-  Raleigh          sources 370,507  targets 132,080  merged     1   refused: far 298,369 / same-id 72,135 / not-mutual 1 / ambiguous 1   by-address 0 (shared 108, coords 156)
+  Raleigh          sources 370,528  targets 132,150  merged     1   refused: far 298,378 / same-id 72,147 / not-mutual 1 / ambiguous 1   by-address 0 (shared 108, coords 156)
   Durham           sources       4  targets 129,496  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Newport News     sources  46,672  targets   7,672  merged     0   refused: far 39,017 / same-id 7,655 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
   Portsmouth       sources       7  targets  37,544  merged     0   refused: far 3 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
@@ -78,7 +75,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Chesapeake: Apartments x614, 1060 x188, 3015 x166, (units only) x165, 4020 x151
   Winston-Salem: (units only) x1
   Newport News: A x243, C x21, R x3, (units only) x2, O x2
-  Raleigh: (units only) x1636, MD x1
+  Raleigh: (units only) x1638, MD x1
   Hampton: (units only) x71, Residential x1
   Portsmouth: (units only) x44, 20 x1
   Virginia Beach: Multi Family x240, Commercial x20, Single Family or Duplex x17, Undeveloped x15, Town House x13
@@ -96,7 +93,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
   Chesapeake: units>=10: 1,832, learned code (no units): 22, code only (no units): 2
   Winston-Salem: units>=10: 1
   Newport News: units>=10: 244, learned code (no units): 27
-  Raleigh: units>=10: 1,637
+  Raleigh: units>=10: 1,639
   Hampton: learned code (no units): 70, units>=10: 2
   Portsmouth: learned code (no units): 45
   Virginia Beach: units>=10: 222, learned code (no units): 92, code only (no units): 18
