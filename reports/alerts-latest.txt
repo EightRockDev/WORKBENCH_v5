@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-11-09T00:50:24
+autopilot alerts @ 2026-11-09T02:28:38
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 1 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 4661 - new_mf 4657, units_jump 4
   showing the 25 most recent of 4661
   [new_mf] New multifamily on the backbone: 4841 CINDY DR  (23 units · Raleigh)
