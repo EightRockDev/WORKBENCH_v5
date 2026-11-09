@@ -1,4 +1,4 @@
-autopilot pull @ 2026-11-08T21:25:19
+autopilot pull @ 2026-11-08T23:15:33
 
 WORKBENCH muni-data ETL — 2026-11-08
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -28,5 +28,22 @@ WORKBENCH muni-data ETL — 2026-11-08
     + Richmond: https://services.arcgis.com/ak2bo87wLfUpMrt1/arcgis/rest/services/Undeveloped_Parcels_Richmond_Virginia/FeatureServer/0
   [fresh] Raleigh/assessor+sales: pulled within 3 days - keeping 439,544 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/assessor+sales                  439544 records
+  [OK] Raleigh/permits                         184994 records
+  [OK] Greensboro/assessor                     223246 records
+  [OK] Durham/assessor                         133851 records
+  [OK] Durham/permits                               0 records
+  [OK] Winston-Salem/assessor+sales            167719 records
+  [OK] Atlanta/assessor                        171158 records
+  [OK] Atlanta/assessor                        373402 records
+  [OK] Nashville/assessor+sales                287888 records
+  [OK] Nashville/permits                        29646 records
+  [OK] Norfolk/assessor+sales                   74298 records
+  [OK] Norfolk/permits                         128760 records
+  [OK] Virginia Beach/permits                  111291 records
+  [OK] Newport News/assessor+sales              54441 records
+  [OK] Chesapeake/assessor                      92812 records
+  [OK] Atlanta/assessor                           244 records
+  [OK] Atlanta/assessor                           224 records
+  [OK] Raleigh/assessor                         61363 records
 
 !! step killed after 3600s (ER_AUTOPILOT_STEP_TIMEOUT / _DISCOVER_TIMEOUT) - a hung step must never wedge the cycle
