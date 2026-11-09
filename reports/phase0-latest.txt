@@ -1,14 +1,13 @@
-autopilot phase0 @ 2026-11-09T14:32:57
+autopilot phase0 @ 2026-11-09T15:28:12
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,281,407
+Assessor records available: 4,188,850
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,518  .../Accela_base_map_pro/MapServer/0
   Chesapeake        116,666  .../Address_Points/MapServer/0
   Chesapeake         92,812  .../OpenData/MapServer/15
   Chesapeake         92,557  .../VA_Parcels/FeatureServer/0
-  Chesapeake         92,557  .../VA_Parcels/MapServer/0
   Hampton               703  .../CZM_Hampton_Data/FeatureServer/44
   Hampton            51,800  .../VA_Parcels/FeatureServer/0
   Newport News       54,441  .../Parcel/MapServer/0
@@ -27,10 +26,10 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 33 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,338,600
-parcels normalized:        3,338,600
+muni records scanned:      3,246,043
+parcels normalized:        3,246,043
 multifamily (>= 10 units): 7,943
-written to properties_8r:  3,338,600
+written to properties_8r:  3,246,043
 provisional (no-APN) ids:  1,154
 units derived from address points: 1,101  (skipped non-residential: 11,958)
 units bridged by geometry: 271  (Richmond 167, Atlanta 98, Hampton 2, Norfolk 2, Chesapeake 1, Raleigh 1)
@@ -77,7 +76,7 @@ Top use codes classified multifamily (wrong codes here = bad aliasing):
   Winston-Salem: (units only) x1
   Newport News: A x243, C x21, R x3, (units only) x2, O x2
   Raleigh: (units only) x1638, MD x1
-  Hampton: (units only) x70, Residential x2
+  Hampton: (units only) x71, Residential x1
   Portsmouth: (units only) x44, 20 x1
   Virginia Beach: Multi Family x240, Commercial x20, Single Family or Duplex x17, Undeveloped x15, Town House x13
   Durham: (units only) x1
