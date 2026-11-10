@@ -1,11 +1,11 @@
-autopilot discover @ 2026-11-10T01:00:24
+autopilot discover @ 2026-11-10T02:00:20
 
 Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
 (a few minutes - each city's services are walked layer by layer)
 
    [   0s] probing Virginia Beach...
    [city cap] Virginia Beach passed 240s - skipped, its saved feeds are kept
-   [ 241s] probing Chesapeake...
+   [ 240s] probing Chesapeake...
    [rejected] Chesapeake: Towers/Towers: only 139 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected] Chesapeake: CommunityLayers/Apartments: only 161 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected] Chesapeake: CommunityLayers/Places of Worship: only 256 records - kept but demoted, a citywide roll should have >= 5,000
@@ -23,7 +23,7 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
    [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
    [rejected] Chesapeake: I_87 Parcel Development Potential Data: records are NOT in Chesapeake
-   [ 378s] probing Hampton...
+   [ 458s] probing Hampton...
    [rejected] Hampton: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Hampton
    [rejected] Hampton: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Hampton
    [rejected] Hampton: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Hampton
@@ -44,32 +44,32 @@ Probing GIS portals for unit-bearing parcel layers (Virginia cities)...
    [rejected] Hampton: CZM_Hampton_Data: only 716 records - kept but demoted, a citywide roll should have >= 5,000
    [rejected] Hampton: CZM_Hampton_Data: layer name declares a subset - demoted, does not count as the city roll
    [rejected] Hampton: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Hampton
-   [ 452s] probing Portsmouth...
+   [ 529s] probing Portsmouth...
    [rejected] Portsmouth: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Portsmouth
    [rejected] Portsmouth: ElevationCertificates/Elevation Certificates - Parcels: records are NOT in Portsmouth
    [rejected] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Portsmouth
    [rejected] Portsmouth: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): records are NOT in Portsmouth
    [rejected] Portsmouth: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Portsmouth
    [rejected] Portsmouth: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Portsmouth
-   [ 485s] probing Suffolk...
+   [ 560s] probing Suffolk...
    [rejected] Suffolk: ElevationCertificates/Elevation Certificates - Building Footprints: records are NOT in Suffolk
    [rejected] Suffolk: ElevationCertificates/Elevation Certificates - Parcels: layer name declares a subset - demoted, does not count as the city roll
    [rejected] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Building Footprints (NAVD88): records are NOT in Suffolk
    [rejected] Suffolk: ElevationCertificatesNAVD88/Elevation Certificates - Parcels (NAVD88): layer name declares a subset - demoted, does not count as the city roll
    [rejected] Suffolk: HRGeo_Parcels_Public/HRGeo Parcels: records are NOT in Suffolk
-   [ 518s] probing Norfolk...
+   [ 593s] probing Norfolk...
    [rejected] Norfolk: Backlick Run Stream Restoration: records are NOT in Norfolk
    [rejected] Norfolk: ElevationCertificate_Parcels_Missing_Footprint: records are NOT in Norfolk
    [rejected] Norfolk: Property Assessment and Sales - FY23: dated fiscal-year snapshot (the current roll is curated)
    [rejected] Norfolk: Property Assessment and Sales - FY25: dated fiscal-year snapshot (the current roll is curated)
-   [rejected] Norfolk: Property Assessment and Sales - FY26: dated fiscal-year snapshot (the current roll is curated)
    [rejected] Norfolk: Property Assessment and Sales - FY24: dated fiscal-year snapshot (the current roll is curated)
+   [rejected] Norfolk: Property Assessment and Sales - FY26: dated fiscal-year snapshot (the current roll is curated)
    [rejected] Norfolk: Property Assessment and Sales - FY21: dated fiscal-year snapshot (the current roll is curated)
    [rejected] Norfolk: Property Assessment and Sales - FY27: dated fiscal-year snapshot (the current roll is curated)
    [rejected] Norfolk: Property Assessment and Sales - FY22: dated fiscal-year snapshot (the current roll is curated)
-   [rejected] Norfolk: Property Assessment and Sales - FY20: dated fiscal-year snapshot (the current roll is curated)
    [rejected] Norfolk: Property Assessment and Sales - FY19: dated fiscal-year snapshot (the current roll is curated)
-   [ 536s] probing Richmond...
+   [rejected] Norfolk: Property Assessment and Sales - FY20: dated fiscal-year snapshot (the current roll is curated)
+   [ 611s] probing Richmond...
    [rejected] Richmond: RichmondCounty_Parcels: records are NOT in Richmond
    [rejected] Richmond: RichmondCounty_Parcels_WithWellRecords: records are NOT in Richmond
    [rejected] Richmond: Undeveloped_Parcels_Richmond_Virginia: layer name declares a subset - demoted, does not count as the city roll
@@ -86,7 +86,7 @@ Chesapeake: 3 candidate layer(s)
    https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0
       auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,666 records
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
-      geometry supplement; VGIN statewide fallback: FIPS = '51550'; 92,557 records; fields ['apn']
+      geometry supplement; VGIN statewide fallback: UPPER(LOCALITY) = 'CHESAPEAKE CITY'; 92,557 records; fields ['apn']
 
 Hampton: 2 candidate layer(s)
    https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0
