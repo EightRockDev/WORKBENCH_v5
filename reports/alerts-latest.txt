@@ -1,7 +1,6 @@
-autopilot alerts @ 2026-11-11T21:52:33
+autopilot alerts @ 2026-11-11T22:20:44
 
 alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-  closed 1 stale alert(s) whose property no longer qualifies as multifamily
 OPEN alerts (carried forward): 4694 - new_mf 4688, units_jump 6
   showing the 25 most recent of 4694
   [new_mf] New multifamily on the backbone: 8R-51800-7a607a2cd1b0  (? units · Suffolk)
