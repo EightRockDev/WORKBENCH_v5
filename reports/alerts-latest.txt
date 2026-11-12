@@ -1,8 +1,9 @@
-autopilot alerts @ 2026-11-11T23:59:15
+autopilot alerts @ 2026-11-12T02:51:27
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 5 ownership changes
-OPEN alerts (carried forward): 4694 - new_mf 4688, units_jump 6
-  showing the 25 most recent of 4694
+alert sweep, NEW this cycle: 1 multifamily, 0 unit-count moves, 0 ownership changes
+OPEN alerts (carried forward): 4695 - new_mf 4689, units_jump 6
+  showing the 25 most recent of 4695
+  [new_mf] New multifamily on the backbone: WINGFIELD AVE   (? units · Chesapeake)
   [new_mf] New multifamily on the backbone: 8R-51800-7a607a2cd1b0  (? units · Suffolk)
   [new_mf] New multifamily on the backbone: 8R-51800-9de5a8f22802  (47 units · Suffolk)
   [new_mf] New multifamily on the backbone: 8R-51800-c2fba8d6300b  (? units · Suffolk)
@@ -27,4 +28,3 @@ OPEN alerts (carried forward): 4694 - new_mf 4688, units_jump 6
   [new_mf] New multifamily on the backbone: 8R-51800-f9f378ad68e8  (? units · Suffolk)
   [new_mf] New multifamily on the backbone: 8R-51800-eb4d77be6800  (? units · Suffolk)
   [new_mf] New multifamily on the backbone: 8R-51800-bf9fc6354ea0  (? units · Suffolk)
-  [new_mf] New multifamily on the backbone: 8R-51800-b4deccceb3a0  (? units · Suffolk)
