@@ -1,4 +1,4 @@
-autopilot phase0 @ 2026-11-13T11:19:10
+autopilot phase0 @ 2026-11-13T12:18:54
 
 phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
 Last full report follows so the gate numbers stay in this cycle's report file:
