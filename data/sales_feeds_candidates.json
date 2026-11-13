@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T16:15:32",
+  "generated_at": "2026-11-13T16:16:11",
   "localities": {
     "Alexandria": [],
     "Arlington": [],
@@ -49,7 +49,7 @@
         "columns_hit": {
           "date": "transfer_date",
           "price": "consideration",
-          "parcel": "parcel_id"
+          "parcel": "gpin"
         },
         "score": 95
       },
@@ -92,9 +92,9 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2026-05-13T20:33:53.000Z",
         "columns_hit": {
-          "price": "consideration",
+          "parcel": "gpin",
           "date": "transfer_date",
-          "parcel": "gpin"
+          "price": "consideration"
         },
         "score": 95
       },
@@ -122,9 +122,9 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2023-04-03T19:11:00.000Z",
         "columns_hit": {
-          "price": "consideration",
+          "parcel": "parcel_id",
           "date": "transfer_date",
-          "parcel": "gpin"
+          "price": "consideration"
         },
         "score": 85
       },
@@ -137,9 +137,9 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2021-03-01T13:38:08.000Z",
         "columns_hit": {
-          "parcel": "gpin",
           "price": "consideration",
-          "date": "transfer_date"
+          "date": "transfer_date",
+          "parcel": "gpin"
         },
         "score": 85
       },
@@ -152,33 +152,11 @@
         "base": "https://data.norfolk.gov/resource/",
         "updated": "2023-04-03T19:11:17.000Z",
         "columns_hit": {
+          "parcel": "gpin",
           "price": "consideration",
-          "date": "transfer_date",
-          "parcel": "gpin"
+          "date": "transfer_date"
         },
         "score": 85
-      },
-      {
-        "method": "ckan-va",
-        "adapter": "csv_download",
-        "title": "Property Assessment and Sales - FY22 [CSV]",
-        "org": "City of Norfolk",
-        "url": "https://data.norfolk.gov/api/v3/views/7tu9-2ytx/export.csv?accessType=DOWNLOAD",
-        "updated": "2026-11-03T15:08:14.576001",
-        "columns_hit": {},
-        "score": 35,
-        "note": "state mirror - fields sniff on first sized pull"
-      },
-      {
-        "method": "ckan-va",
-        "adapter": "csv_download",
-        "title": "Property Assessment and Sales - FY22 [JSON]",
-        "org": "City of Norfolk",
-        "url": "https://data.norfolk.gov/api/v3/views/7tu9-2ytx/query.json?accessType=DOWNLOAD",
-        "updated": "2026-11-03T15:08:14.576001",
-        "columns_hit": {},
-        "score": 35,
-        "note": "state mirror - fields sniff on first sized pull"
       },
       {
         "method": "ckan-va",
@@ -198,6 +176,28 @@
         "org": "City of Norfolk",
         "url": "https://data.norfolk.gov/api/v3/views/pdf2-gh9c/query.json?accessType=DOWNLOAD",
         "updated": "2026-11-03T15:09:09.149523",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY22 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/7tu9-2ytx/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-11-03T15:08:14.576001",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY22 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/7tu9-2ytx/query.json?accessType=DOWNLOAD",
+        "updated": "2026-11-03T15:08:14.576001",
         "columns_hit": {},
         "score": 35,
         "note": "state mirror - fields sniff on first sized pull"
@@ -293,28 +293,6 @@
       {
         "method": "ckan-va",
         "adapter": "csv_download",
-        "title": "Property Assessment and Sales - FY25 [CSV]",
-        "org": "City of Norfolk",
-        "url": "https://data.norfolk.gov/api/v3/views/g7sg-tivf/export.csv?accessType=DOWNLOAD",
-        "updated": "2026-11-03T15:08:48.080691",
-        "columns_hit": {},
-        "score": 35,
-        "note": "state mirror - fields sniff on first sized pull"
-      },
-      {
-        "method": "ckan-va",
-        "adapter": "csv_download",
-        "title": "Property Assessment and Sales - FY25 [JSON]",
-        "org": "City of Norfolk",
-        "url": "https://data.norfolk.gov/api/v3/views/g7sg-tivf/query.json?accessType=DOWNLOAD",
-        "updated": "2026-11-03T15:08:48.080691",
-        "columns_hit": {},
-        "score": 35,
-        "note": "state mirror - fields sniff on first sized pull"
-      },
-      {
-        "method": "ckan-va",
-        "adapter": "csv_download",
         "title": "Property Assessment and Sales - FY26 [CSV]",
         "org": "City of Norfolk",
         "url": "https://data.norfolk.gov/api/v3/views/m5ya-5grb/export.csv?accessType=DOWNLOAD",
@@ -330,6 +308,28 @@
         "org": "City of Norfolk",
         "url": "https://data.norfolk.gov/api/v3/views/m5ya-5grb/query.json?accessType=DOWNLOAD",
         "updated": "2026-11-03T15:08:59.034235",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY25 [CSV]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/g7sg-tivf/export.csv?accessType=DOWNLOAD",
+        "updated": "2026-11-03T15:08:48.080691",
+        "columns_hit": {},
+        "score": 35,
+        "note": "state mirror - fields sniff on first sized pull"
+      },
+      {
+        "method": "ckan-va",
+        "adapter": "csv_download",
+        "title": "Property Assessment and Sales - FY25 [JSON]",
+        "org": "City of Norfolk",
+        "url": "https://data.norfolk.gov/api/v3/views/g7sg-tivf/query.json?accessType=DOWNLOAD",
+        "updated": "2026-11-03T15:08:48.080691",
         "columns_hit": {},
         "score": 35,
         "note": "state mirror - fields sniff on first sized pull"
@@ -466,8 +466,8 @@
         "title": "Property Sales ",
         "org": "City of Virginia Beach - Online Mapping",
         "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0",
-        "record_count": 597311,
-        "updated": 1793600926687,
+        "record_count": 597719,
+        "updated": 1794205954619,
         "columns_hit": {
           "parcel": "GPIN",
           "price": "Sale_Price",
@@ -481,8 +481,8 @@
         "title": "Property Sales ",
         "org": "City of Virginia Beach - Online Mapping",
         "url": "https://services2.arcgis.com/CyVvlIiUfRBmMQuu/arcgis/rest/services/Property_Sales_/FeatureServer/0",
-        "record_count": 597311,
-        "updated": 1793600926687,
+        "record_count": 597719,
+        "updated": 1794205954619,
         "columns_hit": {
           "parcel": "GPIN",
           "price": "Sale_Price",
@@ -496,7 +496,7 @@
         "title": "Property Sales [CSV]",
         "org": "Virginia Beach",
         "url": "https://data.virginiabeach.gov/api/download/v1/items/948bc15e637c4bd6a65fb94ae633e052/csv?layers=0",
-        "updated": "2026-11-01T15:06:12.342935",
+        "updated": "2026-11-08T15:06:16.960338",
         "columns_hit": {},
         "score": 35,
         "note": "state mirror - fields sniff on first sized pull"
