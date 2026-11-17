@@ -1,10 +1,7 @@
-autopilot phase0 @ 2026-11-17T15:18:09
-
-phase0: inputs unchanged since the last build - rebuild skipped (ER_PHASE0_FORCE=1 to force).
-Last full report follows so the gate numbers stay in this cycle's report file:
+autopilot phase0 @ 2026-11-17T16:46:36
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,234,718
+Assessor records available: 4,234,722
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,545  .../Accela_base_map_pro/MapServer/0
@@ -30,10 +27,10 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 34 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,291,911
-parcels normalized:        3,291,911
+muni records scanned:      3,291,915
+parcels normalized:        3,291,915
 multifamily (>= 10 units): 7,993
-written to properties_8r:  3,291,911
+written to properties_8r:  3,291,915
 provisional (no-APN) ids:  1,162
 units derived from address points: 1,347  (skipped non-residential: 11,956)
 units bridged by geometry: 268  (Richmond 162, Atlanta 98, Hampton 2, Norfolk 2, Suffolk 2, Chesapeake 1, Raleigh 1)
@@ -41,17 +38,17 @@ coords backfilled by address (multifamily): 0
 rent estimates stamped (HUD FMR blend): 7,990
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 740,445  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 740,518  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
 Multifamily by city: Atlanta 1,988, Chesapeake 1,856, Raleigh 1,639, Greensboro 900, Richmond 671, Virginia Beach 332, Newport News 271, Norfolk 164, Hampton 72, Suffolk 52, Portsmouth 45, Winston-Salem 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 747,120
-  candidate parcels      : 1,037,301
+  unit-bearing parcels   : 747,193
+  candidate parcels      : 1,037,232
   merged                 : 115
-  rejected (too far)     : 592,942
-  rejected (same id form): 152,993
+  rejected (too far)     : 593,019
+  rejected (same id form): 152,989
   rejected (not mutual)  : 658
   rejected (ambiguous)   : 412
   merged by address      : 153
@@ -63,7 +60,7 @@ Geometry unit bridge (counts carried across parcel-id schemes):
   Norfolk          sources     397  targets  67,016  merged     2   refused: far 123 / same-id 272 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Suffolk          sources     248  targets  49,405  merged     2   refused: far 162 / same-id 80 / not-mutual 0 / ambiguous 4   by-address 0 (shared 0, coords 0)
   Chesapeake       sources   2,050  targets  92,538  merged     1   refused: far 1,203 / same-id 846 / not-mutual 0 / ambiguous 0   by-address 0 (shared 12, coords 0)
-  Raleigh          sources 370,738  targets 131,943  merged     1   refused: far 298,477 / same-id 72,258 / not-mutual 1 / ambiguous 1   by-address 0 (shared 107, coords 156)
+  Raleigh          sources 370,811  targets 131,874  merged     1   refused: far 298,554 / same-id 72,254 / not-mutual 1 / ambiguous 1   by-address 0 (shared 107, coords 156)
   Durham           sources       4  targets 129,499  merged     0   refused: far 0 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Newport News     sources  46,673  targets   7,671  merged     0   refused: far 39,019 / same-id 7,654 / not-mutual 0 / ambiguous 0   by-address 0 (shared 7, coords 0)
   Portsmouth       sources       7  targets  37,544  merged     0   refused: far 3 / same-id 4 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
