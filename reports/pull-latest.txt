@@ -1,4 +1,4 @@
-autopilot pull @ 2026-11-18T15:25:34
+autopilot pull @ 2026-11-18T18:25:31
 
 WORKBENCH muni-data ETL — 2026-11-18
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -35,8 +35,11 @@ WORKBENCH muni-data ETL — 2026-11-18
   [fresh] Durham/assessor: pulled within 3 days - keeping 133,905 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Durham/assessor                         133905 records
   [OK] Durham/permits                               0 records
+  [fresh] Winston-Salem/assessor+sales: pulled within 3 days - keeping 167,798 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Winston-Salem/assessor+sales            167798 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 171,174 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        171174 records
+  [fresh] Atlanta/assessor: pulled within 3 days - keeping 373,402 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Atlanta/assessor                        373402 records
 
 !! step killed after 3600s (ER_AUTOPILOT_STEP_TIMEOUT / _DISCOVER_TIMEOUT) - a hung step must never wedge the cycle
