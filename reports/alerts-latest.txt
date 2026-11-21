@@ -1,6 +1,6 @@
-autopilot alerts @ 2026-11-21T17:06:53
+autopilot alerts @ 2026-11-21T18:21:39
 
-alert sweep, NEW this cycle: 1 multifamily, 0 unit-count moves, 4 ownership changes
+alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
 OPEN alerts (carried forward): 4696 - new_mf 4690, units_jump 6
   showing the 25 most recent of 4696
   [new_mf] New multifamily on the backbone: 1104 AVONDALE AVE SE  (291 units · Atlanta)
