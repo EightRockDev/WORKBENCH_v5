@@ -1,4 +1,4 @@
-autopilot pull @ 2026-11-21T10:16:46
+autopilot pull @ 2026-11-21T11:16:52
 
 WORKBENCH muni-data ETL — 2026-11-21
   discovered feeds loaded from data/feeds_extra.json: 24
@@ -30,6 +30,7 @@ WORKBENCH muni-data ETL — 2026-11-21
   [OK] Raleigh/assessor+sales                  439613 records
   [fresh] Raleigh/permits: pulled within 3 days - keeping 105,000 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Raleigh/permits                         105000 records
+  [fresh] Greensboro/assessor: pulled within 3 days - keeping 223,537 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Greensboro/assessor                     223537 records
   [fresh] Durham/assessor: pulled within 3 days - keeping 133,905 rows (ER_MUNI_FORCE=1 to re-pull)
   [OK] Durham/assessor                         133905 records
