@@ -1,4 +1,4 @@
-autopilot salespull @ 2026-11-23T12:17:22
+autopilot salespull @ 2026-11-23T13:17:08
 
 [sales] 21 localities tracked
 [sales] Alexandria: no parcels to probe - skip
