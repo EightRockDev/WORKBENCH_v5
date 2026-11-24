@@ -1,5 +1,45 @@
 [
   {
+    "market": "Chesapeake",
+    "state": "VA",
+    "county": "Chesapeake",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0",
+    "status": "live",
+    "record_count": 110554,
+    "fields_mapped": [
+      "address",
+      "apn",
+      "city",
+      "units",
+      "use_code",
+      "zip"
+    ],
+    "is_subset": false,
+    "note": "auto-discovered: Accela_base_map_pro/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 110,554 records"
+  },
+  {
+    "market": "Chesapeake",
+    "state": "VA",
+    "county": "Chesapeake",
+    "kind": "assessor",
+    "platform": "arcgis",
+    "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0",
+    "status": "live",
+    "record_count": 116692,
+    "fields_mapped": [
+      "address",
+      "apn",
+      "city",
+      "units",
+      "use_code",
+      "zip"
+    ],
+    "is_subset": false,
+    "note": "auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,692 records"
+  },
+  {
     "market": "Riverside",
     "state": "CA",
     "county": "Riverside",
@@ -204,46 +244,6 @@
     ],
     "is_subset": false,
     "note": "auto-discovered: CAD_Basemap/Parcels; score 13; fields ['address', 'apn', 'lat', 'lng', 'use_code', 'zip']; 135,362 records"
-  },
-  {
-    "market": "Chesapeake",
-    "state": "VA",
-    "county": "Chesapeake",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Accela/Accela_base_map_pro/MapServer/0",
-    "status": "live",
-    "record_count": 110554,
-    "fields_mapped": [
-      "address",
-      "apn",
-      "city",
-      "units",
-      "use_code",
-      "zip"
-    ],
-    "is_subset": false,
-    "note": "auto-discovered: Accela_base_map_pro/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 110,554 records"
-  },
-  {
-    "market": "Chesapeake",
-    "state": "VA",
-    "county": "Chesapeake",
-    "kind": "assessor",
-    "platform": "arcgis",
-    "url": "https://gis.cityofchesapeake.net/mapping/rest/services/Common_Layers/Address_Points/MapServer/0",
-    "status": "live",
-    "record_count": 116692,
-    "fields_mapped": [
-      "address",
-      "apn",
-      "city",
-      "units",
-      "use_code",
-      "zip"
-    ],
-    "is_subset": false,
-    "note": "auto-discovered: Address_Points/Address Points; score 21; fields ['address', 'apn', 'city', 'units', 'use_code', 'zip']; 116,692 records"
   },
   {
     "market": "Hampton",
