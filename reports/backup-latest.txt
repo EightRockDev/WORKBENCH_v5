@@ -1,5 +1,5 @@
-autopilot backup @ 2026-11-27T05:21:44
+autopilot backup @ 2026-11-27T06:21:40
 
-[backup] dumping to D:\Backup\8rw\workbench-20261127-052144.dump
+[backup] dumping to D:\Backup\8rw\workbench-20261127-062141.dump
 pg_dump: error: could not write to output file: No space left on device
 [backup] FAILED (pg_dump exit 1) - no dump written, next cycle retries
