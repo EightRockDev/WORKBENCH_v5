@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-11-27T18:48:46
+autopilot phase0 @ 2026-11-27T20:40:34
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,235,764
+Assessor records available: 4,235,766
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,554  .../Accela_base_map_pro/MapServer/0
@@ -27,35 +27,35 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 36 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,292,957
-parcels normalized:        3,292,957
-multifamily (>= 10 units): 7,996
-written to properties_8r:  3,292,957
+muni records scanned:      3,292,959
+parcels normalized:        3,292,959
+multifamily (>= 10 units): 7,997
+written to properties_8r:  3,292,959
 provisional (no-APN) ids:  1,162
 units derived from address points: 1,350  (skipped non-residential: 11,958)
-units bridged by geometry: 271  (Richmond 165, Atlanta 98, Hampton 2, Norfolk 2, Suffolk 2, Chesapeake 1, Raleigh 1)
+units bridged by geometry: 273  (Richmond 167, Atlanta 98, Hampton 2, Norfolk 2, Suffolk 2, Chesapeake 1, Raleigh 1)
 coords backfilled by address (multifamily): 0
-rent estimates stamped (HUD FMR blend): 7,993
+rent estimates stamped (HUD FMR blend): 7,994
 rents from scraped listings: 3
 unusable (no parcel/latlng): 0
-pruned from backbone (known < 10 units): 741,078  (full roll kept in parcel_index)
+pruned from backbone (known < 10 units): 741,079  (full roll kept in parcel_index)
 P0-1 coverage:             100.0%  (gate >= 95%: PASS)
 
-Multifamily by city: Atlanta 1,990, Chesapeake 1,856, Raleigh 1,640, Greensboro 900, Richmond 671, Virginia Beach 332, Newport News 271, Norfolk 164, Hampton 72, Suffolk 52, Portsmouth 45, Winston-Salem 2, Durham 1
+Multifamily by city: Atlanta 1,990, Chesapeake 1,856, Raleigh 1,640, Greensboro 900, Richmond 672, Virginia Beach 332, Newport News 271, Norfolk 164, Hampton 72, Suffolk 52, Portsmouth 45, Winston-Salem 2, Durham 1
 
 Geometry unit bridge (counts carried across parcel-id schemes):
-  unit-bearing parcels   : 747,756
-  candidate parcels      : 1,037,668
-  merged                 : 116
-  rejected (too far)     : 593,407
-  rejected (same id form): 153,160
-  rejected (not mutual)  : 656
-  rejected (ambiguous)   : 417
+  unit-bearing parcels   : 747,758
+  candidate parcels      : 1,037,666
+  merged                 : 118
+  rejected (too far)     : 593,411
+  rejected (same id form): 153,156
+  rejected (not mutual)  : 658
+  rejected (ambiguous)   : 415
   merged by address      : 155
-  addr rejected (shared) : 832
+  addr rejected (shared) : 831
   addr rejected (coords) : 173
   Atlanta          sources 321,658  targets  67,239  merged    77   refused: far 253,325 / same-id 67,211 / not-mutual 650 / ambiguous 395   by-address 21 (shared 700, coords 16)
-  Richmond         sources   5,020  targets  72,133  merged    31   refused: far 575 / same-id 4,392 / not-mutual 5 / ambiguous 17   by-address 134 (shared 4, coords 1)
+  Richmond         sources   5,022  targets  72,131  merged    33   refused: far 579 / same-id 4,388 / not-mutual 7 / ambiguous 15   by-address 134 (shared 3, coords 1)
   Hampton          sources     210  targets  51,333  merged     2   refused: far 26 / same-id 182 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Norfolk          sources     398  targets  67,013  merged     2   refused: far 123 / same-id 273 / not-mutual 0 / ambiguous 0   by-address 0 (shared 0, coords 0)
   Suffolk          sources     248  targets  49,405  merged     2   refused: far 162 / same-id 80 / not-mutual 0 / ambiguous 4   by-address 0 (shared 0, coords 0)
@@ -86,7 +86,7 @@ Cities with parcels but NO multifamily found - their top use codes:
   Nashville: RS10 x39094, R10 x31943, SP x19825, RS7.5 x18974, RS15 x16480, R6 x14297, RS20 x12129, R8 x11628
 
 Why rows qualified as multifamily (suspicious bucket = code w/ small units):
-  Richmond: units>=10: 671
+  Richmond: units>=10: 672
   Norfolk: learned code (no units): 77, units>=10: 62, code only (no units): 25
   Greensboro: code only (no units): 900
   Suffolk: learned code (no units): 32, units>=10: 18, code only (no units): 2
@@ -102,7 +102,7 @@ Why rows qualified as multifamily (suspicious bucket = code w/ small units):
 
 NOT counted - multifamily label but no unit count, in a city whose feed carries unit data (>= 50 parcels with a known 10+ count):
   Virginia Beach: 16,046  (curated known apartments carrying a unit count: 47 of 157)
-  Richmond: 5,039
+  Richmond: 5,035
   Norfolk: 612  (curated known apartments carrying a unit count: 15 of 117)
   Chesapeake: 132  (curated known apartments carrying a unit count: 37 of 61)
 
