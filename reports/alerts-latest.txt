@@ -1,8 +1,10 @@
-autopilot alerts @ 2026-11-27T17:24:17
+autopilot alerts @ 2026-11-27T19:24:25
 
-alert sweep, NEW this cycle: 0 multifamily, 0 unit-count moves, 0 ownership changes
-OPEN alerts (carried forward): 4698 - new_mf 4691, units_jump 7
-  showing the 25 most recent of 4698
+alert sweep, NEW this cycle: 1 multifamily, 1 unit-count moves, 3 ownership changes
+OPEN alerts (carried forward): 4700 - new_mf 4692, units_jump 8
+  showing the 25 most recent of 4700
+  [units_jump] Unit count moved: 1104 AVONDALE AVE SE  (291 -> 63 units · Atlanta)
+  [new_mf] New multifamily on the backbone: 0 LESTER AVE SE  (228 units · Atlanta)
   [new_mf] New multifamily on the backbone: 600 PONY CLUB CIR  (24 units · Raleigh)
   [units_jump] Unit count moved: 900 PONY CLUB CIR  (120 -> 96 units · Raleigh)
   [new_mf] New multifamily on the backbone: 1104 AVONDALE AVE SE  (291 units · Atlanta)
@@ -26,5 +28,3 @@ OPEN alerts (carried forward): 4698 - new_mf 4691, units_jump 7
   [new_mf] New multifamily on the backbone: 8R-51800-655dbebd8212  (? units · Suffolk)
   [new_mf] New multifamily on the backbone: 8R-51800-7ac39001abea  (? units · Suffolk)
   [new_mf] New multifamily on the backbone: 8R-51800-c1510ac7e4e7  (? units · Suffolk)
-  [new_mf] New multifamily on the backbone: 8R-51800-7ca73c156a5f  (? units · Suffolk)
-  [new_mf] New multifamily on the backbone: 8R-51800-63eec98065d2  (? units · Suffolk)
