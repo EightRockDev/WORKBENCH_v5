@@ -1,7 +1,7 @@
-autopilot phase0 @ 2026-11-28T01:36:16
+autopilot phase0 @ 2026-11-28T03:46:09
 
 Database: C:\WORKBENCH_V5\data\workbench.db
-Assessor records available: 4,235,766
+Assessor records available: 4,235,758
 
 Assessor feeds present (Hampton Roads):
   Chesapeake        110,554  .../Accela_base_map_pro/MapServer/0
@@ -27,10 +27,10 @@ Building the Eight Rock property backbone (properties_8r)...
   [rent-signal] listings ingest: 36 success rows -> 6 properties, 4 with usable rents, 3 in crosswalk -> 3 stamped
   [rent-signal] scraped but NOT in crosswalk (city has no backbone yet, or parity has not matched it): a5723e9a-8fad-41c2-ac5a-6927a468247b
 
-muni records scanned:      3,292,959
-parcels normalized:        3,292,959
+muni records scanned:      3,292,951
+parcels normalized:        3,292,951
 multifamily (>= 10 units): 7,997
-written to properties_8r:  3,292,959
+written to properties_8r:  3,292,951
 provisional (no-APN) ids:  1,162
 units derived from address points: 1,350  (skipped non-residential: 11,958)
 units bridged by geometry: 273  (Richmond 167, Atlanta 98, Hampton 2, Norfolk 2, Suffolk 2, Chesapeake 1, Raleigh 1)
@@ -118,7 +118,7 @@ Attribute keys with NO mapping yet (add aliases in core/phase0.py):
   Portsmouth: PREV_INST_, VGIN_QPID, LOCALITY, COMBLDFACT, COMPHDPRC1, COMFNDPRC2, COMECDPRC3, FRONT, LOC_ZIP, OWNER_ST_N, MP, ACRES_A, LOT_SEQ_A, ACPRICE_A, DEPR1_A, DEPR2_A, DEPR3_A, TOTVAL_A, ACRES_B, LOT_SEQ_B, ACPRICE_B, DEPR1_B, DEPR2_B, DEPR3_B
   Virginia Beach: CRNT_OWNER, OWNER_MAIL_ZIP, OWNER_MAIL_STATE, OWNER_MAIL_ADRS, OWNER_MAIL_CITY, PAR_GPIN, geodb_oid, SUBDIVISION, INSTRUMENT, STR_DIR
   Durham: FEATURE_KEY, PARCEL_TYPE, PARCEL_PK, AUT_SNAPSHOT_DATE, PIN_EXT, PIN_MAP, PIN_BLOCK, PIN_LOT, PROPERTY_DESCR, LOCATION_ADDR, SPEC_DIST, SPEC_DIST_PCNT, TOWNSHIP, CALCULATED_ACRES, DEEDED_ACRES, PROPERTY_OWNER, OWNER_MAIL_1, PHYADDR_LOCID, PHYADDR_STR_NUM, PHYADDR_STR, PHYADDR_STATE, VALUE_APPROACH, DEED_DATE, DEED_PATH
-  Nashville: FEATURETYPE, STANPAR, OwnDate, OwnInstr, PropHouse, PropState, LegalDesc, PropInstr, PropDate, Front, Side, Council, Tract, OwnState, PropCity, PropZip, OwnCountry, PropStreet, OwnAddr1, OwnCity, OwnZip, IsRegular, TaxDist, LandAppr
+  Nashville: FEATURETYPE, STANPAR, OwnDate, OwnInstr, PropHouse, PropState, LegalDesc, PropInstr, PropDate, Front, Side, Council, Tract, PropCity, PropZip, OwnState, OwnCountry, PropStreet, OwnAddr1, OwnCity, OwnZip, IsRegular, TaxDist, LandAppr
   Chesapeake: VGIN_QPID, LOCALITY
 
 P0-1 GATE PASSED.
